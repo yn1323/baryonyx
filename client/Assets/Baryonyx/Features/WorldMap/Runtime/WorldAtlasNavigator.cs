@@ -203,7 +203,8 @@ namespace Baryonyx.WorldMap
                     current.Nodes[index],
                     kind,
                     null,
-                    start == null ? null : () => start(id)
+                    start == null || BattleAt(id, 0) == null ? null : () => start(id),
+                    current.EventFormAt(index)
                 );
                 return;
             }
@@ -240,8 +241,24 @@ namespace Baryonyx.WorldMap
                     if (view != null)
                         view.Resume();
                 },
-                start == null ? null : () => start(id)
+                start == null || BattleAt(id, 0) == null ? null : () => start(id),
+                current.EventFormAt(index)
             );
+        }
+
+        /// <summary>
+        /// The battle of <paramref name="square"/> on the shown map, its random enemies drawn with
+        /// <paramref name="seed"/>, or null when the square's settings cannot be read.
+        /// </summary>
+        public WorldAtlasBattle BattleAt(string square, int seed)
+        {
+            var layout = current != null ? current.Atlas : null;
+            if (layout == null)
+                return null;
+            foreach (var node in layout.nodes)
+                if (node.id == square)
+                    return WorldAtlasBattle.Of(currentKey, node, layout.level, seed);
+            return null;
         }
 
         private void PressDungeons()

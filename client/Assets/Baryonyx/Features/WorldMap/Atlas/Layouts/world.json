@@ -60,8 +60,8 @@
    "x": 4165.0,
    "y": 2880.0,
    "kind": "empty",
-   "event": "battle",
-   "price": 200
+   "price": 200,
+   "event": "battle"
   },
   {
    "id": "world-64",
@@ -110,8 +110,8 @@
    "x": 4085.0,
    "y": 2227.5,
    "kind": "empty",
-   "event": "choice",
-   "price": 250
+   "price": 250,
+   "event": "choice"
   },
   {
    "id": "world-39",
@@ -132,8 +132,8 @@
    "x": 3795.0,
    "y": 1640.0,
    "kind": "empty",
-   "event": "pickup",
-   "price": 200
+   "price": 300,
+   "event": "peddler"
   },
   {
    "id": "world-66",
@@ -154,8 +154,8 @@
    "x": 4820.3,
    "y": 2874.7,
    "kind": "empty",
-   "event": "choice",
-   "price": 250
+   "price": 250,
+   "event": "choice"
   },
   {
    "id": "world-61",
@@ -176,8 +176,8 @@
    "x": 5387.8,
    "y": 2507.7,
    "kind": "empty",
-   "event": "pickup",
-   "price": 200
+   "price": 200,
+   "event": "pickup"
   },
   {
    "id": "world-50",
@@ -198,8 +198,8 @@
    "x": 5920.0,
    "y": 2120.0,
    "kind": "empty",
-   "event": "choice",
-   "price": 250
+   "price": 300,
+   "event": "peddler"
   },
   {
    "id": "world-40",
@@ -220,8 +220,8 @@
    "x": 5906.2,
    "y": 1542.2,
    "kind": "empty",
-   "event": "pickup",
-   "price": 200
+   "price": 400,
+   "event": "chest"
   },
   {
    "id": "world-17",
@@ -263,8 +263,9 @@
    "x": 5940.2,
    "y": 902.2,
    "kind": "empty",
-   "event": "pickup",
-   "price": 200
+   "price": 250,
+   "event": "bet",
+   "form": "chests"
   },
   {
    "id": "world-11",
@@ -285,8 +286,8 @@
    "x": 5416.5,
    "y": 614.0,
    "kind": "empty",
-   "event": "battle",
-   "price": 200
+   "price": 200,
+   "event": "battle"
   },
   {
    "id": "world-6",
@@ -307,8 +308,8 @@
    "x": 4841.4,
    "y": 330.5,
    "kind": "empty",
-   "event": "pickup",
-   "price": 200
+   "price": 200,
+   "event": "pickup"
   },
   {
    "id": "world-1",
@@ -329,8 +330,8 @@
    "x": 4246.0,
    "y": 502.5,
    "kind": "empty",
-   "event": "peddler",
-   "price": 300
+   "price": 200,
+   "event": "battle"
   },
   {
    "id": "world-7",
@@ -351,8 +352,8 @@
    "x": 4097.8,
    "y": 1042.5,
    "kind": "empty",
-   "event": "choice",
-   "price": 250
+   "price": 250,
+   "event": "meet"
   },
   {
    "id": "world-16",
@@ -373,7 +374,8 @@
    "x": 2731.0,
    "y": 1978.2,
    "kind": "empty",
-   "price": 200
+   "price": 200,
+   "event": "battle"
   },
   {
    "id": "world-34",
@@ -387,8 +389,9 @@
    "x": 1115.0,
    "y": 2390.0,
    "kind": "empty",
+   "price": 250,
    "event": "bet",
-   "price": 250
+   "form": "dice"
   },
   {
    "id": "world-45",
@@ -423,8 +426,8 @@
    "x": 1726.2,
    "y": 2475.0,
    "kind": "empty",
-   "event": "peddler",
-   "price": 300
+   "price": 250,
+   "event": "choice"
   },
   {
    "id": "world-56",
@@ -445,8 +448,8 @@
    "x": 2108.8,
    "y": 2946.3,
    "kind": "empty",
-   "event": "battle",
-   "price": 200
+   "price": 200,
+   "event": "pickup"
   },
   {
    "id": "world-72",
@@ -467,8 +470,8 @@
    "x": 2647.9,
    "y": 3269.9,
    "kind": "empty",
-   "event": "choice",
-   "price": 250
+   "price": 200,
+   "event": "battle"
   },
   {
    "id": "world-75",
@@ -489,8 +492,7 @@
    "x": 3218.4,
    "y": 3252.2,
    "kind": "empty",
-   "event": "meet",
-   "price": 250
+   "price": 200
   },
   {
    "id": "world-51",
@@ -511,8 +513,8 @@
    "x": 631.2,
    "y": 2878.8,
    "kind": "empty",
-   "event": "battle",
-   "price": 200
+   "price": 200,
+   "event": "battle"
   },
   {
    "id": "world-71",
@@ -533,8 +535,8 @@
    "x": 1490.0,
    "y": 2029.6,
    "kind": "empty",
-   "event": "pickup",
-   "price": 200
+   "price": 200,
+   "event": "pickup"
   },
   {
    "id": "world-33",
@@ -561,8 +563,8 @@
    "x": 1924.1,
    "y": 1395.1,
    "kind": "empty",
-   "event": "pickup",
-   "price": 200
+   "price": 200,
+   "event": "pickup"
   },
   {
    "id": "world-20",
@@ -583,14 +585,16 @@
    "x": 3415.0,
    "y": 3276.5,
    "kind": "empty",
-   "price": 200
+   "price": 400,
+   "event": "chest"
   },
   {
    "id": "world-21",
    "x": 2409.7,
    "y": 1355.3,
    "kind": "empty",
-   "price": 200
+   "price": 400,
+   "event": "chest"
   },
   {
    "id": "world-28",
@@ -611,8 +615,8 @@
    "x": 3097.1,
    "y": 1535.3,
    "kind": "empty",
-   "event": "choice",
-   "price": 250
+   "price": 250,
+   "event": "choice"
   },
   {
    "id": "world-31",
@@ -626,7 +630,6 @@
    "x": 2498.5,
    "y": 1683.5,
    "kind": "empty",
-   "event": "pickup",
    "price": 200
   }
  ],

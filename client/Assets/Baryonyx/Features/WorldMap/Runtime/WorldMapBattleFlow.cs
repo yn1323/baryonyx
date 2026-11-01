@@ -15,7 +15,9 @@ namespace Baryonyx.WorldMap
     /// on its background, fought from full HP. A win clears the square and returns to the map; a
     /// gate boss's defeat opens the way behind it. After the party is wiped out, the square is
     /// not cleared and can be fought again at once or later from the map. The menu returns to the
-    /// map. Scene changes are the caller's.
+    /// map. Scene changes are the caller's. The nested world map's battles (<see cref="WorldAtlasBattle"/>)
+    /// run the same way with the enemies drawn from the square's settings, and save nothing on a
+    /// win, since the square was paid for on the way in.
     /// </summary>
     public sealed class WorldMapBattleFlow : IDisposable
     {
@@ -34,10 +36,13 @@ namespace Baryonyx.WorldMap
         private readonly AdventureOverlay overlay;
         private readonly Func<bool> toMap;
         private readonly Func<bool> retry;
+        private readonly Func<Task<bool>> clear;
+        private readonly Action left;
         private readonly CancellationTokenSource lifetime = new();
         private bool busy;
         private bool disposed;
 
+        /// <summary>A battle of the highway: the square's fixed enemies, clearing it on a win.</summary>
         public WorldMapBattleFlow(
             BattleInspectView battle,
             AdventureOverlay overlay,
@@ -45,15 +50,42 @@ namespace Baryonyx.WorldMap
             Func<bool> toMap,
             Func<bool> retry
         )
+            : this(
+                battle,
+                overlay,
+                squareId,
+                WorldMapEncounters.Of(squareId)
+                    ?? throw new ArgumentException("The square has no battle.", nameof(squareId)),
+                () => WorldMapSession.MoveAsync(squareId, clear: true),
+                toMap,
+                retry,
+                () => WorldMapSession.Battle = null
+            ) { }
+
+        /// <summary>
+        /// A battle of <paramref name="encounter"/>: on a win, <paramref name="clear"/> saves the
+        /// square before going back to the map, and <paramref name="left"/> runs once the map is
+        /// on its way.
+        /// </summary>
+        public WorldMapBattleFlow(
+            BattleInspectView battle,
+            AdventureOverlay overlay,
+            string squareId,
+            WorldMapEncounter encounter,
+            Func<Task<bool>> clear,
+            Func<bool> toMap,
+            Func<bool> retry,
+            Action left
+        )
         {
             this.battle = battle != null ? battle : throw new ArgumentNullException(nameof(battle));
             this.overlay =
                 overlay != null ? overlay : throw new ArgumentNullException(nameof(overlay));
             this.toMap = toMap ?? throw new ArgumentNullException(nameof(toMap));
             this.retry = retry ?? throw new ArgumentNullException(nameof(retry));
-            Encounter =
-                WorldMapEncounters.Of(squareId)
-                ?? throw new ArgumentException("The square has no battle.", nameof(squareId));
+            this.clear = clear ?? throw new ArgumentNullException(nameof(clear));
+            this.left = left;
+            Encounter = encounter ?? throw new ArgumentNullException(nameof(encounter));
             SquareId = squareId;
             Gate = Encounter.Enemies.Kinds.Count > 2 && Encounter.Enemies.Kinds[2] != null;
 
@@ -102,7 +134,7 @@ namespace Baryonyx.WorldMap
         // 勝利の演出のあいだにマスのクリアを保存し、保存できたら地図へ戻る。
         private async Task VictoryAsync()
         {
-            var saving = WorldMapSession.MoveAsync(SquareId, clear: true);
+            var saving = clear();
             if (!await Play(battle.PlayVictory))
                 return;
             await ShowVictoryAsync(saving);
@@ -122,10 +154,7 @@ namespace Baryonyx.WorldMap
                     null,
                     new DialogChoice(
                         AdventureDialogs.RetryChoice,
-                        () =>
-                            Work = ShowVictoryAsync(
-                                WorldMapSession.MoveAsync(SquareId, clear: true)
-                            )
+                        () => Work = ShowVictoryAsync(clear())
                     )
                 );
                 return;
@@ -193,7 +222,7 @@ namespace Baryonyx.WorldMap
                 return;
             Leave(toMap);
             if (Leaving)
-                WorldMapSession.Battle = null;
+                left?.Invoke();
         }
 
         private void Retry() => Leave(retry);

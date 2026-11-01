@@ -59,6 +59,9 @@ namespace Baryonyx.App
         // 世界地図から地域のエリアマップへ入る、入れ子の地図の試作。
         public const string WorldAtlas = "WorldAtlas";
 
+        // 地図エディター。入れ子の地図の上で、マスの出来事と戦闘の設定を変えて試す。
+        public const string WorldEventLab = "WorldEventLab";
+
         /// <summary>
         /// The debugging rooms Home's list opens, in its order: the name shown, the scene,
         /// whether the room has its own button back to Home, and for the others where the one
@@ -81,6 +84,7 @@ namespace Baryonyx.App
             ("冒険のデバッグルーム", AdventureLab, false, DebugRoomCorner.TopRight),
             ("TempLab", TempLab, false, DebugRoomCorner.TopRight),
             ("入れ子の地図（試作）", WorldAtlas, false, DebugRoomCorner.BottomLeft),
+            ("地図エディター", WorldEventLab, false, DebugRoomCorner.BottomLeft),
         };
 
         // Homeの左下のボタンと、冒険していないときの右下のカード（旅の案内所）が開く案内人の画面。

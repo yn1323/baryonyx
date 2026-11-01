@@ -46,8 +46,15 @@ namespace Baryonyx.WorldMap
 
         // 入れ子の地図で、マスに置いた出来事（WorldEventKind の値。何も起きないマスは -1）と、
         // 出来事ごとの台（WorldEventKind の順）。クリアしたマスは何もない台に戻す。
+        // 出来事は、地図を組むときに配置のJSON（Layout）から読む。
         public int[] NodeEvents = Array.Empty<int>();
         public Sprite[] EventSprites = Array.Empty<Sprite>();
+
+        // マスに置いた出来事の遊び方（WorldEventPanel.Form の値）。並びは NodeEvents と同じ。
+        public int[] NodeEventForms = Array.Empty<int>();
+
+        // マスを押したときに、歩く代わりに受け取る処理（出来事のデバッグルームの付け替え）。true を返すと歩かない。
+        public Func<int, bool> Picking;
 
         // マスを結ぶ線。並びは WorldMapGraph.Lines。
         public Image[] LineFills = Array.Empty<Image>();
@@ -275,14 +282,25 @@ namespace Baryonyx.WorldMap
         private WorldAtlasLayout AtlasLayout =>
             atlasLayout ??= InAtlas ? WorldAtlasLayout.Parse(Layout.text) : null;
 
+        /// <summary>The nested world map's layout this map was built from, or null on the highway.</summary>
+        public WorldAtlasLayout Atlas => AtlasLayout;
+
         private WorldMapGraph BuildGraph()
         {
             if (!InAtlas)
                 return WorldMapCatalog.Build();
             var nodes = AtlasLayout.nodes;
             prices = new int[nodes.Length];
+            NodeEvents = new int[nodes.Length];
+            NodeEventForms = new int[nodes.Length];
             for (int i = 0; i < nodes.Length; i++)
+            {
                 prices[i] = nodes[i].price;
+                NodeEvents[i] = WorldAtlasLayout.EventOf(nodes[i].@event) is { } kind
+                    ? (int)kind
+                    : -1;
+                NodeEventForms[i] = WorldAtlasLayout.FormOf(nodes[i].form) ?? 0;
+            }
             WorldAtlasSession.Register(AtlasLayout);
             return AtlasLayout.Build();
         }
@@ -319,6 +337,17 @@ namespace Baryonyx.WorldMap
             zoom = Mathf.Max(0.05f, value);
             glide = Vector2.zero;
             scroll = Clamp(partyDesign - SeenSize * 0.5f);
+            ApplyScroll();
+        }
+
+        /// <summary>
+        /// Scrolls the map so the square <paramref name="index"/> is as near the middle of the
+        /// screen as the map's edges allow (the map event lab's list of squares).
+        /// </summary>
+        public void LookAt(int index)
+        {
+            glide = Vector2.zero;
+            scroll = Clamp(DesignOf(index) - SeenSize * 0.5f);
             ApplyScroll();
         }
 
@@ -411,6 +440,8 @@ namespace Baryonyx.WorldMap
             if (!Loaded || Walking || Fighting || Opening)
                 return false;
             if (EventWindow != null && EventWindow.IsShown)
+                return false;
+            if (Picking != null && Picking(index))
                 return false;
             if (index == partyAt)
             {
@@ -926,6 +957,24 @@ namespace Baryonyx.WorldMap
             kind = (WorldEventKind)NodeEvents[index];
             return true;
         }
+
+        /// <summary>
+        /// Puts <paramref name="kind"/> played as <paramref name="form"/> on the square
+        /// <paramref name="index"/>, or nothing when it is null, with the runes entering it now
+        /// costs (the event lab's changes, saved to the layout elsewhere).
+        /// </summary>
+        public void SetEvent(int index, WorldEventKind? kind, int form, int price)
+        {
+            NodeEvents[index] = kind is { } placed ? (int)placed : -1;
+            NodeEventForms[index] = form;
+            if (index < prices.Length)
+                prices[index] = price;
+            Refresh();
+        }
+
+        /// <summary>How the event on the square <paramref name="index"/> is played.</summary>
+        public int EventFormAt(int index) =>
+            index >= 0 && index < NodeEventForms.Length ? NodeEventForms[index] : 0;
 
         /// <summary>
         /// The kind of platform a square shows. A cleared square has nothing left to happen on

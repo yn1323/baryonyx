@@ -101,6 +101,7 @@ namespace Baryonyx.Tests.EditMode
                     if (string.IsNullOrEmpty(node.@event))
                         continue;
                     Assert.That(WorldAtlasLayout.EventOf(node.@event), Is.Not.Null, node.id);
+                    Assert.That(WorldAtlasLayout.FormOf(node.form), Is.Not.Null, node.id);
                     Assert.That(node.kind, Is.EqualTo("empty"), node.id);
                     placed.Add(i);
                 }
@@ -114,6 +115,26 @@ namespace Baryonyx.Tests.EditMode
                             Assert.That(placed, Has.No.Member(beyond), key);
                 }
             }
+        }
+
+        // 世界地図には、7種類の出来事と、賭けのどの遊び方も1つ以上ある（2026-11-01、ユーザーの依頼）。
+        [Test]
+        public void TheWorldHoldsEveryKindOfEventAndEveryWayToBet()
+        {
+            var nodes = Load(WorldAtlasLayout.WorldKey).nodes;
+            var kinds = nodes
+                .Select(n => WorldAtlasLayout.EventOf(n.@event))
+                .Where(kind => kind != null)
+                .Select(kind => kind.Value)
+                .ToList();
+            foreach (WorldEventKind kind in System.Enum.GetValues(typeof(WorldEventKind)))
+                Assert.That(kinds, Does.Contain(kind), kind.ToString());
+            var bets = nodes
+                .Where(n => WorldAtlasLayout.EventOf(n.@event) == WorldEventKind.Bet)
+                .Select(n => WorldAtlasLayout.FormOf(n.form))
+                .ToList();
+            foreach (WorldBetGame game in System.Enum.GetValues(typeof(WorldBetGame)))
+                Assert.That(bets, Does.Contain((int)game), game.ToString());
         }
 
         [Test]

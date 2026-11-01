@@ -1,0 +1,7 @@
+interface:
+  display_name: "地図のマスの出来事を足す・変える・消す"
+  short_description: "入れ子の地図のマスの出来事・遊び方・設定を変えるとき、地図エディターを含む一緒に直す所を漏れなく直す"
+  default_prompt: "Use $map-event-authoring when adding, changing, removing or reviewing an event kind, a way of playing, a square's setting or the map editor of the nested world map."
+
+policy:
+  allow_implicit_invocation: true

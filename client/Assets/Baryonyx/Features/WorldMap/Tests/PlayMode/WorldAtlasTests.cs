@@ -343,27 +343,89 @@ namespace Baryonyx.Tests.PlayMode
             );
             yield return CloseWindow(window);
 
-            // 賭け：遊ぶと伏せたカードが混ざり、当たりを引くとルーンが増える。
-            window.Open(square, WorldEventKind.Bet, null);
+            // 賭け（サイコロ）：遊ぶと賭け金が積まれ、次の目の高い・低いを当てると倍になる。
+            // 当てたあとは降りられ、積んだ分をもらう。得意な仲間がいると、振り直せる。
+            window.Open(square, WorldEventKind.Bet, null, null, (int)WorldBetGame.Dice);
             yield return WaitOpened(window);
-            var bet = (WorldEventBet)window.Panel;
-            bet.Play.onClick.Invoke();
+            var dice = (WorldEventDice)window.Panel;
+            dice.Rig(3, 5);
+            dice.Play.onClick.Invoke();
             yield return SceneTests.WaitUntil(
-                () => bet.Picking,
-                seconds: 6f,
-                message: "The cards were not shuffled."
+                () => dice.Guessing,
+                message: "The die did not land."
             );
-            bet.Picks[bet.Winner].onClick.Invoke();
-            yield return SceneTests.WaitUntil(() => bet.Done, message: "The bet did not end.");
+            Assert.That(dice.Face, Is.EqualTo(3));
             Assert.That(
-                bet.Balance,
-                Is.EqualTo(
-                    WorldEventSamples.PeddlerRunes
-                        - WorldEventSamples.BetStake
-                        + WorldEventSamples.BetPrize
-                )
+                dice.StopGroup.interactable,
+                Is.False,
+                "Stopping needs a right guess first."
+            );
+            Assert.That(dice.RerollGroup.interactable, Is.True);
+            dice.High.onClick.Invoke();
+            yield return SceneTests.WaitUntil(
+                () => dice.Guessing,
+                message: "The guess was not rolled."
+            );
+            Assert.That(dice.PotRunes, Is.EqualTo(WorldEventSamples.BetStake * 2));
+            dice.Stop.onClick.Invoke();
+            yield return SceneTests.WaitUntil(
+                () => dice.Done,
+                message: "The dice bet did not end."
+            );
+            Assert.That(
+                dice.Balance,
+                Is.EqualTo(WorldEventSamples.PeddlerRunes + WorldEventSamples.BetStake)
             );
             yield return CloseWindow(window);
+
+            // 賭け（宝箱）：開けるたびにルーンが積まれ、ミミックを開けると積んだ分を失う。
+            window.Open(square, WorldEventKind.Bet, null, null, (int)WorldBetGame.Chests);
+            yield return WaitOpened(window);
+            var chests = (WorldEventChestRun)window.Panel;
+            chests.Rig(4);
+            chests.Play.onClick.Invoke();
+            Assert.That(chests.Picking, Is.True);
+            chests.Taps[0].onClick.Invoke();
+            yield return SceneTests.WaitUntil(
+                () => chests.Picking,
+                message: "The chest did not open."
+            );
+            Assert.That(chests.PotRunes, Is.EqualTo(WorldEventSamples.ChestRunGains[0]));
+            Assert.That(chests.StopGroup.interactable, Is.True);
+            chests.Taps[4].onClick.Invoke();
+            yield return SceneTests.WaitUntil(
+                () => chests.Done,
+                message: "The mimic did not end the bet."
+            );
+            Assert.That(chests.Lost, Is.True);
+            Assert.That(chests.PotRunes, Is.Zero);
+            Assert.That(
+                chests.Balance,
+                Is.EqualTo(WorldEventSamples.PeddlerRunes - WorldEventSamples.BetStake)
+            );
+            yield return CloseWindow(window);
+
+            // 得意な仲間がいないと、助けのボタンも、選択の印の付いた答えも出ない。
+            window.Helped = false;
+            window.Open(square, WorldEventKind.Bet, null, null, (int)WorldBetGame.Chests);
+            yield return WaitOpened(window);
+            chests.Play.onClick.Invoke();
+            Assert.That(chests.PeekGroup.interactable, Is.False);
+            yield return CloseWindow(window);
+            window.Open(square, WorldEventKind.Choice, null);
+            yield return WaitOpened(window);
+            var helpless = (WorldEventChoice)window.Panel;
+            Assert.That(helpless.Options[^1].gameObject.activeSelf, Is.False);
+            Assert.That(helpless.Options[0].gameObject.activeSelf, Is.True);
+            window.Next.onClick.Invoke();
+            yield return SceneTests.WaitUntil(() => helpless.Answers.interactable);
+            helpless.Options[0].onClick.Invoke();
+            yield return SceneTests.WaitUntil(
+                () => helpless.Done,
+                message: "The choice did not end."
+            );
+            yield return CloseWindow(window);
+            window.Helped = true;
 
             // 戦闘：「たたかう」で白く覆い、戦闘の画面へ渡す。
             bool fought = false;

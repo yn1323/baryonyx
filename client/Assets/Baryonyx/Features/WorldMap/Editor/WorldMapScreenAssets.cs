@@ -78,8 +78,8 @@ namespace Baryonyx.WorldMap.Editor
             "WorldNodeStory",
             "WorldNodeBoss",
             "WorldNodeTown",
-            // 入れ子の地図の地域と入口。
-            "WorldNodeTown",
+            // 入れ子の地図の地域と入口。入るときも出るときも、旗を立てた同じ台にする。
+            "WorldNodeGate",
             "WorldNodeGate",
         };
 
@@ -179,7 +179,7 @@ namespace Baryonyx.WorldMap.Editor
                 // 入れ子の地図では、マスに置いた出来事を台の絵で見せ、マスから開く窓で見せる。
                 if (layout != null)
                 {
-                    PlaceEvents(view, layout);
+                    PlaceEventSprites(view);
                     WorldAtlasTollAssets.Build(root, view);
                     view.EventWindow = WorldMapEventWindowAssets.Build(root);
                 }
@@ -204,19 +204,13 @@ namespace Baryonyx.WorldMap.Editor
             return ArtAssets.ImportTexture(BackgroundPath, FilterMode.Point);
         }
 
-        // マスの並びは、配置のJSONのマスの並び（WorldAtlasLayout.Build と同じ）。
-        private static void PlaceEvents(WorldMapView view, TextAsset layout)
+        // 出来事ごとの台。どのマスに何を置くかは、地図が Play 中に配置のJSONから読む。
+        private static void PlaceEventSprites(WorldMapView view)
         {
             var sprites = new Sprite[EventArt.Length];
             for (int i = 0; i < EventArt.Length; i++)
                 sprites[i] = ImportNode($"{ArtFolder}/{EventArt[i]}.png");
             view.EventSprites = sprites;
-            var nodes = WorldAtlasLayout.Parse(layout.text).nodes;
-            view.NodeEvents = new int[nodes.Length];
-            for (int i = 0; i < nodes.Length; i++)
-                view.NodeEvents[i] = WorldAtlasLayout.EventOf(nodes[i].@event) is { } kind
-                    ? (int)kind
-                    : -1;
         }
 
         private static Sprite ImportNode(string path)

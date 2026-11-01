@@ -49,6 +49,9 @@ namespace Baryonyx.WorldMap
             answersAt = -1f;
             Answers.alpha = 0f;
             Answers.interactable = Answers.blocksRaycasts = false;
+            // 最後の答えは、得意な仲間がいるときだけ出る。
+            if (Options.Length > 0)
+                Options[^1].gameObject.SetActive(Host.Helped);
             foreach (var gift in Gifts)
                 gift.gameObject.SetActive(false);
         }

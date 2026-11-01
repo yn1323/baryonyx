@@ -17,6 +17,16 @@ namespace Baryonyx.WorldMap
         Battle,
     }
 
+    /// <summary>The ways a bet is played, in the order of the panels' <see cref="WorldEventPanel.Form"/>.</summary>
+    public enum WorldBetGame
+    {
+        // サイコロのハイ＆ロー。
+        Dice,
+
+        // 宝箱を開け続ける。
+        Chests,
+    }
+
     /// <summary>One line of a talk, said by <see cref="Speaker"/> (an index into the panel's bubbles).</summary>
     public readonly struct WorldEventLine
     {
@@ -77,11 +87,25 @@ namespace Baryonyx.WorldMap
         public static readonly int[] PeddlerPrices = { 300, 600, 600, 900 };
         public const int PeddlerRunes = 1500;
 
-        // 賭け：伏せた3枚から当たりを引く。外れても小さな物はもらえる。
+        // 賭け：賭け金を払い、どこで降りるかを選ぶ。外れると、積んだ分を失う（何ももらえない）。
         public const int BetStake = 100;
-        public const int BetPrize = 300;
         public const string BetPlay = "100ルーンで遊ぶ";
-        public const string BetConsolation = "どんぐり";
+        public const string BetStop = "降りる";
+        public const string BetLost = "ハズレ";
+
+        // サイコロのハイ＆ロー：次の目が高いか低いかを当てるたびに、積んだルーンが倍になる。
+        // 同じ目は引き分けで、もう一度当てる。DiceWins 回当てると、自動で降りる。
+        public const int DiceWins = 5;
+        public const string DiceHigh = "次は高い";
+        public const string DiceLow = "次は低い";
+
+        // 宝箱の連続開け：ChestRunCount 個のうち1つがミミック。開けた順に、宝箱が ChestRunGains を足す。
+        public const int ChestRunCount = 5;
+        public static readonly int[] ChestRunGains = { 100, 150, 250, 400 };
+
+        // 仲間の助け：得意な仲間がいると、1回だけ使える。選択の3つ目の答えと同じく、属性の印で示す。
+        public const string DiceReroll = "振り直す";
+        public const string ChestRunPeek = "のぞく";
 
         public const string BattleFight = "たたかう";
     }
@@ -95,6 +119,9 @@ namespace Baryonyx.WorldMap
     public abstract class WorldEventPanel : MonoBehaviour
     {
         public WorldEventKind Kind;
+
+        // 同じ種類の出来事の、遊び方の違い（賭けは WorldBetGame の値）。違いのない出来事は0。
+        public int Form;
         public Vector2 WindowSize = new(1600f, 860f);
         public bool ShowScenery = true;
         public float Veil = 0.68f;

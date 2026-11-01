@@ -39068,7 +39068,7 @@ MonoBehaviour:
   - {fileID: 21300000, guid: 5e2b51a53f1529146a690542a4a3adc2, type: 3}
   - {fileID: 21300000, guid: 22f030aa38fa812438cbee0a95c74aa8, type: 3}
   - {fileID: 21300000, guid: dd5aeb116a40d4444a84d99e0fc59151, type: 3}
-  - {fileID: 21300000, guid: dd5aeb116a40d4444a84d99e0fc59151, type: 3}
+  - {fileID: 21300000, guid: a70154263f7ff48f9b53edd97cfc7ff5, type: 3}
   - {fileID: 21300000, guid: a70154263f7ff48f9b53edd97cfc7ff5, type: 3}
   HiddenSprite: {fileID: 21300000, guid: ba271d57576ab3349a156131a746f471, type: 3}
   NodeEvents: 

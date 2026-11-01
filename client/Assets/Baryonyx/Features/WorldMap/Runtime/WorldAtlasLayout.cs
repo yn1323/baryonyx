@@ -36,8 +36,17 @@ namespace Baryonyx.WorldMap
             // マスに置いた出来事（EventOf の名前）。何も起きないマスは空。
             public string @event;
 
+            // 出来事の遊び方（FormOf の名前）。賭けだけが持ち、ないときは最初の遊び方。
+            public string form;
+
             // 初めて入るときに払うルーン。地図の始まりのマスは0（タダ）。
             public int price;
+
+            // 戦闘の設定（WorldAtlasEncounters）。敵は言葉で書き、空はランダム。Lvの0は地図の推奨Lv。
+            // 強さは空（ふつう）・"elite"（強い）・"boss"（主）。
+            public string enemies;
+            public int enemyLevel;
+            public string strength;
         }
 
         [Serializable]
@@ -88,6 +97,36 @@ namespace Baryonyx.WorldMap
                 "peddler" => WorldEventKind.Peddler,
                 "bet" => WorldEventKind.Bet,
                 "battle" => WorldEventKind.Battle,
+                _ => null,
+            };
+
+        /// <summary>The name a layout gives the event <paramref name="kind"/> (the reverse of <see cref="EventOf"/>).</summary>
+        public static string NameOf(WorldEventKind kind) =>
+            kind switch
+            {
+                WorldEventKind.Meet => "meet",
+                WorldEventKind.Choice => "choice",
+                WorldEventKind.HiddenChest => "chest",
+                WorldEventKind.Pickup => "pickup",
+                WorldEventKind.Peddler => "peddler",
+                WorldEventKind.Bet => "bet",
+                _ => "battle",
+            };
+
+        /// <summary>The name a layout gives a bet's way of playing (the reverse of <see cref="FormOf"/>).</summary>
+        public static string FormNameOf(int form) =>
+            form == (int)WorldBetGame.Chests ? "chests" : "dice";
+
+        /// <summary>
+        /// How the event on a square is played (<see cref="WorldEventPanel.Form"/>), or null for a
+        /// name no event knows.
+        /// </summary>
+        public static int? FormOf(string name) =>
+            name switch
+            {
+                null or "" => 0,
+                "dice" => (int)WorldBetGame.Dice,
+                "chests" => (int)WorldBetGame.Chests,
                 _ => null,
             };
 

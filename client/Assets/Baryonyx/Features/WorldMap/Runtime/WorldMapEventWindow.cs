@@ -47,6 +47,10 @@ namespace Baryonyx.WorldMap
         public Image Flash;
         public WorldEventPanel[] Panels = Array.Empty<WorldEventPanel>();
 
+        // 仲間の助けの見本：得意な仲間がいる形で見せるか。選択の3つ目の答えと、賭けの振り直し・のぞくが出る。
+        // パーティをまだ見ないため、地図では常にいる形にし、出来事のデバッグルームで切り替える。
+        public bool Helped = true;
+
         // 開く流れ：マスが光る→光の線が昇る→窓がマスから育つ→物が1つずつ降り立つ。
         public const float RaySeconds = 0.5f;
         public const float GrowDelay = 0.18f;
@@ -140,17 +144,24 @@ namespace Baryonyx.WorldMap
             return null;
         }
 
-        public WorldEventPanel PanelOf(WorldEventKind kind)
+        /// <summary>The panel for <paramref name="kind"/> played as <paramref name="form"/>, or the kind's first.</summary>
+        public WorldEventPanel PanelOf(WorldEventKind kind, int form = 0)
         {
+            WorldEventPanel first = null;
             foreach (var panel in Panels)
-                if (panel.Kind == kind)
+            {
+                if (panel.Kind != kind)
+                    continue;
+                if (panel.Form == form)
                     return panel;
-            return null;
+                first ??= panel;
+            }
+            return first;
         }
 
         /// <summary>
         /// Opens the window out of <paramref name="from"/> (a square on the map) for the event of
-        /// <paramref name="kind"/>. <paramref name="whenClosed"/> runs once the window has gone
+        /// <paramref name="kind"/>, played as <paramref name="form"/>. <paramref name="whenClosed"/> runs once the window has gone
         /// back into the square. A battle's fight button calls <paramref name="toBattle"/> once
         /// the screen is white; without it (the prototype), the white fades back to the map.
         /// </summary>
@@ -158,10 +169,11 @@ namespace Baryonyx.WorldMap
             RectTransform from,
             WorldEventKind kind,
             Action whenClosed,
-            Action toBattle = null
+            Action toBattle = null,
+            int form = 0
         )
         {
-            Panel = PanelOf(kind);
+            Panel = PanelOf(kind, form);
             if (Panel == null)
             {
                 Debug.LogError("The event window has no panel for " + kind + ".", this);

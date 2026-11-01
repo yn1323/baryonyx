@@ -12,7 +12,8 @@ updated: 2026-11-01
 世界地図で駒を進めて地域のマスに止まると、その地域の細かい地図（**エリアマップ**）へ入り、エリアマップの入口に止まると世界地図へ戻る、入れ子の地図の試作である。
 2026-10-28から、冒険していないときのHomeの行き先カードは、今の街道（[探索とダンジョンの進行](stage-progression.md#街道とダンジョン)）の代わりに、この地図のシーン（`World`）を開く。
 試作のシーン（`WorldAtlas`）は、デバッグ用にHomeのデバッグルームの一覧に残す。前の街道の世界地図（`WorldMap`）は、2026-10-29にユーザーの「前の街道のLabは不要」で一覧から外した。
-世界地図とマリーナ海岸のエリアマップには、出来事を試しに置いた（[マスに置いた出来事](#マスに置いた出来事)）。ほかの地図のマスには出来事がなく、町や名所のドット絵も置いていない。
+世界地図とマリーナ海岸のエリアマップには、出来事を試しに置いた（[マスに置いた出来事](#マスに置いた出来事)）。世界地図には7種類の出来事がすべてある。
+マスの出来事は、[地図エディター](screens/debug-rooms.md#地図エディター)で一覧から開いて確かめられる。ほかの地図のマスには出来事がなく、町や名所のドット絵も置いていない。
 どの地図でも、まだ入っていないマスに入るにはルーンを払う（[マスを開くルーン](#マスを開くルーン)）。
 
 ## 確定している方針
@@ -73,23 +74,99 @@ updated: 2026-11-01
 
 世界地図とマリーナ海岸のエリアマップのマスに、出来事を試しに置いた（2026-10-29、ユーザーの指示。割合は任された）。
 置き方は仮で、[place_events.py](../../client/ArtSource/WorldMap/Atlas/scripts/place_events.py) が配置のJSONの何もないマスに `event` を書き込む。
+世界地図は、マスごとに手で決めた（[世界地図の出来事の割り当て](#世界地図の出来事の割り当て)）。ほかの地図は、次の決まりで置く。
 
 - 出来事は何もないマスにだけ置き、道のりで2マス以上を空ける。マスの約3割になる。
 - 始まり（世界地図は `world-start`、エリアマップは入口）の隣には置かず、いちばん近い出来事は拾い物にする。
-- 行き止まりには隠し宝箱を置き、寄り道のごほうびにする。
+- 行き止まりには隠し宝箱を置き、寄り道のごほうびにする。空いた行き止まりがない地図では、始まりからいちばん遠い出来事を隠し宝箱にし、どの地図にも7種類がそろうようにする（2026-11-01、ユーザーの「7種類のマスを入れてみて」。世界地図には隠し宝箱がなかった）。
 - 出会いは地図に1つで、始まりから中ほどに置く。
-- 行商人は町・地域のマス・入口から離れた所に、出来事12個に1つ置く。賭けは15個に1つ置く。
+- 行商人は町・地域のマス・入口から離れた所に、出来事12個に1つ置く。賭けは15個に1つ置き、[遊び方](#賭けの遊び方)ごとに1つ以上にする。賭けは始まりに近い順に、サイコロ・宝箱の遊び方を交互に持つ（配置のJSONの `form`）。
 - 残りは戦闘・拾い物・選択から選び、戦闘どうしは道のりで5マス以上離す。
 
 | 地図 | 出来事 | 出会い | 選択 | 隠し宝箱 | 拾い物 | 行商人 | 賭け | 戦闘 |
 |---|---|---|---|---|---|---|---|---|
-| 世界地図 | 22／79マス | 1 | 6 | 0 | 8 | 2 | 1 | 4 |
+| 世界地図 | 23／79マス | 1 | 4 | 3 | 5 | 2 | 2（サイコロ1・宝箱1） | 6 |
 | マリーナ海岸 | 24／80マス | 1 | 4 | 2 | 7 | 2 | 2 | 6 |
+
+#### 世界地図の出来事の割り当て
+
+2026-11-01、ユーザーの「各マスにどのイベントを割り当てるかも一緒にお願い」で、世界地図の出来事をマスごとに手で決めた（形は任された）。
+決まりは前の配置と同じで、何もないマスにだけ置き、道のりで2マス以上を空け、始まりの隣には置かず、戦闘どうしは5マス以上離す。そのうえで、次をねらった。
+
+- 始まりから8マス以内に、拾い物・隠し宝箱・戦闘・選択・賭けがある。14マス以内で7種類がそろう。
+- 地域へ入る行き止まりの手前（ジェーロ連峰・オーロ砂漠）に隠し宝箱を置き、寄り道のごほうびにする。
+- 行商人は、道が集まる分かれ道の中ほどと奥に1つずつ置く。賭けは、近くにサイコロ、奥に宝箱を置く。
+- 戦闘は、地域の手前と長い道の途中に置く。
+
+| 始まりから | マス | 出来事 | ねらい |
+|---|---|---|---|
+| 2 | `world-19` | 拾い物 | 東の道の、最初の確かなごほうび |
+| 2 | `world-37` | 拾い物 | 西の道の、最初の確かなごほうび |
+| 5 | `world-21` | 隠し宝箱 | ジェーロ連峰へ入る行き止まりの手前 |
+| 5 | `world-48` | 賭け（サイコロ） | 西の分かれ道の、最初の賭け |
+| 7 | `world-38` | 戦闘 | ヴェルデ平原の手前の、最初の戦闘 |
+| 8 | `world-24` | 選択 | ヴェルデの先の、最初の選択 |
+| 8 | `world-54` | 選択 | 西の道の先 |
+| 8 | `world-62` | 戦闘 | ネッビア湿原の手前 |
+| 11 | `world-29` | 行商人 | 南東の分かれ道（道が集まる所の商人） |
+| 11 | `world-63` | 拾い物 | 西の長い道の途中 |
+| 14 | `world-13` | 出会い | 東の長い道の中ほど。仲間が加わる |
+| 14 | `world-43` | 選択 | 南へ下る道の途中 |
+| 14 | `world-77` | 戦闘 | 西の長い道の途中 |
+| 17 | `world-5` | 戦闘 | 東の長い道の途中 |
+| 17 | `world-65` | 戦闘 | 南の分かれ道 |
+| 19 | `world-79` | 隠し宝箱 | オーロ砂漠へ入る行き止まりの手前 |
+| 20 | `world-2` | 拾い物 | 東の長い道の途中 |
+| 20 | `world-67` | 選択 | 南東へ回る道の途中 |
+| 23 | `world-8` | 戦闘 | 東の長い道の奥 |
+| 23 | `world-55` | 拾い物 | 南東へ回る道の奥 |
+| 26 | `world-12` | 賭け（宝箱） | ボスコ大森林の手前の、奥の賭け |
+| 26 | `world-41` | 行商人 | フィアンマ火山とボスコ大森林の手前の分かれ道（奥の商人） |
+| 29 | `world-26` | 隠し宝箱 | いちばん奥 |
+
+表は2026-11-01に決めたときの割り当てである。今の割り当ての正本は配置のJSON（`Layouts/world.json` の `event`・`form`）で、[地図エディター](screens/debug-rooms.md#地図エディター)の「マスの一覧」が、今の地図のマスを始まりから近い順に出す。
+世界地図は place_events.py の `HAND_PLACED` に入れてあり、決まりで置き直さない（`place_events.py world` は断る）。
+
+#### マスの付け替え
+
+1マスずつ、[地図エディター](screens/debug-rooms.md#地図エディター)か `place_events.py set <地図> <マス> <出来事|none> [賭けの遊び方]` で変える（2026-11-01、ユーザーの「Labからも手動でも調整できるといいな」）。
+どちらも、何もないマスにだけ置け、始まりの隣には置けず、ほかの出来事から道のりで2マス以上を空ける決まりを確かめ、合わないときは理由を出して変えない。
+地図エディターの付け替えはEditorで配置に残り（端末ではアプリを閉じるまでだけ変わる）、[WorldEventLabSave](../../client/Assets/Baryonyx/Features/WorldMap/Editor/WorldEventLabSave.cs) が `set`・値段（[price_squares.py](../../client/ArtSource/WorldMap/Atlas/scripts/price_squares.py)）・サーバーのマスの表（`node scripts/world-atlas-catalog.mjs`）を続けて実行する。手で `set` を使ったときは、残りの2つを自分で実行する。
+地図は、どのマスに何を置くかを開くときに配置のJSONから読むため、付け替えたあとに地図を作り直す必要はない。
+マスの設定（[戦闘の設定](#戦闘の設定)）は `place_events.py setting <地図> <マス> <項目> [値]` で書き、値がないと消す。地図エディターの設定の欄もこれを呼ぶ。設定は値段を変えないため、値段とサーバーのマスの表は作り直さない。出来事を別の種類に替えると、前の出来事の設定は消える。
+
+#### 戦闘の設定
+
+2026-11-01、ユーザーの「バトルだと敵もどのぐらいのレベルでとか、そこまで考慮して設定したい」「敵をランダムで置くみたいな、言葉で設定できれば」で、戦闘のマスに次の設定を足した（言葉の書き方と強さの倍率は任された）。
+冒険の世界地図（`World`）では、「たたかう」でこの設定から敵を引き、戦闘の画面（`Battle`）を開く。それまでは、白く覆ったあと地図へ戻るだけだった（ユーザーが「今回つなぐ」を選んだ）。
+
+| 項目 | 配置のJSON | 書き方 | ないとき |
+|---|---|---|---|
+| 敵 | `enemies` | 敵の名前を「、」で並べる（「苔スライム、苔むした狼」「苔スライム×2」）。「ランダム」はランダムの敵で、名前と並べると1体、「ランダム2体」は2体。合わせて3体まで | ランダム（数も編成に任せる） |
+| Lv | `enemyLevel` | 1〜100 | 地図の推奨Lv |
+| 強さ | `strength` | 空（ふつう）・`elite`（強い）・`boss`（主） | ふつう |
+
+- ランダムの敵は、そのLvにいちばん近い行き先（[街とダンジョン](stage-progression.md#街とダンジョン仮)のダンジョン）の魔物から、同じ戦闘で種類が重ならないように選ぶ。
+- 敵の並びとHP・攻撃の倍率は、ダンジョンの戦闘と同じにする。ふつうは魔物の気配、強いは強い魔物の気配の編成と倍率を使い、主は小さな敵・中くらいの敵・主の3体を最奥の主の倍率で出す。
+- 名前の敵は、編成の同じ大きさの立ち位置に入れる。合う編成がないときは、小さい順に前から並べ、倍率は1倍とする。
+- Lvは書いたLvのまま使い、強い・主でもダンジョンのように上げない。
+- 背景は、ランダムの敵を選ぶ行き先の背景にする。
+- ランダムの敵は「たたかう」を押したときに引き、全滅して挑み直すときも同じ敵と戦う。
+- 勝つか、メニューで地図へ戻ると、冒険の世界地図の同じマスへ戻る。マスは入るときにルーンを払って開けてあるため、勝っても保存するものはない。戦闘の窓は初めて止まったときにだけ開くため、負けて戻ったマスでもう一度戦う手段はまだない。
+- 書き方が読めない設定のマスは、戦闘の画面を開かず、前と同じく白く覆ったあと地図へ戻る。地図エディターは、読めない言葉を赤で示して残さない。
+- 地図エディターの設定の欄の下に、引く敵を「苔スライム・ランダム1体　Lv12・強い」「ランダムはミストラ遺跡（Lv10）の魔物から」のように出す。
+
+#### 各環境への反映
+
+付け替えは、配置のJSONとサーバーのマスの表（[squares.ts](../../server/src/features/world-atlas/squares.ts)）の2つのファイルを書き換える。どちらもリポジトリに入り、commitしたものが、そのcommitから作ったAPKと、デプロイしたサーバー（Dev・Prod）に同じように入る（2026-11-01、ユーザーの「dev、ローカルで設定したマスを各環境に連携する方法」の検討）。
+DBへのseedにはしない。割り当てはアプリと一緒に変わる決まった表で、生成したファイルをサーバーと一緒にデプロイすれば、差分が見え、戻せて、環境ごとにずれない。DBに置くのは、アプリを出し直さずにサーバーだけで変えたくなったときで、そのときは管理用の書き込み、環境の間で写す手順、端末がサーバーから割り当てを読む形が要る。
+今のサーバーの表は値段とつながりだけを持ち、出来事は持たない。報酬を本物にするときは、もらう物をサーバーが決めるため、表に出来事を足す。日替わり・週替わりの復活は、プレイヤーごとの記録としてDBの表に持つ。
+APKとサーバーは同じcommitから出す。サーバーの表だけが新しいと、払うルーンは新しく、マスの台の絵は古くなる。
 
 出来事を置いたマスは、出来事ごとの台（`WorldEvent<種類>.png`、256×256）で見せる。
 台は、生成り色の地に種類の色の太い縁を付け、焦げ茶の輪郭と2段の塗りで地図の背景に合わせた（2026-10-29、ユーザーが5案から選んだ）。
 駒が少し斜め上から見た姿で立つため、台も何もないマスの石の台と同じ角度で見下ろした楕円にし、手前に薄い側面を付けた（2026-10-29、ユーザー）。
-台の形は、何もないマスや入口と同じ石の台（低い石の縁の内側に、1段高い生成りの面）にそろえた（2026-10-29、ユーザー）。町の台（`WorldNodeTown.png`）の金の縁を種類の色に塗り替え、印を内側の面の上に立てて作る。印は、平らな輪の台から切り出すと先（剣の先など）が欠けたため、Codex CLIで台なしで描き直したものを使う（2026-10-29、ユーザーの「見切れたりするんで全体的に調整してから利用する」による）。ダンジョンの部屋のマスも同じ石の台と印で作る（[冒険の画面](screens/adventure.md#冒険の画面)）。
+台の形は、何もないマスや町と同じ石の台（低い石の縁の内側に、1段高い生成りの面）にそろえた（2026-10-29、ユーザー）。町の台（`WorldNodeTown.png`）の金の縁を種類の色に塗り替え、印を内側の面の上に立てて作る。印は、平らな輪の台から切り出すと先（剣の先など）が欠けたため、Codex CLIで台なしで描き直したものを使う（2026-10-29、ユーザーの「見切れたりするんで全体的に調整してから利用する」による）。ダンジョンの部屋のマスも同じ石の台と印で作る（[冒険の画面](screens/adventure.md#冒険の画面)）。
 生成の依頼文は、選んだ案が [event_squares.txt](../../client/ArtSource/WorldMap/Atlas/requests/event_squares.txt)・[event_squares_redraw.txt](../../client/ArtSource/WorldMap/Atlas/requests/event_squares_redraw.txt)、斜めにした最終の絵が [event_squares_tilted.txt](../../client/ArtSource/WorldMap/Atlas/requests/event_squares_tilted.txt) である。
 印は、出会いが人の上半身の影絵、選択が「？」（傾いた立体の形が歪んで見えたため、まっすぐ立てて描き直した7案から、ユーザーが少し太く点の大きい形を選んだ。2026-10-29）、隠し宝箱が閉じた宝箱、拾い物が虫眼鏡、行商人が天秤ばかり、賭けが1の目の見えるサイコロ、戦闘が交差した剣である。
 まだ行けないマスでも、出来事の台は暗くせずに見せる。
@@ -158,12 +235,12 @@ updated: 2026-11-01
 | 出来事 | 窓の中 | ×が出る時機 |
 |---|---|---|
 | 出会い | アリアとルカが吹き出しで話す。読み終えると、ルカの絵が右から入り、「ルカが仲間になった！」の帯が伸びる | 仲間になってから |
-| 選択 | トーマが倒れた荷車を見つけて話す。書き終えると、右に答えが3つ出る。3つ目は打の印付きで、打の属性のカードを持つ仲間がいるときだけ出る答えの見本。選ぶと、答えの場所にもらう物が並ぶ | もらう物が出てから |
+| 選択 | トーマが倒れた荷車を見つけて話す。書き終えると、右に答えが3つ出る。3つ目は打の印付きで、打の属性のカードを持つ仲間がいるときだけ出る答えの見本（[仲間の助け](#賭けの遊び方)がいないと出ない）。選ぶと、答えの場所にもらう物が並ぶ | もらう物が出てから |
 | 隠し宝箱 | 宝箱がときどき揺れる。押すと揺れて開き、中身が口から弧を描いて飛び出して上に並ぶ | 中身が並んでから |
 | 拾い物 | 小さな窓（820×230）に、拾った物の絵と名前だけを出す。1.8秒か、押すと閉じる | 出さない |
 | 行商人 | 左に商人（絵がないので酒場の案内人を仮に立たせる）、右に品物のカード4枚、右上に持っているルーン。押すと買え、カードが暗くなって「売り切れ」が付く。足りない品は揺れる | いつでも |
-| 賭け | 伏せたカード3枚と「100ルーンで遊ぶ」。遊ぶと表を見せてから伏せ直して混ぜる。押したカードがめくれ、当たりは300ルーン、外れはどんぐり | いつでも |
-| 戦闘 | 左にトーマとアリア、右に苔スライムと苔むした狼、下に「たたかう」。押すと窓がふくらみ、画面が白く覆われて戦闘の画面へ渡す。試作には戦闘の画面がないため、白が引いて地図へ戻る | いつでも（逃げる） |
+| 賭け | 上に積んだルーン、下に「100ルーンで遊ぶ」。遊び方はサイコロと宝箱の2つ（[賭けの遊び方](#賭けの遊び方)） | いつでも |
+| 戦闘 | 左にトーマとアリア、右に苔スライムと苔むした狼、下に「たたかう」。押すと窓がふくらみ、画面が白く覆われて戦闘の画面へ渡す（[戦闘の設定](#戦闘の設定)）。試作のシーンと地図エディターには戦闘の画面がないため、白が引いて地図へ戻る | いつでも（逃げる） |
 
 開く流れは、どの出来事も同じである。
 
@@ -188,6 +265,39 @@ updated: 2026-11-01
 開く途中に暗い所を押すと、開き終えた形まで飛ばす。
 窓の中は自動レイアウトを使わずに置き、開く間の拡大と移動の負担を抑える。
 
+#### 賭けの遊び方
+
+2026-11-01、ユーザーの「サイコロのマスのギャンブルがめっちゃ面白くない」を受けて作り直した（ユーザーが3つの直し方の案をすべて選んだ）。
+前の賭けは、伏せたカード3枚を混ぜて当たりを当てる形だった。混ぜる動きが見えるため目で追えば当たり、選ぶのが1回だけで、外れてもどんぐりがもらえたため、迷う所がなかった。
+どの遊び方も、ここまでの儲けで降りるか、失う覚悟で続けるかを選ばせる（プッシュ・ユア・ラック）。外れると積んだ分を失い、何ももらえない。
+
+| 遊び方 | 窓の中 | 降りられる時機 | 仲間の助け |
+|---|---|---|---|
+| サイコロ（`dice`） | 中央にサイコロ1つ。遊ぶと100ルーンが積まれてサイコロが跳ねながら回り、目が出る。「次は低い」「次は高い」で次の目を当てるたびに積んだルーンが倍になる。同じ目は引き分けで、もう一度当てる。1の目では「次は低い」を、6の目では「次は高い」を押せない。5回当てると自動で降りる（3,200ルーン） | 1回当ててから、間の「降りる」 | 「振り直す」（雷の印）：今の目を1回だけ振り直す |
+| 宝箱（`chests`） | 宝箱5つを横に並べる。1つがミミック。遊んで100ルーンを払うと押して開けられ、開けた順に100・150・250・400ルーンが積まれ、上に足した分が浮かぶ。ミミックを開けると絵がミミックに替わって跳ね、積んだ分を失う。ミミックのほかを全部開けると自動で降りる（900ルーン） | 1つ開けてから、下の「降りる」 | 「のぞく」（突の印）：閉じた宝箱1つの中身を、上の印（ルーンかミミック）で見せる |
+
+仲間の助けは、得意な仲間がいるときだけ1回使える見本である。パーティをまだ見ないため、地図では常にいる形で出し、[地図エディター](screens/debug-rooms.md#地図エディター)で、いない形に切り替えて見られる。選択の3つ目の答えも同じ切り替えで出し分ける。
+数字（賭け金・倍率・宝箱の中身・数）は仮で、ルーンは見せるだけで持ち物にもサーバーにも入らない。
+
+### 出来事を足す・変える・消すとき
+
+マスの出来事の種類、賭けなどの遊び方、マスの設定の項目を足す・変える・消すときは、同じ変更で次をすべて直す（2026-11-01、ユーザーの「マップでのイベントとかを追加削除した場合、地図エディターもちゃんと修正するように」）。
+地図エディターに出ない種類や設定、地図エディターに残った消した種類を作らないためである。
+
+| 直す所 | 中身 |
+|---|---|
+| 種類と名前 | `WorldEventKind`（[WorldEvents.cs](../../client/Assets/Baryonyx/Features/WorldMap/Runtime/Events/WorldEvents.cs)）、配置の名前との対応（[WorldAtlasLayout](../../client/Assets/Baryonyx/Features/WorldMap/Runtime/WorldAtlasLayout.cs) の `EventOf`・`NameOf`、遊び方は `FormOf`・`FormNameOf`） |
+| 窓の中 | 種類ごとの窓（`Events/` の `WorldEvent<種類>`）、見本の文面と数字（`WorldEventSamples`）、配置（[WorldEventPanelAssets](../../client/Assets/Baryonyx/Features/WorldMap/Editor/WorldEventPanelAssets.cs) の `Build`） |
+| マスの台 | `WorldEvent<種類>.png` と、`WorldEventKind` の順に並べる [WorldMapScreenAssets](../../client/Assets/Baryonyx/Features/WorldMap/Editor/WorldMapScreenAssets.cs) の `EventArt`。[展示室](showcase.md)の登録 |
+| 地図エディター | 置く出来事のボタン（[WorldEventLab](../../client/Assets/Baryonyx/Features/WorldMap/Runtime/WorldEventLab.cs) の `Entries`）、右の設定の欄（`ShowInspector` と設定ごとの `Set…`、欄の配置は [WorldEventLabAssets](../../client/Assets/Baryonyx/Features/WorldMap/Editor/WorldEventLabAssets.cs)）、これから設定できるようにするものの一覧（`LaterSettings`。作った設定は消し、思いついた候補は足す） |
+| 配置と値段 | [place_events.py](../../client/ArtSource/WorldMap/Atlas/scripts/place_events.py) の `EVENTS`・`SETTINGS`・`BET_FORMS` と置き方の決まり、[price_squares.py](../../client/ArtSource/WorldMap/Atlas/scripts/price_squares.py) の `EVENT_RATES`、設定の項目は `WorldAtlasLayout.Node`。消した種類や設定が配置のJSONに残っていれば外し、値段とサーバーのマスの表（`node scripts/world-atlas-catalog.mjs`）を作り直す |
+| 戦闘 | 戦闘の設定を変えたら [WorldAtlasEncounters](../../client/Assets/Baryonyx/Features/WorldMap/Runtime/WorldAtlasEncounters.cs) と [WorldAtlasBattle](../../client/Assets/Baryonyx/Features/WorldMap/Runtime/WorldAtlasBattle.cs)。強さが変わるなら、[戦闘の自動対戦](../rules/client-testing.md#戦闘の自動対戦)で測り直す |
+| テスト | [WorldAtlasLayoutTests](../../client/Assets/Baryonyx/Features/WorldMap/Tests/EditMode/WorldAtlasLayoutTests.cs)（世界地図に全種類があること）、[WorldAtlasTests](../../client/Assets/Baryonyx/Features/WorldMap/Tests/PlayMode/WorldAtlasTests.cs)（窓）、[WorldEventLabSceneTests](../../client/Assets/Baryonyx/Features/WorldMap/Tests/PlayMode/WorldEventLabSceneTests.cs)（地図エディター）、戦闘なら [WorldAtlasEncountersTests](../../client/Assets/Baryonyx/Features/WorldMap/Tests/EditMode/WorldAtlasEncountersTests.cs)・[WorldAtlasBattleTests](../../client/Assets/Baryonyx/Features/WorldMap/Tests/PlayMode/WorldAtlasBattleTests.cs) |
+| 文書 | この仕様の[マスの出来事の見本](#マスの出来事の見本)・[マスに置いた出来事](#マスに置いた出来事)の数・[戦闘の設定](#戦闘の設定)、[地図エディター](screens/debug-rooms.md#地図エディター)の操作の表と「これから設定できるようにするもの」 |
+
+直したら、`Baryonyx > World Map > Create Atlas Assets` で地図を、`Baryonyx > App > Create World Event Lab Scene` で地図エディターを作り直す。
+作り直す前に開いているシーンを保存し、別のシーンへ移る。開いたままのシーンを作り直すと、保存を確かめる窓でEditorが止まる。
+
 ### 見た目の数値（仮）
 
 大きさは設計座標（1920×1080）で、地図の拡大率が1のときの大きさである。
@@ -206,7 +316,7 @@ updated: 2026-11-01
 マスは、あとで出来事のアイコンを描き込めるくらいの大きさにし、駒はマスより少し大きい程度にした。
 押せる範囲は、台の大きさでは押しにくかったため（2026-10-28、ユーザー）、台の外へ透明に広げた。いちばん近いマスどうしの間（世界地図76、エリアマップ94）でも、隣のマスの台にかからない幅にしている。町・地域のマス・入口は、台のほうが大きいため台の大きさで押す。
 2本指の拡大・縮小は、今の街道と同じ上限（2倍）と下限（地図が画面を埋めるところ）にする。
-入口の台は、町の台の金色の縁を青緑にした絵（`WorldNodeGate.png`）である。
+世界地図の地域のマスとエリアマップの入口は、どちらも同じ台（`WorldNodeGate.png`）にする。金の縁の内側を深緑の面にし、赤い旗を立てた絵で、何もないマスや町の生成りの面と見分けられるようにした（2026-11-01、ユーザー）。地域へ入るときも出るときも同じ台を使う。Codex CLIで4案を1枚に描かせ（依頼文は [requests/](../../client/ArtSource/WorldMap/Atlas/requests/) の `region_squares.txt`。添付は今のマスの一組と、地域のマスを世界地図に置いた画面）、2案目を切り出して、横幅256・縦の中心を町の台にそろえて置いた。
 
 ### 地図とマス（仮）
 
@@ -280,7 +390,8 @@ JPEGの品質はAPKの大きさを変えず、Gitに入る大きさだけを変�
 
 | 項目 | 決めること |
 |---|---|
-| 今の街道との関係 | 今の街道の戦闘・宝箱・関所のボス・サーバーへの保存を、入れ子の地図へ移すか（Homeの行き先カードは2026-10-28に入れ子の地図へ替えた） |
+| 今の街道との関係 | 今の街道の宝箱・関所のボス・サーバーへの保存を、入れ子の地図へ移すか（Homeの行き先カードは2026-10-28に入れ子の地図へ替えた。戦闘は2026-11-01に入れ子の地図からも開くようにした） |
+| 戦闘のあと | 負けたマスで戦い直す手段、勝ったときにもらう物、マスの設定の項目（[地図エディター](screens/debug-rooms.md#地図エディター)の「これから設定できるようにするもの」） |
 | マスの中身 | 出来事の割合と置き方を試しの配置から決め直すか。日週月の復活を、どの地図のマスに置くか（[計画](../plans/2026-10-27-world-map-rune-squares.md#仕様案)）。何もないマスで隠し宝箱が出る形にするか（2026-10-29、ユーザーの案。割合と合わせて後で相談する） |
 | マスの値段 | 地図ごとの推奨Lv（仮）と、全部で約66万ルーンになる値段を、1日に地図へ回すルーンと合わせて決め直すか |
 | 地域の境 | オーロ砂漠以外の6地域の境を、地形に合わせて引き直すか |
@@ -298,15 +409,18 @@ JPEGの品質はAPKの大きさを変えず、Gitに入る大きさだけを変�
 - 地図の切り替えと演出：[WorldAtlasNavigator](../../client/Assets/Baryonyx/Features/WorldMap/Runtime/WorldAtlasNavigator.cs)
 - 地図の画面（今の街道と共通）：[WorldMapView](../../client/Assets/Baryonyx/Features/WorldMap/Runtime/WorldMapView.cs)（`Layout`・`StartZoom`・`StartAt`・`FrameAt`・`Arrived`）
 - マスの出来事の窓：[WorldMapEventWindow](../../client/Assets/Baryonyx/Features/WorldMap/Runtime/WorldMapEventWindow.cs)・[WorldMapEventWindowAssets](../../client/Assets/Baryonyx/Features/WorldMap/Editor/WorldMapEventWindowAssets.cs)
-- マスに置いた出来事：[WorldAtlasLayout](../../client/Assets/Baryonyx/Features/WorldMap/Runtime/WorldAtlasLayout.cs) の `EventOf`・[WorldMapView](../../client/Assets/Baryonyx/Features/WorldMap/Runtime/WorldMapView.cs) の `NodeEvents`・`EventSprites`・`TryEventAt`
-- 出来事の見本：[Events/](../../client/Assets/Baryonyx/Features/WorldMap/Runtime/Events/WorldEvents.cs)（種類ごとの中身と文面）・[WorldEventPanelAssets](../../client/Assets/Baryonyx/Features/WorldMap/Editor/WorldEventPanelAssets.cs)（配置）
+- マスに置いた出来事：[WorldAtlasLayout](../../client/Assets/Baryonyx/Features/WorldMap/Runtime/WorldAtlasLayout.cs) の `EventOf`・`FormOf`・[WorldMapView](../../client/Assets/Baryonyx/Features/WorldMap/Runtime/WorldMapView.cs) の `NodeEvents`・`NodeEventForms`・`EventSprites`・`TryEventAt`・`EventFormAt`
+- 出来事の見本：[Events/](../../client/Assets/Baryonyx/Features/WorldMap/Runtime/Events/WorldEvents.cs)（種類ごとの中身と文面。賭けは [WorldEventDice](../../client/Assets/Baryonyx/Features/WorldMap/Runtime/Events/WorldEventDice.cs)・[WorldEventChestRun](../../client/Assets/Baryonyx/Features/WorldMap/Runtime/Events/WorldEventChestRun.cs)、仲間の助けは [WorldMapEventWindow](../../client/Assets/Baryonyx/Features/WorldMap/Runtime/WorldMapEventWindow.cs) の `Helped`）・[WorldEventPanelAssets](../../client/Assets/Baryonyx/Features/WorldMap/Editor/WorldEventPanelAssets.cs)（配置）
+- 戦闘の設定：[WorldAtlasEncounters](../../client/Assets/Baryonyx/Features/WorldMap/Runtime/WorldAtlasEncounters.cs)（言葉を読む `Read`、敵を引く `Draw`、地図エディターの説明 `Describe`）・[WorldAtlasBattle](../../client/Assets/Baryonyx/Features/WorldMap/Runtime/WorldAtlasBattle.cs)（戦闘の画面へ渡す敵）・[WorldAtlasNavigator](../../client/Assets/Baryonyx/Features/WorldMap/Runtime/WorldAtlasNavigator.cs) の `BattleAt`・[WorldBootstrap](../../client/Assets/Baryonyx/App/Runtime/WorldBootstrap.cs)・[BattleBootstrap](../../client/Assets/Baryonyx/App/Runtime/BattleBootstrap.cs)・[WorldMapBattleFlow](../../client/Assets/Baryonyx/Features/WorldMap/Runtime/WorldMapBattleFlow.cs)（街道と共通の戦闘の流れ）
+- 地図エディター：[WorldEventLab](../../client/Assets/Baryonyx/Features/WorldMap/Runtime/WorldEventLab.cs)（付け替えは `Assign`、設定は `SetEnemies`・`SetLevel`、地図は [WorldMapView](../../client/Assets/Baryonyx/Features/WorldMap/Runtime/WorldMapView.cs) の `Picking`・`SetEvent`・`LookAt`）・[WorldEventLabSave](../../client/Assets/Baryonyx/Features/WorldMap/Editor/WorldEventLabSave.cs)（Editorでの保存）・[WorldEventLabAssets](../../client/Assets/Baryonyx/Features/WorldMap/Editor/WorldEventLabAssets.cs)・[WorldEventLabSceneSetup](../../client/Assets/Baryonyx/App/Editor/WorldEventLabSceneSetup.cs)
 - マスを開くルーン：[WorldAtlasSession](../../client/Assets/Baryonyx/Features/WorldMap/Runtime/WorldAtlasSession.cs)（読み込み・1マスの支払い（`OptimisticState` と `SaveQueue` による楽観的更新）・受けなかった支払いの知らせ `Refused`・オンオフ・確認を省く選択）・[WorldAtlasToll](../../client/Assets/Baryonyx/Features/WorldMap/Runtime/WorldAtlasToll.cs)（残高・値札・確認の窓・止めるボタン）・[WorldAtlasTollAssets](../../client/Assets/Baryonyx/Features/WorldMap/Editor/WorldAtlasTollAssets.cs)（配置）・[WorldMapGraph](../../client/Assets/Baryonyx/Features/WorldMap/Runtime/WorldMapGraph.cs) の `CheapestPathTo`・[WorldMapView](../../client/Assets/Baryonyx/Features/WorldMap/Runtime/WorldMapView.cs) の `Pay`・`Go`・`Stop`・`Resume`・`Unpaid`（受けなかった支払いを戻す）、[WorldAtlasNavigator](../../client/Assets/Baryonyx/Features/WorldMap/Runtime/WorldAtlasNavigator.cs) の `TakeBack`、サーバーは [world-atlas/](../../server/src/features/world-atlas/routes.ts)
 - 画面とシーンの生成：[WorldAtlasAssets](../../client/Assets/Baryonyx/Features/WorldMap/Editor/WorldAtlasAssets.cs)・[WorldMapScreenAssets](../../client/Assets/Baryonyx/Features/WorldMap/Editor/WorldMapScreenAssets.cs)
-- 入口：[SceneNames](../../client/Assets/Baryonyx/App/Runtime/SceneNames.cs) の `WorldAtlas` と `DebugRooms`
-- テスト：配置は [WorldAtlasLayoutTests](../../client/Assets/Baryonyx/Features/WorldMap/Tests/EditMode/WorldAtlasLayoutTests.cs)、道と支払いは [WorldAtlasTollTests](../../client/Assets/Baryonyx/Features/WorldMap/Tests/EditMode/WorldAtlasTollTests.cs)、切り替えと払って歩くことは [WorldAtlasTests](../../client/Assets/Baryonyx/Features/WorldMap/Tests/PlayMode/WorldAtlasTests.cs)、サーバーは [routes.test.ts](../../server/src/features/world-atlas/routes.test.ts)
+- 入口：[SceneNames](../../client/Assets/Baryonyx/App/Runtime/SceneNames.cs) の `WorldAtlas`・`WorldEventLab` と `DebugRooms`
+- テスト：配置は [WorldAtlasLayoutTests](../../client/Assets/Baryonyx/Features/WorldMap/Tests/EditMode/WorldAtlasLayoutTests.cs)、道と支払いは [WorldAtlasTollTests](../../client/Assets/Baryonyx/Features/WorldMap/Tests/EditMode/WorldAtlasTollTests.cs)、切り替えと払って歩くこと・出来事の窓は [WorldAtlasTests](../../client/Assets/Baryonyx/Features/WorldMap/Tests/PlayMode/WorldAtlasTests.cs)、地図エディターは [WorldEventLabSceneTests](../../client/Assets/Baryonyx/Features/WorldMap/Tests/PlayMode/WorldEventLabSceneTests.cs)、戦闘の言葉は [WorldAtlasEncountersTests](../../client/Assets/Baryonyx/Features/WorldMap/Tests/EditMode/WorldAtlasEncountersTests.cs)、戦闘の画面へ移ることは [WorldAtlasBattleTests](../../client/Assets/Baryonyx/Features/WorldMap/Tests/PlayMode/WorldAtlasBattleTests.cs)、サーバーは [routes.test.ts](../../server/src/features/world-atlas/routes.test.ts)
 
 ## 変更と判断の記録
 
+- 2026-11-01：ユーザーの相談「サイコロのマスのギャンブルがめっちゃ面白くない」に、目で追えば当たる・選ぶのが1回だけ・外れても損がない、の3点を理由に挙げ、直し方を3案出した。ユーザーが3案すべてを選んだため、賭けをサイコロのハイ＆ローと宝箱の連続開けの2つの遊び方に作り直し、両方に1回だけの仲間の助けを付けた（[賭けの遊び方](#賭けの遊び方)）。足せるマスの候補（石碑の欠片・はぐれ魔物・踏破の報酬・駅馬車）は、ユーザーが不要とした。続く依頼「ワールドマップだけでいいので、7種類のマスを入れてみて」で、世界地図に隠し宝箱とサイコロ・宝箱の賭けを1つずつ置いた。さらに「各マスにどのイベントを割り当てるかも一緒にお願い」で、世界地図の出来事をマスごとに手で決め直し、デバッグルームにマスの一覧を足した（[世界地図の出来事の割り当て](#世界地図の出来事の割り当て)）。続く「Labからも手動でも調整できるといいな」で[マスの付け替え](#マスの付け替え)を足し、マスの出来事を地図のPrefabへ焼き込むのをやめて配置のJSONから読むようにした。サーバーで定義するか、seedにするかの相談には、生成したファイルをデプロイする今の形を続けると答えた（[各環境への反映](#各環境への反映)）。さらに「ワールドマップと諸エリアを選んで、マスの付け替えができる」「マスごとにイベントを設定できる」専用の画面の依頼で、デバッグルームを[地図エディター](screens/debug-rooms.md#地図エディター)に作り替え、[戦闘の設定](#戦闘の設定)を足して、冒険の世界地図の戦闘を本物の戦闘の画面につないだ。「マップで起きることはリスト化して、確認できるように」「そのためのLabもほしい」で、[地図エディター](screens/debug-rooms.md#地図エディター)を加えた。
 - 2026-11-01：ユーザーの報告「APKを入れると、ワールドマップでルーンを払えず（『ルーンを払えませんでした』）元の位置に戻る。遠くまで行けない」で、原因を調べた。端末に覚えた駒の位置（`WorldAtlas.Position`）が、サーバーで開けたマスになっていないと、隣のマスの支払いが `square_not_reachable` で断られる（ローカルのサーバーで確かめた。マスの定義はクライアントの配置と一致していた）。開けたマスを読んだあと、駒の位置と通ったマスをサーバーの開けたマスと始まりのマスに合わせ、ずれていれば地図の始まりへ戻すようにした（[マスを開くルーン](#マスを開くルーン)）。
 - 2026-10-29：ユーザーの依頼「ワールドマップからダンジョン一覧に行って戻ると初期位置にポーンが戻ってしまう」で、駒が最後に立っていた地図とマスを端末に残し（`PlayerPrefs` の `WorldAtlas.Position`）、地図を開くとそこから始めるようにした。覚えていたマスが地図にないときは、はじめのマスから始める。
 - 2026-10-29：ユーザーの依頼「ワールドマップ移動時にルーンの消費が直列になっているので、楽観的更新にしてください」で、マスの支払いをサーバーの答えを待たずに決めるようにした。前は跳ぶ直前の支払いがサーバーの答え（1往復約250ms）を待つため、複数マスを歩くとマスごとに止まっていた。編成のレベルアップと同じ作り（`OptimisticState`・`SaveQueue`）にし、受けなかった支払いは、あとから払ったマスとまとめて取り消して駒を戻す。

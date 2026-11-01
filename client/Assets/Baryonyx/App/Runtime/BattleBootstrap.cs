@@ -17,7 +17,9 @@ namespace Baryonyx.App
     /// <summary>
     /// Runs the battle scene. Opened from the highway's map (<see cref="WorldMapSession.Battle"/>),
     /// it fights the square's fixed enemies from full HP and returns to the map
-    /// (<see cref="WorldMapBattleFlow"/>). When the adventure in progress waits on a battle (the
+    /// (<see cref="WorldMapBattleFlow"/>); opened from the nested world map
+    /// (<see cref="WorldAtlasBattle.Pending"/>), it fights the enemies drawn from the square's
+    /// settings and returns to the world map scene. When the adventure in progress waits on a battle (the
     /// exploration opened the scene), the battle is fought with the room's encounter on the
     /// destination's stage and ends with its outcome (<see cref="BattleAdventureFlow"/>), going on to the
     /// exploration or Home. Opened on its own, it stays the battle mock with the stage chosen in
@@ -91,6 +93,29 @@ namespace Baryonyx.App
                     WorldMapSession.Battle,
                     () => SceneLoader.Load(SceneNames.WorldMap, transition, this),
                     () => SceneLoader.Load(SceneNames.Battle, transition, this)
+                );
+                battle.HoldEntrance = () =>
+                    transition != null && (transition.IsCovered || transition.IsPlaying);
+                UsePartyCovered();
+                return;
+            }
+            // 入れ子の地図から開いたときは、マスの設定から引いた敵と戦い、世界地図へ戻る。
+            if (WorldAtlasBattle.Pending is { } atlas)
+            {
+                if (stages != null)
+                {
+                    stages.Stage = atlas.Encounter.Stage;
+                    stages.Apply();
+                }
+                worldMapFlow = new WorldMapBattleFlow(
+                    battle,
+                    overlay,
+                    atlas.Square,
+                    atlas.Encounter,
+                    () => Task.FromResult(true),
+                    () => SceneLoader.Load(SceneNames.World, transition, this),
+                    () => SceneLoader.Load(SceneNames.Battle, transition, this),
+                    () => WorldAtlasBattle.Pending = null
                 );
                 battle.HoldEntrance = () =>
                     transition != null && (transition.IsCovered || transition.IsPlaying);

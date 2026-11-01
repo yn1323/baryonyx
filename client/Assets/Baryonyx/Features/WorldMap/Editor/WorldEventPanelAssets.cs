@@ -14,7 +14,7 @@ namespace Baryonyx.WorldMap.Editor
     /// Builds one panel for each kind of event inside the event window's stage
     /// (doc/features/world-atlas.md#マスの出来事の見本): a meeting that ends with someone joining,
     /// a choice with what each answer gives, a hidden chest, a pickup in a small window, a
-    /// peddler's goods, a bet on three cards and a battle that leads to the battle screen. Places
+    /// peddler's goods, a bet played with a die or a row of chests, and a battle that leads to the battle screen. Places
     /// are given from the stage's bottom middle (the ground the scenery's meadow shows), in the
     /// design's pixels. All words, pictures and numbers are samples.
     /// </summary>
@@ -37,6 +37,9 @@ namespace Baryonyx.WorldMap.Editor
         private const string HerbPath = Art + "/Items/Herb.aseprite";
         private const string AcornPath = Art + "/Items/Acorn.aseprite";
         private const string BluntPath = Art + "/Attributes/ElementBlunt.aseprite";
+        private const string ThunderPath = Art + "/Attributes/ElementThunder.aseprite";
+        private const string PiercePath = Art + "/Attributes/ElementPierce.aseprite";
+        private const string MimicPath = Enemies + "/ChestMimic.aseprite";
         private const string IronSwordPath = Art + "/Weapons/IronSword.aseprite";
 
         // キャラは足元を景色の草原に置く。頭の上に吹き出しのしっぽを置く。
@@ -47,6 +50,12 @@ namespace Baryonyx.WorldMap.Editor
         private const float TailDrop = 26f;
         private static readonly Color Paper = new(0.98f, 0.96f, 0.9f, 1f);
 
+        // 賭け：ボタンの並ぶ高さ、サイコロの大きさ、宝箱とミミックのドット絵の倍率（同じくらいの大きさになる）。
+        private const float BetRowY = 120f;
+        private const float DieSize = 200f;
+        private const float ChestRunDot = 6f;
+        private const float MimicDot = 2f;
+
         public static WorldEventPanel[] Build(RectTransform stage) =>
             new WorldEventPanel[]
             {
@@ -55,7 +64,8 @@ namespace Baryonyx.WorldMap.Editor
                 Chest(stage),
                 Pickup(stage),
                 Peddler(stage),
-                Bet(stage),
+                Dice(stage),
+                ChestRun(stage),
                 Battle(stage),
             };
 
@@ -335,98 +345,211 @@ namespace Baryonyx.WorldMap.Editor
             return panel;
         }
 
-        // 賭け：3枚のカードを伏せて並べ、下に遊ぶボタン。当たりはルーン、外れはどんぐり。
-        private static WorldEventBet Bet(RectTransform stage)
+        // 賭け（サイコロのハイ＆ロー）：中央にサイコロ、上に積んだルーン、下に当てるボタン。
+        private static WorldEventDice Dice(RectTransform stage)
         {
-            var panel = Panel<WorldEventBet>(stage, WorldEventKind.Bet);
+            var panel = Panel<WorldEventDice>(stage, WorldEventKind.Bet);
+            panel.Form = (int)WorldBetGame.Dice;
+            panel.name = "BetDice";
             panel.Rule = WorldMapEventWindow.CloseRule.Anytime;
             var root = (RectTransform)panel.transform;
             panel.Runes = Runes(root);
+            (panel.PotPlate, panel.Pot) = PotPlate(root);
 
-            // カードはまとめて1つの台として降り立ち、台の上で入れ替わる。
-            var table = Rect("Table", root);
-            Bottom(table, Vector2.zero, Vector2.zero);
-            var cards = new List<RectTransform>();
-            var backs = new List<GameObject>();
-            var winners = new List<GameObject>();
-            var losers = new List<GameObject>();
-            var picks = new List<Button>();
-            for (int i = 0; i < 3; i++)
+            // サイコロは、置き場所（影の上の中心）から跳ねて回る。降り立つのは、置き場所の中の足元。
+            var holder = Rect("DieSpot", root);
+            Bottom(holder, new Vector2(0f, 400f), Vector2.zero);
+            var spot = Rect("Feet", holder);
+            Place(spot, Vector2.zero, Vector2.zero);
+            Picture(
+                spot,
+                "Shadow",
+                ArtAssets.LoadSprite(UiArt.ShadowPath),
+                new Vector2(0f, -DieSize * 0.5f - 6f),
+                new Vector2(DieSize * 1.1f, DieSize * 0.22f),
+                0.45f
+            );
+            var die = Rect("Die", spot);
+            Place(die, Vector2.zero, Vector2.one * DieSize);
+            var edge = Sliced(die, UiArt.CapsulePath, WorldMapEventWindowAssets.Ink);
+            edge.raycastTarget = false;
+            edge.pixelsPerUnitMultiplier = 1.4f;
+            var face = Rect("Face", die);
+            Stretch(face);
+            face.offsetMin = Vector2.one * 7f;
+            face.offsetMax = -Vector2.one * 7f;
+            var paper = Sliced(face, UiArt.CapsulePath, Paper);
+            paper.raycastTarget = false;
+            paper.pixelsPerUnitMultiplier = 1.6f;
+            // 目の点は、左上・右上・左中・中央・右中・左下・右下の順。
+            const float step = 54f;
+            Vector2[] pips =
             {
-                var card = Rect("Card" + i, table);
-                Bottom(card, new Vector2((i - 1) * 300f, 480f), new Vector2(240f, 340f));
-                var (button, _, content) = GlassCardAssets.Choice(
-                    card,
-                    pattern: false,
-                    fill: GlassCardAssets.SceneFillColor
-                );
-                var win = Rect("Win", content);
-                Stretch(win);
-                var crown = Rect("Rune", win);
-                Place(crown, new Vector2(0f, 30f), Vector2.one * 144f);
-                Pixel(crown, RunePath);
-                var prize = Label(
-                    win,
-                    "Prize",
-                    WorldEventSamples.BetPrize.ToString("N0"),
+                new(-step, step),
+                new(step, step),
+                new(-step, 0f),
+                Vector2.zero,
+                new(step, 0f),
+                new(-step, -step),
+                new(step, -step),
+            };
+            var dots = new List<Graphic>();
+            for (int i = 0; i < pips.Length; i++)
+            {
+                var pip = Rect("Pip" + i, die);
+                Place(pip, pips[i], Vector2.one * 40f);
+                dots.Add(SpriteImage(pip, UiArt.CirclePath, WorldMapEventWindowAssets.Ink));
+            }
+            panel.Die = die;
+            panel.Pips = dots.ToArray();
+            panel.Arrivals = new[] { spot };
+
+            (panel.PlayGroup, panel.Play) = TextChoice(
+                root,
+                "Play",
+                new Vector2(0f, BetRowY),
+                new Vector2(560f, 110f),
+                WorldEventSamples.BetPlay
+            );
+            var guess = Rect("Guess", root);
+            Bottom(guess, new Vector2(0f, BetRowY), new Vector2(1600f, 110f));
+            panel.GuessGroup = guess.gameObject.AddComponent<CanvasGroup>();
+            panel.Low = TextButton(
+                guess,
+                "Low",
+                new Vector2(-440f, 0f),
+                new Vector2(380f, 110f),
+                WorldEventSamples.DiceLow
+            );
+            panel.High = TextButton(
+                guess,
+                "High",
+                new Vector2(440f, 0f),
+                new Vector2(380f, 110f),
+                WorldEventSamples.DiceHigh
+            );
+            (panel.StopGroup, panel.Stop) = TextChoice(
+                root,
+                "Stop",
+                new Vector2(0f, BetRowY),
+                new Vector2(300f, 110f),
+                WorldEventSamples.BetStop
+            );
+            (panel.RerollGroup, panel.Reroll) = HelpButton(
+                root,
+                "Reroll",
+                new Vector2(400f, 400f),
+                WorldEventSamples.DiceReroll,
+                ThunderPath
+            );
+
+            panel.Win = Gifts(root, "WinGifts", new Vector2(0f, BetRowY), (RunePath, ""));
+            panel.WinLabel = panel.Win.GetComponentInChildren<TMP_Text>(true);
+            panel.Lose = Note(root, "Lose", new Vector2(0f, BetRowY), WorldEventSamples.BetLost);
+            return panel;
+        }
+
+        // 賭け（宝箱の連続開け）：宝箱を横に並べ、上に積んだルーン、下に遊ぶ・降りるボタン。
+        private static WorldEventChestRun ChestRun(RectTransform stage)
+        {
+            var panel = Panel<WorldEventChestRun>(stage, WorldEventKind.Bet);
+            panel.Form = (int)WorldBetGame.Chests;
+            panel.name = "BetChests";
+            panel.Rule = WorldMapEventWindow.CloseRule.Anytime;
+            var root = (RectTransform)panel.transform;
+            panel.Runes = Runes(root);
+            (panel.PotPlate, panel.Pot) = PotPlate(root);
+
+            panel.ClosedArt = ArtAssets.LoadTexture(ChestClosedPath);
+            panel.OpenArt = ArtAssets.LoadTexture(ChestOpenPath);
+            panel.MimicArt = ArtAssets.LoadTexture(MimicPath);
+            panel.ChestSize =
+                new Vector2(panel.ClosedArt.width, panel.ClosedArt.height) * ChestRunDot;
+            panel.MimicSize = new Vector2(panel.MimicArt.width, panel.MimicArt.height) * MimicDot;
+
+            int count = WorldEventSamples.ChestRunCount;
+            var feet = new List<RectTransform>();
+            var chests = new List<RawImage>();
+            var taps = new List<Button>();
+            var gains = new List<TMP_Text>();
+            var safe = new List<GameObject>();
+            var mimic = new List<GameObject>();
+            for (int i = 0; i < count; i++)
+            {
+                var at = new Vector2((i - (count - 1) * 0.5f) * 290f, 220f);
+                var foot = Prop(root, "Chest" + i, ChestClosedPath, at, ChestRunDot, 210f);
+                feet.Add(foot);
+                chests.Add(foot.GetChild(0).GetComponent<RawImage>());
+
+                // 宝箱の上を押して開ける。ミミックの絵に替わっても、同じ広さで受ける。
+                var tap = Rect("Tap", foot);
+                tap.anchorMin = tap.anchorMax = new Vector2(0.5f, 0f);
+                tap.pivot = new Vector2(0.5f, 0f);
+                tap.anchoredPosition = Vector2.zero;
+                tap.sizeDelta = Vector2.one * 230f;
+                AddImage(tap, Color.clear, true);
+                var button = tap.gameObject.AddComponent<Button>();
+                button.transition = Selectable.Transition.None;
+                taps.Add(button);
+
+                var over = Rect("Over", foot);
+                over.anchorMin = over.anchorMax = new Vector2(0.5f, 0f);
+                over.anchoredPosition = new Vector2(0f, 250f);
+                over.sizeDelta = Vector2.zero;
+                var gain = Label(
+                    over,
+                    "Gain",
+                    "",
                     52,
                     UiPalette.GoldLight,
                     TextAlignmentOptions.Center
                 );
-                Place(
-                    (RectTransform)prize.transform,
-                    new Vector2(0f, -90f),
-                    new Vector2(220f, 70f)
-                );
-                var lose = Rect("Lose", content);
-                Stretch(lose);
-                var acorn = Rect("Acorn", lose);
-                Place(acorn, new Vector2(0f, 10f), Vector2.one * 128f);
-                Pixel(acorn, AcornPath);
-                var back = GlassCardAssets.AddBack(card.GetComponent<GlassCard>());
-                cards.Add(card);
-                backs.Add(back.Face);
-                winners.Add(win.gameObject);
-                losers.Add(lose.gameObject);
-                picks.Add(button);
+                Place(gain.rectTransform, Vector2.zero, new Vector2(240f, 70f));
+                gain.gameObject.SetActive(false);
+                gains.Add(gain);
+                var rune = Rect("Safe", over);
+                Place(rune, Vector2.zero, Vector2.one * 64f);
+                Pixel(rune, RunePath);
+                rune.gameObject.SetActive(false);
+                safe.Add(rune.gameObject);
+                var fang = Rect("Mimic", over);
+                Place(fang, Vector2.zero, new Vector2(panel.MimicArt.width, panel.MimicArt.height));
+                Pixel(fang, MimicPath);
+                fang.gameObject.SetActive(false);
+                mimic.Add(fang.gameObject);
             }
-            panel.Arrivals = new[] { table };
-            panel.Cards = cards.ToArray();
-            panel.Backs = backs.ToArray();
-            panel.Winners = winners.ToArray();
-            panel.Losers = losers.ToArray();
-            panel.Picks = picks.ToArray();
+            panel.Arrivals = feet.ToArray();
+            panel.Chests = chests.ToArray();
+            panel.Taps = taps.ToArray();
+            panel.Gains = gains.ToArray();
+            panel.SafeMarks = safe.ToArray();
+            panel.MimicMarks = mimic.ToArray();
 
-            var (playGroup, play, playContent) = Faded(
+            (panel.PlayGroup, panel.Play) = TextChoice(
                 root,
                 "Play",
-                new Vector2(0f, 150f),
-                new Vector2(560f, 110f)
+                new Vector2(0f, BetRowY),
+                new Vector2(560f, 110f),
+                WorldEventSamples.BetPlay
             );
-            var label = Label(
-                playContent,
-                "Label",
-                WorldEventSamples.BetPlay,
-                44,
-                UiPalette.TextMain,
-                TextAlignmentOptions.Center
+            (panel.StopGroup, panel.Stop) = TextChoice(
+                root,
+                "Stop",
+                new Vector2(0f, BetRowY),
+                new Vector2(300f, 110f),
+                WorldEventSamples.BetStop
             );
-            Stretch((RectTransform)label.transform);
-            panel.Play = play;
-            panel.PlayGroup = playGroup;
+            (panel.PeekGroup, panel.Peek) = HelpButton(
+                root,
+                "Peek",
+                new Vector2(-520f, BetRowY),
+                WorldEventSamples.ChestRunPeek,
+                PiercePath
+            );
 
-            panel.Win = Gifts(
-                root,
-                "WinGifts",
-                new Vector2(0f, 150f),
-                (RunePath, $"{WorldEventSamples.BetPrize}ルーン")
-            );
-            panel.Lose = Gifts(
-                root,
-                "LoseGifts",
-                new Vector2(0f, 150f),
-                (AcornPath, WorldEventSamples.BetConsolation)
-            );
+            panel.Win = Gifts(root, "WinGifts", new Vector2(0f, BetRowY), (RunePath, ""));
+            panel.WinLabel = panel.Win.GetComponentInChildren<TMP_Text>(true);
+            panel.Lose = Note(root, "Lose", new Vector2(0f, BetRowY), WorldEventSamples.BetLost);
             return panel;
         }
 
@@ -753,6 +876,129 @@ namespace Baryonyx.WorldMap.Editor
             var group = holder.gameObject.AddComponent<CanvasGroup>();
             var (button, content) = Glass(holder, "Button", Vector2.zero, size, false);
             return (group, button, content);
+        }
+
+        // 上の中央に、賭けで積んだルーンを出す札。
+        private static (RectTransform Plate, TMP_Text Count) PotPlate(RectTransform parent)
+        {
+            var pill = Rect("Pot", parent);
+            Bottom(pill, new Vector2(0f, 760f), new Vector2(340f, 100f));
+            var plate = Sliced(pill, UiArt.CapsulePath, new Color(0.02f, 0.03f, 0.07f, 0.7f));
+            plate.raycastTarget = false;
+            var icon = Rect("Icon", pill);
+            Place(icon, new Vector2(-110f, 0f), Vector2.one * 64f);
+            Pixel(icon, RunePath);
+            var text = Label(
+                pill,
+                "Count",
+                "0",
+                56,
+                UiPalette.GoldLight,
+                TextAlignmentOptions.MidlineRight
+            );
+            Place((RectTransform)text.transform, new Vector2(40f, 0f), new Vector2(220f, 80f));
+            pill.gameObject.SetActive(false);
+            return (pill, text);
+        }
+
+        // 文字だけの押せるカード。
+        private static Button TextButton(
+            RectTransform parent,
+            string name,
+            Vector2 center,
+            Vector2 size,
+            string text
+        )
+        {
+            var (button, content) = Glass(parent, name, center, size, false);
+            var label = Label(
+                content,
+                "Label",
+                text,
+                44,
+                UiPalette.TextMain,
+                TextAlignmentOptions.Center
+            );
+            Stretch((RectTransform)label.transform);
+            return button;
+        }
+
+        // 現れたり消えたりする、文字だけの押せるカード。
+        private static (CanvasGroup Group, Button Button) TextChoice(
+            RectTransform parent,
+            string name,
+            Vector2 center,
+            Vector2 size,
+            string text
+        )
+        {
+            var (group, button, content) = Faded(parent, name, center, size);
+            var label = Label(
+                content,
+                "Label",
+                text,
+                44,
+                UiPalette.TextMain,
+                TextAlignmentOptions.Center
+            );
+            Stretch((RectTransform)label.transform);
+            return (group, button);
+        }
+
+        // 得意な仲間がいるときだけ出る助けのボタン。選択の3つ目の答えと同じく、左に属性の印を付ける。
+        private static (CanvasGroup Group, Button Button) HelpButton(
+            RectTransform parent,
+            string name,
+            Vector2 center,
+            string text,
+            string element
+        )
+        {
+            var size = new Vector2(320f, 100f);
+            var (group, button, content) = Faded(parent, name, center, size);
+            var mark = Rect("Element", content);
+            Place(mark, new Vector2(-110f, 0f), Vector2.one * 48f);
+            Pixel(mark, element);
+            var label = Label(
+                content,
+                "Label",
+                text,
+                42,
+                UiPalette.TextMain,
+                TextAlignmentOptions.Center
+            );
+            Place((RectTransform)label.transform, new Vector2(30f, 0f), new Vector2(220f, 70f));
+            return (group, button);
+        }
+
+        // すりガラスの札に載せた短い言葉（賭けのハズレ）。PopRow で出すため、札を1つ持つ並びにする。
+        private static RectTransform Note(
+            RectTransform parent,
+            string name,
+            Vector2 center,
+            string text
+        )
+        {
+            var row = Rect(name, parent);
+            Bottom(row, center, new Vector2(360f, 110f));
+            var slot = Rect("Note", row);
+            Stretch(slot);
+            var content = GlassCardAssets.Plaque(
+                slot,
+                pattern: false,
+                fill: GlassCardAssets.SceneFillColor
+            );
+            var label = Label(
+                content,
+                "Label",
+                text,
+                48,
+                UiPalette.TextMain,
+                TextAlignmentOptions.Center
+            );
+            Stretch((RectTransform)label.transform);
+            row.gameObject.SetActive(false);
+            return row;
         }
 
         // 右上（×の左）に、持っているルーンを出す。

@@ -77,6 +77,12 @@
 | [card-skill-authoring](card-skill-authoring/SKILL.md) | カードスキルの効果と説明文を足す・直す・レビューする | 自動 | [戦闘システム](../../doc/features/combat.md)（[カードの説明文に書くこと](../../doc/features/combat.md#カードの説明文に書くこと)） | 挿絵は pixel-art-standards、演出は vfx-authoring |
 | [passive-skill-authoring](passive-skill-authoring/SKILL.md) | キャラのパッシブスキルを考える・足す・直す・レビューする | 自動 | [パッシブスキル](../../doc/features/passives.md)（[設計方針](../../doc/features/passives.md#設計方針)） | 説明文の書き方は card-skill-authoring に従う |
 
+## 地図
+
+| スキル | 使う場面 | 呼び出し | 正本のdoc | 担当外・一緒に使うスキル |
+|---|---|---|---|---|
+| [map-event-authoring](map-event-authoring/SKILL.md) | 入れ子の地図のマスの出来事・遊び方・マスの設定を足す・変える・消す。どのマスに何を置くかを変える。地図エディターを直す | 自動 | [出来事を足す・変える・消すとき](../../doc/features/world-atlas.md#出来事を足す変える消すとき)、[地図エディター](../../doc/features/screens/debug-rooms.md#地図エディター) | 窓の演出は vfx-authoring、台の絵は pixel-art-standards、戦闘の強さの測り直しは battle-balance |
+
 ## 戦闘のバランス
 
 | スキル | 使う場面 | 呼び出し | 正本のdoc | 担当外・一緒に使うスキル |
@@ -125,6 +131,7 @@
 | カードスキルを足す・文言を直す | card-skill-authoring |
 | キャラのパッシブスキルを考える・直す | passive-skill-authoring |
 | 敵が硬い・弱い、戦闘が長い・危ない、倍率や数値を変えたあとに測り直す | battle-balance（手動専用。使ってよいかユーザーに確認する） |
+| 地図のマスの出来事・賭けの遊び方・戦闘の敵やLvの設定を足す・消す、どのマスに何を置くかを変える、地図エディターを直す | map-event-authoring |
 | 画面を作る・直す | ui-advisor。保存を伴えば data-storage、演出を伴えば vfx-authoring も |
 | 画面の切り替えで一瞬別の姿が見える、開くのが遅い、「読み込み中」を出したくない | loading-concealment。サーバーが遅いなら server-api-authoring も |
 | この場面・動き・スキルの演出を動画で撮って見せて | unity-video-recording |
