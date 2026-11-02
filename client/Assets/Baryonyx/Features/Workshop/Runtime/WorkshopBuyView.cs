@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -23,7 +24,8 @@ namespace Baryonyx.Workshop
     /// a grid of every skill, weapon, armor and accessory the library has found
     /// (<see cref="WorkshopGoods"/>) on the left, read again each time it opens, and the chosen
     /// one's art (a skill as its deck card), quality, effect and price on the right. Press "buy" to buy one at the lowest
-    /// quality: it shows at once and is saved behind (<see cref="WorkshopSession.BuyAsync"/>),
+    /// quality: the screen sinks and the bought thing comes out to the middle and bursts into view
+    /// (<see cref="Reveal"/>), while it is saved behind (<see cref="WorkshopSession.BuyAsync"/>),
     /// so the same one can be bought again right away. A good the balance cannot pay for can be
     /// chosen, but not bought.
     /// </summary>
@@ -85,6 +87,9 @@ namespace Baryonyx.Workshop
         public TMP_Text PriceLabel;
         public TMP_Text Missing;
         public Button Confirm;
+
+        // 買ったときの演出：画面を沈め、買った物を中央へ出して弾けさせ、右の面へ戻す（合成の演出の終わりと同じ）。
+        public WorkshopCraftSwirl Reveal;
 
         private readonly HashSet<Component> bound = new();
         private readonly GlassCardCover cover = new();
@@ -259,7 +264,7 @@ namespace Baryonyx.Workshop
             var good = SelectedGood;
             if (!CanBuy(good))
                 return;
-            ShowNotice(BoughtText(good));
+            PlayReveal(good);
             bought++;
             var buying = WorkshopSession.BuyAsync(good, BuyFailedMessage);
             if (owned != null)
@@ -268,6 +273,96 @@ namespace Baryonyx.Workshop
                     .ToArray();
             BuyTask = TakeBackIfFailedAsync(buying, good);
             RefreshConfirm();
+        }
+
+        // 買った物を中央へ出して見せる。装備は右の面の絵を、出ている間だけ隠す。
+        private void PlayReveal(WorkshopGood good)
+        {
+            if (Reveal == null || !isActiveAndEnabled)
+                return;
+            var plan = RevealPlan(good, UnityEngine.Random.value);
+            bool gear = good.Kind != LibraryKind.Skill;
+            if (Confirm != null)
+                StartCoroutine(Press(Confirm.transform));
+            if (gear)
+                SetDetailArtShown(false);
+            Reveal.Play(
+                plan,
+                () =>
+                {
+                    if (this == null)
+                        return;
+                    SetDetailArtShown(true);
+                    // 画面を閉じて演出が切れたときは、閉じる途中なので跳ねさせない。
+                    if (gear && gameObject.activeInHierarchy && DetailArt != null)
+                        StartCoroutine(Punch(DetailArt.rectTransform));
+                }
+            );
+        }
+
+        /// <summary>
+        /// What the buy effect shows for <paramref name="good"/>: its art coming out from the big
+        /// art on the right (a skill's deck card), at the bought quality's colour.
+        /// </summary>
+        public WorkshopCraftSwirl.Plan RevealPlan(WorkshopGood good, float seed)
+        {
+            var plan = new WorkshopCraftSwirl.Plan { Seed = seed, Reveal = true };
+            if (Reveal == null || good == null)
+                return plan;
+            var entry = good.Entry;
+            if (entry != null && entry.Art != null)
+            {
+                plan.ItemArt = entry.Art;
+                plan.ItemUv = entry.ArtUv;
+                plan.ItemTint = entry.ArtTint;
+                var dots = entry.ArtDots;
+                float dot = Mathf.Max(
+                    1f,
+                    Mathf.Floor(DetailArtBox / Mathf.Max(1f, Mathf.Max(dots.x, dots.y)))
+                );
+                plan.ItemSize = dots * dot;
+            }
+            var home =
+                good.Kind == LibraryKind.Skill && DetailCard.Frame != null
+                    ? DetailCard.Frame.rectTransform
+                : DetailArt != null ? DetailArt.rectTransform
+                : null;
+            if (home != null)
+                plan.ItemHome = Reveal.PlaceOf(home);
+            plan.Quality = QualityPalette.Of(BoughtQuality);
+            plan.Look = WorkshopCraftSwirl.LookOf(good.Stars);
+            return plan;
+        }
+
+        private void SetDetailArtShown(bool shown)
+        {
+            if (DetailArt != null)
+                DetailArt.canvasRenderer.SetAlpha(shown ? 1f : 0f);
+        }
+
+        private static IEnumerator Press(Transform button)
+        {
+            const float duration = 0.16f;
+            for (float t = 0f; t < duration; t += Time.unscaledDeltaTime)
+            {
+                float k = t / duration;
+                button.localScale = Vector3.one * (1f - 0.08f * Mathf.Sin(k * Mathf.PI));
+                yield return null;
+            }
+            button.localScale = Vector3.one;
+        }
+
+        // 戻ってきた瞬間：絵を大きくして戻す。
+        private static IEnumerator Punch(RectTransform rect)
+        {
+            const float duration = 0.5f;
+            for (float t = 0f; t < duration; t += Time.unscaledDeltaTime)
+            {
+                float k = t / duration;
+                rect.localScale = Vector3.one * (1f + 0.3f * (1f - k) * (1f - k));
+                yield return null;
+            }
+            rect.localScale = Vector3.one;
         }
 
         // 保存できなかったら、値段と一緒に、手元で足した持っている数の1つも戻す。
@@ -437,9 +532,6 @@ namespace Baryonyx.Workshop
                 ? $"ルーンが {good.Price - balance:N0} 足りません"
                 : "";
 
-        public static string BoughtText(WorkshopGood good) =>
-            $"{good.Name}を {good.Price:N0} ルーンで買った";
-
         private static string Join(string first, string second) =>
             string.Join("｜", new[] { first, second }.Where(text => !string.IsNullOrEmpty(text)));
 
@@ -449,12 +541,44 @@ namespace Baryonyx.Workshop
                 label.text = text ?? "";
         }
 
-        // 停止中の表示の切り替え：焼いた仮の品物、選んだとき、サーバーから読み込む間、読めなかったとき。
+        // 停止中の表示の切り替え：焼いた仮の品物、選んだとき、サーバーから読み込む間、読めなかったとき、
+        // 買ったときの演出の止めたコマ。
         public IReadOnlyList<string> PreviewStates =>
-            new[] { "品物", "選んだとき" }.Concat(GuidePanelLoad.PreviewStates).ToArray();
+            new[] { "品物", "選んだとき" }
+                .Concat(GuidePanelLoad.PreviewStates)
+                .Concat(RevealStates.Select(state => state.Name))
+                .ToArray();
+
+        // 買ったときの演出の止めたコマ：見た目と、押してからの秒（弾ける拍からの秒は Burst に足す）。
+        private static readonly (
+            string Name,
+            WorkshopCraftSwirl.Look Look,
+            float Seconds,
+            bool FromBurst
+        )[] RevealStates =
+        {
+            ("買ったときの演出・出てくる", WorkshopCraftSwirl.Look.Plain, 0.18f, false),
+            ("買ったときの演出・弾ける", WorkshopCraftSwirl.Look.Plain, 0.05f, true),
+            ("買ったときの演出・現れる", WorkshopCraftSwirl.Look.Plain, 0.25f, true),
+            ("買ったときの演出・戻る", WorkshopCraftSwirl.Look.Plain, 0.9f, false),
+            ("買ったときの演出・☆4 現れる", WorkshopCraftSwirl.Look.Gold, 0.2f, true),
+            ("買ったときの演出・☆5 現れる", WorkshopCraftSwirl.Look.Rainbow, 0.2f, true),
+        };
+        private const int RevealStateFirst = 4;
 
         public void ShowPreviewState(int index)
         {
+            if (Reveal != null)
+                Reveal.gameObject.SetActive(false);
+            SetDetailArtShown(true);
+            if (index >= RevealStateFirst && index < RevealStateFirst + RevealStates.Length)
+            {
+                ShowPreviewState(1);
+                var state = RevealStates[index - RevealStateFirst];
+                var beats = WorkshopCraftSwirl.Beats.Of(state.Look, true);
+                ShowRevealState(state.Look, state.Seconds + (state.FromBurst ? beats.Burst : 0f));
+                return;
+            }
             if (index <= 1)
             {
                 foreach (var row in Rows)
@@ -470,6 +594,22 @@ namespace Baryonyx.Workshop
             ShowLoading();
             if (index == 3)
                 ShowLoadFailed();
+        }
+
+        // 選んだときの品物で、買ったときの演出の1コマを止めて描く。☆4・☆5は見た目だけ替えて見せる。
+        private void ShowRevealState(WorkshopCraftSwirl.Look look, float seconds)
+        {
+            var good = PreviewGood;
+            if (Reveal == null || good == null)
+                return;
+            Combat.Presentation.BattleVfxNoise.Ensure();
+            Combat.Presentation.BattleVfxImage.EnableShapeChannel(Reveal.transform);
+            Canvas.ForceUpdateCanvases();
+            var plan = RevealPlan(good, 0.37f);
+            plan.Look = look;
+            Reveal.gameObject.SetActive(true);
+            SetDetailArtShown(seconds >= WorkshopCraftSwirl.Beats.Of(look, true).Seconds);
+            Reveal.Show(seconds, plan);
         }
 
         // 停止中に選んだときの見た目を確かめる品物（焼いた2枚目）。

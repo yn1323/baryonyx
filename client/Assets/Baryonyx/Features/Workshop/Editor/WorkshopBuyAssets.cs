@@ -218,6 +218,8 @@ namespace Baryonyx.Workshop.Editor
             buy.Price = buy.PriceLabel.transform.parent.gameObject;
             buy.Price.SetActive(false);
             (buy.Confirm, _) = ConfirmButton(layer, "買う");
+            // 買ったときの演出：合成の演出（光の渦）の部品を、渦を使わずに終わりだけ流す。
+            buy.Reveal = WorkshopCraftAssets.BuildSwirl((RectTransform)buy.transform, "BuyReveal");
             return buy.gameObject;
         }
 

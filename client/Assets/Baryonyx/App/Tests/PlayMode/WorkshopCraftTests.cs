@@ -303,7 +303,10 @@ namespace Baryonyx.Tests.PlayMode
             yield return SceneTests.WaitForTask(sell.Work);
             Assert.That(shop.Sold, Is.EquivalentTo(picked.Select(thing => thing.RowId)));
             Assert.That(RuneBalance.Known, Is.EqualTo(1000 + total));
-            Assert.That(view.ToastMessage, Is.EqualTo(WorkshopSellView.SoldText(2, total)));
+            // 通知の帯は出さず、売った行から得たルーンが所持ルーンへ飛ぶ。
+            Assert.That(view.RuneGain.Playing, Is.True);
+            yield return SceneTests.WaitUntil(() => !view.RuneGain.Playing);
+            Assert.That(view.Runes.text, Is.EqualTo(RuneBalance.Text(1000 + total)));
             Assert.That(sell.Chosen, Is.Empty);
             Assert.That(sell.Shown.Count, Is.EqualTo(weapons.Count - 2));
             Assert.That(

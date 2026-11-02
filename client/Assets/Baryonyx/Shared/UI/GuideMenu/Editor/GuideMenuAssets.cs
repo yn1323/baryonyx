@@ -257,6 +257,7 @@ namespace Baryonyx.UI.GuideMenu.Editor
                 view.TabBackdrops = tabBackdrops.ToArray();
                 if (overlay != null)
                     view.Overlay = overlay(root, view);
+                BuildRuneGain(root, safe, view);
                 BuildToast(root, view);
                 CollectTintGraphics(root);
                 return PrefabUtility.SaveAsPrefabAsset(root.gameObject, prefabPath);
@@ -730,6 +731,23 @@ namespace Baryonyx.UI.GuideMenu.Editor
             badgeRect.anchorMin = new Vector2(0.5f, 1);
             return button;
         }
+
+        // 得たルーンが所持ルーンへ飛び込む演出（ホームと同じ）。得た数は所持ルーンの下に右寄せで出す。
+        private static void BuildRuneGain(
+            RectTransform root,
+            RectTransform safe,
+            GuideMenuView view
+        ) =>
+            view.RuneGain = RuneGainAssets.Build(
+                root,
+                (RectTransform)safe.Find("RunePill/RuneIcon"),
+                view.Runes,
+                RuneIconSize,
+                safe,
+                new Vector2(-(CloseWidth + HeaderGap / 2f + 36f), -(BackHeight + 4f)),
+                new Vector2(320, 56),
+                RuneTextSize
+            );
 
         private static void BuildToast(RectTransform root, GuideMenuView view) =>
             view.Notice = NoticeBandAssets.Build(root);

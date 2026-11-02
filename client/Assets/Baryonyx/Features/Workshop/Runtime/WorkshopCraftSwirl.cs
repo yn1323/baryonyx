@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using Baryonyx.Combat.Presentation;
 using UnityEngine;
 using UnityEngine.UI;
@@ -15,7 +16,9 @@ namespace Baryonyx.Workshop
     /// large and goes back to its place. A ☆4 thing makes it gold and a ☆5 one faintly rainbow,
     /// each a little richer and longer (<see cref="Look"/>). <see cref="Show"/> draws it at a
     /// time since the press, so <see cref="Play"/> runs it frame by frame and any moment can be
-    /// shown still.
+    /// shown still. Buying plays only its end (<see cref="Plan.Reveal"/>): the bought thing comes
+    /// out from its place to the middle and bursts into view there (doc/features/screens/shop.md
+    /// 買ったときの演出).
     /// </summary>
     public sealed class WorkshopCraftSwirl : MonoBehaviour
     {
@@ -38,10 +41,14 @@ namespace Baryonyx.Workshop
             public const float SwirlStart = 0.27f;
             public const float CollapseStart = 0.78f;
 
-            public Beats(float hold, float linger)
+            // 買ったとき：品物が元の位置を離れて中央へ出てくる拍と、弾けるまで。
+            public const float RiseStart = 0.03f;
+            public const float RevealBurst = 0.3f;
+
+            public Beats(float hold, float linger, bool reveal = false)
             {
-                Burst = 0.92f + hold;
-                ReturnStart = Burst + 0.28f + linger;
+                Burst = (reveal ? RevealBurst : 0.92f) + hold;
+                ReturnStart = Burst + (reveal ? 0.45f : 0.28f) + linger;
                 Seconds = ReturnStart + 0.3f;
             }
 
@@ -52,12 +59,12 @@ namespace Baryonyx.Workshop
             // 渦が中央で消えきる時刻（弾ける直前）。
             public float SwirlEnd => Burst - 0.02f;
 
-            public static Beats Of(Look look) =>
+            public static Beats Of(Look look, bool reveal = false) =>
                 look switch
                 {
-                    Look.Rainbow => new Beats(0.18f, 0.1f),
-                    Look.Gold => new Beats(0.06f, 0.04f),
-                    _ => new Beats(0f, 0f),
+                    Look.Rainbow => new Beats(0.18f, 0.1f, reveal),
+                    Look.Gold => new Beats(0.06f, 0.04f, reveal),
+                    _ => new Beats(0f, 0f, reveal),
                 };
         }
 
@@ -144,6 +151,9 @@ namespace Baryonyx.Workshop
             public Color Quality = Color.white;
             public Look Look;
             public float Seed;
+
+            // 買ったとき：材料も渦もなく、品物が ItemHome から中央へ出てきて弾ける。
+            public bool Reveal;
         }
 
         public struct Piece
@@ -196,7 +206,7 @@ namespace Baryonyx.Workshop
                 End();
             }
             plan = next ?? new Plan();
-            beats = Beats.Of(plan.Look);
+            beats = Beats.Of(plan.Look, plan.Reveal);
             finished = done;
             gameObject.SetActive(true);
             if (Skip != null)
@@ -247,7 +257,7 @@ namespace Baryonyx.Workshop
         public void Show(float seconds, Plan shown)
         {
             plan = shown ?? new Plan();
-            beats = Beats.Of(plan.Look);
+            beats = Beats.Of(plan.Look, plan.Reveal);
             float t = seconds;
             float seed = plan.Seed;
             bool rich = plan.Look != Look.Plain;
@@ -259,7 +269,7 @@ namespace Baryonyx.Workshop
                     Smooth(Ramp(t, 0f, 0.15f))
                     * (1f - Smooth(Ramp(t, beats.ReturnStart, beats.Seconds)));
                 float deeper =
-                    plan.Look == Look.Rainbow
+                    plan.Look == Look.Rainbow && !plan.Reveal
                         ? 0.08f
                             * Smooth(Ramp(t, Beats.CollapseStart, beats.Burst - 0.05f))
                             * (1f - Ramp(t, beats.Burst, beats.Burst + 0.1f))
@@ -270,7 +280,7 @@ namespace Baryonyx.Workshop
 
             // 渦：進み具合は渦の拍の中で0から1。入ってから現れ、詰まるときに消える。
             float k = Ramp(t, Beats.SwirlStart, beats.SwirlEnd);
-            bool swirling = t > Beats.SwirlStart - 0.04f && t < beats.Burst + 0.06f;
+            bool swirling = !plan.Reveal && t > Beats.SwirlStart - 0.04f && t < beats.Burst + 0.06f;
             float swirlIn = Smooth(Ramp(t, Beats.SwirlStart - 0.04f, Beats.SwirlStart + 0.16f));
             float swirlGone = Ramp(t, Beats.CollapseStart + 0.06f, beats.Burst + 0.05f);
             var swirlTint = plan.Look switch
@@ -309,10 +319,21 @@ namespace Baryonyx.Workshop
             );
 
             ShowPieces(t);
-            ShowSparks(t);
-            ShowGlints(t, rich);
-            ShowConverge(t, rich);
-            ShowOrb(t);
+            if (plan.Reveal)
+            {
+                // 買ったときは渦がないため、渦に伴う火の粉・きらめき・光の球を出さない。
+                foreach (var board in Sparks.Concat(Glints).Concat(Converge))
+                    Hide(board);
+                Hide(OrbHalo);
+                Hide(OrbCore);
+            }
+            else
+            {
+                ShowSparks(t);
+                ShowGlints(t, rich);
+                ShowConverge(t, rich);
+                ShowOrb(t);
+            }
             ShowBurst(t);
             ShowFlakes(t, rich);
             ShowItem(t);
@@ -755,7 +776,8 @@ namespace Baryonyx.Workshop
         private void ShowItem(float t)
         {
             float burst = beats.Burst;
-            bool on = t >= burst;
+            bool rising = plan.Reveal && t >= Beats.RiseStart && t < burst;
+            bool on = t >= burst || rising;
             if (Item != null)
                 Item.gameObject.SetActive(on && plan.ItemArt != null);
             if (!on)
@@ -770,9 +792,24 @@ namespace Baryonyx.Workshop
             }
             float appear = Ramp(t, burst, burst + 0.2f);
             float back = Smooth(Ramp(t, beats.ReturnStart, beats.Seconds));
-            float bob = Mathf.Sin((t - burst) * 6f) * 6f * (1f - back);
+            float bob = Mathf.Sin(Mathf.Max(0f, t - burst) * 6f) * 6f * (1f - back);
             Vector2 at = Vector2.Lerp(new Vector2(0f, bob), plan.ItemHome, back);
             float scale = Mathf.Lerp(ItemScale * OvershootOut(appear), 1f, back);
+            // 買ったとき：元の位置から大きくなりながら中央へ出てきて、弾けると少し跳ねて止まる。
+            float rise = plan.Reveal ? Smooth(Ramp(t, Beats.RiseStart, burst)) : 1f;
+            if (plan.Reveal)
+            {
+                const float risen = 0.85f;
+                at = rising ? Vector2.Lerp(plan.ItemHome, Vector2.zero, rise) : at;
+                scale = rising
+                    ? Mathf.Lerp(1f, ItemScale * risen, rise)
+                    : Mathf.Lerp(
+                        ItemScale * Mathf.LerpUnclamped(risen, 1f, OvershootOut(appear)),
+                        1f,
+                        back
+                    );
+                ShowRiseTrail(t, rising);
+            }
             if (Item != null && plan.ItemArt != null)
             {
                 Item.texture = plan.ItemArt;
@@ -791,7 +828,7 @@ namespace Baryonyx.Workshop
                 plan.ItemSize * (scale * 1.35f),
                 0f,
                 plan.Look == Look.Rainbow ? WarmWhite : Color.Lerp(plan.Quality, Gold, 0.4f),
-                glow * Smooth(appear),
+                rising ? 0.35f * rise : glow * Smooth(appear),
                 plan.Seed + 0.75f,
                 k: t,
                 eaten: 0f,
@@ -829,12 +866,12 @@ namespace Baryonyx.Workshop
                     brightness: 1.3f
                 );
             }
-            // ☆4・☆5：光が絵の左下から右上へ走る（刃に沿う光）。
+            // ☆4・☆5と買ったとき：光が絵の左下から右上へ走る（刃に沿う光。キラン）。
             float sheen = Ramp(t, burst + 0.12f, burst + 0.34f);
             Vector2 diagonal = plan.ItemSize * (scale * 0.42f);
             ShowBoard(
                 Sheen,
-                plan.Look != Look.Plain && sheen > 0f && sheen < 1f,
+                (plan.Look != Look.Plain || plan.Reveal) && sheen > 0f && sheen < 1f,
                 at + Vector2.Lerp(-diagonal, diagonal, Smooth(sheen)),
                 Vector2.one * 90f,
                 0f,
@@ -863,6 +900,41 @@ namespace Baryonyx.Workshop
                     brightness: 1f
                 );
             }
+        }
+
+        // 買ったとき：中央へ出てくる品物の後ろに、元の位置の方へ細い金の光の筋を引く。
+        private void ShowRiseTrail(float t, bool rising)
+        {
+            var trail = PieceTrails.Length > 0 ? PieceTrails[0] : null;
+            if (!rising)
+            {
+                Hide(trail);
+                return;
+            }
+            float rise = Smooth(Ramp(t, Beats.RiseStart, beats.Burst));
+            Vector2 at = Vector2.Lerp(plan.ItemHome, Vector2.zero, rise);
+            Vector2 toward = -plan.ItemHome;
+            float travelled = toward.magnitude * rise;
+            float length = Mathf.Min(travelled, 360f);
+            if (length < 12f)
+            {
+                Hide(trail);
+                return;
+            }
+            Vector2 dir = toward / Mathf.Max(toward.magnitude, 1e-3f);
+            ShowBoard(
+                trail,
+                true,
+                at - dir * length * 0.45f,
+                new Vector2(40f, length),
+                AngleOf(dir),
+                Gold,
+                0.8f * (1f - Ramp(t, beats.Burst - 0.08f, beats.Burst)),
+                Hash(3, plan.Seed),
+                k: t,
+                eaten: 0f,
+                brightness: 1.2f
+            );
         }
 
         private static void ShowBoard(

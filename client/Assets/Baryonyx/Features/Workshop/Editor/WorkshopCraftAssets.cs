@@ -228,15 +228,16 @@ namespace Baryonyx.Workshop.Editor
             craft.Price.SetActive(false);
             (craft.Confirm, _) = ConfirmButton(layer, "合成");
             craft.Picker = BuildPicker((RectTransform)craft.transform);
-            craft.Swirl = BuildSwirl((RectTransform)craft.transform);
+            craft.Swirl = BuildSwirl((RectTransform)craft.transform, "CraftSwirl");
             return craft.gameObject;
         }
 
         // 合成の演出（光の渦）：画面全体の暗転と、計算で描く光の板（doc/features/synthesis.md 合成の演出）。
         // 渦の線は専用のシェーダー、ほかの光は戦闘の形のマテリアルを使う。押すまで隠しておく。
-        private static WorkshopCraftSwirl BuildSwirl(RectTransform root)
+        // 買うも、同じ部品で終わりだけを流す（doc/features/screens/shop.md 買ったときの演出）。
+        internal static WorkshopCraftSwirl BuildSwirl(RectTransform root, string name)
         {
-            var screen = Rect("CraftSwirl", root);
+            var screen = Rect(name, root);
             Stretch(screen);
             var swirl = screen.gameObject.AddComponent<WorkshopCraftSwirl>();
 

@@ -1,8 +1,10 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Baryonyx.Economy;
 using Baryonyx.Equipment;
 using Baryonyx.Inventory;
 using Baryonyx.Library;
@@ -31,6 +33,9 @@ namespace Baryonyx.Workshop
 
         // 1回で売れる数。サーバーの SELL_LIMIT（server/src/features/workshop/catalog.ts）と同じ。
         public const int MaxChosen = 50;
+
+        // 売れたとき、左の札と右の行が消える時間。右の行からはルーンが所持ルーンへ飛ぶ。
+        public const float VanishSeconds = 0.28f;
 
         // 読み込む間に伏せて並べるカードの数（4列×3段で一覧の見える所を埋める）。
         public const int CoverCards = 12;
@@ -65,6 +70,9 @@ namespace Baryonyx.Workshop
         private int tab;
         private bool busy;
 
+        // 売れた物の札と行が消えるのを待つ。画面を閉じたら待たずに終える。
+        private TaskCompletionSource<bool> vanishing;
+
         public IReadOnlyList<WorkshopOwned> Owned => owned;
         public IReadOnlyList<WorkshopOwned> Shown => shown;
         public IReadOnlyList<WorkshopOwned> Chosen => chosen;
@@ -80,7 +88,11 @@ namespace Baryonyx.Workshop
             StartLoad(LoadAsync, LoadFailedMessage, ShowLoadFailed);
         }
 
-        private void OnDisable() => Load.Cancel();
+        private void OnDisable()
+        {
+            Load.Cancel();
+            vanishing?.TrySetResult(false);
+        }
 
         private void BindControls()
         {
@@ -161,7 +173,10 @@ namespace Baryonyx.Workshop
             RefreshChosen();
         }
 
-        /// <summary>Sells the chosen things, and takes them off the list when the server answers.</summary>
+        /// <summary>
+        /// Sells the chosen things. When the server answers, their cards and rows fade, the rows
+        /// bursting into runes that fly into the balance, and then they leave the list.
+        /// </summary>
         public void Sell()
         {
             if (busy || chosen.Count == 0)
@@ -174,12 +189,18 @@ namespace Baryonyx.Workshop
             busy = true;
             RefreshChosen();
             bool failed = false;
+            long? before = RuneBalance.Known;
             try
             {
                 var sale = await WorkshopSession.SellAsync(things);
+                if (this != null && isActiveAndEnabled)
+                    await Vanish(
+                        things,
+                        before ?? sale.BalanceAfter - sale.Runes,
+                        sale.BalanceAfter
+                    );
                 owned = Without(owned, things);
                 chosen.Clear();
-                ShowNotice(SoldText(things.Count, sale.Runes));
             }
             catch (OperationCanceledException) { }
             catch (Exception exception)
@@ -200,6 +221,63 @@ namespace Baryonyx.Workshop
                 PaintTab();
         }
 
+        // 売れた物の左の札と右の行を消し、右の行から得たルーンを所持ルーンへ飛ばす。
+        private Task Vanish(IReadOnlyList<WorkshopOwned> sold, long from, long to)
+        {
+            var fading = new List<GameObject>();
+            for (int i = 0; i < shown.Count && i < Rows.Count; i++)
+                if (sold.Contains(shown[i]))
+                    fading.Add(Rows[i].gameObject);
+            var sources = new List<RectTransform>();
+            for (int i = 0; i < sold.Count && i < ChosenRows.Count; i++)
+                if (ChosenRows[i].gameObject.activeInHierarchy)
+                {
+                    fading.Add(ChosenRows[i].gameObject);
+                    sources.Add((RectTransform)ChosenRows[i].transform);
+                }
+            if (Guide != null)
+                Guide.PlayRuneGain(from, to, sources);
+            vanishing = new TaskCompletionSource<bool>();
+            StartCoroutine(Fade(fading, vanishing));
+            return vanishing.Task;
+        }
+
+        // 少し膨らみながら薄れて消える。終わったら元の見た目に戻し、一覧を描き直すのに任せる。
+        private static IEnumerator Fade(
+            IReadOnlyList<GameObject> fading,
+            TaskCompletionSource<bool> done
+        )
+        {
+            var groups = fading
+                .Select(item =>
+                    item.TryGetComponent(out CanvasGroup group)
+                        ? group
+                        : item.AddComponent<CanvasGroup>()
+                )
+                .ToArray();
+            for (
+                float t = 0f;
+                t < VanishSeconds && !done.Task.IsCompleted;
+                t += Time.unscaledDeltaTime
+            )
+            {
+                float k = t / VanishSeconds;
+                for (int i = 0; i < groups.Length; i++)
+                {
+                    groups[i].alpha = 1f - k * k;
+                    groups[i].transform.localScale = Vector3.one * (1f + 0.06f * k);
+                }
+                yield return null;
+            }
+            foreach (var group in groups)
+                if (group != null)
+                {
+                    group.alpha = 1f;
+                    group.transform.localScale = Vector3.one;
+                }
+            done.TrySetResult(true);
+        }
+
         /// <summary>The held things after a sale: the sold ones gone.</summary>
         public static IReadOnlyList<WorkshopOwned> Without(
             IReadOnlyList<WorkshopOwned> before,
@@ -210,9 +288,6 @@ namespace Baryonyx.Workshop
                     !sold.Any(other => other.Kind == thing.Kind && other.RowId == thing.RowId)
                 )
                 .ToArray();
-
-        public static string SoldText(int count, int runes) =>
-            $"{count}点を{runes:N0}ルーンで売った";
 
         private void RefreshChosen()
         {

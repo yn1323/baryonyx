@@ -35,6 +35,9 @@ namespace Baryonyx.UI.GuideMenu
         public string TitleOverride;
         public TMP_Text Runes;
 
+        // 得たルーンが所持ルーンへ飛び込む演出（ホームと同じ）。商会で売ったときに使う。
+        public RuneGainEffect RuneGain;
+
         // 左の案内人。項目の専用のパネルが画面を広く使うときは隠す。
         public GameObject GuideArt;
         public GameObject MenuPanel;
@@ -148,6 +151,8 @@ namespace Baryonyx.UI.GuideMenu
         private void OnEnable()
         {
             RuneBalance.Changed += ShowRunes;
+            if (RuneGain != null)
+                RuneGain.Finished += ShowRunes;
             // 先に表示した変更を保存できなかったときは、どの画面を開いていても通知の帯で知らせる。
             SaveQueue.Failed += ShowToast;
             ShowRunes();
@@ -156,10 +161,29 @@ namespace Baryonyx.UI.GuideMenu
         private void OnDisable()
         {
             RuneBalance.Changed -= ShowRunes;
+            if (RuneGain != null)
+                RuneGain.Finished -= ShowRunes;
             SaveQueue.Failed -= ShowToast;
         }
 
-        private void ShowRunes() => SetText(Runes, RuneBalance.Text(RuneBalance.Known));
+        // 演出の間は、演出が所持ルーンを数え上げる。終わったら残高を書き直す。
+        private void ShowRunes()
+        {
+            if (RuneGain == null || !RuneGain.Playing)
+                SetText(Runes, RuneBalance.Text(RuneBalance.Known));
+        }
+
+        /// <summary>
+        /// Counts the balance up from <paramref name="from"/> to <paramref name="to"/>, the runes
+        /// bursting from the middles of <paramref name="sources"/> and flying into the balance.
+        /// </summary>
+        public void PlayRuneGain(long from, long to, IEnumerable<RectTransform> sources)
+        {
+            if (RuneGain == null || sources == null)
+                return;
+            var origins = sources.Where(rect => rect != null).Select(RuneGain.PointOf).ToArray();
+            RuneGain.Play(from, to, origins);
+        }
 
         /// <summary>Called by the scene before the view starts, so it does not make its own presenter.</summary>
         public void MarkBound() => bound = true;

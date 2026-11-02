@@ -115,7 +115,9 @@ namespace Baryonyx.Tests.PlayMode
             int price = expected[0].Price;
             shop.Hold = true;
             buy.Confirm.onClick.Invoke();
-            Assert.That(view.ToastMessage, Is.EqualTo(WorkshopBuyView.BoughtText(expected[0])));
+            // 通知の帯は出さず、画面を沈めて買った物を中央に出す。
+            Assert.That(buy.LastNotice, Is.Empty);
+            Assert.That(buy.Reveal.Playing, Is.True);
             Assert.That(RuneBalance.Known, Is.EqualTo(Balance - price));
             Assert.That(buy.BuyTask.IsCompleted, Is.False);
             // 保存を待つ間も、同じ物を続けて買える。
