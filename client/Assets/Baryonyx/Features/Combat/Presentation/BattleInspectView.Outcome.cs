@@ -42,7 +42,8 @@ namespace Baryonyx.Combat.Presentation
         /// Sets the encounter before the battle begins: only the enemies of
         /// <paramref name="standing"/> (indexes of <see cref="Enemies"/>) take part, with their HP
         /// scaled by <paramref name="hpScale"/>. The others are gone from the field and the turn
-        /// order, as if beaten before the battle.
+        /// order, as if beaten before the battle, and those left stand where their number does
+        /// (<see cref="StandEnemies"/>).
         /// </summary>
         public void UseEncounter(IReadOnlyCollection<int> standing, float hpScale)
         {
@@ -65,7 +66,42 @@ namespace Baryonyx.Combat.Presentation
                 if (here)
                     lastBeaten = i;
             }
+            StandEnemies(present);
             RefreshTurnOrder();
+        }
+
+        // Fewer than every place taken, those standing move to the places for their number
+        // (LoneEnemyFeet, PairEnemyFeet), the one of the earlier place in front, so they are
+        // not left to one side of the field. Every place taken, each stands at its own.
+        private void StandEnemies(HashSet<int> present)
+        {
+            if (enemyHome == null || enemyHome.Length != Enemies.Length)
+            {
+                enemyHome = new Vector2[Enemies.Length];
+                for (int i = 0; i < Enemies.Length; i++)
+                    enemyHome[i] = Enemies[i].Body.anchoredPosition;
+            }
+            int count = 0;
+            for (int i = 0; i < Enemies.Length; i++)
+                if (present.Contains(i))
+                    count++;
+            int nth = 0;
+            for (int i = 0; i < Enemies.Length; i++)
+            {
+                var feet = enemyHome[i];
+                if (present.Contains(i) && count < Enemies.Length)
+                {
+                    if (count == 1)
+                        feet = LoneEnemyFeet;
+                    else if (count == 2 && nth < PairEnemyFeet.Length)
+                        feet = PairEnemyFeet[nth];
+                    nth++;
+                }
+                Enemies[i].Body.anchoredPosition = feet;
+                // Before Awake there is no base yet; it is then taken from where they stand now.
+                if (i < enemyBase.Length)
+                    enemyBase[i] = feet;
+            }
         }
 
         /// <summary>

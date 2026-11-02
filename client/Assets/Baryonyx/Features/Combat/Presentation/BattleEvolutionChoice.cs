@@ -12,9 +12,10 @@ namespace Baryonyx.Combat.Presentation
     /// hovers above: a branch of light runs down from the card to each stage it can evolve into,
     /// shown as a battle card in a row below, one stage already acquired marked so. A tap picks a
     /// stage (it rises a little larger in a haze of pale gold light breathing behind it; the others
-    /// step back and darken), and the check button in the bottom-right corner, where the
-    /// end of the turn is, confirms it. With one stage to go to, it is picked and confirmed the same
-    /// way, so that what it does can be read before it is taken. Nothing else is pressed while open.
+    /// step back and darken), and the check button in the bottom-right corner, by where the
+    /// end of the turn is and in front of the cards, confirms it. With one stage to go to, it is
+    /// picked and confirmed the same way, so that what it does can be read before it is taken.
+    /// Nothing else is pressed while open.
     /// </summary>
     public sealed class BattleEvolutionChoice : MonoBehaviour
     {
@@ -190,9 +191,15 @@ namespace Baryonyx.Combat.Presentation
         {
             selected = slot;
             pickedAt = age;
-            // The stage picked stands in front of its neighbours, which it may overlap.
-            if (slot < Slots.Length && Slots[slot] != null)
-                Slots[slot].transform.SetAsLastSibling();
+            // The stage picked stands in front of its neighbours, which it may overlap, but behind
+            // the check, which its corner may reach.
+            if (slot >= Slots.Length || Slots[slot] == null)
+                return;
+            int front = 0;
+            foreach (var other in Slots)
+                if (other != null)
+                    front = Mathf.Max(front, other.transform.GetSiblingIndex());
+            Slots[slot].transform.SetSiblingIndex(front);
         }
 
         /// <summary>Confirms the stage picked and closes; nothing happens while none is picked.</summary>

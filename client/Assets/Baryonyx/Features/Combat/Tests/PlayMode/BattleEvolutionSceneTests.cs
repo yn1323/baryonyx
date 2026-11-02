@@ -63,9 +63,24 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(view.Choice.AcquiredTags[0].activeSelf, Is.False);
             Assert.That(view.Hand.GetComponent<CanvasGroup>().alpha, Is.Zero);
             Assert.That(evolved, Is.Empty, "Nothing evolves before the pick.");
-            // The check confirming stands where the end of the turn is, pressed once a stage is picked.
+            // The check confirming stands by where the end of the turn is, a little to its right,
+            // pressed once a stage is picked.
             Assert.That(view.EndTurnButton.GetComponent<CanvasGroup>().alpha, Is.Zero);
             Assert.That(view.Choice.ConfirmButton.interactable, Is.False);
+            var check = (RectTransform)view.Choice.ConfirmButton.transform;
+            Assert.That(
+                check.anchoredPosition.x,
+                Is.GreaterThan(((RectTransform)view.EndTurnButton.transform).anchoredPosition.x)
+            );
+
+            // The stage at the right, picked, stands in front of the others but behind the check.
+            view.Choice.Select(2);
+            var right = view.Choice.Slots[2].transform;
+            Assert.That(
+                right.GetSiblingIndex(),
+                Is.GreaterThan(view.Choice.Slots[1].transform.GetSiblingIndex())
+            );
+            Assert.That(check.parent.GetSiblingIndex(), Is.GreaterThan(right.GetSiblingIndex()));
 
             view.Choice.Select(1);
             yield return null;
@@ -107,12 +122,20 @@ namespace Baryonyx.Tests.PlayMode
             int deck = DeckOf(view, "ManaBurst");
             int dealt = DealInto(view, deck);
             Assert.That(view.Glints(dealt), Is.True);
-            Assert.That(view.DeckSparkles, Is.False, "A lit card in the hand does not make the deck twinkle.");
+            Assert.That(
+                view.DeckSparkles,
+                Is.False,
+                "A lit card in the hand does not make the deck twinkle."
+            );
 
             // Left in the hand at the end of the turn, it is discarded still lit (in this small
             // deck the discard pile is shuffled back into the deck for the next hand).
             view.EndTurn();
-            for (float t = 0f; (view.EnemyTurn || view.Dealing) && t < 15f; t += Time.unscaledDeltaTime)
+            for (
+                float t = 0f;
+                (view.EnemyTurn || view.Dealing) && t < 15f;
+                t += Time.unscaledDeltaTime
+            )
                 yield return null;
             Assert.That(view.EnemyTurn || view.Dealing, Is.False, "The next turn is dealt.");
             Assert.That(view.Cards.Any(card => card.InHand && card.DeckIndex == deck), Is.False);

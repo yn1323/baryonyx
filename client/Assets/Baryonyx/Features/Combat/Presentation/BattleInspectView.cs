@@ -531,6 +531,18 @@ namespace Baryonyx.Combat.Presentation
         public BattleInspectAlly[] Allies = Array.Empty<BattleInspectAlly>();
         public BattleInspectEnemy[] Enemies = Array.Empty<BattleInspectEnemy>();
 
+        /// <summary>
+        /// Where an enemy standing alone stands (its feet), whatever its place: the middle of the
+        /// enemies' side, as the party stands round the middle of its own.
+        /// </summary>
+        public Vector2 LoneEnemyFeet = new(575f, -15f);
+
+        /// <summary>
+        /// Where two enemies stand (their feet), the one of the earlier place first: on a slant,
+        /// in front and low, behind and high, as the party's columns are.
+        /// </summary>
+        public Vector2[] PairEnemyFeet = { new(460f, -130f), new(720f, 60f) };
+
         /// <summary>Containers of the party and enemy sprites that sway while idle.</summary>
         public RectTransform[] IdleActors = Array.Empty<RectTransform>();
 
@@ -679,6 +691,9 @@ namespace Baryonyx.Combat.Presentation
         private Vector2[] allyMarkerBase = Array.Empty<Vector2>();
         private Vector2[] enemyMarkerBase = Array.Empty<Vector2>();
         private Vector2[] enemyBase = Array.Empty<Vector2>();
+
+        // Where each enemy stands with every place taken, as built; null until an encounter moves them.
+        private Vector2[] enemyHome;
         private Vector2[] allyBase = Array.Empty<Vector2>();
         private Vector2[] allyBarBase = Array.Empty<Vector2>();
 
@@ -827,8 +842,19 @@ namespace Baryonyx.Combat.Presentation
             float a = angle * Mathf.Deg2Rad;
             float reach = float.MinValue;
             // The card turns about the middle of its foot.
-            foreach (var corner in new[] { new Vector2(-half.x, 0f), new Vector2(half.x, 0f), new Vector2(-half.x, half.y * 2f), new Vector2(half.x, half.y * 2f) })
-                reach = Mathf.Max(reach, position.x + corner.x * Mathf.Cos(a) - corner.y * Mathf.Sin(a));
+            foreach (
+                var corner in new[]
+                {
+                    new Vector2(-half.x, 0f),
+                    new Vector2(half.x, 0f),
+                    new Vector2(-half.x, half.y * 2f),
+                    new Vector2(half.x, half.y * 2f),
+                }
+            )
+                reach = Mathf.Max(
+                    reach,
+                    position.x + corner.x * Mathf.Cos(a) - corner.y * Mathf.Sin(a)
+                );
             return reach;
         }
 

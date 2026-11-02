@@ -130,6 +130,31 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(guardian.Hp, Is.LessThan(guardian.MaxHp));
         }
 
+        // 敵が1体・2体なら数に合わせた立ち位置に並べ直し、3体なら元の場所に戻す（doc/features/screens/battle.md）。
+        [UnityTest]
+        public IEnumerator FewerEnemiesStandWhereTheirNumberDoes()
+        {
+            var view = default(BattleInspectView);
+            yield return Load(value => view = value);
+            var homes = view.Enemies.Select(enemy => enemy.Body.anchoredPosition).ToArray();
+
+            view.UseEncounter(new[] { null, "moss-wolf", null }, 10, 1f);
+            Assert.That(view.Enemies[1].Body.anchoredPosition, Is.EqualTo(view.LoneEnemyFeet));
+            // The moments that put the enemies back put it back there too.
+            view.MomentRestore();
+            Assert.That(view.Enemies[1].Body.anchoredPosition, Is.EqualTo(view.LoneEnemyFeet));
+
+            view.UseEncounter(new[] { null, "moss-wolf", "stump-boar" }, 10, 1f);
+            Assert.That(view.Enemies[1].Body.anchoredPosition, Is.EqualTo(view.PairEnemyFeet[0]));
+            Assert.That(view.Enemies[2].Body.anchoredPosition, Is.EqualTo(view.PairEnemyFeet[1]));
+
+            view.UseEncounter(new[] { "moss-slime", "moss-wolf", "forest-guardian" }, 10, 1f);
+            Assert.That(
+                view.Enemies.Select(enemy => enemy.Body.anchoredPosition),
+                Is.EqualTo(homes)
+            );
+        }
+
         [UnityTest]
         public IEnumerator PlayingACardClosesTheGapAroundTheMiddle()
         {
@@ -512,7 +537,11 @@ namespace Baryonyx.Tests.PlayMode
             // The hand flowed away; new cards come in at the left end, the side of the deck.
             Assert.That(DeckCards(view), Is.EqualTo(new[] { 9, 8, 7, 6, 5 }));
             Assert.That(view.DeckLabel.text, Is.EqualTo("6"));
-            Assert.That(view.DiscardLabel.text, Is.EqualTo("5"), "The played card and the four that flowed.");
+            Assert.That(
+                view.DiscardLabel.text,
+                Is.EqualTo("5"),
+                "The played card and the four that flowed."
+            );
             // The played card's place on screen shows a newly drawn card of the deck.
             Assert.That(view.Cards[0].InHand, Is.True);
             Assert.That(view.Cards[0].DeckIndex, Is.Not.EqualTo(0));
@@ -594,7 +623,10 @@ namespace Baryonyx.Tests.PlayMode
             var view = default(BattleInspectView);
             yield return Load(value => view = value);
             var wolf = view.Enemies[1];
-            int slash = System.Array.FindIndex(view.Cards, card => card.InHand && card.DeckIndex == 0);
+            int slash = System.Array.FindIndex(
+                view.Cards,
+                card => card.InHand && card.DeckIndex == 0
+            );
             // Every other card in hand costs more than the energy the slash leaves.
             foreach (int i in view.HandCards)
                 view.Cards[i].Cost = i == slash ? 1 : view.Energy;
@@ -711,7 +743,10 @@ namespace Baryonyx.Tests.PlayMode
             // 居合一閃 (保持) stays in the hand; the other four flowed away.
             Assert.That(view.DeckLabel.text, Is.EqualTo("1"));
             Assert.That(view.DiscardLabel.text, Is.EqualTo("9"));
-            Assert.That(view.HandCards.Select(i => view.Cards[i].DeckIndex), Has.Member(DeckIndexOf(view, "Iai")));
+            Assert.That(
+                view.HandCards.Select(i => view.Cards[i].DeckIndex),
+                Has.Member(DeckIndexOf(view, "Iai"))
+            );
 
             // Only the one card is left: the discard pile is shuffled into a new deck, and the
             // cards in hand are not in it, so none is in the hand twice.
@@ -780,8 +815,14 @@ namespace Baryonyx.Tests.PlayMode
             view.Allies[fallen].Hp = view.Allies[fallen].MaxHp;
             yield return null;
             yield return WaitDealt(view);
-            var drawn = view.HandCards.Select(i => view.Cards[i].DeckIndex).Intersect(theirs).ToArray();
-            Assert.That(drawn, Has.Length.EqualTo(System.Math.Min(BattleInspectView.RisingDraw, theirs.Length)));
+            var drawn = view
+                .HandCards.Select(i => view.Cards[i].DeckIndex)
+                .Intersect(theirs)
+                .ToArray();
+            Assert.That(
+                drawn,
+                Has.Length.EqualTo(System.Math.Min(BattleInspectView.RisingDraw, theirs.Length))
+            );
             Assert.That(view.DrawPile.Concat(drawn).Intersect(theirs), Is.EquivalentTo(theirs));
             Assert.That(view.DeckLabel.text, Is.EqualTo(view.DrawPile.Count.ToString()));
         }
@@ -1280,11 +1321,16 @@ namespace Baryonyx.Tests.PlayMode
                 shape != null
                 && (
                     material == shape
-                    || (material.shader == shape.shader && material.name.StartsWith(shape.name + " (Rich"))
+                    || (
+                        material.shader == shape.shader
+                        && material.name.StartsWith(shape.name + " (Rich")
+                    )
                 );
             Assert.That(
                 shapes.Select(image => image.material),
-                Has.All.Matches<Material>(material => vfx.Shapes.Any(shape => OfShape(material, shape)))
+                Has.All.Matches<Material>(material =>
+                    vfx.Shapes.Any(shape => OfShape(material, shape))
+                )
             );
             Assert.That(
                 shapes.Select(image => image.uvRect),
@@ -1791,7 +1837,11 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(wolf.Alive, Is.False);
             for (float t = 0f; wolf.Group.alpha > 0f && t < 3f; t += Time.unscaledDeltaTime)
                 yield return null;
-            Assert.That(wolf.Group.alpha, Is.EqualTo(0f), "The wolf is gone once the card is over.");
+            Assert.That(
+                wolf.Group.alpha,
+                Is.EqualTo(0f),
+                "The wolf is gone once the card is over."
+            );
 
             // Its picture is drawn again where it stood, to be eaten away.
             var body = view

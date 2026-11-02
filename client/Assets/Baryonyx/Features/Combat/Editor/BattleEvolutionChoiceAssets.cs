@@ -12,7 +12,7 @@ namespace Baryonyx.Combat.Editor
     /// Builds where the next stage of an evolving unique skill is picked
     /// (<see cref="BattleEvolutionChoice"/>) on a screen's controls canvas: a branch of light and
     /// a battle card for each of up to three stages in a row under the middle, an "acquired" tag
-    /// on each card, and the check that confirms the stage picked where the end of the turn is.
+    /// on each card, and the check that confirms the stage picked by where the end of the turn is.
     /// </summary>
     public static class BattleEvolutionChoiceAssets
     {
@@ -26,6 +26,11 @@ namespace Baryonyx.Combat.Editor
         // How far past its card the haze behind the stage picked may reach (px): the board it is
         // drawn on, on every side. The haze is an oval about twice the card's size (2026-10-29).
         private const float AuraMargin = 330f;
+
+        // How far the check stands from the end-turn button's place: right and a little lower, so
+        // the corner of the stage at the right, picked and risen, does not cover its tick. As far
+        // as a 16:9 screen leaves room at its right (2026-11-02).
+        private static readonly Vector2 ConfirmShift = new(110f, -14f);
 
         private const string AuraShaderPath =
             "Assets/Baryonyx/Features/Combat/Vfx/Shaders/BattleCardAura.shader";
@@ -78,8 +83,9 @@ namespace Baryonyx.Combat.Editor
             return choice;
         }
 
-        // The check that confirms, in the end-turn button's place and shape (its circle, a gold
-        // check where its white tick is), over a glow that breathes while it can be pressed.
+        // The check that confirms, in the end-turn button's shape (its circle, a gold check where
+        // its white tick is) by its place (ConfirmShift), over a glow that breathes while it can
+        // be pressed.
         private static void BuildConfirm(RectTransform root, BattleEvolutionChoice choice)
         {
             var safe = SafeArea(root);
@@ -97,6 +103,7 @@ namespace Baryonyx.Combat.Editor
                 new Vector2(haloArt.width, haloArt.height),
                 -spread
             );
+            glow.anchoredPosition += ConfirmShift;
             var light = BattleInspectAssets.AddRaw(glow, haloArt);
             light.raycastTarget = false;
             light.color = Color.clear;
@@ -104,6 +111,7 @@ namespace Baryonyx.Combat.Editor
 
             var button = Rect("Confirm", safe);
             var face = BattleInspectAssets.EndTurnCircle(button);
+            button.anchoredPosition += ConfirmShift;
             var checkArt = BattleInspectAssets.Art("ConfirmCheck");
             var check = Rect("Check", button);
             Place(check, Vector2.zero, new Vector2(checkArt.width, checkArt.height));
