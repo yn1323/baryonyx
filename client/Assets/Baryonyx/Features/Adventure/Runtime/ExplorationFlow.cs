@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Baryonyx.Combat.Presentation;
 using Baryonyx.Inventory;
+using Baryonyx.SkillEvolution;
 using Baryonyx.UI;
 using UnityEngine;
 
@@ -65,6 +66,15 @@ namespace Baryonyx.Adventure
             this.entered = entered;
             view.RoomPressed += OnRoom;
             view.ChestPressed += OnChest;
+            if (view.Peddler != null)
+                view.Peddler.Pressed += OnWarePressed;
+            if (view.ShadyChest != null)
+            {
+                view.ShadyChest.Opened += OnShadyOpened;
+                view.ShadyChest.Passed += OnShadyPassed;
+            }
+            if (view.Altar != null)
+                view.Altar.Chosen += OnAltarChosen;
             view.MenuPressed += OpenMenu;
             view.BackPressed += OpenMenu;
             view.EquipmentPressed += OpenEquipment;
@@ -249,43 +259,160 @@ namespace Baryonyx.Adventure
         private IReadOnlyList<AdventureAltar.Choice> AltarChoices() =>
             altarChoices?.Invoke() ?? Array.Empty<AdventureAltar.Choice>();
 
-        // 宝箱から覚醒が出て、覚醒させる固有スキルを選んでいるところ。祭壇と同じ手順で選び、選ぶまで閉じない。
+        // 宝箱から覚醒が出て、覚醒させる固有スキルを選んでいるところ。祭壇と同じ窓で選び、選ぶまで閉じない。
         private bool chestAwakening;
 
-        // 祭壇と宝箱の覚醒の、選ぶダイアログ。題名だけが違う。
-        private void AltarDialog(
-            string body,
-            IReadOnlyList<(string Label, Action Choose)> options,
-            string backLabel,
-            Action back
-        ) =>
-            AdventureDialogs.Choose(
-                view.Dialog,
-                chestAwakening ? AdventureDialogs.ChestAwakeningTitle : AdventureDialogs.AltarTitle,
-                body,
-                options,
-                backLabel,
-                back
-            );
+        // 祭壇の窓に並べた仲間（札の順）ごとの、覚醒できる固有スキル。
+        private List<List<AdventureAltar.Choice>> altarPeople = new();
 
-        // 祭壇：仲間を選び、その固有スキルを選び、次の段階を選んで進化させる。進められる固有スキルが
-        // なければ、宝箱と同じに開ける（OnChest）。宝箱の覚醒も同じ手順だが、閉じられない。
+        // 祭壇の窓で選んだ固有スキル。窓が祭壇へ戻りきってから、覚醒の場面を開く。
+        private AdventureAltar.Choice altarPicked;
+
+        // 祭壇：覚醒できる仲間を、出来事の窓に編成の札で並べる。仲間を選び、固有スキルを選ぶと、窓を閉じて
+        // 覚醒の場面へ進む。進められる固有スキルがなければ、宝箱と同じに開ける（OnChest）。
+        // 宝箱の覚醒も同じ窓だが、選ぶまで閉じない。
         private void OpenAltar()
         {
-            var choices = AltarChoices();
-            var people = choices.Select(choice => choice.Person).Distinct().ToArray();
-            AltarDialog(
-                chestAwakening ? AdventureDialogs.ChestAwakeningBody : AdventureDialogs.AltarBody,
-                people
-                    .Select(person =>
-                    {
-                        var mine = choices.Where(choice => choice.Person == person).ToArray();
-                        return (mine[0].Name, (Action)(() => OpenAltarUniques(mine)));
-                    })
-                    .ToArray(),
-                chestAwakening ? null : AdventureTexts.CloseChoice,
-                chestAwakening ? null : view.Dialog.Hide
+            var altar = view.Altar;
+            if (altar == null)
+                return;
+            var members = Party();
+            altarPeople = AltarChoices()
+                .GroupBy(choice => choice.Person)
+                .Select(mine => mine.ToList())
+                .ToList();
+            altarPicked = null;
+            altar.Use(
+                altarPeople.Select(mine => PersonOf(mine, members)).ToList(),
+                !chestAwakening
             );
+            view.OpenEvent(altar, OnAltarClosed);
+        }
+
+        private AdventureAltarPanel.Person PersonOf(
+            IReadOnlyList<AdventureAltar.Choice> mine,
+            IReadOnlyList<BattlePartyMember> members
+        )
+        {
+            var member = MemberOf(mine[0].Person, members);
+            return new AdventureAltarPanel.Person
+            {
+                Name = mine[0].Name,
+                Level = member?.Level ?? 1,
+                Art = member?.Art,
+                Tint = member?.Tint ?? Color.white,
+                Stats = member?.Stats ?? default,
+                Skills = mine.Select(choice => new AdventureAltarPanel.Skill
+                    {
+                        Card = choice.Tree?.StageAt(choice.From)?.Card,
+                        Art = CardOf(choice, members)?.Art,
+                    })
+                    .ToList(),
+            };
+        }
+
+        private static BattlePartyMember MemberOf(
+            string person,
+            IReadOnlyList<BattlePartyMember> members
+        ) =>
+            members.FirstOrDefault(member =>
+                member != null && member.Cards.Any(card => card.Person == person)
+            );
+
+        private static BattlePartyCard CardOf(
+            AdventureAltar.Choice choice,
+            IReadOnlyList<BattlePartyMember> members
+        ) =>
+            members
+                .Where(member => member != null)
+                .SelectMany(member => member.Cards)
+                .FirstOrDefault(card =>
+                    card.Person == choice.Person && card.Unique == choice.Index
+                );
+
+        private void OnAltarChosen(int person, int skill)
+        {
+            // 宝箱の覚醒は、宝箱を開けた処理の続き（busy のまま）で選ばせるため、busy では止めない。
+            if (altarPicked != null || person < 0 || person >= altarPeople.Count)
+                return;
+            var mine = altarPeople[person];
+            if (skill < 0 || skill >= mine.Count)
+                return;
+            altarPicked = mine[skill];
+            view.Altar.Release();
+            view.Events.Hide();
+        }
+
+        // 窓が祭壇へ戻りきった。固有スキルを選んでいれば覚醒の場面を開き、×で閉じたなら何もしない
+        // （祭壇の絵を押すと開き直す）。
+        private void OnAltarClosed()
+        {
+            var choice = altarPicked;
+            altarPicked = null;
+            if (choice != null && !disposed)
+                OpenAwakening(choice);
+        }
+
+        // 覚醒の場面：今の段階のカードが浮かび、覚醒先を選んで丸いチェックで決める。祭壇なら「もどる」で
+        // 祭壇の窓へ戻れ、宝箱の覚醒は決めるまで戻れない。
+        private void OpenAwakening(AdventureAltar.Choice choice)
+        {
+            var awakening = view.Awakening;
+            if (awakening == null || choice.Tree == null)
+                return;
+            var members = Party();
+            awakening.Open(
+                FaceOf(choice, choice.From, members),
+                choice.Next.Select(stage => FaceOf(choice, stage, members)).ToList(),
+                view.Chest,
+                Deep(choice),
+                pick =>
+                {
+                    int stage = choice.Next[Mathf.Clamp(pick, 0, choice.Next.Count - 1)];
+                    Work = chestAwakening
+                        ? ChestEvolveAsync(choice, stage)
+                        : EvolveAsync(choice, stage);
+                },
+                chestAwakening ? null : OpenAltar
+            );
+        }
+
+        private AdventureAwakening.Face FaceOf(
+            AdventureAltar.Choice choice,
+            int stage,
+            IReadOnlyList<BattlePartyMember> members
+        )
+        {
+            var skill = choice.Tree.StageAt(stage)?.Card;
+            var card = CardOf(choice, members);
+            return new AdventureAwakening.Face
+            {
+                Skill = skill,
+                Owner = choice.Name,
+                Stats = MemberOf(choice.Person, members)?.Stats ?? default,
+                Art =
+                    stage == choice.From && card?.Art != null ? card.Art
+                    : skill != null ? card?.ArtOf?.Invoke(skill.Id)
+                    : null,
+            };
+        }
+
+        // 枝の2段目へ進むときは、戦闘と同じく深い演出にする。
+        private static bool Deep(AdventureAltar.Choice choice) =>
+            choice.Next.All(stage => UniqueSkillTreeShape.Step(stage) == 2);
+
+        // 覚醒の場面のカードが、選んだ段階に割れて現れるのを待つ。
+        private Task BurstAsync(AdventureAltar.Choice choice, int stage)
+        {
+            var done = new TaskCompletionSource<bool>();
+            if (view.Awakening == null)
+                return Task.CompletedTask;
+            view.Awakening.Burst(
+                FaceOf(choice, stage, Party()),
+                Deep(choice),
+                () => done.TrySetResult(true)
+            );
+            return done.Task;
         }
 
         // 宝箱を開けて中身を見せたあと、宝箱から出た覚醒で固有スキルを選ばせる。
@@ -297,67 +424,18 @@ namespace Baryonyx.Adventure
         }
 
         // 宝箱のマスは開けたときに終えているため、マスを終えずに覚醒だけを残す。
-        private Task ChestEvolveAsync(AdventureAltar.Choice choice, int stage)
+        private async Task ChestEvolveAsync(AdventureAltar.Choice choice, int stage)
         {
             chestAwakening = false;
-            view.Dialog.Hide();
             evolve?.Invoke(choice, stage);
+            await BurstAsync(choice, stage);
+            if (disposed)
+                return;
             busy = false;
             view.ShowNotice(
                 $"「{choice.CardName(choice.From)}」が「{choice.CardName(stage)}」に覚醒した！"
             );
-            return Task.CompletedTask;
         }
-
-        private void OpenAltarUniques(IReadOnlyList<AdventureAltar.Choice> mine)
-        {
-            if (mine.Count == 1)
-            {
-                OpenAltarStages(mine[0], () => OpenAltar());
-                return;
-            }
-            AltarDialog(
-                mine[0].Name + "のどの固有スキルを覚醒させる？",
-                mine.Select(choice =>
-                        (
-                            choice.CardName(choice.From),
-                            (Action)(() => OpenAltarStages(choice, () => OpenAltarUniques(mine)))
-                        )
-                    )
-                    .ToArray(),
-                AdventureDialogs.BackChoice,
-                OpenAltar
-            );
-        }
-
-        private void OpenAltarStages(AdventureAltar.Choice choice, Action back) =>
-            AltarDialog(
-                $"{choice.Name}の「{choice.CardName(choice.From)}」の覚醒先を選ぶ",
-                choice
-                    .Next.Select(stage =>
-                        (choice.CardName(stage), (Action)(() => ConfirmEvolve(choice, stage, back)))
-                    )
-                    .ToArray(),
-                AdventureDialogs.BackChoice,
-                back
-            );
-
-        private void ConfirmEvolve(AdventureAltar.Choice choice, int stage, Action back) =>
-            AltarDialog(
-                $"「{choice.CardName(choice.From)}」を「{choice.CardName(stage)}」へ覚醒させますか？",
-                new (string, Action)[]
-                {
-                    (
-                        AdventureDialogs.EvolveChoice,
-                        () =>
-                            Work = chestAwakening
-                                ? ChestEvolveAsync(choice, stage)
-                                : EvolveAsync(choice, stage)
-                    ),
-                },
-                AdventureDialogs.BackChoice,
-                () => OpenAltarStages(choice, back)
-            );
 
         // 祭壇のマスを終えてから進化させ、終えたことを保存できなければ進化させない。
         private async Task EvolveAsync(AdventureAltar.Choice choice, int stage)
@@ -365,7 +443,11 @@ namespace Baryonyx.Adventure
             busy = true;
             view.Dialog.Hide();
             if (!await MoveSaved())
+            {
+                if (view.Awakening != null)
+                    view.Awakening.Close();
                 return;
+            }
             AdventureState state;
             try
             {
@@ -385,6 +467,8 @@ namespace Baryonyx.Adventure
                 Debug.LogWarning("祭壇のマスを終えられませんでした。" + exception.Message);
                 if (disposed)
                     return;
+                if (view.Awakening != null)
+                    view.Awakening.Close();
                 view.ShowNotice(AdventureTexts.SaveFailed);
                 Work = LoadAsync();
                 return;
@@ -392,6 +476,9 @@ namespace Baryonyx.Adventure
             if (disposed)
                 return;
             evolve?.Invoke(choice, stage);
+            await BurstAsync(choice, stage);
+            if (disposed)
+                return;
             Enter(state);
             view.ShowNotice(
                 $"「{choice.CardName(choice.From)}」が「{choice.CardName(stage)}」に覚醒した！"
@@ -400,37 +487,29 @@ namespace Baryonyx.Adventure
 
         // --- Merchant ------------------------------------------------------------------------
 
-        // 行商人の品物を並べる。買うと確かめてから買い、一覧へ戻る。立ち去ると、行商人のマスを終える。
+        // 行商人：出来事の窓に、商人と品物のカードを並べる。押すと買い、売り切れの札が付く。×で立ち去ると、
+        // 行商人のマスを終える。
         private void OpenMerchant()
         {
             if (State?.Run == null)
                 return;
-            AdventureDialogs.Merchant(
-                view.Dialog,
-                State.Run.Contents.Wares,
-                State.Runes,
-                ConfirmBuy,
-                () =>
-                {
-                    view.Dialog.Hide();
-                    Work = PassAsync();
-                }
-            );
+            var peddler = view.Peddler;
+            if (peddler == null)
+                return;
+            peddler.Use(State.Run.Contents.Wares, State.Runes, view.ItemArt);
+            view.OpenEvent(peddler, () => Work = PassAsync());
         }
 
-        private void ConfirmBuy(AdventureWare ware) =>
-            AdventureDialogs.ConfirmBuy(
-                view.Dialog,
-                ware,
-                State.Runes,
-                () => Work = BuyAsync(ware),
-                OpenMerchant
-            );
+        private void OnWarePressed(AdventureWare ware)
+        {
+            if (busy || Leaving || State?.Run == null)
+                return;
+            Work = BuyAsync(ware);
+        }
 
         private async Task BuyAsync(AdventureWare ware)
         {
             busy = true;
-            view.Dialog.Hide();
             if (!await MoveSaved())
                 return;
             AdventureState state;
@@ -449,30 +528,52 @@ namespace Baryonyx.Adventure
                     return;
                 busy = false;
                 view.ShowNotice(AdventureTexts.BuyFailed);
-                OpenMerchant();
                 return;
             }
             if (disposed)
                 return;
-            // 買った物を札で見せてから、一覧へ戻る（Enter が開き直す）。
-            if (view.Moments != null && view.Moments.Reveal != null)
-            {
-                var item = AdventureDropItems.From(ware.AsDrop(state.Run.RoomId), view.ItemArt);
-                if (item != null)
+            // 窓を開いたまま、買った品に売り切れの札を付け、持っているルーンを数え下げる。
+            State = AdventureSession.Use(state);
+            room = ExplorationRoom.From(state.Run);
+            entered?.Invoke(state.Run);
+            if (view.Peddler != null)
+                view.Peddler.MarkSold(ware.Index, state.Runes);
+            busy = false;
+        }
+
+        // --- Shady chest ---------------------------------------------------------------------
+
+        // 怪しい宝箱の窓で選んだ答え。窓が宝箱へ戻りきってから行う。
+        private Action shadyAnswer;
+
+        // 怪しい宝箱：出来事の窓の中央に宝箱を置き、開けるか通り過ぎるかを選ばせる。×で閉じると選ばずに地図へ
+        // 戻り、宝箱の絵を押すと開き直す。
+        private void OpenShadyChest()
+        {
+            shadyAnswer = null;
+            view.OpenEvent(
+                view.ShadyChest,
+                () =>
                 {
-                    view.Moments.Reveal.Show(item);
-                    try
-                    {
-                        await Awaitable.WaitForSecondsAsync(ItemReadSeconds, lifetime.Token);
-                    }
-                    catch (OperationCanceledException)
-                    {
-                        return;
-                    }
-                    view.Moments.Reveal.Hide();
+                    var then = shadyAnswer;
+                    shadyAnswer = null;
+                    if (!disposed)
+                        then?.Invoke();
                 }
-            }
-            Enter(state);
+            );
+        }
+
+        private void OnShadyOpened() => AnswerShady(() => Work = OpenChestAsync(open: true));
+
+        private void OnShadyPassed() =>
+            AnswerShady(() => Work = PassAsync(new AdventureClearOptions { Pass = true }));
+
+        private void AnswerShady(Action then)
+        {
+            if (busy || shadyAnswer != null)
+                return;
+            shadyAnswer = then;
+            view.Events.Hide();
         }
 
         private async Task BattleAsync()
@@ -618,7 +719,11 @@ namespace Baryonyx.Adventure
             if (disposed)
                 return false;
             // サーバーの答えを、先に入った部屋の正しい中身にする（宝箱の覚醒の当たりなど）。
-            if (State?.Run != null && State.Run.RoomId == state.Run?.RoomId && !State.Run.RoomCleared)
+            if (
+                State?.Run != null
+                && State.Run.RoomId == state.Run?.RoomId
+                && !State.Run.RoomCleared
+            )
             {
                 State = AdventureSession.Use(state);
                 room = ExplorationRoom.From(state.Run);
@@ -665,20 +770,7 @@ namespace Baryonyx.Adventure
             if (room.Run?.Room?.Kind == AdventureRoomKind.Altar && AltarChoices().Count > 0)
                 OpenAltar();
             else if (room.Run?.Room?.Kind == AdventureRoomKind.ShadyChest)
-                AdventureDialogs.ShadyChest(
-                    view.Dialog,
-                    () =>
-                    {
-                        view.Dialog.Hide();
-                        Work = OpenChestAsync(open: true);
-                    },
-                    () =>
-                    {
-                        view.Dialog.Hide();
-                        Work = PassAsync(new AdventureClearOptions { Pass = true });
-                    },
-                    view.Dialog.Hide
-                );
+                OpenShadyChest();
             else
                 Work = OpenChestAsync();
         }
@@ -785,7 +877,6 @@ namespace Baryonyx.Adventure
                 view.Dialog,
                 State.Run,
                 null,
-                AdventureTexts.CloseChoice,
                 view.Dialog.Hide,
                 GoHome,
                 ConfirmQuit
@@ -895,6 +986,17 @@ namespace Baryonyx.Adventure
             lifetime.Cancel();
             view.RoomPressed -= OnRoom;
             view.ChestPressed -= OnChest;
+            if (view.Peddler != null)
+                view.Peddler.Pressed -= OnWarePressed;
+            if (view.ShadyChest != null)
+            {
+                view.ShadyChest.Opened -= OnShadyOpened;
+                view.ShadyChest.Passed -= OnShadyPassed;
+            }
+            if (view.Altar != null)
+                view.Altar.Chosen -= OnAltarChosen;
+            if (view.Awakening != null)
+                view.Awakening.Close();
             view.MenuPressed -= OpenMenu;
             view.BackPressed -= OpenMenu;
             view.EquipmentPressed -= OpenEquipment;

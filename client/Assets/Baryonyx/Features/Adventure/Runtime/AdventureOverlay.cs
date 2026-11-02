@@ -150,7 +150,6 @@ namespace Baryonyx.Adventure
                         Dialog,
                         AdventureDialogSamples.Run,
                         AdventureTexts.SuspendBody,
-                        AdventureTexts.GoOnChoice,
                         none,
                         none,
                         none

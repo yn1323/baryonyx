@@ -1,4 +1,6 @@
 using System.Collections.Generic;
+using Baryonyx.Combat;
+using Baryonyx.Combat.Editor;
 using Baryonyx.Editor.Art;
 using Baryonyx.Editor.UI;
 using Baryonyx.UI;
@@ -27,18 +29,18 @@ namespace Baryonyx.WorldMap.Editor
         private const string LukaPicturePath = Art + "/Characters/Illustrations/luka.png";
 
         // 行商人の絵はまだないため、酒場の案内人を仮に立たせる。
-        private const string MerchantPath =
+        internal const string MerchantPath =
             "Assets/Baryonyx/Features/Tavern/UI/Art/TavernGuide.aseprite";
         private const string CartPath = Art + "/Stages/MeadowRoad/MeadowCart.aseprite";
-        private const string ChestClosedPath = Art + "/Stages/Exploration/ChestClosed.aseprite";
-        private const string ChestOpenPath = Art + "/Stages/Exploration/ChestOpen.aseprite";
+        internal const string ChestClosedPath = Art + "/Stages/Exploration/ChestClosed.aseprite";
+        internal const string ChestOpenPath = Art + "/Stages/Exploration/ChestOpen.aseprite";
         private const string Enemies = "Assets/Baryonyx/Features/Combat/UI/Art/Enemies";
-        private const string RunePath = Art + "/GameResources/IconRune.aseprite";
+        internal const string RunePath = Art + "/GameResources/IconRune.aseprite";
         private const string HerbPath = Art + "/Items/Herb.aseprite";
         private const string AcornPath = Art + "/Items/Acorn.aseprite";
-        private const string BluntPath = Art + "/Attributes/ElementBlunt.aseprite";
-        private const string ThunderPath = Art + "/Attributes/ElementThunder.aseprite";
-        private const string PiercePath = Art + "/Attributes/ElementPierce.aseprite";
+        private static readonly string BluntPath = AttributeIconArt.IconPath(CardElement.Blunt);
+        private static readonly string ThunderPath = AttributeIconArt.IconPath(CardElement.Thunder);
+        private static readonly string PiercePath = AttributeIconArt.IconPath(CardElement.Pierce);
         private const string MimicPath = Enemies + "/ChestMimic.aseprite";
         private const string IronSwordPath = Art + "/Weapons/IronSword.aseprite";
 
@@ -46,7 +48,7 @@ namespace Baryonyx.WorldMap.Editor
         private const float FeetY = 110f;
         private const float CharacterDot = 6f;
         private static readonly Vector2 BubbleSize = new(760f, 180f);
-        private const float BubbleShift = 220f;
+        internal const float BubbleShift = 220f;
         private const float TailDrop = 26f;
         private static readonly Color Paper = new(0.98f, 0.96f, 0.9f, 1f);
 
@@ -69,7 +71,7 @@ namespace Baryonyx.WorldMap.Editor
                 Battle(stage),
             };
 
-        private static T Panel<T>(RectTransform stage, WorldEventKind kind)
+        internal static T Panel<T>(RectTransform stage, WorldEventKind kind)
             where T : WorldEventPanel
         {
             var rect = Rect(kind.ToString(), stage);
@@ -607,7 +609,7 @@ namespace Baryonyx.WorldMap.Editor
         // --- 部品 ------------------------------------------------------------------------
 
         // 舞台の下の真ん中から測って置く。
-        private static void Bottom(RectTransform rect, Vector2 at, Vector2 size)
+        internal static void Bottom(RectTransform rect, Vector2 at, Vector2 size)
         {
             rect.anchorMin = rect.anchorMax = new Vector2(0.5f, 0f);
             rect.pivot = new Vector2(0.5f, 0.5f);
@@ -635,7 +637,7 @@ namespace Baryonyx.WorldMap.Editor
         }
 
         // ドット絵の物を、足元を基準に整数倍で置く。shadow が0なら影を敷かない。降り立つ足元を返す。
-        private static RectTransform Prop(
+        internal static RectTransform Prop(
             RectTransform parent,
             string name,
             string path,
@@ -673,8 +675,8 @@ namespace Baryonyx.WorldMap.Editor
             return feet;
         }
 
-        // ドット絵を、置いた枠いっぱいに描く。
-        private static void Pixel(RectTransform rect, string path)
+        // 絵（ドット絵や属性の印）を、置いた枠いっぱいに描く。
+        internal static void Pixel(RectTransform rect, string path)
         {
             var image = rect.gameObject.AddComponent<RawImage>();
             image.texture = ArtAssets.LoadTexture(path);
@@ -682,7 +684,7 @@ namespace Baryonyx.WorldMap.Editor
         }
 
         // 話す人ごとの吹き出し。しっぽの先（tip、舞台の下から）から、本体を shift だけ横へずらして置く。
-        private static EventBubbles Bubbles(
+        internal static EventBubbles Bubbles(
             RectTransform parent,
             params (Vector2 Tip, float Shift)[] speakers
         )
@@ -842,7 +844,7 @@ namespace Baryonyx.WorldMap.Editor
         }
 
         // 景色の上に置く、すりガラスの押せるカード。中身を入れる枠を返す。
-        private static (Button Button, RectTransform Content) Glass(
+        internal static (Button Button, RectTransform Content) Glass(
             RectTransform parent,
             string name,
             Vector2 center,
@@ -902,7 +904,7 @@ namespace Baryonyx.WorldMap.Editor
         }
 
         // 文字だけの押せるカード。
-        private static Button TextButton(
+        internal static Button TextButton(
             RectTransform parent,
             string name,
             Vector2 center,
@@ -1002,7 +1004,7 @@ namespace Baryonyx.WorldMap.Editor
         }
 
         // 右上（×の左）に、持っているルーンを出す。
-        private static TMP_Text Runes(RectTransform parent)
+        internal static TMP_Text Runes(RectTransform parent)
         {
             var pill = Rect("Runes", parent);
             Corner(pill, Vector2.one, new Vector2(-150f, -26f), new Vector2(290f, 80f));

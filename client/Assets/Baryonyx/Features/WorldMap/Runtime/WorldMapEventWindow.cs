@@ -173,17 +173,32 @@ namespace Baryonyx.WorldMap
             int form = 0
         )
         {
-            Panel = PanelOf(kind, form);
-            if (Panel == null)
+            var panel = PanelOf(kind, form);
+            if (panel == null)
             {
                 Debug.LogError("The event window has no panel for " + kind + ".", this);
                 return;
             }
+            Open(from, panel, whenClosed, toBattle);
+        }
+
+        /// <summary>
+        /// Opens the window out of <paramref name="from"/> on <paramref name="panel"/>, one of
+        /// <see cref="Panels"/> (the adventure's rooms open theirs by the panel itself).
+        /// </summary>
+        public void Open(
+            RectTransform from,
+            WorldEventPanel panel,
+            Action whenClosed,
+            Action toBattle = null
+        )
+        {
+            Panel = panel;
             square = from;
             closed = whenClosed;
             battle = toBattle;
-            foreach (var panel in Panels)
-                panel.gameObject.SetActive(panel == Panel);
+            foreach (var each in Panels)
+                each.gameObject.SetActive(each == Panel);
             Window.sizeDelta = Panel.WindowSize;
             Window.localRotation = Quaternion.identity;
             if (Scenery != null)

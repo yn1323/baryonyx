@@ -114,11 +114,7 @@ namespace Baryonyx.Adventure.Editor
                 .Select(element => (Texture)BattleInspectAssets.Art("CardFrame" + element))
                 .ToArray();
             campfire.ElementIcons = elements
-                .Select(element =>
-                    element == CardElement.None
-                        ? null
-                        : (Texture)BattleInspectAssets.Art("Element" + element)
-                )
+                .Select(element => (Texture)BattleInspectAssets.Art("Element" + element))
                 .ToArray();
             BuildCamp(root, campfire);
             BuildTrain(root, campfire);

@@ -50,6 +50,54 @@ namespace Baryonyx.Adventure
                 ),
             };
 
+        // 行商人の品物の見本：スキル3つと装備2つ。2つ目は売り切れ、最後の1つはルーンが足りない値段。
+        public static IReadOnlyList<AdventureWare> Wares()
+        {
+            var random = new Random(7);
+            var wares = new List<AdventureWare>();
+            var categories = new[]
+            {
+                AdventureDropCategory.Skill,
+                AdventureDropCategory.Skill,
+                AdventureDropCategory.Skill,
+                AdventureDropCategory.Weapon,
+                AdventureDropCategory.Accessory,
+            };
+            for (int i = 0; i < categories.Length; i++)
+            {
+                AdventureDrop pick = null;
+                for (int attempt = 0; attempt < 12 && pick == null; attempt++)
+                {
+                    var drop = AdventureDrops.PickWare(
+                        AdventureCatalog.ForestRuins,
+                        categories[i],
+                        AdventureTexts.MaxMultiplierOf,
+                        random
+                    );
+                    if (drop != null && !wares.Exists(ware => ware.Id == drop.Id))
+                        pick = drop;
+                }
+                if (pick == null)
+                    continue;
+                int price = AdventureWares.PriceOf(
+                    AdventureDrops.StarsOf(pick.Category, pick.Id),
+                    pick.Quality
+                );
+                wares.Add(
+                    new AdventureWare(
+                        i,
+                        pick.Category,
+                        pick.Id,
+                        pick.Multiplier,
+                        pick.Quality,
+                        price,
+                        i == 1
+                    )
+                );
+            }
+            return wares;
+        }
+
         // 冒険の結果の見本。クリアは3回目（その回のクリア回数の報酬つき）にする。
         public const int Clears = 3;
 
@@ -74,17 +122,47 @@ namespace Baryonyx.Adventure
             {
                 new AdventureDrop("", AdventureDropCategory.Item, "herb"),
                 new AdventureDrop("", AdventureDropCategory.Item, "herb"),
-                new AdventureDrop("", AdventureDropCategory.Weapon, "flame-dagger", 1.82f, ItemQuality.S),
-                new AdventureDrop("", AdventureDropCategory.Weapon, "short-bow", 1.4f, ItemQuality.B),
-                new AdventureDrop("", AdventureDropCategory.Accessory, "dew-pendant", 1.55f, ItemQuality.A),
+                new AdventureDrop(
+                    "",
+                    AdventureDropCategory.Weapon,
+                    "flame-dagger",
+                    1.82f,
+                    ItemQuality.S
+                ),
+                new AdventureDrop(
+                    "",
+                    AdventureDropCategory.Weapon,
+                    "short-bow",
+                    1.4f,
+                    ItemQuality.B
+                ),
+                new AdventureDrop(
+                    "",
+                    AdventureDropCategory.Accessory,
+                    "dew-pendant",
+                    1.55f,
+                    ItemQuality.A
+                ),
                 new AdventureDrop("", AdventureDropCategory.Item, "acorn"),
                 new AdventureDrop("", AdventureDropCategory.Item, "acorn"),
                 new AdventureDrop("", AdventureDropCategory.Item, "acorn"),
                 new AdventureDrop("", AdventureDropCategory.Item, "dew-vial"),
                 new AdventureDrop("", AdventureDropCategory.Item, "moss-wad"),
                 new AdventureDrop("", AdventureDropCategory.Item, "shell-shard"),
-                new AdventureDrop("", AdventureDropCategory.Accessory, "moss-charm", 1.25f, ItemQuality.C),
-                new AdventureDrop("", AdventureDropCategory.Weapon, "wooden-sword", 1.45f, ItemQuality.B),
+                new AdventureDrop(
+                    "",
+                    AdventureDropCategory.Accessory,
+                    "moss-charm",
+                    1.25f,
+                    ItemQuality.C
+                ),
+                new AdventureDrop(
+                    "",
+                    AdventureDropCategory.Weapon,
+                    "wooden-sword",
+                    1.45f,
+                    ItemQuality.B
+                ),
                 new AdventureDrop("", AdventureDropCategory.Item, "dew-vial"),
             };
     }

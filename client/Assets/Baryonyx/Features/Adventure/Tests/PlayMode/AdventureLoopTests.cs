@@ -116,7 +116,32 @@ namespace Baryonyx.Tests.PlayMode
                 $"The result \"{title}\" did not show (it shows \"{result.TitleText}\")."
             );
 
-        // 宝箱から覚醒が出たら、中身を見せたあとに「宝箱の覚醒」を開き、祭壇と同じ手順で固有スキルを
+        // マスの出来事の窓が panel で開ききるのを待つ。
+        private static IEnumerator WaitForEvent(
+            ExplorationView view,
+            WorldMap.WorldEventPanel panel,
+            float seconds = 8f
+        ) =>
+            SceneTests.WaitUntil(
+                () => view.Events.IsShown && !view.Events.Opening && view.Events.Panel == panel,
+                seconds,
+                $"The event window did not open on {panel.name}."
+            );
+
+        // 祭壇の窓で最初の仲間（固有スキルが2つあれば、その最初）を選び、覚醒の場面が開くのを待つ。
+        private static IEnumerator PickFirstSkill(ExplorationView view)
+        {
+            view.Altar.PickPerson(0);
+            if (view.Altar.People[0].Skills.Count > 1)
+                view.Altar.Skills[0].onClick.Invoke();
+            yield return SceneTests.WaitUntil(
+                () => view.Awakening.IsOpen && view.Awakening.Choice.IsOpen,
+                8f,
+                "The awakening scene did not open."
+            );
+        }
+
+        // 宝箱から覚醒が出たら、中身を見せたあとに祭壇と同じ窓を開き、仲間と固有スキルを選んで、覚醒の場面で
         // 1段覚醒させる。選ぶまで閉じない（doc/features/skill-evolution.md の覚醒が起きる場面）。
         [UnityTest]
         public IEnumerator AChestWithAnAwakeningEvolvesAUniqueSkillChosen()
@@ -139,31 +164,22 @@ namespace Baryonyx.Tests.PlayMode
             );
             var view = bootstrap.View;
             view.MarkerOf(here.Next[0]).Button.onClick.Invoke();
-            var dialog = view.Dialog;
             // 中身を札で見せたら、「宝箱を開けた！」を挟まずに覚醒を選ばせる。
-            yield return WaitForDialog(
-                dialog,
-                AdventureDialogs.ChestAwakeningTitle,
-                VictorySeconds
-            );
+            yield return WaitForEvent(view, view.Altar, VictorySeconds);
             Assert.That(AdventureSession.Current.Run.Contents.Awakening, Is.True);
-            Assert.That(dialog.BodyText, Is.EqualTo(AdventureDialogs.ChestAwakeningBody));
-            // 選ぶまで閉じない：閉じる選択肢がなく、戻るキーでも閉じない。
-            Assert.That(dialog.ChoiceLabels, Has.No.Member(AdventureTexts.CloseChoice));
-            dialog.HandleBack();
-            Assert.That(dialog.IsShown, Is.True);
-            // 仲間・固有スキル・段階を、先頭から選んでいき、最後に覚醒させる。
-            for (
-                int i = 0;
-                i < 4 && !dialog.ChoiceLabels.Contains(AdventureDialogs.EvolveChoice);
-                i++
-            )
-                dialog.Choose(dialog.ChoiceLabels[0]);
-            Assert.That(dialog.TitleText, Is.EqualTo(AdventureDialogs.ChestAwakeningTitle));
-            dialog.Choose(AdventureDialogs.EvolveChoice);
+            // 選ぶまで閉じない：×がなく、戻るキーでも閉じない。
+            Assert.That(view.Events.CanClose, Is.False);
+            view.PressBack();
+            Assert.That(view.Events.IsShown, Is.True);
+            yield return PickFirstSkill(view);
+            // 宝箱の覚醒は、覚醒の場面からも戻れない。
+            view.PressBack();
+            Assert.That(view.Awakening.IsOpen, Is.True);
+            view.Awakening.Choice.Select(0);
+            view.Awakening.Choice.Confirm();
             yield return SceneTests.WaitUntil(
-                () => !dialog.IsShown && !bootstrap.Flow.Busy,
-                4f,
+                () => !view.Awakening.IsOpen && !bootstrap.Flow.Busy,
+                8f,
                 "The awakening did not end."
             );
             StringAssert.EndsWith("に覚醒した！", view.Notice.Message);
@@ -466,7 +482,7 @@ namespace Baryonyx.Tests.PlayMode
             return null;
         }
 
-        // 怪しい宝箱は、着くと開けるか通り過ぎるかを聞く。閉じたあとは、宝箱を押すと聞き直す。
+        // 怪しい宝箱は、着くと出来事の窓で開けるか通り過ぎるかを聞く。閉じたあとは、宝箱を押すと聞き直す。
         // 開けてミミックなら、戦闘へ移る。
         [UnityTest]
         public IEnumerator TheShadyChestAsksFirstAndAMimicGoesToBattle()
@@ -481,30 +497,25 @@ namespace Baryonyx.Tests.PlayMode
             );
             var view = bootstrap.View;
             Assert.That(view.PromptText, Is.Empty);
-            yield return WaitForDialog(view.Dialog, AdventureDialogs.ShadyChestTitle);
-            Assert.That(view.Dialog.Choose(AdventureTexts.CloseChoice), Is.True);
+            yield return WaitForEvent(view, view.ShadyChest);
+            // ×で閉じると、選ばずに地図へ戻る。宝箱を押すと聞き直す。
+            view.Events.Close.onClick.Invoke();
+            yield return SceneTests.WaitUntil(
+                () => !view.Events.IsShown,
+                4f,
+                "The event window did not close."
+            );
             Assert.That(view.ChestButton.gameObject.activeSelf, Is.True);
             view.ChestButton.onClick.Invoke();
-            yield return WaitForDialog(view.Dialog, AdventureDialogs.ShadyChestTitle);
-            Assert.That(
-                view.Dialog.ChoiceLabels,
-                Is.EqualTo(
-                    new[]
-                    {
-                        AdventureDialogs.OpenChoice,
-                        AdventureDialogs.PassChoice,
-                        AdventureTexts.CloseChoice,
-                    }
-                )
-            );
-            Assert.That(view.Dialog.Choose(AdventureDialogs.OpenChoice), Is.True);
+            yield return WaitForEvent(view, view.ShadyChest);
+            view.ShadyChest.OpenButton.onClick.Invoke();
             yield return WaitForScene(SceneNames.Battle);
             Assert.That(AdventureSession.Current.Run.RoomId, Is.EqualTo(chest.Id));
             Assert.That(AdventureSession.Current.Run.Contents.Mimic, Is.True);
             Assert.That(AdventureSession.Current.Run.InBattle, Is.True);
         }
 
-        // 進化の祭壇は、仲間・固有スキル・進化先を選んで確かめると進化させ、物を落とさずにマスを終える。
+        // 進化の祭壇は、窓で仲間と固有スキルを選び、覚醒の場面で進化先を決めると進化させ、物を落とさずにマスを終える。
         [UnityTest]
         public IEnumerator TheAltarEvolvesTheUniqueSkillChosen()
         {
@@ -517,20 +528,17 @@ namespace Baryonyx.Tests.PlayMode
             );
             var view = bootstrap.View;
             Assert.That(view.PromptText, Is.Empty);
-            // 着くと、押さなくても祭壇の選択を開く。
-            yield return WaitForDialog(view.Dialog, AdventureDialogs.AltarTitle);
-            // 仲間 → （固有スキルが2つあれば）固有スキル → 進化先 → 確かめる、の順に、いつも最初を選ぶ。
-            for (int step = 0; step < 4; step++)
-            {
-                var labels = view.Dialog.ChoiceLabels;
-                if (labels.Contains(AdventureDialogs.EvolveChoice))
-                {
-                    Assert.That(view.Dialog.Choose(AdventureDialogs.EvolveChoice), Is.True);
-                    break;
-                }
-                Assert.That(view.Dialog.Choose(labels[0]), Is.True);
-                yield return WaitForDialog(view.Dialog, AdventureDialogs.AltarTitle);
-            }
+            // 着くと、押さなくても祭壇の窓を開く。
+            yield return WaitForEvent(view, view.Altar);
+            Assert.That(view.Altar.People, Is.Not.Empty);
+            yield return PickFirstSkill(view);
+            // 覚醒先を決める前は、「もどる」で祭壇の窓へ戻れる。
+            view.PressBack();
+            Assert.That(view.Awakening.IsOpen, Is.False);
+            yield return WaitForEvent(view, view.Altar);
+            yield return PickFirstSkill(view);
+            view.Awakening.Choice.Select(0);
+            view.Awakening.Choice.Confirm();
             yield return SceneTests.WaitUntil(
                 () => AdventureSession.Current.Run.RoomCleared && ExplorationReady(bootstrap),
                 8f,
@@ -545,7 +553,7 @@ namespace Baryonyx.Tests.PlayMode
             );
         }
 
-        // 行商人のマスに着くと品物の一覧を開き、確かめてから買うと売り切れになる。立ち去ると先へ進める。
+        // 行商人のマスに着くと出来事の窓に品物を並べ、押すと買って売り切れになる。×で立ち去ると先へ進める。
         [UnityTest]
         public IEnumerator TheMerchantSellsAndTheWayGoesOnOnceLeft()
         {
@@ -559,32 +567,28 @@ namespace Baryonyx.Tests.PlayMode
                 value => bootstrap = value
             );
             var view = bootstrap.View;
-            yield return WaitForDialog(view.Dialog, AdventureDialogs.MerchantTitle);
+            yield return WaitForEvent(view, view.Peddler);
             var wares = AdventureSession.Current.Run.Contents.Wares;
             Assert.That(wares.Count, Is.EqualTo(AdventureWares.Skills + AdventureWares.Gear));
-            Assert.That(view.Dialog.ChoiceLabels.Length, Is.EqualTo(wares.Count + 1));
-            string first = AdventureTexts.WareLine(wares[0]);
+            Assert.That(
+                view.Peddler.Goods.Count(good => good.gameObject.activeSelf),
+                Is.EqualTo(wares.Count)
+            );
             long before = AdventureSession.Current.Runes;
-            Assert.That(view.Dialog.Choose(first), Is.True);
-            yield return WaitForDialog(view.Dialog, AdventureDialogs.MerchantTitle);
-            Assert.That(view.Dialog.Choose(AdventureDialogs.BuyChoice), Is.True);
+            view.Peddler.Goods[0].onClick.Invoke();
             yield return SceneTests.WaitUntil(
                 () =>
                     AdventureSession.Current.Run.Contents.Wares[0].Sold
-                    && view.Dialog.IsShown
-                    && !view.Dialog.Busy
-                    && view.Dialog.TitleText == AdventureDialogs.MerchantTitle,
+                    && !bootstrap.Flow.Busy
+                    && view.Events.IsShown,
                 8f,
                 "The ware was not bought."
             );
             Assert.That(AdventureSession.Current.Runes, Is.EqualTo(before - wares[0].Price));
-            Assert.That(
-                view.Dialog.ChoiceLabels,
-                Does.Contain(
-                    AdventureTexts.WareLine(AdventureSession.Current.Run.Contents.Wares[0])
-                )
-            );
-            Assert.That(view.Dialog.Choose(AdventureDialogs.LeaveChoice), Is.True);
+            Assert.That(view.Peddler.Balance, Is.EqualTo(before - wares[0].Price));
+            Assert.That(view.Peddler.Goods[0].interactable, Is.False);
+            // ×で立ち去ると、行商人のマスを終える。
+            view.Events.Close.onClick.Invoke();
             yield return SceneTests.WaitUntil(
                 () => AdventureSession.Current.Run.RoomCleared && ExplorationReady(bootstrap),
                 8f,
@@ -611,16 +615,11 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(view.Dialog.TitleText, Is.EqualTo(AdventureTexts.MenuTitle));
             Assert.That(
                 view.Dialog.ChoiceLabels,
-                Is.EqualTo(
-                    new[]
-                    {
-                        AdventureTexts.SuspendChoice,
-                        AdventureTexts.QuitChoice,
-                        AdventureTexts.CloseChoice,
-                    }
-                )
+                Is.EqualTo(new[] { AdventureTexts.SuspendChoice, AdventureTexts.QuitChoice })
             );
-            view.PressBack();
+            // 閉じるのは右上の×。
+            Assert.That(view.Dialog.CrossShown, Is.True);
+            view.Dialog.Cross.onClick.Invoke();
             Assert.That(view.Dialog.IsShown, Is.False);
 
             view.MenuButton.onClick.Invoke();

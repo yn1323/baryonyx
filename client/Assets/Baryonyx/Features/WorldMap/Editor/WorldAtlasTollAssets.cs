@@ -26,7 +26,7 @@ namespace Baryonyx.WorldMap.Editor
 
         private static readonly Color Pill = new(0.02f, 0.03f, 0.07f, 0.86f);
         private static readonly Color Box = new(0.95f, 0.91f, 0.82f, 1f);
-        private static readonly Color GoFill = new(0.78f, 0.55f, 0.24f, 0.95f);
+
         // 確認の窓は、文と選ぶところの間を広く取る。イベントの窓（1600×860）よりは小さくする。
         private static readonly Vector2 ConfirmSize = new(1100f, 500f);
 
@@ -170,8 +170,15 @@ namespace Baryonyx.WorldMap.Editor
             );
             Place((RectTransform)label.transform, new Vector2(90f, 0f), new Vector2(500f, 48f));
 
-            toll.Cancel = TextButton(inside, "Cancel", new Vector2(-180f, -160f), "やめる", GlassCardAssets.SceneFillColor);
-            toll.Go = TextButton(inside, "Go", new Vector2(180f, -160f), "OK", GoFill);
+            toll.Cancel = TextButton(
+                inside,
+                "Cancel",
+                new Vector2(-180f, -160f),
+                "やめる",
+                primary: false
+            );
+            // 決める「OK」は、窓のボタンの決める方と同じく、地を塗らずに金の縁と光だけを灯す（2026-11-02）。
+            toll.Go = TextButton(inside, "Go", new Vector2(180f, -160f), "OK", primary: true);
         }
 
         // 歩いている間だけ、左下の隅に出す。文字を置かず、止まる印（角の丸い四角）だけにする。
@@ -191,12 +198,30 @@ namespace Baryonyx.WorldMap.Editor
             toll.StopRoot = rect.gameObject;
         }
 
-        private static Button TextButton(RectTransform parent, string name, Vector2 center, string text, Color fill)
+        private static Button TextButton(
+            RectTransform parent,
+            string name,
+            Vector2 center,
+            string text,
+            bool primary
+        )
         {
             var rect = Rect(name, parent);
             Place(rect, center, new Vector2(300f, 96f));
-            var (button, _, content) = GlassCardAssets.Choice(rect, pattern: false, fill: fill);
-            var label = Label(content, "Label", text, 40, UiPalette.TextMain, TextAlignmentOptions.Center);
+            var (button, rim, content) = GlassCardAssets.Choice(
+                rect,
+                pattern: false,
+                fill: GlassCardAssets.SceneFillColor
+            );
+            rim.SetActive(primary);
+            var label = Label(
+                content,
+                "Label",
+                text,
+                40,
+                UiPalette.TextMain,
+                TextAlignmentOptions.Center
+            );
             Stretch((RectTransform)label.transform);
             return button;
         }

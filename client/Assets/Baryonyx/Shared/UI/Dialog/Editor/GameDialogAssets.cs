@@ -13,11 +13,17 @@ namespace Baryonyx.UI.Editor
     /// and in the safe area the guide frame's window (<see cref="GuideFrameAssets.WindowFrame"/>)
     /// with the title, an optional picture, the body and five rows of choices as frosted glass
     /// cards (<see cref="GlassCardAssets"/>), like the formation's level-up. A screen that needs
-    /// more choices (Home's list of debugging rooms) asks for more of them, in columns.
+    /// more choices (Home's list of debugging rooms) asks for more of them, in columns. Under
+    /// them lies a row of buttons side by side for a confirmation, the × at the window's top
+    /// right, and over everything a clear board that goes on when tapped anywhere.
     /// </summary>
     public static class GameDialogAssets
     {
         public const int ChoiceCount = 5;
+
+        // 横に並べる選択肢の数と、1つの幅。
+        public const int RowCount = 3;
+        private const float RowWidth = 520f;
 
         /// <summary>
         /// Adds the dialog under <paramref name="parent"/>, which should span the whole screen.
@@ -104,6 +110,42 @@ namespace Baryonyx.UI.Editor
             }
             dialog.Buttons = buttons.ToArray();
             dialog.Labels = labels.ToArray();
+
+            // 確かめる窓のように、窓の下に横に並べる選択肢（左にやめる・つづける、右に決める方）。
+            var row = GuideFrameAssets.ButtonRow(window);
+            var rowButtons = new List<Button>();
+            var rowLabels = new List<TMP_Text>();
+            for (int i = 0; i < RowCount; i++)
+            {
+                var (button, label, _) = GuideFrameAssets.WindowButton(
+                    row,
+                    "Choice" + i,
+                    "",
+                    RowWidth,
+                    rowHeight,
+                    primary: false
+                );
+                rowButtons.Add(button);
+                rowLabels.Add(label);
+            }
+            dialog.Row = row.gameObject;
+            dialog.RowButtons = rowButtons.ToArray();
+            dialog.RowLabels = rowLabels.ToArray();
+            row.gameObject.SetActive(false);
+
+            // 右上の×。どの窓とも同じ形と場所にし、窓の縦の並びからは外す。
+            var cross = Rect("Close", window);
+            cross.gameObject.AddComponent<LayoutElement>().ignoreLayout = true;
+            Corner(cross, Vector2.one, new Vector2(-8f, -4f), Vector2.one * UiSpace.Hit);
+            dialog.Cross = GuideFrameAssets.CloseMark(cross);
+            cross.gameObject.SetActive(false);
+
+            // どこを押しても進む板。窓の上も含めて画面全体で受ける。
+            var tap = Rect("TapAnywhere", root);
+            Stretch(tap);
+            dialog.TapAnywhere = AddTintButton(tap, AddImage(tap, Color.clear, true));
+            dialog.TapAnywhere.transition = Selectable.Transition.None;
+            tap.gameObject.SetActive(false);
 
             group.alpha = 0f;
             group.blocksRaycasts = false;

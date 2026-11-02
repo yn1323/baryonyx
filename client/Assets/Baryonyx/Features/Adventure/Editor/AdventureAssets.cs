@@ -31,12 +31,15 @@ namespace Baryonyx.Adventure.Editor
         public const string ExplorationPrefabPath = Folder + "/UI/ExplorationScreen.prefab";
         public const string OverlayPrefabPath = Folder + "/UI/AdventureOverlay.prefab";
         public const string ArtFolder = Folder + "/UI/Art";
+
         // マスの種類ごとの台の絵（AdventureRoomKind の名前）。世界地図のマスと同じ石の台に印を載せる
         // （doc/features/screens/adventure.md の地図のマス）。
-        public static string RoomPlatePath(AdventureRoomKind kind) => $"{ArtFolder}/RoomPlate{kind}.png";
+        public static string RoomPlatePath(AdventureRoomKind kind) =>
+            $"{ArtFolder}/RoomPlate{kind}.png";
 
         // 「？」の凡例の台の絵。地図のマスと同じ台に、印を潰さずに貼る。
-        public static string RoomLegendPath(AdventureRoomKind kind) => $"{ArtFolder}/RoomLegend{kind}.png";
+        public static string RoomLegendPath(AdventureRoomKind kind) =>
+            $"{ArtFolder}/RoomLegend{kind}.png";
 
         // 宝箱のドット絵。旅の案内所のお宝の札が使う（地図のマスは台の絵を使う）。
         public const string IconTreasurePath = ArtFolder + "/IconRoomTreasure.aseprite";
@@ -249,9 +252,14 @@ namespace Baryonyx.Adventure.Editor
             // 冒険の結果（やめたとき）は、地図と演出の上、通知とダイアログの下に重ねる。
             view.Result = AdventureResultAssets.Build(root);
 
+            // 行商人・怪しい宝箱・覚醒の祭壇の窓と覚醒の場面は、通知とダイアログの下に重ねる。
+            AdventureEventAssets.Build(root, view);
+            view.PartyData = AssetDatabase.LoadAssetAtPath<Baryonyx.Party.PartyMockData>(
+                Baryonyx.Party.Editor.PartyAssets.DataPath
+            );
+
             view.Notice = NoticeBandAssets.Build(root);
-            // 行商人の品物5つと「立ち去る」を並べるため、選択肢を6つにして行を少し低くする。
-            view.Dialog = GameDialogAssets.Build(root, choiceCount: 6, rowHeight: 96f);
+            view.Dialog = GameDialogAssets.Build(root);
             CollectTintGraphics(root);
             DrawSample(view);
             PrefabUtility.SaveAsPrefabAsset(root.gameObject, ExplorationPrefabPath);

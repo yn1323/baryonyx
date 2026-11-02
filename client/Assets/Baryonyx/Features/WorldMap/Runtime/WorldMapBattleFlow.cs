@@ -23,7 +23,6 @@ namespace Baryonyx.WorldMap
     {
         public const string VictoryTitle = AdventureDialogs.VictoryTitle;
         public const string DefeatTitle = AdventureDialogs.DefeatTitle;
-        public const string GateOpened = "関所を越え、この先への道が開いた";
         public const string DefeatBody = "このマスには、何度でも挑み直せる。";
         public const string MapChoice = "地図へ";
         public const string RetryChoice = "もう一度挑む";
@@ -159,11 +158,13 @@ namespace Baryonyx.WorldMap
                 );
                 return;
             }
+            // 冒険の勝利と同じく、題だけを出し、どこを押しても地図へ戻る（2026-11-03、ユーザー）。
             Dialog.Show(
                 VictoryTitle,
-                Gate ? GateOpened : null,
                 null,
                 null,
+                null,
+                DialogStyle.TapAnywhere,
                 new DialogChoice(MapChoice, GoMap)
             );
         }

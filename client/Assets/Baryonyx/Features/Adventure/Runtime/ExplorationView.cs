@@ -3,8 +3,11 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Baryonyx.Inventory;
+using Baryonyx.Party;
+using Baryonyx.SkillEvolution;
 using Baryonyx.UI;
 using Baryonyx.UI.EditModePreview;
+using Baryonyx.WorldMap;
 using TMPro;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -71,6 +74,7 @@ namespace Baryonyx.Adventure
 
         private static readonly Color EliteGlow = new(1f, 0.35f, 0.23f, 0.55f);
         private static readonly Color BossGlow = new(0.6f, 0.3f, 0.95f, 0.7f);
+
         // 行けないマスの台は、暗くして少し透かす。
         private static readonly Color Faded = new(0.5f, 0.52f, 0.56f, 0.8f);
 
@@ -80,7 +84,6 @@ namespace Baryonyx.Adventure
         private static readonly Color RoadAhead = new(0.56f, 0.82f, 1f, 0.95f);
         private static readonly Color RoadWalked = new(0.86f, 0.7f, 0.42f, 0.9f);
         private static readonly Color RoadClosed = new(0.55f, 0.6f, 0.66f, 0.5f);
-
 
         [Header("地図")]
         // 画面いっぱいの地図の窓。中の Content を左右に動かして、道の先を見る。
@@ -130,6 +133,19 @@ namespace Baryonyx.Adventure
 
         // 冒険の結果（やめたとき）。
         public AdventureResultPanel Result;
+
+        // マスから開く出来事の窓（行商人・怪しい宝箱・覚醒の祭壇）。世界地図のマスと同じ窓で、景色は行き先の戦闘の背景。
+        public WorldMapEventWindow Events;
+        public AdventurePeddlerPanel Peddler;
+        public AdventureShadyChestPanel ShadyChest;
+        public AdventureAltarPanel Altar;
+        public ExplorationGround[] Backdrops = Array.Empty<ExplorationGround>();
+
+        // 祭壇と宝箱の覚醒の、覚醒の場面（商会のスキル覚醒と同じ）。
+        public AdventureAwakening Awakening;
+
+        // 停止中の表示で、カードの挿絵を引く編成の見本。
+        public PartyMockData PartyData;
 
         // 地図のどこを見ているかを示す、下の細いバー。
         public RectTransform ScrollTrack;
@@ -342,6 +358,13 @@ namespace Baryonyx.Adventure
         {
             if (Dialog != null && Dialog.HandleBack())
                 return;
+            if (Awakening != null && Awakening.HandleBack())
+                return;
+            if (EventShown)
+            {
+                Events.Hide();
+                return;
+            }
             if (Result != null && Result.HandleBack())
                 return;
             if (Boons != null && Boons.HandleBack())
@@ -355,6 +378,41 @@ namespace Baryonyx.Adventure
             }
             BackPressed?.Invoke();
         }
+
+        /// <summary>The event window is open (or opening or closing).</summary>
+        public bool EventShown => Events != null && Events.IsShown;
+
+        /// <summary>
+        /// Opens the event window on <paramref name="panel"/> out of the room's chest (or the
+        /// party), with the destination's battle backdrop as its scenery.
+        /// <paramref name="closed"/> runs once it has gone back into the room.
+        /// </summary>
+        public void OpenEvent(WorldEventPanel panel, Action closed)
+        {
+            if (Events == null || panel == null)
+            {
+                closed?.Invoke();
+                return;
+            }
+            var backdrop =
+                Backdrops.FirstOrDefault(entry => entry.DestinationId == ShownRun?.DestinationId)
+                ?? Backdrops.FirstOrDefault();
+            if (Events.Scenery != null && backdrop?.Texture != null)
+                Events.Scenery.texture = backdrop.Texture;
+            // 停止中の表示では Awake が呼ばれないため、マスの光の絵をここで入れる。
+            if (Events.Glow != null && Events.Glow.texture == null)
+                Events.Glow.texture = WorldMapEventWindow.GlowTexture;
+            Events.Open(EventAnchor, panel, closed);
+            // 窓は開くと最前に移るため、知らせの帯をその上へ戻す（買えなかったときなど）。
+            if (Notice != null)
+                Notice.transform.SetAsLastSibling();
+        }
+
+        // 窓が育ち、戻っていく所：マスの宝箱（祭壇・怪しい宝箱）か、パーティの駒。
+        private RectTransform EventAnchor =>
+            Chest != null && Chest.gameObject.activeInHierarchy ? Chest
+            : Party.Length > 0 && Party[0] != null ? Party[0]
+            : (RectTransform)transform;
 
         /// <summary>Opens the legend, or closes it when open.</summary>
         public void ToggleLegend()
@@ -908,6 +966,11 @@ namespace Baryonyx.Adventure
                 "結果（クリア）",
                 "結果（帰還）",
                 "取得できない",
+                "行商人",
+                "怪しい宝箱",
+                "覚醒の祭壇",
+                "覚醒の祭壇 › 固有スキル",
+                "覚醒の場面",
             };
 
         public void ShowPreviewState(int index)
@@ -917,6 +980,12 @@ namespace Baryonyx.Adventure
             if (Dialog == null)
                 return;
             Action none = () => { };
+            if (index >= 6)
+            {
+                Dialog.Hide();
+                ShowEventPreview(index - 6);
+                return;
+            }
             switch (index)
             {
                 case 0:
@@ -924,7 +993,6 @@ namespace Baryonyx.Adventure
                         Dialog,
                         AdventureDialogSamples.Run,
                         null,
-                        AdventureTexts.CloseChoice,
                         none,
                         none,
                         none
@@ -934,12 +1002,12 @@ namespace Baryonyx.Adventure
                     AdventureDialogs.ConfirmQuit(Dialog, none, none, none);
                     break;
                 case 2:
-                    AdventureDialogs.Treasure(
-                        Dialog,
-                        AdventureDialogSamples.Drops(),
-                        none,
-                        ItemArt
-                    );
+                    // 宝箱は、ダイアログを出さずに中身を札でまとめて見せる（ExplorationFlow の ChestAsync）。
+                    Dialog.Hide();
+                    if (Moments != null && Moments.Reveal != null)
+                        Moments.Reveal.ShowAllStill(
+                            AdventureDropItems.All(AdventureDialogSamples.Drops(), ItemArt)
+                        );
                     break;
                 case 3:
                 case 4:
@@ -955,6 +1023,111 @@ namespace Baryonyx.Adventure
                     break;
             }
         }
+
+        // 出来事の窓と覚醒の場面の見本：行商人、怪しい宝箱、祭壇（仲間）、祭壇（トーマの固有スキル）、覚醒の場面。
+        private void ShowEventPreview(int which)
+        {
+            ShowEventStill(which);
+            // 停止中はコマが進まず×が現れないため、開ききった形にする。
+            if (EventShown && Events.CanClose && Events.CloseGroup != null)
+                Events.CloseGroup.alpha = 1f;
+        }
+
+        private void ShowEventStill(int which)
+        {
+            switch (which)
+            {
+                case 0:
+                    if (Peddler == null)
+                        return;
+                    Peddler.Use(
+                        AdventureDialogSamples.Wares(),
+                        AdventureDialogSamples.Runes * 4,
+                        ItemArt
+                    );
+                    OpenEvent(Peddler, null);
+                    Events.FinishOpening();
+                    // 吹き出しの文字を書き終えた形で見せる。
+                    Peddler.Advance();
+                    Peddler.Tick(0f);
+                    break;
+                case 1:
+                    if (ShadyChest == null)
+                        return;
+                    OpenEvent(ShadyChest, null);
+                    Events.FinishOpening();
+                    break;
+                case 2:
+                case 3:
+                    if (Altar == null)
+                        return;
+                    Altar.Use(AltarSamples(), true);
+                    OpenEvent(Altar, null);
+                    Events.FinishOpening();
+                    if (which == 3)
+                        Altar.PickPerson(0);
+                    break;
+                default:
+                    if (Awakening == null)
+                        return;
+                    var tree = UniqueSkillTrees.All[0];
+                    Awakening.Open(
+                        AwakeningSample(tree.StageAt(0).Card),
+                        UniqueSkillTreeShape
+                            .Children(0)
+                            .Select(stage => AwakeningSample(tree.StageAt(stage).Card))
+                            .ToList(),
+                        null,
+                        false,
+                        _ => { },
+                        () => { }
+                    );
+                    // 1枚目を選んだ形で止める（商会の覚醒の場面と同じ）。
+                    Awakening.Choice.Select(0);
+                    Awakening.Choice.Settle();
+                    break;
+            }
+        }
+
+        // 祭壇の見本：固有スキルを2つ覚醒できるトーマと、1つずつの3人。絵は札に作り込んだ見本を使う。
+        private List<AdventureAltarPanel.Person> AltarSamples()
+        {
+            string[] names = { "トーマ", "ルカ", "アリア", "ミナ" };
+            int[] levels = { 12, 11, 10, 10 };
+            var people = new List<AdventureAltarPanel.Person>();
+            for (int i = 0; i < names.Length; i++)
+            {
+                var skills = new List<AdventureAltarPanel.Skill>();
+                for (int k = 0; k < (i == 0 ? 2 : 1); k++)
+                {
+                    var card = UniqueSkillTrees
+                        .All[(i * 2 + k) % UniqueSkillTrees.All.Count]
+                        .StageAt(0)
+                        .Card;
+                    skills.Add(new AdventureAltarPanel.Skill { Card = card, Art = ArtOf(card) });
+                }
+                people.Add(
+                    new AdventureAltarPanel.Person
+                    {
+                        Name = names[i],
+                        Level = levels[i],
+                        Skills = skills,
+                    }
+                );
+            }
+            return people;
+        }
+
+        private AdventureAwakening.Face AwakeningSample(Combat.CardSkill card) =>
+            new()
+            {
+                Skill = card,
+                Owner = "トーマ",
+                Art = ArtOf(card),
+            };
+
+        private Texture ArtOf(Combat.CardSkill card) =>
+            PartyData != null && card != null ? PartyData.ArtOf(card.Id) : null;
 
         public Sprite KindIcon(AdventureRoomKind kind) =>
             (int)kind < KindIcons.Length ? KindIcons[(int)kind] : null;

@@ -399,9 +399,7 @@ namespace Baryonyx.Adventure
                 member.Stats,
                 card.Art,
                 element >= 0 && element < CardFrames.Length ? CardFrames[element] : null,
-                skill.Element == CardElement.None || element >= ElementIcons.Length
-                    ? null
-                    : ElementIcons[element],
+                element >= ElementIcons.Length ? null : ElementIcons[element],
                 0
             );
             var face = StudyFaces[index];

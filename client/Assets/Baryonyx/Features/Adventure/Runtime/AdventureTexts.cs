@@ -77,23 +77,6 @@ namespace Baryonyx.Adventure
         public static string StepDoorNotice(AdventureStepDoor door) =>
             $"今日の歩数 {door.Steps:N0}歩：扉が{DoorTiers[Math.Clamp(door.Tier, 0, DoorTiers.Length - 1)]}";
 
-        public static string MerchantBody(long runes) =>
-            "旅の品をそろえているよ。\n" + $"所持ルーン {runes:N0}";
-
-        // 品物の行：☆、名前、品質と倍率、値段。売り切れなら値段の代わりに「売り切れ」。
-        public static string WareLine(AdventureWare ware)
-        {
-            var drop = ware.AsDrop("");
-            string stars = ware.Stars > 0 ? new string('☆', ware.Stars) + " " : "";
-            string grade = ware.Quality is { } quality ? $" {quality}×{ware.Multiplier:0.00}" : "";
-            string price = ware.Sold ? "売り切れ" : $"{ware.Price:N0}ルーン";
-            return $"{stars}{DropName(drop)}{grade}　{price}";
-        }
-
-        public static string ConfirmBuyBody(AdventureWare ware, long runes) =>
-            $"{DropName(ware.AsDrop(""))}を {ware.Price:N0}ルーンで買いますか？\n"
-            + $"所持ルーン {runes:N0} → {runes - ware.Price:N0}";
-
         /// <summary>The name of a room's kind, as the map's legend shows it (doc/features/stage-progression.md).</summary>
         public static string KindName(AdventureRoomKind kind) =>
             kind switch

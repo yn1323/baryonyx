@@ -32,8 +32,16 @@ namespace Baryonyx.WorldMap.Editor
         private static readonly Color Veil = new(0.012f, 0.02f, 0.04f, 0f);
         public static readonly Color Ink = new(0.1f, 0.12f, 0.18f, 1f);
 
-        /// <summary>Adds the window under <paramref name="root"/>, which spans the whole screen.</summary>
-        public static WorldMapEventWindow Build(RectTransform root)
+        /// <summary>
+        /// Adds the window under <paramref name="root"/>, which spans the whole screen, with the
+        /// scenery at <paramref name="sceneryPath"/> (the meadow unless given) and the panels
+        /// <paramref name="panels"/> builds in the stage (the map's events unless given).
+        /// </summary>
+        public static WorldMapEventWindow Build(
+            RectTransform root,
+            string sceneryPath = SceneryPath,
+            System.Func<RectTransform, WorldEventPanel[]> panels = null
+        )
         {
             var rect = Rect("EventWindow", root);
             Stretch(rect);
@@ -80,9 +88,9 @@ namespace Baryonyx.WorldMap.Editor
             window.Next = stage.gameObject.AddComponent<Button>();
             window.Next.targetGraphic = AddImage(stage, Color.clear, true);
             window.Next.transition = Selectable.Transition.None;
-            window.Scenery = Scenery(stage, WindowSize - Vector2.one * (Inset * 2f));
+            window.Scenery = Scenery(stage, WindowSize - Vector2.one * (Inset * 2f), sceneryPath);
 
-            window.Panels = WorldEventPanelAssets.Build(stage);
+            window.Panels = (panels ?? WorldEventPanelAssets.Build)(stage);
 
             // 閉じるは右上の×にして、窓の中を中身に使う。×は小さく描き、押せる範囲は指の大きさにする。
             // 明るい空の上でも見えるよう、×の下に暗い円を敷く。
@@ -107,11 +115,11 @@ namespace Baryonyx.WorldMap.Editor
         }
 
         // 景色のドット絵を整数倍で窓いっぱいに広げ、足元の草原が見えるよう下の端に合わせる。
-        private static RawImage Scenery(RectTransform stage, Vector2 size)
+        private static RawImage Scenery(RectTransform stage, Vector2 size, string path)
         {
             var rect = Rect("Scenery", stage);
             Stretch(rect);
-            var texture = ArtAssets.LoadTexture(SceneryPath);
+            var texture = ArtAssets.LoadTexture(path);
             float dot = Mathf.Ceil(Mathf.Max(size.x / texture.width, size.y / texture.height));
             float w = size.x / (texture.width * dot);
             float h = size.y / (texture.height * dot);

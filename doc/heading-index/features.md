@@ -501,11 +501,11 @@
 
 ## [features/screens/adventure.md](../features/screens/adventure.md)
 
-29KB・79行
+32KB・83行
 
 - 8: # 画面一覧：冒険の画面
 - 12: ## 冒険の画面
-- 70: ### 探索のHP
+- 74: ### 探索のHP
 
 ## [features/screens/adventurers.md](../features/screens/adventurers.md)
 

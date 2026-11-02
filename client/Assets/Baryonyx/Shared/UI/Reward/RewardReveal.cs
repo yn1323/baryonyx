@@ -143,6 +143,24 @@ namespace Baryonyx.UI
             Pose(plates[0], 1f, 1f);
         }
 
+        /// <summary>Puts every one of <paramref name="drops"/> on its plate as they rest open (for a still frame).</summary>
+        public void ShowAllStill(IReadOnlyList<RewardItem> drops)
+        {
+            if (Plate == null)
+                return;
+            KeepHome();
+            count = Mathf.Max(1, drops?.Count ?? 0);
+            var plates = PlatesFor(count);
+            var fitted = home + Vector2.up * FitOf(count);
+            for (int i = 0; i < plates.Count; i++)
+            {
+                Fill(plates[i], drops != null && i < drops.Count ? drops[i] : null);
+                plates[i].Plate.anchoredPosition = fitted + OffsetOf(i, count);
+                plates[i].Plate.gameObject.SetActive(true);
+                Pose(plates[i], 1f, 1f);
+            }
+        }
+
         /// <summary>Fades the plates out.</summary>
         public void Hide()
         {

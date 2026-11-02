@@ -385,13 +385,17 @@ namespace Baryonyx.Adventure
 
         private void OpenMenu()
         {
-            if (busy || Leaving || Dialog.IsShown || (overlay.Result != null && overlay.Result.IsOpen))
+            if (
+                busy
+                || Leaving
+                || Dialog.IsShown
+                || (overlay.Result != null && overlay.Result.IsOpen)
+            )
                 return;
             AdventureDialogs.Menu(
                 Dialog,
                 state.Run,
                 AdventureTexts.SuspendBody,
-                AdventureTexts.GoOnChoice,
                 Dialog.Hide,
                 GoHome,
                 ConfirmQuit
@@ -441,7 +445,14 @@ namespace Baryonyx.Adventure
         }
 
         private void ShowResult(AdventureResult result) =>
-            ExplorationFlow.ShowResult(overlay.Result, Dialog, result, Party, overlay.ItemArt, GoHome);
+            ExplorationFlow.ShowResult(
+                overlay.Result,
+                Dialog,
+                result,
+                Party,
+                overlay.ItemArt,
+                GoHome
+            );
 
         /// <summary>The enemies of this battle by kind, with how many the party has beaten.</summary>
         public IReadOnlyList<AdventureEnemyTally> Tally() =>
