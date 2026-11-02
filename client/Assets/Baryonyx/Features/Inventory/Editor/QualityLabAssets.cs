@@ -529,7 +529,11 @@ namespace Baryonyx.Inventory.Editor
                 .Select(element => (Texture)BattleInspectAssets.Art("CardFrame" + element))
                 .ToArray();
             lab.ElementIcons = elements
-                .Select(element => (Texture)BattleInspectAssets.Art("Element" + element))
+                .Select(element =>
+                    element == CardElement.None
+                        ? null
+                        : (Texture)BattleInspectAssets.Art("Element" + element)
+                )
                 .ToArray();
             var names = new string[Enum.GetValues(typeof(CardUser)).Length];
             foreach (var ally in BattleInspectAssets.Allies)

@@ -130,7 +130,7 @@ namespace Baryonyx.Training
         private static readonly Color LockedIcon = new(0.25f, 0.25f, 0.3f, 1f);
         private static readonly Color LockedText = new(0.55f, 0.58f, 0.66f, 1f);
 
-        // コストの数字の画像に、0〜9が横に並んでいる（戦闘のカードと同じ。切り出しは BattleInspectCardView.CostUv）。
+        // コストの数字の画像に、0〜9が横に並んでいる（戦闘のカードと同じ）。
         private const int CostDigits = 10;
 
         public PartyMockData Party;
@@ -636,8 +636,11 @@ namespace Baryonyx.Training
             if (widget.Cost != null)
                 widget.Cost.SetActive(filled && card.Cost >= 0 && card.Cost < CostDigits);
             if (widget.CostDigit != null && filled)
-                widget.CostDigit.uvRect = Baryonyx.Combat.Presentation.BattleInspectCardView.CostUv(
-                    card.Cost
+                widget.CostDigit.uvRect = new Rect(
+                    card.Cost / (float)CostDigits,
+                    0f,
+                    1f / CostDigits,
+                    1f
                 );
             if (widget.Element != null)
             {

@@ -137,7 +137,7 @@ APIは `GET /v1/equipment`、`PUT /v1/equipment/characters/:characterId/:slot`�
 編成の[装備](screens/loadout.md#装備)で武器と防具を付け替え、サーバーに保存する（[持っている装備と付け替えの保存](#持っている装備と付け替えの保存)）。
 装備のタブへは、[冒険者のタブ](screens/adventurers.md#冒険者のタブ)の右のタブから移る。冒険者のタブへは、編成のメニューの冒険者と[育成](screens/loadout.md#育成の人選び)の2つの入口がある。
 装備の生成・厳選は未実装である。
-[装備の属性](#装備の属性)は、[EquipmentCatalog](../../client/Assets/Baryonyx/Features/Equipment/Runtime/EquipmentCatalog.cs) の種類ごとの属性として持ち、編成の[装備](screens/loadout.md#装備)の枠と行、商会の[買う](screens/shop.md#買う)の右の面と[売る](screens/shop.md#売る)の行にアイコンで出す（2026-11-03）。アイコンを並べる部品は [ElementIconRow](../../client/Assets/Baryonyx/Shared/UI/ElementIcons/ElementIconRow.cs) である。属性の追加効果は未実装で、画面にも書かない（2026-11-03、ユーザーの指示）。
+[装備の属性](#装備の属性)は、[EquipmentCatalog](../../client/Assets/Baryonyx/Features/Equipment/Runtime/EquipmentCatalog.cs) の種類ごとの属性として持ち、編成の[装備](screens/loadout.md#装備)の枠と行、商会の[買う](screens/shop.md#買う)の右の面と[売る](screens/shop.md#売る)の行にアイコンで出す（2026-11-03）。アイコンを並べる部品は [ElementIconRow](../../client/Assets/Baryonyx/Shared/UI/ElementIcons/ElementIconRow.cs) である。属性なしの装備とスキルには、どの画面でも印を出さない（2026-11-03、ユーザーの指示「やっぱり無属性はカードにも装備にも何もマークなしに」）。属性の追加効果は未実装で、画面にも書かない（2026-11-03、ユーザーの指示）。
 売却は、[商会](screens/shop.md#売る)の「売る」で、付けていない装備を1つずつ選んでルーンに替え、持ち物から消す（2026-10-24、[API](../../server/src/features/workshop/routes.ts)）。
 購入は、[商会](screens/shop.md#商会)の「買う」で、ライブラリに見つけた記録がある武器・防具・アクセサリーを×1.00で1つずつ持ち物に足す（2026-10-24、[API](../../server/src/features/workshop/routes.ts)）。
 1つずつ持つ倍率はサーバーに保存し、編成の装備と育成の装備の欄は★に続けて品質の文字を品質の色で出し、説明の数字に倍率を掛ける（2026-10-19）。

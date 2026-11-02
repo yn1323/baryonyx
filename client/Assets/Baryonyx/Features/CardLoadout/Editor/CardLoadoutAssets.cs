@@ -75,9 +75,7 @@ namespace Baryonyx.CardLoadout.Editor
         private const string ArtFolder = "Assets/Baryonyx/Features/CardLoadout/UI/Art";
         private const float SealSize = 112f;
         private const float ChainWidth = 420f;
-
-        // 挿絵の角のコストと属性の印の大きさ。暗がりが外へ消える分、記号より大きく取る。
-        private const float ThumbMark = 40f;
+        private static readonly Color BadgeColor = new(0.02f, 0.03f, 0.06f, 0.85f);
 
         /// <summary>
         /// Builds the card skills over the guide screen's safe area: the person, their two
@@ -514,24 +512,14 @@ namespace Baryonyx.CardLoadout.Editor
             art.raycastTarget = false;
             thumb.gameObject.AddComponent<PixelPerfectRawImage>().DotSize = ArtDot;
 
-            // コストと属性の印は、台を置かず、数字と記号の後ろに暗がりを敷く（doc/rules/ui-design.md#属性とコストの印）。
             var badge = Rect("Cost", thumb);
-            Corner(badge, new Vector2(0, 1), Vector2.zero, Vector2.one * ThumbMark);
-            var glow = badge.gameObject.AddComponent<Image>();
-            glow.sprite = Guide.Icon(AttributeIconArt.CostGlowPath);
-            glow.raycastTarget = false;
-            var cost = Label(
-                badge,
-                "Value",
-                "",
-                26,
-                UiPalette.TextMain,
-                TextAlignmentOptions.Center
-            );
+            Corner(badge, new Vector2(0, 1), new Vector2(2, -2), new Vector2(34, 34));
+            AddImage(badge, BadgeColor, false);
+            var cost = Label(badge, "Value", "", 28, UiPalette.Gold, TextAlignmentOptions.Center);
             Stretch((RectTransform)cost.transform);
 
             var icon = Rect("Element", thumb);
-            Corner(icon, new Vector2(1, 1), Vector2.zero, Vector2.one * ThumbMark);
+            Corner(icon, new Vector2(1, 1), new Vector2(-2, -2), Vector2.one * 12 * ArtDot);
             var element = icon.gameObject.AddComponent<Image>();
             element.raycastTarget = false;
             return (art, cost, element);
@@ -597,7 +585,9 @@ namespace Baryonyx.CardLoadout.Editor
         }
 
         private static Sprite ElementIcon(CardElement element) =>
-            Guide.Icon(AttributeIconArt.IconPath(element));
+            element == CardElement.None
+                ? null
+                : Guide.Icon($"{PartyAssets.AttributeArtFolder}/Element{element}.aseprite");
 
         /// <summary>
         /// The mock data only, so the prefab never bakes what Play Mode or a test left in the

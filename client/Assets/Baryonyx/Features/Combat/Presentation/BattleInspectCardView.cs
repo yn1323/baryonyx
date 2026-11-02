@@ -15,16 +15,6 @@ namespace Baryonyx.Combat.Presentation
         /// <summary>The cost digits 0 to 9 sit side by side in one texture.</summary>
         public const int CostDigits = 10;
 
-        /// <summary>
-        /// Cells across the cost texture: the ten digits, then blank cells that make its width a
-        /// power of two so it keeps its mipmaps when compressed for phones.
-        /// </summary>
-        public const int CostSheetCells = 16;
-
-        /// <summary>The part of the cost texture that shows one digit.</summary>
-        public static Rect CostUv(int cost) =>
-            new(cost / (float)CostSheetCells, 0f, 1f / CostSheetCells, 1f);
-
         /// <summary>Space kept dark after the end of each line's text before the band fades, in px.</summary>
         public const float BandMargin = 6f;
 
@@ -89,7 +79,7 @@ namespace Baryonyx.Combat.Presentation
                 FrameFoil.Show(quality);
             Element.texture = element;
             Element.enabled = element != null;
-            CostDigit.uvRect = CostUv(cost);
+            CostDigit.uvRect = new Rect(cost / (float)CostDigits, 0f, 1f / CostDigits, 1f);
             FitBands();
         }
 
@@ -97,7 +87,7 @@ namespace Baryonyx.Combat.Presentation
         public void SetCost(int cost)
         {
             cost = Mathf.Clamp(cost, 0, CostDigits - 1);
-            CostDigit.uvRect = CostUv(cost);
+            CostDigit.uvRect = new Rect(cost / (float)CostDigits, 0f, 1f / CostDigits, 1f);
         }
 
         /// <summary>

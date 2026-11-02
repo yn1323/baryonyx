@@ -449,7 +449,7 @@ namespace Baryonyx.Workshop.Editor
         public static Sprite[] ElementIcons() =>
             Enum.GetValues(typeof(CardElement))
                 .Cast<CardElement>()
-                .Select(element => Icon(AttributeIconArt.IconPath(element)))
+                .Select(element => AttributeIconArt.SpriteOf(element))
                 .ToArray();
     }
 }

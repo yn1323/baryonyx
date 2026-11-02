@@ -309,7 +309,8 @@ namespace Baryonyx.Combat.Presentation
                         Description = CardText.Description(skill),
                         Art = data.ArtOf?.Invoke(skill.Id),
                         Frame = At(CardFrames, element),
-                        Element = At(ElementIcons, element),
+                        Element =
+                            skill.Element == CardElement.None ? null : At(ElementIcons, element),
                         Cost = skill.Cost,
                         Quality = skill.Quality,
                         FoilStyle = skill.FoilStyle,

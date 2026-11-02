@@ -42,7 +42,9 @@ namespace Baryonyx.Workshop
                 Inventory.Quality.Of(multiplier, max),
                 card.FoilStyle,
                 card.Element,
-                element < (icons?.Length ?? 0) ? icons[element] : null,
+                card.Element != CardElement.None && element < (icons?.Length ?? 0)
+                    ? icons[element]
+                    : null,
                 party != null ? party.ArtOf(card.Id) : null
             );
             TrainingView.ShowCard(

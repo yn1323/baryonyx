@@ -210,13 +210,13 @@
 
 ## [features/equipment-history.md](../features/equipment-history.md)
 
-9KB・37行
+10KB・38行
 
 - 8: # 装備生成と厳選の変更と判断の記録
 
 ## [features/equipment.md](../features/equipment.md)
 
-20KB・157行
+21KB・157行
 
 - 8: # 装備生成と厳選
 - 12: ## 確定している方針
@@ -465,7 +465,7 @@
 
 ## [features/screens-history.md](../features/screens-history.md)
 
-45KB・77行
+46KB・78行
 
 - 8: # 画面一覧と操作の変更と判断の記録
 

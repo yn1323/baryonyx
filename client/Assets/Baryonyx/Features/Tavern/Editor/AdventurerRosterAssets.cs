@@ -43,9 +43,6 @@ namespace Baryonyx.Tavern.Editor
 
         // 下の帯（選んでいる人と「装備・スキル」）の上端と高さ。
         private const float BandHeight = 140f;
-
-        // Lvの横の、使える属性の印（doc/rules/ui-design.md#属性とコストの印）。暗がりが外へ消える分、記号より大きく取る。
-        private const float ElementMark = 44f;
         private const float BandTop = 1080f - BandHeight;
 
         // カード1枚の高さ。パーティの4枚が帯の上まで並ぶ高さにし、一覧も同じ高さで2列に並べる。
@@ -303,7 +300,7 @@ namespace Baryonyx.Tavern.Editor
             widget.Level = Card.Level(level, "");
             widget.Elements = Enumerable
                 .Range(0, 3)
-                .Select(i => Layout.RowIcon(level, "Element" + i, ElementMark))
+                .Select(i => Layout.RowIcon(level, "Element" + i, 12f * 3f))
                 .ToArray();
 
             var (button, rim, inside) = GlassCardAssets.Choice(
@@ -368,7 +365,7 @@ namespace Baryonyx.Tavern.Editor
             var level = Card.Level(line, "");
             var elements = Enumerable
                 .Range(0, 3)
-                .Select(i => Layout.RowIcon(line, "Element" + i, ElementMark))
+                .Select(i => Layout.RowIcon(line, "Element" + i, 12f * 3f))
                 .ToArray();
             return (name, line.gameObject, level, elements);
         }

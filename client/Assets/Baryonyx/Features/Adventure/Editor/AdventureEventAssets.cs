@@ -94,7 +94,7 @@ namespace Baryonyx.Adventure.Editor
                 .Select(element => (Texture)BattleInspectAssets.Art("CardFrame" + element))
                 .ToArray();
             var icons = elements
-                .Select(element => (Texture)BattleInspectAssets.Art("Element" + element))
+                .Select(element => AttributeIconArt.TextureOf(element))
                 .ToArray();
             AdventurePeddlerPanel peddler = null;
             AdventureShadyChestPanel shady = null;

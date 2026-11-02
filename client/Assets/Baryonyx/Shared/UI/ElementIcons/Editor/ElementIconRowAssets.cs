@@ -2,7 +2,6 @@ using System;
 using System.Linq;
 using Baryonyx.Combat;
 using Baryonyx.Combat.Editor;
-using Baryonyx.Editor.Art;
 using UnityEngine;
 using UnityEngine.UI;
 using static Baryonyx.Editor.UI.UiBuild;
@@ -15,14 +14,14 @@ namespace Baryonyx.UI.Editor
     /// </summary>
     public static class ElementIconRowAssets
     {
-        // 装備の属性は2つか3つ（魔法のローブ）。目立ちすぎないよう、名前の文字より少し小さくする
-        // （2026-11-03、ユーザーの指示。doc/features/equipment.md#装備の属性）。
+        // 装備の属性は2つか3つ（魔法のローブ）。印は12×12ドットのドット絵で、崩れないよう
+        // 整数倍（3倍）で出す（2026-11-03、ユーザーの指示。doc/features/equipment.md#装備の属性）。
         public const int Places = 3;
-        public const float Size = 30f;
-        public const float Gap = 5f;
+        public const float Size = 12f * 3f;
+        public const float Gap = 6f;
 
-        // 遠目に読む詳しい面（商会の買う）では少し大きくする。
-        public const float DetailSize = 38f;
+        // 遠目に読む詳しい面（商会の買う）では4倍にする。
+        public const float DetailSize = 12f * 4f;
 
         /// <summary>The width that <paramref name="count"/> icons take side by side.</summary>
         public static float Width(int count = Places) => count * Size + (count - 1) * Gap;
@@ -41,11 +40,7 @@ namespace Baryonyx.UI.Editor
             layout.childForceExpandWidth = layout.childForceExpandHeight = false;
             row.Icons = Enum.GetValues(typeof(CardElement))
                 .Cast<CardElement>()
-                .Select(element =>
-                    element == CardElement.None
-                        ? null
-                        : ArtAssets.LoadSprite(AttributeIconArt.IconPath(element))
-                )
+                .Select(AttributeIconArt.SpriteOf)
                 .ToArray();
             row.Slots = Enumerable
                 .Range(0, Places)
