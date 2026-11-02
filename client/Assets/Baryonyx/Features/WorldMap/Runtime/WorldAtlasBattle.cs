@@ -5,7 +5,7 @@ namespace Baryonyx.WorldMap
 {
     /// <summary>
     /// The battle of the nested world map waiting for the battle scene
-    /// (doc/features/world-atlas.md#戦闘の設定): the map and square it was fought from, and the
+    /// (doc/features/world-atlas/square-events.md#戦闘の設定): the map and square it was fought from, and the
     /// enemies drawn from the square's settings when "たたかう" was pressed, so fighting again
     /// meets the same ones. It is kept only while the app runs.
     /// </summary>

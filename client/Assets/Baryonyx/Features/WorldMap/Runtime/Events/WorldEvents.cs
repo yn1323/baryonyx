@@ -5,7 +5,7 @@ using UnityEngine.UI;
 
 namespace Baryonyx.WorldMap
 {
-    /// <summary>The kinds of what happens on a square (doc/features/world-atlas.md#マスの出来事の見本).</summary>
+    /// <summary>The kinds of what happens on a square (doc/features/world-atlas/square-events.md#マスの出来事の見本).</summary>
     public enum WorldEventKind
     {
         Meet,

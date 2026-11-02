@@ -28,7 +28,7 @@ namespace Baryonyx.WorldMap
 
     /// <summary>
     /// The runes of the nested world map while the app runs
-    /// (doc/features/world-atlas.md#マスを開くルーン): the squares paid for and the balance, read
+    /// (doc/features/world-atlas/maps.md#マスを開くルーン): the squares paid for and the balance, read
     /// from <see cref="Source"/> (the game server, set by the app) when the map opens, and the
     /// payment for one square just before the party hops onto it. A payment is shown at once
     /// (optimistic update, doc/rules/data-storage.md): the square opens and its price comes off

@@ -17,7 +17,7 @@ namespace Baryonyx.WorldMap
     }
 
     /// <summary>
-    /// The enemies a square's words call for (doc/features/world-atlas.md#戦闘の設定), read before
+    /// The enemies a square's words call for (doc/features/world-atlas/square-events.md#戦闘の設定), read before
     /// they are drawn: the enemies named, how many are drawn at random, and what could not be read.
     /// </summary>
     public sealed class WorldBattleWords
@@ -33,7 +33,7 @@ namespace Baryonyx.WorldMap
     }
 
     /// <summary>
-    /// The battles of the nested world map's squares (doc/features/world-atlas.md#戦闘の設定). A
+    /// The battles of the nested world map's squares (doc/features/world-atlas/square-events.md#戦闘の設定). A
     /// square's battle is set in words, a level and a strength. The words name enemies by their
     /// names ("苔スライム、苔むした狼", "苔スライム×2") and call for random ones ("ランダム",
     /// "ランダム2体"), up to three in all; empty words are all random. Random enemies come from the

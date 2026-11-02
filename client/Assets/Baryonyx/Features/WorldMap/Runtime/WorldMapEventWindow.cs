@@ -6,7 +6,7 @@ namespace Baryonyx.WorldMap
 {
     /// <summary>
     /// A window for what happens on a square, opened from the square itself with the map left
-    /// behind it (doc/features/world-atlas.md#マスの出来事の見本): the map stays where it is,
+    /// behind it (doc/features/world-atlas/square-events.md#マスの出来事の見本): the map stays where it is,
     /// the square lights up and thin lines of light rise from it, then the
     /// window grows up out of the square with a slight overshoot while the map dims, and the
     /// event's characters and things drop in. What happens inside is the open

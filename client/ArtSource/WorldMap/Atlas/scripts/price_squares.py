@@ -1,5 +1,5 @@
 """Writes the rune price of each square into the nested world map layouts
-(doc/features/world-atlas.md#マスを開くルーン).
+(doc/features/world-atlas/maps.md#マスを開くルーン).
 
 usage: price_squares.py            # every layout
        price_squares.py world marina

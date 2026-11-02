@@ -9,7 +9,7 @@ export function createWorldMapApi() {
   // Honoでは `/world-map/*` が `/world-map` にも一致する。
   api.use("/world-map/*", requireSession);
 
-  // 街道の進み具合（doc/features/stage-progression.md の世界地図の形と試作）。
+  // 街道の進み具合（doc/features/stage-progression-world-map.md の世界地図の形と試作）。
   api.get("/world-map", async (c) => {
     const state = await createWorldMapRepository(c.env.DB).read(
       c.get("userId"),

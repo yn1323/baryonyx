@@ -4,7 +4,7 @@ using UnityEngine.UI;
 namespace Baryonyx.Combat.Presentation
 {
     /// <summary>
-    /// The light on a card of the hand that evolves when used (doc/features/skill-evolution.md#覚醒の予兆):
+    /// The light on a card of the hand that evolves when used (doc/features/skill-evolution/rules.md#覚醒の予兆):
     /// the same haze of light as behind the stage picked in <see cref="BattleEvolutionChoice"/>
     /// (Battle Card Aura: an oval of haze, platinum near the card and amber further out, coming
     /// apart like mist, with no lines), breathing behind it, and the star of an idea twinkling

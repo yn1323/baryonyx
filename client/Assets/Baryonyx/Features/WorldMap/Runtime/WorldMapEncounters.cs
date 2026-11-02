@@ -6,7 +6,7 @@ namespace Baryonyx.WorldMap
 {
     /// <summary>
     /// The enemies of a battle on the highway: always the same, set by hand for each square
-    /// (doc/features/stage-progression.md#街道のマスと移動2026-10-24), with the battle background.
+    /// (doc/features/stage-progression-world-map.md#街道のマスと移動2026-10-24), with the battle background.
     /// </summary>
     public sealed class WorldMapEncounter
     {

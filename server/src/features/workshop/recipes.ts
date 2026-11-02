@@ -2,9 +2,9 @@ import type { HoldingCategory } from "../inventory/catalog.js";
 import type { WorkshopCategory } from "./catalog.js";
 
 // 合成のレシピ（doc/features/synthesis.md のレシピ）。作る物ごとに、材料と数が決まっている。
-// 材料はすべてそろえて、すべて使う。正本は作る物の定義の文書（doc/catalog/weapons・armor・accessories の
-// README の「合成のレシピ」と、doc/catalog/skills の各スキルの「合成の材料」）で、ここはその写しである。
-// クライアントの WorkshopRecipes が同じ値を持つ。
+// 材料はすべてそろえて、すべて使う。正本はこのファイルとクライアントの WorkshopRecipes で、同じ値にする。
+// 作る物の定義の文書（doc/catalog/weapons・armor・accessories の README の「合成のレシピ」と、
+// doc/catalog/skills の各スキルの「合成の材料」）の表は、その写しである。
 
 // 材料の分類。アイテムは種類ごとの数、それ以外（特別な材料）は持ち物の1つずつ。
 export type RecipeMaterialCategory = Exclude<HoldingCategory, "material">;

@@ -8,10 +8,10 @@ namespace Baryonyx.Adventure
     /// <summary>
     /// Unique skills evolving and owned skill cards awakening in an adventure's battle
     /// (doc/features/skill-evolution.md, doc/features/skill-awakening.md): the chance by the kind
-    /// of room and the destination's recommended level (doc/features/skill-evolution.md#確率の仮設定;
+    /// of room and the destination's recommended level (doc/features/skill-evolution/rules.md#確率の仮設定;
     /// a skill card's is half a unique skill's), and the awakenings of the room, which are kept
     /// once the room ends (won, or lost and the adventure over) and dropped when the battle is
-    /// left unfinished (doc/features/skill-evolution.md#覚醒の保存).
+    /// left unfinished (doc/features/skill-evolution/rules.md#覚醒の保存).
     /// </summary>
     public sealed class AdventureEvolution
     {

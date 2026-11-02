@@ -47,7 +47,7 @@ namespace Baryonyx.SkillEvolution
 
         /// <summary>
         /// Evolves the person's unique skill <paramref name="index"/> into <paramref name="stage"/>
-        /// (doc/features/skill-evolution.md#取得した段階とセット): the stage is acquired and set.
+        /// (doc/features/skill-evolution/rules.md#取得した段階とセット): the stage is acquired and set.
         /// </summary>
         public static void Evolve(string person, int index, int stage, UniqueSkillProgress mock)
         {

@@ -270,7 +270,7 @@ namespace Baryonyx.Party
     }
 
     /// <summary>
-    /// Saves the progress of the characters' unique skills (doc/features/skill-evolution.md#覚醒の保存):
+    /// Saves the progress of the characters' unique skills (doc/features/skill-evolution/rules.md#覚醒の保存):
     /// the stage the formation sets, and each evolution in an adventure's battle.
     /// </summary>
     public interface IPartyUniqueSkillSource

@@ -10,7 +10,7 @@ using UnityEngine.UI;
 namespace Baryonyx.WorldMap
 {
     /// <summary>
-    /// The highway's world map (doc/features/stage-progression.md#街道とダンジョン): a big picture
+    /// The highway's world map (doc/features/stage-progression/destinations.md#街道とダンジョン): a big picture
     /// seen through the screen, dragged in any direction and pinched to zoom, with sugoroku
     /// squares and straight lines over it. Tapping a cleared or open square walks the party there
     /// by the shortest way over cleared squares. The progress is read from <see cref="WorldMapSession"/> when the map

@@ -19,7 +19,7 @@ namespace Baryonyx.WorldMap
     }
 
     /// <summary>
-    /// The highway's world map (街道, doc/features/stage-progression.md#街とダンジョン仮), drawn as a
+    /// The highway's world map (街道, doc/features/stage-progression/destinations.md#街とダンジョン仮), drawn as a
     /// grid of characters like a sugoroku board (<see cref="WorldMapGrid"/>). The web has two
     /// rings around the first town, roads out to the other towns behind a boss, and dead ends to
     /// wander into. All names, levels and squares are provisional.

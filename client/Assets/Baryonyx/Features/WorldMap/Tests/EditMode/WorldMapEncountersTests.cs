@@ -5,7 +5,7 @@ using NUnit.Framework;
 
 namespace Baryonyx.Tests.EditMode
 {
-    // 街道の戦闘のマスの決まった敵（doc/features/stage-progression.md の街道のマスと移動）。
+    // 街道の戦闘のマスの決まった敵（doc/features/stage-progression-world-map.md の街道のマスと移動）。
     public sealed class WorldMapEncountersTests
     {
         private static readonly AdventureArea[] Areas = AdventureCatalog.Areas.ToArray();

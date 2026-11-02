@@ -18,7 +18,7 @@ namespace Baryonyx.Combat.Presentation
     /// battle's party and enemies, with nothing else of the battle (no hand, no turns, no
     /// numbers). A skill picked while another plays cuts it short. With evolution turned on, a
     /// unique skill's stage that can evolve is played as the battle plays an evolution
-    /// (doc/features/skill-evolution.md#戦闘中の覚醒): its card rises and cracks, the stage it
+    /// (doc/features/skill-evolution/rules.md#戦闘中の覚醒): its card rises and cracks, the stage it
     /// becomes is picked from those it can (<see cref="BattleEvolutionChoice"/>), the card shatters
     /// into it, and the stage picked plays. The skill last picked,
     /// how hard its blows land, the enemy it aims at, whether it evolves and whether it repeats

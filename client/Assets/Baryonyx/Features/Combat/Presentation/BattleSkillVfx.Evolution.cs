@@ -7,7 +7,7 @@ using UnityEngine.UI;
 namespace Baryonyx.Combat.Presentation
 {
     /// <summary>
-    /// A unique skill's evolution (doc/features/skill-evolution.md#戦闘中の覚醒), before the skill's
+    /// A unique skill's evolution (doc/features/skill-evolution/rules.md#戦闘中の覚醒), before the skill's
     /// effect, all in the colour of the card's element. The omen (<see cref="EvolutionOmen"/>): the
     /// stage darkens, the card just played rises from its user onto an upright circle of runes in a
     /// wider ring, a circle turns under the user, thin lines of light rise from below into it,
@@ -1201,7 +1201,7 @@ namespace Baryonyx.Combat.Presentation
 
         // When the cracks snap a step further over the card (s after they start), as glass that
         // is stressed cracks: in sudden snaps (ぴき), each reaching at once a step further out,
-        // nothing growing between them (doc/features/skill-evolution.md#覚醒のエフェクト).
+        // nothing growing between them (doc/features/skill-evolution/effects.md#覚醒のエフェクト).
         private static readonly float[] CardSnapAt = { 0f, 0.11f, 0.2f, 0.3f };
 
         // How long the cracks a snap has just broken stay white (s).

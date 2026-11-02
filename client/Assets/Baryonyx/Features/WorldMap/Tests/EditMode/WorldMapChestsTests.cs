@@ -9,7 +9,7 @@ using NUnit.Framework;
 
 namespace Baryonyx.Tests.EditMode
 {
-    // 街道の宝箱の中身（doc/features/stage-progression.md の街道の宝箱と街）。
+    // 街道の宝箱の中身（doc/features/stage-progression-world-map.md の街道の宝箱と街）。
     public sealed class WorldMapChestsTests
     {
         [SetUp]

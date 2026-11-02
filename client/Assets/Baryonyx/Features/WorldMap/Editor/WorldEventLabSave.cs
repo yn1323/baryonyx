@@ -10,7 +10,7 @@ namespace Baryonyx.WorldMap.Editor
     /// Keeps the map editor's changes (<see cref="WorldEventLab.Save"/>) in the nested world
     /// map's layouts: place_events.py puts the event on the square under the layout's rules, then
     /// price_squares.py prices the map again and the server's catalog of squares is written again
-    /// from the layouts (doc/features/world-atlas.md#マスの付け替え). A square's settings
+    /// from the layouts (doc/features/world-atlas/square-events.md#マスの付け替え). A square's settings
     /// (<see cref="WorldEventLab.SaveSetting"/>) are written by place_events.py alone, since they
     /// change no price. The maps read their events and settings from the layouts, so nothing
     /// needs rebuilding.

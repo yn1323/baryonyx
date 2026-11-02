@@ -1,5 +1,5 @@
 """Places the square events (出来事) on a nested world map layout, as a trial
-(doc/features/world-atlas.md#マスに置いた出来事).
+(doc/features/world-atlas/square-events.md#マスに置いた出来事).
 
 usage: place_events.py <key>...                          # e.g. place_events.py marina
        place_events.py set <key> <square> <event|none> [form]   # one square, by hand

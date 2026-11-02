@@ -43,9 +43,10 @@ namespace Baryonyx.Workshop
     }
 
     /// <summary>
-    /// The craft's recipes (doc/features/synthesis.md#レシピ). The documents of the made things
-    /// (doc/catalog/weapons, armor and accessories, and each skill's) are the source; this is
-    /// their copy, the same as the server's (server/src/features/workshop/recipes.ts).
+    /// The craft's recipes (doc/features/synthesis.md#レシピ). This and the server's
+    /// (server/src/features/workshop/recipes.ts) are the source and hold the same values; the
+    /// tables in the documents of the made things (doc/catalog/weapons, armor and accessories,
+    /// and each skill's) are their copy.
     /// </summary>
     public static class WorkshopRecipes
     {

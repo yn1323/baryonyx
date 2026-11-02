@@ -339,7 +339,7 @@ namespace Baryonyx.TravelOffice
 
         /// <summary>
         /// How many times the destination was cleared (its master beaten), from the adventure's
-        /// records (doc/features/stage-progression.md#ダンジョンのクリア回数の報酬). "-" before
+        /// records (doc/features/stage-progression/destinations.md#ダンジョンのクリア回数の報酬). "-" before
         /// the records are read.
         /// </summary>
         public static string ClearsText(AdventureState state, string destinationId) =>

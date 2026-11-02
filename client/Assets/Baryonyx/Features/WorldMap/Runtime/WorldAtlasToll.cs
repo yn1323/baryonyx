@@ -6,7 +6,7 @@ using UnityEngine.UI;
 namespace Baryonyx.WorldMap
 {
     /// <summary>
-    /// The runes on a map of the nested world map (doc/features/world-atlas.md#マスを開くルーン):
+    /// The runes on a map of the nested world map (doc/features/world-atlas/maps.md#マスを開くルーン):
     /// the balance under the place's name at the top right, with the runes taken for each square
     /// rising from it and fading, a price tag under each next square, the window that asks before a walk of several squares that
     /// costs runes (with the choice not to be asked again until the app starts again), the button at the

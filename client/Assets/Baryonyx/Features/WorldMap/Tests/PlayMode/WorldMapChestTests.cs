@@ -8,7 +8,7 @@ using UnityEngine.TestTools;
 
 namespace Baryonyx.Tests.PlayMode
 {
-    // 街道の宝箱のマス（doc/features/stage-progression.md の街道の宝箱と街）を、実際のシーンで通す。
+    // 街道の宝箱のマス（doc/features/stage-progression-world-map.md の街道の宝箱と街）を、実際のシーンで通す。
     // 進み具合は、ピーノの西の寄り道の宝箱の手前に立ったアプリ内の保存先から始める。
     public sealed class WorldMapChestTests
     {

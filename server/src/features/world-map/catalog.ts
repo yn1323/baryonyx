@@ -30,7 +30,7 @@ const polishStones = (count: number): ChestEntry[] =>
     id: POLISH_ID,
   }));
 
-// 街道の宝箱のマスごとの中身（仮。doc/features/stage-progression.md の街道の宝箱）。
+// 街道の宝箱のマスごとの中身（仮。doc/features/stage-progression-world-map.md の街道の宝箱）。
 // 抽選せず、マスを初めてクリアしたときに1回だけもらう。その先の区間で役立つ物を置く。
 // 中身はクライアントの WorldMapChests と同じにする。
 export const CHESTS: Record<string, readonly ChestEntry[]> = {

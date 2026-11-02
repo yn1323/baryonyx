@@ -21,7 +21,7 @@ namespace Baryonyx.WorldMap
 
     /// <summary>
     /// The squares of the world map and the straight lines between them
-    /// (doc/features/stage-progression.md#街道のマスと移動2026-10-24). Cleared squares stay cleared,
+    /// (doc/features/stage-progression-world-map.md#街道のマスと移動2026-10-24). Cleared squares stay cleared,
     /// a square next to one can be taken on next, and an unbeaten boss is a gate that hides what
     /// lies behind it. The party walks the shortest way over cleared squares.
     /// </summary>

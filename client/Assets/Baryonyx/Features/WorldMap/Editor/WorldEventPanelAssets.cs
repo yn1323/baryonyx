@@ -12,7 +12,7 @@ namespace Baryonyx.WorldMap.Editor
 {
     /// <summary>
     /// Builds one panel for each kind of event inside the event window's stage
-    /// (doc/features/world-atlas.md#マスの出来事の見本): a meeting that ends with someone joining,
+    /// (doc/features/world-atlas/square-events.md#マスの出来事の見本): a meeting that ends with someone joining,
     /// a choice with what each answer gives, a hidden chest, a pickup in a small window, a
     /// peddler's goods, a bet played with a die or a row of chests, and a battle that leads to the battle screen. Places
     /// are given from the stage's bottom middle (the ground the scenery's meadow shows), in the

@@ -6,7 +6,7 @@ using UnityEngine;
 
 namespace Baryonyx.Tests.EditMode
 {
-    // 街道の世界地図のマスと道、進める範囲（doc/features/stage-progression.md#街道のマスと移動2026-10-24）。
+    // 街道の世界地図のマスと道、進める範囲（doc/features/stage-progression-world-map.md#街道のマスと移動2026-10-24）。
     public sealed class WorldMapGraphTests
     {
         private static WorldMapGraph Graph() => WorldMapCatalog.Build();

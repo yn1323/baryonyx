@@ -13,7 +13,7 @@ namespace Baryonyx.Tests.PlayMode
 {
     /// <summary>
     /// A unique skill's card lighting up as it is drawn and evolving when used in the battle
-    /// (doc/features/skill-evolution.md#戦闘中の覚醒).
+    /// (doc/features/skill-evolution/rules.md#戦闘中の覚醒).
     /// </summary>
     public sealed class BattleEvolutionSceneTests
     {

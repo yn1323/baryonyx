@@ -11,7 +11,7 @@ namespace Baryonyx.WorldMap
 {
     /// <summary>
     /// Runs a battle of the highway on the battle screen
-    /// (doc/features/stage-progression.md#街道のマスと移動2026-10-24): the square's fixed enemies
+    /// (doc/features/stage-progression-world-map.md#街道のマスと移動2026-10-24): the square's fixed enemies
     /// on its background, fought from full HP. A win clears the square and returns to the map; a
     /// gate boss's defeat opens the way behind it. After the party is wiped out, the square is
     /// not cleared and can be fought again at once or later from the map. The menu returns to the

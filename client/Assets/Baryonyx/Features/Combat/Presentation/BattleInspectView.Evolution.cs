@@ -9,7 +9,7 @@ namespace Baryonyx.Combat.Presentation
 {
     /// <summary>
     /// What the battle needs to let cards awaken: unique skills evolve
-    /// (doc/features/skill-evolution.md#戦闘中の覚醒) and owned skill cards awaken
+    /// (doc/features/skill-evolution/rules.md#戦闘中の覚醒) and owned skill cards awaken
     /// (doc/features/skill-awakening.md). For each, the chance for a user's level, and who is told
     /// of each; the draw, and which unique stages are acquired already. The adventure gives it;
     /// without it nothing awakens.

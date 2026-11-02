@@ -10,7 +10,7 @@ using UnityEngine.TestTools;
 
 namespace Baryonyx.Tests.EditMode
 {
-    // 街道の進み具合の読み書き（doc/features/stage-progression.md の世界地図の形と試作）。
+    // 街道の進み具合の読み書き（doc/features/stage-progression-world-map.md の世界地図の形と試作）。
     public sealed class WorldMapSessionTests
     {
         private sealed class FakeSource : IWorldMapSource

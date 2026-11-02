@@ -10,7 +10,7 @@ using UnityEngine.TestTools;
 
 namespace Baryonyx.Tests.PlayMode
 {
-    // 街道の戦闘のマス（doc/features/stage-progression.md の街道のマスと移動）を、実際のシーンで通す。
+    // 街道の戦闘のマス（doc/features/stage-progression-world-map.md の街道のマスと移動）を、実際のシーンで通す。
     // 進み具合は、最初の街だけをクリアしたアプリ内の保存先から始める。
     public sealed class WorldMapBattleTests
     {

@@ -7,7 +7,7 @@ using UnityEngine;
 namespace Baryonyx.Combat.Presentation
 {
     /// <summary>
-    /// The unique skills' effects (doc/features/skill-evolution.md#段階ごとのエフェクト): each of
+    /// The unique skills' effects (doc/features/skill-evolution/effects.md#段階ごとのエフェクト): each of
     /// the twelve trees has an effect of its own, built from what it shows really is (an orb of
     /// compressed magic, meteors, an arrow calling down the lightning, a volley, a barrier, one
     /// cut, a breeze, a rising, an eye's scan, quick shots, a war cry, shafts of light from the
@@ -184,7 +184,7 @@ namespace Baryonyx.Combat.Presentation
         }
 
         /// <summary>
-        /// 魔眼, an eye that sees through (doc/features/skill-evolution.md#ツリーごとの演出): the user's
+        /// 魔眼, an eye that sees through (doc/features/skill-evolution/effects.md#ツリーごとの演出): the user's
         /// eye glints, a thin line of light sweeps across the enemies as a scan does, and as it
         /// passes each a sight closes on it and its weak point glints. 射・滅光 then shoot a thin
         /// beam from the eye into one enemy, which bursts (滅光 wider, laying the guard down);
@@ -436,7 +436,7 @@ namespace Baryonyx.Combat.Presentation
         }
 
         /// <summary>
-        /// 速射, quick shots from the bow (doc/features/skill-evolution.md#ツリーごとの演出): the string is
+        /// 速射, quick shots from the bow (doc/features/skill-evolution/effects.md#ツリーごとの演出): the string is
         /// loosed again and again, each arrow flat and fast with a thin white streak and a fainter
         /// one behind it, the bow kicking a little dust at the user's feet; each lands with a
         /// small spray of sparks and grit. 連・乱れ撃ち loose more (乱れ撃ち fanning over random
@@ -583,7 +583,7 @@ namespace Baryonyx.Combat.Presentation
         }
 
         /// <summary>
-        /// 鼓舞, a war cry (doc/features/skill-evolution.md#ツリーごとの演出): the user's shout goes out
+        /// 鼓舞, a war cry (doc/features/skill-evolution/effects.md#ツリーごとの演出): the user's shout goes out
         /// as rings of pressure, thin and fading as they spread, the dust at its feet blown out,
         /// and each ally is roused in turn as it reaches them: thin lines of light rising off the
         /// body, a chevron rising and a crest of light for the block. 突撃・総攻撃 carry the shout
@@ -799,7 +799,7 @@ namespace Baryonyx.Combat.Presentation
         }
 
         /// <summary>
-        /// 裁きの光, light from the heavens (doc/features/skill-evolution.md#ツリーごとの演出): shafts
+        /// 裁きの光, light from the heavens (doc/features/skill-evolution/effects.md#ツリーごとの演出): shafts
         /// of light come down through the air onto the enemies, the dust in them glinting, each
         /// landing with a white flash and thin rays, and then the light spills softly over the
         /// party, rising off them. 断罪・天罰 bring one wide shaft down on one enemy with a long
@@ -979,7 +979,7 @@ namespace Baryonyx.Combat.Presentation
 
         /// <summary>
         /// The landing of each blow with the step's layers on top of the tree's own, split as a
-        /// real burst of energy is (doc/features/skill-evolution.md#段階の層): behind the target the
+        /// real burst of energy is (doc/features/skill-evolution/effects.md#段階の層): behind the target the
         /// air it lights (the longest), a pool of light on the floor, a white star (the shortest),
         /// sparks thrown out and falling, dust driven out along the floor, and motes rising late.
         /// A last step also hits once like a finisher (flash, hit stop, slow-down, punch-in, thin
@@ -1082,7 +1082,7 @@ namespace Baryonyx.Combat.Presentation
 
         /// <summary>
         /// A step's layers on an ally it heals or guards: no blow, a light that comes up gently
-        /// from the floor (doc/features/skill-evolution.md#段階の層): a pool on the floor, a soft
+        /// from the floor (doc/features/skill-evolution/effects.md#段階の層): a pool on the floor, a soft
         /// glow round the body, thin lines of light rising past it and gone above, a twinkle, and
         /// motes drifting up last. A last step's finale also lifts the whole stage once.
         /// </summary>
@@ -1306,7 +1306,7 @@ namespace Baryonyx.Combat.Presentation
         // --- The trees -------------------------------------------------------------------------
 
         /// <summary>
-        /// マナバースト, a sphere of compressed magic (doc/features/skill-evolution.md#マナバーストの演出):
+        /// マナバースト, a sphere of compressed magic (doc/features/skill-evolution/effects.md#マナバーストの演出):
         /// an orb of four layers is flung over the enemies (<see cref="ManaOrb"/>), is squeezed for
         /// an instant as light is drawn into it, and bursts (<see cref="ManaRelease"/>): its spines
         /// shoot out and are eaten away, a small white core and thin rays, the air lit
@@ -1644,7 +1644,7 @@ namespace Baryonyx.Combat.Presentation
         }
 
         /// <summary>
-        /// 星降り, a shower of falling stars, as meteors look (doc/features/skill-evolution.md#ツリーごとの演出):
+        /// 星降り, a shower of falling stars, as meteors look (doc/features/skill-evolution/effects.md#ツリーごとの演出):
         /// each star comes down from the sky with a white-hot head in a glow of its own colour,
         /// leaves a lit train in the air that lingers and breaks up after it has struck, and
         /// lands one after another with a flash, a pool of light and dust thrown out along the
@@ -1881,7 +1881,7 @@ namespace Baryonyx.Combat.Presentation
         }
 
         /// <summary>
-        /// 雷撃の矢, an arrow that calls down the lightning (doc/features/skill-evolution.md#ツリーごとの演出):
+        /// 雷撃の矢, an arrow that calls down the lightning (doc/features/skill-evolution/effects.md#ツリーごとの演出):
         /// as the arrow leaves the bow, a faint leader feels its way down from the sky toward where
         /// it will stick, and the moment it does, the stroke comes down the same path and lights it
         /// twice more (<see cref="Channel"/>), as a real flash does; crackles run round the enemy.
@@ -2069,7 +2069,7 @@ namespace Baryonyx.Combat.Presentation
             : 2;
 
         /// <summary>
-        /// 矢の雨, a volley (doc/features/skill-evolution.md#ツリーごとの演出): the volley is loosed high
+        /// 矢の雨, a volley (doc/features/skill-evolution/effects.md#ツリーごとの演出): the volley is loosed high
         /// from the user and rains slanting onto every enemy, wave after wave, each arrow a thin
         /// white streak with a fainter coloured one left in the eye behind it; the arrows that miss
         /// stick in the floor round the feet one after another with a spurt of dust. 毒・蠱毒 drip
@@ -2713,7 +2713,7 @@ namespace Baryonyx.Combat.Presentation
         }
 
         /// <summary>
-        /// 蘇生, a rising (doc/features/skill-evolution.md#ツリーごとの演出): the scattered light gathers
+        /// 蘇生, a rising (doc/features/skill-evolution/effects.md#ツリーごとの演出): the scattered light gathers
         /// into the fallen ally, a shaft of light comes down on them and thin lines of light and
         /// white motes lift them.
         /// 祈・奇跡 are quick and quiet (奇跡 with a burst of feathers); 加護・不死鳥 wrap them in a
