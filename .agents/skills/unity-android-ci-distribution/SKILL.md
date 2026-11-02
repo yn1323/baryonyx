@@ -1,6 +1,6 @@
 ---
 name: unity-android-ci-distribution
-description: Unity AndroidのAPK/AABビルド、IL2CPP・ARM64設定、署名、GitHub Actions artifact、Dev/Prod/Preview配布、Google Drive更新を実装・レビュー・検証するときに使う。秘密値や外部配布を含まない通常のUnityビルド説明には使わない。
+description: Unity AndroidのAPK・AABを作る・配るときに使う。ショートカットや開いているEditorでのAPKのビルド、接続先の環境（Dev・Prod）、IL2CPP・ARM64・署名の設定、GitHub Actionsのartifact、Dev・Prod・Previewの配布、いつものGoogle Driveのフォルダーへのコピーを実装・レビュー・検証する。「APK作って」「build、いつものディレクトリに入れて」「Prod向けも作って」という依頼に当てはめる。端末へ入れて確かめるのは unity-android-device-validation、APKが大きい・重いときの画像の圧縮は image-compression の担当とし、ユーザーが頼んでいないAPKのビルドや、ビルドを伴わないUnityの説明には使わない。
 ---
 
 # Unity Androidビルドと配布
@@ -17,14 +17,15 @@ Unityのビルド成功、artifactの保存、Google Driveへの配置、Google 
 
 ## ローカルビルド
 
-ショートカットの一覧とビルド後にAPKをコピーする配置先はルートの [AGENTS.md](../../../AGENTS.md#手動実行用ショートカット)、各ショートカットの動作・前提・ログ・接続先の環境・失敗時の扱いは[手動実行用ショートカットの動作](../../../doc/rules/local-shortcuts.md)、CIの成果物は[Androidビルドと実機確認](../../../doc/rules/client-android-testing.md)を正本とする。
+ショートカットの一覧・動作・前提・ログ・接続先の環境・失敗時の扱いと、ビルド後にAPKをコピーする配置先は[手動実行用ショートカットの動作](../../../doc/rules/local-shortcuts.md)、コピーまでをビルド作業とする制約はルートの [AGENTS.md](../../../AGENTS.md#手動実行用ショートカット)、CIの成果物は[Androidビルドと実機確認](../../../doc/rules/client-android-testing.md)を正本とする。
 作業では次を確かめる。
 
-- Unityが開いている場合は、作業を保存してプロジェクトを閉じ、`Temp/UnityLockfile`がないことを確認する。
+- APKは、ユーザーが頼んだときだけ作る（[ローカルビルドと配布処理の検証](../../../doc/rules/client-android-testing.md#ローカルビルドと配布処理の検証)）。
+- ショートカットや `unity build` で作るときは、Unityを閉じて `Temp/UnityLockfile` がないことを確かめる。開いているEditorで作るときは、同節の `eval` の手順に従う。
 - ショートカットまたは同じ`AndroidBuild.Build`を使い、APKとログの実在、成功マーカー、ビルドログの接続先の環境（`BARYONYX_ANDROID_SERVER:`）を確認する。
-- 古いAPKを新しい成果物として扱わない。ビルドに失敗したときは配置先を更新しない。
-- 配置先へのコピーまでをビルド作業に含める。配置先へアクセスできない、コピーに失敗する、対象フォルダーがない場合は作業を未完了として報告する。
+- 古いAPKを新しい成果物として扱わない。
 - ローカルへのコピーの成功は、Google Drive for desktopの同期の完了を証明しない。同期状態は同アプリで確認する必要がある。
+- ビルドのあとは、ビルドが書き換えたファイルを[ローカルビルドと配布処理の検証](../../../doc/rules/client-android-testing.md#ローカルビルドと配布処理の検証)に従って戻す。
 
 ## artifactと環境名
 
@@ -67,6 +68,6 @@ Unityのビルド成功、artifactの保存、Google Driveへの配置、Google 
 
 - [Unityのビルド概要](https://docs.unity.com/en-us/engine/6000.6/manual/building-and-publishing/building-introduction)
 - [Unity Build Automation](https://docs.unity.com/en-us/build-automation/basic-build-configuration/overview)
-- リポジトリの`shortcuts/`（一覧はルートの [AGENTS.md](../../../AGENTS.md#手動実行用ショートカット)）
+- リポジトリの`shortcuts/`（一覧は[手動実行用ショートカットの動作](../../../doc/rules/local-shortcuts.md#ファイルの一覧)）
 - リポジトリの`.github/workflows/client-ci.yml`
 - リポジトリの`.github/workflows/client-distribute.yml`

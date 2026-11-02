@@ -1,11 +1,10 @@
 ---
 name: hd2d-stage-set
 description: >
-  3Dの地面と背景にドット絵のキャラを立たせる3Dの舞台（HD-2D）を作る・直す・レビューするときに必ず使う。
-  カメラとその動き、キャラの板と影、昼・夜・夕暮れの光、霧、光芒と光だまり、舞台のレンズ（被写界深度）と色調、停止中とSceneタブの表示、
-  地面・遠景・書き割り・小物・草・汚しとそのマテリアル・テクスチャ、密度（ごちゃごちゃ具合）、配置の計算、撮影での点検を扱う。
-  背景が寂しい・平ら・作り物っぽい・光が足りない、新しい場所や画面を3Dの舞台で組む、といった依頼に当てはめる。
-  技・被弾・報酬などのエフェクトは vfx-authoring、3Dの舞台がない描いた2D背景の演出は hd2d-lighting-vfx の担当とする。
+  3Dの地面と背景にドット絵のキャラを立たせる3Dの舞台（HD-2D。Top・Home・戦闘画面と戦闘の背景）を作る・直す・レビューするときに必ず使う。
+  カメラ、キャラの板と影、時間帯の光、霧・光芒、松明や焚き火の炎と煙、Topの舞台に重ねる2Dの塵ときらめき、被写界深度と色調、地面・遠景・小物・草・汚しとテクスチャ、密度と配置、舞台の重さを扱う。
+  「背景が寂しい・平ら・作り物っぽい・光が足りない・ぼけ方が変・重い」「焚き火の火がしょぼい」、新しい場所を3Dの舞台で組む、という依頼に当てはめる。
+  技・被弾のエフェクトと報酬を受け取る瞬間の演出は vfx-authoring、描いた2D背景の画面の演出と常に漂う粒は hd2d-lighting-vfx、地図や案内人の画面などの描いた背景の絵そのものは creative-direction の担当とする。
 ---
 
 # 3Dの舞台（HD-2D）を作る
@@ -13,6 +12,7 @@ description: >
 3Dの地面と背景にドット絵のキャラを立たせ、3Dの光と影とカメラで見せる舞台を作り、HD-2Dらしい密度とリアルな見え方にするためのスキルである。
 値と配置の正本は[3Dの舞台の仕様](../../../doc/art/hd2d-stage.md)、部品と実装の対応は仕様の「実装との対応」とし、このスキルには写さない。
 どの画面が3Dの舞台かは、`client/Assets/Baryonyx/App/Scenes/` のシーンに `Hd2dStageCamera` があるかで確かめる。
+Topの舞台に重ねている2Dの塵ときらめき（`TopHd2dLightingVfx`）も、このスキルで扱う。部品の調整項目は[塵ときらめきの表示](../../../doc/features/showcase/hd2d-tuning.md#塵ときらめきの表示)にある。
 
 | 参照文書 | 扱うこと |
 |---|---|
@@ -20,7 +20,7 @@ description: >
 | [stage-building.md](references/stage-building.md) | 床・壁・遠景・書き割りの組み方、マテリアルの選び方、テクスチャの作り方、法線マップ、草と葉のシェーダー |
 | [set-dressing.md](references/set-dressing.md) | 小物・草の房・地面の汚し・足元の陰の密度の決め方、置き方の手順、撮影での点検 |
 | [Unity EditorとCLIの知見](../shared/unity-editor-notes.md) | Editorの状態、CLIのコマンドの時間切れ、撮影の方法、テストの注意 |
-| [HD-2Dの調査資料](../hd2d-lighting-vfx/references/research-sources.md) | オクトパストラベラーの開発者の発言、再現例、光と炎の資料 |
+| [HD-2Dの調査資料](../shared/hd2d-research-sources.md) | オクトパストラベラーの開発者の発言、再現例、光と炎の資料 |
 
 ## 最初に確認すること
 
@@ -38,8 +38,8 @@ description: >
 4. **配置を計算する**：カメラの位置、手前の物、ピントの範囲、ドットの細かさ、描いた遠景の月、光芒の上端は、撮影の繰り返しで探さず、[配置を計算で決める](references/camera-light.md#配置を計算で決める)と [stage_view.py](scripts/stage_view.py) で先に求め、画面に収まり、キャラの絵に重ならないかを確かめる。
 5. **組む**：舞台の生成処理と小物の配置処理に、物・草・汚し・陰・光・Profileを書く。光を受ける面には法線マップを付け、草と葉は草と葉のシェーダーにする（[法線マップ](references/stage-building.md#法線マップ)、[草と葉のシェーダー](references/stage-building.md#草と葉のシェーダー)）。自作のURPシェーダーとRender Graphのパスは、[自作シェーダーとRender Graphの注意](references/camera-light.md#自作シェーダーとrender-graphの注意)を読んでから書く。決めた値はコードに書き、Inspectorで直さない。
 6. **作り直して撮る**：開いているシーンを閉じてから舞台を作り直し、関係する画面を停止中とPlay Modeで撮る。[camera-light.md の検証](references/camera-light.md#検証)と[set-dressing.md の撮影での点検](references/set-dressing.md#撮影での点検)の項目で確かめ、直して撮り直す。
-7. **テストと展示室**：小物がキャラの足元を避けていること、光を受ける材質に法線マップがあることをEditModeテストで確かめ、関係する画面のPlayModeテストを実行する（[作業中に実行するPlayModeテスト](../../../doc/rules/client-testing.md#作業中に実行するplaymodeテスト)）。展示室はルートの AGENTS.md の[クライアントアセット展示室](../../../AGENTS.md#クライアントアセット展示室)に従って更新し、新しいテクスチャ・マテリアル・シェーダー・Prefabが一覧に入ったことを確かめる。
-8. **文書を更新する**：仕様の該当する節（画面ごとの構成、光と炎、レンズと色、小物と汚し、テクスチャの表）と「変更と判断の記録」、展示室の仕様、`client/ArtSource/Stages/prompts.json` を同じ変更で直す。作業で得た手順や注意はこのスキルの参照文書へ、守るべき規則や値は仕様へ書く（[docとスキルの使い分け](../../../doc/rules/documentation-policy.md#docとスキルの使い分け)）。
+7. **テストと展示室**：小物と草の房がキャラの足元を避けていることをEditModeテストで確かめ、関係する画面のPlayModeテストを実行する（[作業中に実行するPlayModeテスト](../../../doc/rules/client-testing.md#作業中に実行するplaymodeテスト)）。光を受ける材質に法線マップが付いたかを確かめるテストはないため、マテリアルの `_BumpMap` と `_NORMALMAP` を読んで確かめる（[コードで付けたキーワードが消える](references/stage-building.md#つまずいた点)）。展示室はルートの AGENTS.md の[クライアントアセット展示室](../../../AGENTS.md#クライアントアセット展示室)に従って更新し、新しいテクスチャ・マテリアル・シェーダー・Prefabが一覧に入ったことを確かめる。
+8. **文書を更新する**：仕様の該当する節（画面ごとの構成、光と炎、レンズと色、小物と汚し、テクスチャの表）と[変更と判断の記録](../../../doc/art/hd2d-stage-history.md)、展示室の仕様、`client/ArtSource/Stages/prompts.json` を同じ変更で直す。作業で得た手順や注意はこのスキルの参照文書へ、守るべき規則や値は仕様へ書く（[docとスキルの使い分け](../../../doc/rules/documentation-policy.md#docとスキルの使い分け)）。
 
 ## よくある失敗
 

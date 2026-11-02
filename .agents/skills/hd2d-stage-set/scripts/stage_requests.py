@@ -8,7 +8,8 @@ hd2d-stage-set の「テクスチャを作る」で使う。依頼文は1枚ご�
 固定の段落は、doc/art/hd2d-stage.md の「テクスチャ」と doc/art/direction.md の
 「ドット絵の制作規格」「例外（3Dの舞台のテクスチャ）」を正本とする。正本を変えたら、同じ変更でこの段落も直す。
 「■ドット絵の規格」のうち、タッチと背景の色味の行は shared/prompts/pixel-style.ja.txt の touch・background を読み込む。
-色数の行は、pixel-style.ja.txt の colors からアンチエイリアスの文を除いた形でここに持つ。
+光源とセルアウトの部品（light）は入れない。色数の行は colors からアンチエイリアスの文を除いた形で、
+描き込みの行は detail の代わりの3Dのテクスチャ用の文で、ここに持つ。
 
 使い方（リポジトリ直下で）:
   python3 .agents/skills/hd2d-stage-set/scripts/stage_requests.py SPEC.json output/<作業名>

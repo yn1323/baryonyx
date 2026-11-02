@@ -12,8 +12,6 @@
 - [Screen.safeArea](https://docs.unity3d.com/6000.0/Documentation/ScriptReference/Screen-safeArea.html)：端末の非表示領域とUI Toolkitの座標原点の注意点。
 - [Device Simulator](https://docs.unity3d.com/ja/current/Manual/device-simulator-introduction.html)：エディター内で端末の解像度、Safe Area、回転、タッチ入力を初期確認する機能。実機確認の代替にはしない。
 - [Graphic and font assets preparation](https://docs.unity3d.com/6000.0/Documentation/Manual/best-practice-guides/ui-toolkit-for-advanced-unity-developers/graphic-and-font-assets-preparation.html)：Sprite Atlas、動的アトラス、フォントアトラス、Pixel Art資産、PSD、9-sliceの考え方。
-- [Addressables](https://docs.unity3d.com/6000.0/Documentation/Manual/com.unity.addressables.html)：非同期ロード、依存関係、ローカル・リモート資産のアドレス管理。
-- [Localization](https://docs.unity3d.com/ja/6000.0/Manual/com.unity.localization.html)：String/Asset Table、Smart Strings、疑似ローカライズ、Unity 6のパッケージ版。
 - [Input System](https://docs.unity3d.com/6000.0/Documentation/Manual/com.unity.inputsystem.html)：旧Input Managerとの位置付けと新Input Systemの拡張性。
 - [Runtime UI event system](https://docs.unity3d.com/6000.0/Documentation/Manual/UIE-Runtime-Event-System.html)：UI Toolkitと入力システム、Navigation、Pointer、Submit、Cancelのイベント。
 - [Unity Test Framework](https://docs.unity3d.com/6000.0/Documentation/Manual/com.unity.test-framework.html)：Edit ModeとPlay Modeテスト。
@@ -42,20 +40,20 @@ Unity公式資料はAPI・パッケージ・性能上の技術判断に使い、
 
 公式仕様を補う設計の観点として、次の資料を使う。ここにある数値、画面パターン、経済曲線は普遍的な規則ではなく、対象ユーザーとゲームループに合わせて検証する。
 
-- [Unity: UI interface design and implementation](https://unity.com/blog/games/ultimate-guide-to-creating-ui-interfaces)：ワイヤーフレーム、グレーボックス、フォント、uGUI・UI Toolkitの実装工程。
-- [Unity: Effective UI and game design](https://unity.com/blog/games/how-to-immerse-your-players-through-effective-ui-and-game-design)：ジャンルの慣習とアート方針をUIへつなぐ考え方。
+- [Unity: UI interface design and implementation](https://unity.com/blog/games/ultimate-guide-to-creating-ui-interfaces)：ワイヤーフレーム、グレーボックス、アセット準備、フォント、uGUI・UI Toolkitの実装工程。
+- [Unity: Effective UI and game design](https://unity.com/blog/games/how-to-immerse-your-players-through-effective-ui-and-game-design)：ジャンルの慣習とアート方針をUIへつなぐ考え方と、ポップアップの扱い。
 - [Unity: Balanced in-game economy](https://unity.com/how-to/design-balanced-in-game-economy-guide-part-3)：source/sink、動機、初期報酬、テストとロールアウト。
 - [First Time User Experiences in mobile games](https://doi.org/10.1016/j.entcom.2018.04.004)：初回体験のユーザビリティ評価。
 - [Smartphone Games Heuristics](https://doi.org/10.1080/10447318.2024.2356911)：スマホゲームの技術・非技術・ゲームプレイを点検するヒューリスティクス。
-- [GameDeveloper: Gameplay progression](https://www.gamedeveloper.com/design/gameplay-design-fundamentals-gameplay-progression)：報酬を理解可能にし、プレイヤーが行動を計画できるようにする考え方。
-- [Game Accessibility Guidelines](https://gameaccessibilityguidelines.com/)、[Xbox Accessibility Guidelines](https://learn.microsoft.com/en-us/xbox/accessibility/guidelines)：コントラスト、入力、フォーカス、時間、モーション、字幕などの点検観点。
+- [GameDeveloper: Gameplay progression](https://www.gamedeveloper.com/design/gameplay-design-fundamentals-gameplay-progression)：報酬の意味と、性能・報酬値の説明で、プレイヤーが行動を計画できるようにする考え方。
+- [Game Accessibility Guidelines](https://gameaccessibilityguidelines.com/)、[Xbox Accessibility Guidelines](https://learn.microsoft.com/en-us/xbox/accessibility/guidelines)：コントラスト、入力、フォーカス、時間、モーション、字幕などの点検観点。Game Accessibility GuidelinesはBasic・Intermediate・Advancedの3段階で整理している。
 
 ## コミュニティ・参考例
 
 現場の失敗例や発想を探す入口として使う。個人記事や掲示板の意見は、著者の端末、ジャンル、制作規模に依存するため、採用したら実機とプレイテストで再現性を確認する。
 
 - [Procreator: Best practices for game UI design](https://procreator.design/blog/best-practices-for-game-ui-design/)：視覚的階層、プロトタイプ、プレイヤーが知るべき情報の整理。
-- [DEV Community: Pixel-perfect UI in Unity](https://dev.to/niraj_gaming/pixel-perfect-ui-in-unity-a-complete-guide-for-designers-and-developers-1l9c)：PPU、基準解像度、書き出し、9-sliceの実務メモ。
+- [DEV Community: Pixel-perfect UI in Unity](https://dev.to/niraj_gaming/pixel-perfect-ui-in-unity-a-complete-guide-for-designers-and-developers-1l9c)：ピクセルアートの受け渡し、PPU、基準解像度、書き出し、9-sliceの実務メモ。
 - [Reddit: Quick fixes to improve a game HUD](https://www.reddit.com/r/gamedev/comments/1sjlq8l/4_very_quick_fixes_to_improve_your_games_hud/)：最大混乱条件でHUDを見直す、不要要素を減らす、実機距離で読むという経験談。
 - [Reddit: Beginner mistakes with a game HUD](https://www.reddit.com/r/userexperience/comments/1q8j1jn/7_obvious_beginner_mistakes_with_your_games_hud/)：情報の優先順位、親指による遮蔽、スマホ実機モックの経験談。
 - [Gamedexy mobile UI screens](https://www.gamedexy.com/screens?category=daily_reward)：オンボーディング、進行、デイリー報酬などの画面例を比較するアーカイブ。要件や品質保証の根拠にはしない。

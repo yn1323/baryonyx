@@ -2,8 +2,9 @@
 
 2026-09-23に、Top（当時は描いた2D背景）へ霞と霧、揺らぐ光、火の粉、ポストプロセス、疑似ティルトシフトを実装した。
 その過程でつまずいた点と、次の実装でも使える工夫を記録する。
+[hd2d-lighting-vfx](../hd2d-lighting-vfx/SKILL.md) のほか、vfx-authoring と hd2d-stage-set も読むため、shared/ に置く。
 対象はUnity `6000.6.0f1`、URP `17.6.0`、uGUIである。
-Editorの状態・CLI・撮影・テストのつまずきは [Unity EditorとCLIの知見](../../shared/unity-editor-notes.md)、3Dの舞台のつまずきは hd2d-stage-set の [camera-light.md](../../hd2d-stage-set/references/camera-light.md) にある。
+Editorの状態・CLI・撮影・テストのつまずきは [Unity EditorとCLIの知見](unity-editor-notes.md)、3Dの舞台のつまずきは hd2d-stage-set の [camera-light.md](../hd2d-stage-set/references/camera-light.md) にある。
 
 ## 描画のつまずき
 
@@ -38,7 +39,7 @@ Render Graphの `AddBlitPass` が設定するのは `_BlitTexture` と `_BlitSca
 マテリアルは `AddRenderPasses` でも、なければ作るようにする。
 
 **`ScreenSpaceOverlay` のUIには、カメラのポストプロセスが掛からない。**
-Topは背景もUIもOverlayのCanvasに置いていたため、そのままではBloomが効かなかった（仕組みは[vfx-authoringのBloomが掛かる経路](../../vfx-authoring/references/lessons.md#bloomが掛かる経路)）。
+Topは背景もUIもOverlayのCanvasに置いていたため、そのままではBloomが効かなかった（仕組みは[vfx-authoringのBloomが掛かる経路](../vfx-authoring/references/lessons.md#bloomが掛かる経路)）。
 背景と演出を `Screen Space - Camera` のCanvasへ移し、タイトルと操作はOverlayに残した。
 両方のCanvasScalerを同じ設定にすると、座標の単位がそろう。
 
@@ -51,8 +52,8 @@ Topは背景もUIもOverlayのCanvasに置いていたため、そのままで�
 
 **`ResponsiveBackground` の大きさが、Gameビューの解像度でシーンに保存される。**
 この値は実行時に計算し直されるが、シーンを保存すると、そのときのGameビューの大きさ（2712×1526など）が差分に入る。
-一度はこの値がコミットに入り込んだ。
-スクリプトでシーンを保存する前に、`TopBackground` の `sizeDelta` を元の値（1920×1080.5741）へ戻す。
+一度は、当時のTopの描いた背景（`TopBackground`。今はない）のこの値がコミットに入り込んだ。
+スクリプトでシーンを保存する前に、`ResponsiveBackground` を持つ背景の `sizeDelta` を元の値へ戻す。
 
 **Prefabのリストの先頭に要素を挿入すると、全要素が上書き扱いになる。**
 Top専用の霞を霧の層のリストの先頭へ挿入したところ、後ろにずれたPrefab既定の床霧まで、シーン側の上書きとして記録された。
@@ -71,7 +72,7 @@ URPのInspectorと同じく、サブアセットとして追加したFeatureを 
 ## C#とアセンブリのつまずき
 
 **Unityオブジェクトに `??` を使うと、アナライザーのエラーになる。**
-`UNT0007` がエラー扱いで、Editorアセンブリのコンパイルが止まった。書き方は [unity-csharp-differences](../../unity-csharp-differences/SKILL.md) に従う。
+`UNT0007` がエラー扱いで、Editorアセンブリのコンパイルが止まった。書き方は [unity-csharp-differences](../unity-csharp-differences/SKILL.md) に従う。
 
 **asmdefをJSONとして書き出し直すと、既存の整形が崩れる。**
 参照の追加で `json.dumps` を使うと、1行の配列がすべて複数行に展開された。
@@ -123,12 +124,10 @@ uGUIの板はImageの色で色と濃さを渡し、1を超える明るさはマ�
 炎の揺らぎは、ゆっくりした揺れ、速い揺れ、細かいちらつきの3つのノイズを重ねた。
 
 **効果がない画面では処理しない。**
-ティルトシフトはVolume Componentの強さが0の画面ではパスを登録せず、全画面の処理を行わない。
-Rendererは全画面で共通なので、Top以外の画面の負荷を増やさない。
-Bloomより前にぼかすため、ぼけた光もBloomでにじむ。
+Rendererは全画面で共通なので、ティルトシフトはVolume Componentの強さが0の画面ではパスを登録せず、ほかの画面の負荷を増やさない（動作は[疑似ティルトシフト](../../../doc/features/showcase/hd2d-tuning.md#疑似ティルトシフト)）。
 
 ## 検証の工夫
 
-見た目の変化が小さい効果は、同じ範囲を切り出して並べて比べる（[Unity EditorとCLIの知見の撮影](../../shared/unity-editor-notes.md#撮影)）。
+見た目の変化が小さい効果は、同じ範囲を切り出して並べて比べる（[Unity EditorとCLIの知見の撮影](unity-editor-notes.md#撮影)）。
 背景に揃えた部品は、画面比率を変えて撮影し、描かれた光源に重なることを確かめる。
 展示室では、プレビュー用の関数を呼んで対象のPrefabを選び、フレームを進めて撮影した。

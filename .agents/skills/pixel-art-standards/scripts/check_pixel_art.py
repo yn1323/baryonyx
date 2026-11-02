@@ -6,7 +6,7 @@ Pillowを使うので、リポジトリ直下から次のように実行する�
       .agents/skills/pixel-art-standards/scripts/check_pixel_art.py --kind character --standing a.png
 
 検査すること：
-- 画像の大きさが種類ごとの規格と合うか（背景は未決のため大きさを表示するだけ）
+- 画像の大きさが種類ごとの規格と合うか（background は3Dの舞台のテクスチャで、寸法は舞台ごとに決めるため大きさを表示するだけ）
 - 半透明のピクセルがないか（背景側へのアンチエイリアスやぼかしの検出）
 - 不透明な色が32色以内か
 - 拡大済みの画像ではないか（同じ色の並びがすべてk倍になっていないか）
@@ -77,7 +77,7 @@ def check(path, kind, standing):
     expected = KINDS[kind]
 
     if expected is None:
-        notes.append(f"大きさ {w}x{h}（背景・タイルの寸法は未決のため検査しない）")
+        notes.append(f"大きさ {w}x{h}（3Dの舞台のテクスチャの寸法は舞台ごとに決めるため検査しない）")
     elif (w, h) != (expected, expected):
         errors.append(f"大きさが {w}x{h}。{kind} の規格は {expected}x{expected}")
 

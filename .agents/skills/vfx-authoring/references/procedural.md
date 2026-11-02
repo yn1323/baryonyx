@@ -1,9 +1,9 @@
 # 外部画像なしで質感を補う技術
 
-章番号は元のガイド「RPG戦闘VFX：専門用語・計算式・Claudeへの指示ガイド」（2026-10-26）の番号である。第1章・第7章・第8章は [SKILL.md](../SKILL.md)、第2〜3章は [glossary.md](glossary.md)、第4章（F1〜F12）は [formulas.md](formulas.md)、第5章は [recipes.md](recipes.md)、第6章は [prompts.md](prompts.md)、第9章は [sources.md](sources.md)、第10章（P1〜P6）は [procedural.md](procedural.md)、第11章は [lessons.md](lessons.md) にある。[S1] などの記号は [sources.md](sources.md) の資料を指す。
+見出しの番号は、元のガイド「RPG戦闘VFX：専門用語・計算式・Claudeへの指示ガイド」（2026-10-26）の章番号である。[S1] などの記号は [sources.md](sources.md) の資料を指す。
 試作で見つけた失敗と直し方は [計算で描くときのつまずき](lessons.md#計算で描くときのつまずき) にある。
 
-この章と第1章の方針を優先する。第2章の画像関連用語は一般知識として残すが、外部の画像を用意する指示ではない。第5章の法線・亀裂・泡・紋様もすべて計算で生成する。
+この文書と [SKILL.md](../SKILL.md) の前提を優先する。[glossary.md](glossary.md) の画像関連用語は一般知識として残すが、外部の画像を用意する指示ではない。[recipes.md](recipes.md) の法線・亀裂・泡・紋様もすべて計算で生成する。
 
 ## 外部画像なしの構成
 

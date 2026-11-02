@@ -1,5 +1,6 @@
 // 生成スクリプトが作ったPrefabとシーンを、比べられる形のテキストへ書き出す。
-// Unity CLIで接続中のEditorに `unity command eval_file --file <このファイル>` で実行する。
+// 札を取ってから（doc/rules/client-testing.md の「複数のチャットで1台のEditorを使うとき」）、接続中のEditorで
+// `unity --format json command --caller plugin --skill unity-cli eval_file --file <このファイル>` で実行する。
 // 書き出すのは階層、コンポーネント、全てのシリアライズ値。内部の参照は階層のパス、
 // アセットの参照はGUIDとlocal idで表すため、生成し直しで振り直されるfileIDの違いを無視できる。
 // 使う前に Output と Paths を書き換える。シーンは直下の構成だけを書き出す（RootsOnly）。

@@ -23,7 +23,7 @@ force push、rebase、mergeは行わない。
 PRタイトルと本文を書く前に、[japanese-tech-writing](../japanese-tech-writing/SKILL.md) を読む。
 本スキルには文章規範を複製せず、日本語表現の判断は `japanese-tech-writing` に従う。
 
-最後の関連変更より後に同じworkspace状態で成功した検証は再利用し、Pull Request作成段階へ進んだという理由だけで再実行しない。
+検証の再利用は、ルートの `AGENTS.md` の[検証と報告](../../../AGENTS.md#検証と報告)に従う。Pull Request作成段階へ進んだという理由だけで再実行しない。
 
 ## ワークフロー
 

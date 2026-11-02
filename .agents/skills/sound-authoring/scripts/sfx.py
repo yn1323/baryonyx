@@ -9,6 +9,8 @@ Subcommands:
   mux VIDEO OUT.mp4 A[@ms[:dB]]...           put sounds on a silent recording at the given times
   frames VIDEO OUT.png --end SEC             tile frames to find the moment of an action
 
+Defaults (16-bit WAV, peak -1 dBFS) follow doc/rules/sound.md「ファイルの形式と音量」. Change both together.
+
 Run with `python3 -I`. Needs ffmpeg and ffprobe on PATH.
 """
 

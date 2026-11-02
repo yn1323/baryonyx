@@ -11,12 +11,15 @@
   uv run --no-project --with pillow python .agents/skills/item-icon/scripts/item_icons.py cut IMAGE COLS ROWS PREFIX
   uv run --no-project --with pillow python .agents/skills/item-icon/scripts/item_icons.py page --out DIR/index.html --group 見出し=PNG,PNG,... [--group ...]
 
+style-ref は Aseprite 本体を呼ぶ。macOS の /Applications/Aseprite.app 以外にあるときは、環境変数 ASEPRITE に本体のパスを入れる。
+
 cut は、背景を四辺からの塗りつぶしで抜き、マスの絵の範囲を切り出して長辺を SIZE ドットに合わせる。
 1ドットに当たる範囲でいちばん多い色をそのドットの色にする（平均しないので、境目がぼけない）。
 """
 import argparse
 import base64
 import html
+import os
 import subprocess
 import sys
 import tempfile
@@ -31,7 +34,8 @@ SCALE = 4  # 確認用の拡大率
 TOL = 40  # 背景の灰色からの距離（RGBの各差の合計）
 
 ART_ROOT = Path("client/Assets/Baryonyx/Shared/Art")
-ASEPRITE = "/Applications/Aseprite.app/Contents/MacOS/aseprite"
+# Aseprite本体。環境変数 ASEPRITE があればそのパスを使う（Windowsなど、macOSの既定の場所にないとき）
+ASEPRITE = os.environ.get("ASEPRITE", "/Applications/Aseprite.app/Contents/MacOS/aseprite")
 # 画風見本の既定。色と材質がばらけるように、宝石・瓶・金属・植物・粉を選んだ。
 DEFAULT_REFS = [
     "Accessories/DewPendant",

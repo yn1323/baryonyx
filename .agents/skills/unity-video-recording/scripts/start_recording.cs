@@ -7,10 +7,12 @@
 // 進行は EditorApplication.update でゲームの時間を見て行う。シーンの物に頼らないので、隠した物や
 // 場面の切り替えで止まらない。
 
-// ===== ここを書き換える 1：名前と長さ =====
+// ===== ここを書き換える 1：名前・長さ・コマ数 =====
 var outputName = "recording";
 float leadSeconds = 0.5f;
 float recordSeconds = 3.0f;
+// コマ数。Editorが背面のまま演出の速さを見せるときは 10（SKILL.md の「気を付けること」）。
+float frameRate = 30f;
 
 // ===== ここを書き換える 2：録画に映さないCanvas（デバッグルームの操作盤など）のGameObjectの名前 =====
 // GameObject ごと無効にすると、そこに付いた部品の処理まで止まるため、Canvas だけを消す。
@@ -27,7 +29,6 @@ System.Action trigger = () =>
 // ===== ここから下は書き換えない =====
 int outputWidth = 960;
 int outputHeight = 540;
-float frameRate = 30f;
 
 if (!UnityEditor.EditorApplication.isPlaying)
     return "not playing";
@@ -54,7 +55,7 @@ movie.Enabled = true;
 movie.EncoderSettings = new UnityEditor.Recorder.Encoder.CoreEncoderSettings
 {
     Codec = UnityEditor.Recorder.Encoder.CoreEncoderSettings.OutputCodec.MP4,
-    EncodingQuality = UnityEditor.Recorder.Encoder.CoreEncoderSettings.VideoEncodingQuality.High,
+    EncodingQuality = UnityEditor.Recorder.Encoder.CoreEncoderSettings.VideoEncodingQuality.Medium,
 };
 movie.CaptureAudio = false;
 movie.ImageInputSettings = new UnityEditor.Recorder.Input.GameViewInputSettings

@@ -16,7 +16,7 @@ UI Toolkitを採用する場合は、次の責務を固定する。
 - C#：状態購読、イベント、フォーカス、データ変換、非同期ロード。`OnEnable`・`OnDisable`や画面ライフサイクルに合わせて購読を管理する。
 - UI Builder：構造とスタイルの確認。巨大な一枚のUXMLにせず、画面・テンプレート・セル・ダイアログを分割する。
 
-uGUIを採用する場合は、Canvas、Prefab、Layout、Animator、Presenterの責務を分ける。頻繁に変わるHUDと静的な背景を同じCanvasへ置かず、変更範囲を小さくしてCanvas再構築を抑える。Layout GroupやContent Size Fitterを深く連鎖させず、リストセルは再利用する。
+uGUIの責務の分け方は[現行のUI構成](../../../../doc/rules/ui-design.md#現行のui構成)に従う。Layout GroupやContent Size Fitterを深く連鎖させず、リストセルは再利用する。
 
 ## データバインディングと一覧
 
@@ -34,7 +34,7 @@ UI ToolkitとuGUIを混在させる場合は、EventSystem、Input System UI Inp
 
 `Screen.safeArea` はPlayerウィンドウを基準にしたピクセル矩形で、Unity UIは左下原点、UI Toolkitは左上原点を使う。UI Toolkitへ値を渡す場合はY反転を含めて変換し、端末のカットアウト・ステータスバー・ナビゲーションバー・ホームジェスチャーを実機で確かめる。
 
-Canvas ScalerやPanel Settingsは、基準解像度だけでなく縦横比の異なる端末で検証する。横幅だけに合わせて拡大すると、縦画面や横画面でボタンが過大・過小になる。重要情報はアンカーと余白で安全領域へ固定し、装飾背景だけを全画面へ伸ばす。
+Canvas ScalerやPanel Settingsは、基準解像度だけでなく縦横比の異なる端末で検証する。横幅だけに合わせて拡大すると、縦横比の違う横画面でボタンが過大・過小になる。重要情報はアンカーと余白で安全領域へ固定し、装飾背景だけを全画面へ伸ばす。
 
 ## 描画・アセット・性能
 
@@ -42,7 +42,7 @@ Canvas ScalerやPanel Settingsは、基準解像度だけでなく縦横比の�
 - UI Toolkitの動的アトラスは便利だが、表示中の画像が同じアトラスへ入るかFrame Debuggerで確認する。頻繁に変化する色・位置・サイズを一度に多数アニメーションしない。
 - 角丸・枠・影を大量の透明テクスチャで重ねるとオーバードローが増える。Pixel Artの見た目を保つために必要なテクスチャと、USSの単純な背景・境界をプロファイラーで比較する。
 - Render Textureをミニマップやキャラクター表示に使う場合は、更新頻度と解像度を下げられるか調べる。常時更新する大きなRender Textureを画面ごとに増やさない。
-- Addressablesを導入する場合は、画面・イベント・言語・報酬アイコンなどのライフサイクル単位でグループ化し、非同期ロード、失敗、解放、キャッシュ、ラベルを設計する。UIを閉じても参照が残っていないか確認する。
+- TextMeshProの `overflowMode` を `Ellipsis` にすると、横だけでなく縦のはみ出しも判定し、1行目の高さが枠より高いと何も描かない（`text` は入ったまま、`textInfo.characterCount` が0）。文字を入れたのに見えないときは、まず `overflowMode` と枠の高さを疑う。短い名前の欄には付けず、付けるなら枠の高さを行の高さ以上にする。このプロジェクトでは、商会の合成の詳細の効果（`WorkshopCraftAssets`）と案内人の画面のパンくず（`GuideMenuAssets`）が `Ellipsis` を使っている。
 
 性能はエディターだけで合格とせず、目標端末のCPU、GPU、メモリ、入力遅延、ロード時間を測る。Frame Debugger、Profiler、Memory Profilerを、画面表示中、リストスクロール中、報酬演出中、画面遷移中に使う。
 
@@ -50,15 +50,15 @@ Device Simulatorは、エディター内で端末の解像度、Safe Area、回�
 
 ## ローカライズ
 
-Localization packageのString Table・Asset Table・Smart Strings・疑似ローカライズを画面の初期設計から使う。キーは表示文そのものではなく意味と画面の所有者が分かる名前にする。単位、日時、複数形、性別、名前差し込み、右から左の言語を想定し、ボタン幅を日本語だけで決めない。
+Unity LocalizationとAddressablesは、今は入れない（[現行のUI構成](../../../../doc/rules/ui-design.md#現行のui構成)）。
 
-翻訳でレイアウトが伸びたときの優先順位を決める。通常は行数増加、折り返し、スクロール、情報の要約、アイコンの補助説明の順で検討し、文字を極端に縮小して解決しない。
+長い名前や説明でレイアウトが伸びたときの優先順位を決める。通常は行数増加、折り返し、スクロール、情報の要約、アイコンの補助説明の順で検討し、文字を極端に縮小して解決しない。
 
 ## テストの粒度
 
 Unity Test Frameworkで次を分ける。
 
-- Edit Mode：報酬の集計、比較値、状態遷移、ローカライズキー、入力Actionの意味変換など、Unityシーンに依存しない処理。
+- Edit Mode：報酬の集計、比較値、状態遷移、入力Actionの意味変換など、Unityシーンに依存しない処理。
 - Play Mode：ボタン操作、フォーカス、画面遷移、非同期ロード、キャンセル、Safe Area適用、アプリ中断・復帰、演出の終了後状態。
 - 実機・手動：タッチ誤操作、フレーム落ち、フォントの見え方、ノッチ、触覚・音、OSの戻る、通信遅延、メモリ警告。
 
@@ -72,7 +72,5 @@ Unity Test Frameworkで次を分ける。
 - [Screen.safeArea](https://docs.unity3d.com/6000.0/Documentation/ScriptReference/Screen-safeArea.html)
 - [Device Simulator introduction](https://docs.unity3d.com/ja/current/Manual/device-simulator-introduction.html)
 - [Sprite Atlas](https://docs.unity3d.com/6000.0/Documentation/Manual/sprite/atlas.html)
-- [Addressables](https://docs.unity3d.com/6000.0/Documentation/Manual/com.unity.addressables.html)
-- [Localization](https://docs.unity3d.com/6000.0/Documentation/Manual/com.unity.localization.html)
 - [Input System](https://docs.unity3d.com/6000.0/Documentation/Manual/com.unity.inputsystem.html)
 - [Unity Test Framework](https://docs.unity3d.com/6000.0/Documentation/Manual/com.unity.test-framework.html)

@@ -16,7 +16,7 @@ curl -sL -A "Mozilla/5.0" https://soundeffect-lab.info/sound/battle/ | grep -o '
 ## 魔王魂
 
 - 分類ごとのページに音が並び、2ページ目以降は `page/<番号>/` で開く。例：[戦闘効果音](https://maou.audio/category/se/se-battle/)（斬る、殴る、刺す、爆発、銃）、[システム音](https://maou.audio/category/se/se-system/)。
-- 1つの音にmp3・ogg・wavがある。Unityへ入れる音はwavを落とす。
+- 1つの音にmp3・ogg・wavがある。どれを落とすかは[ファイルの形式と音量](../../../../doc/rules/sound.md#ファイルの形式と音量)に従う。
 - ファイルのURLは `https://maou.audio/sound/se/<名前>.<拡張子>`（例：`maou_se_battle01.wav`）である。音の説明（「斬る音。」など）は、ページの本文で各音の再生部分の直前にある。
 - 魔王魂のページから来たことを示さないと、ファイルは403で拒否される。curlでは `-e "https://maou.audio/category/se/se-battle/"` のように、そのページを参照元として付ける。
 

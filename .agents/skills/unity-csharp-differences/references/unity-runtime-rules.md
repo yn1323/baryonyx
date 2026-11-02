@@ -77,6 +77,7 @@ if (other.CompareTag("Player"))
 - `LateUpdate`は`Update`後。追従カメラなど、対象の更新を待ってから行う処理に使う。
 - コルーチンはUnityが`IEnumerator`を進める仕組み。`yield return null`、`WaitForSeconds`、`WaitForFixedUpdate`の時点を確認し、`StartCoroutine`した所有者が無効・破棄された場合のキャンセルを設計する。
 - ループ内で同じ`WaitForSeconds`を大量に生成しない。待機値が固定なら再利用を検討する。
+- メインスレッドで、まだ終わっていない`Task`を`.Result`・`.Wait()`・`GetAwaiter().GetResult()`で待たない。Unityでは`await`の続きがメインスレッドへ戻るため、待っている間は続きが動けず、Editorごと止まる。すでに終わった`Task.FromResult`のほかは、`await`かコルーチンで完了を待つ。
 
 ## 5. EditorとRuntimeの境界
 
@@ -130,7 +131,7 @@ private void ApplyAfterValidate()
 ## 6. 生成アセット・シーンの注意
 
 - 新しいシーンやPrefabを追加したら、Build Settings、参照GUID、展示室やカタログなどプロジェクト固有の登録も確認する。
-- シーン遷移は`SceneManager.LoadScene`だけで完了とせず、Build Settingsの登録、遷移先のEventSystem/Input、戻る・連打・未登録シーンのエラーを検証する。
+- シーン遷移は`SceneManager.LoadScene`だけで完了とせず、Build Settingsの登録、遷移先のEventSystem/Input、戻る・連打・未登録シーンのエラーを検証する。このプロジェクトのシーンの名前と切り替えの部品は[コードとアセットの配置](../../../../doc/rules/frontend-design.md#コードとアセットの配置)に従う。
 - `DontDestroyOnLoad`を使う場合は、重複生成、シーン再入場、破棄順を設計する。
 
 ## 参照

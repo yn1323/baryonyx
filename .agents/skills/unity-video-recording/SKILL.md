@@ -21,16 +21,16 @@ Unity CLIの書き方とEditorの癖は [Unity EditorとCLIの操作・撮影で
 
 ## 2. Editorを用意する
 
-1. 札を取る。札が `busy` なら、取れるまで待つ。札の取得と次の操作を `;` で1行につながない。
+1. 札を取る（[複数のチャットで1台のEditorを使うとき](../../../doc/rules/client-testing.md#複数のチャットで1台のeditorを使うとき)の手順）。
 2. `python3 client/ci/run-editor-tests.py --compile-only --token <token>` でコンパイルが通ることを確かめる。エラーが別の作業のものなら、直さずにユーザーへ伝えて待つ。
-3. 開いているシーンの名前を控えて、`Baryonyx.Editor.EditorScenes.SaveNamed()` で保存してから（`SaveOpenScenes` はUntitledのシーンで「名前を付けて保存」の窓を出してEditorを止めるため使わない）、録るシーンを開く。
+3. 開いているシーンの名前を控え、[client/AGENTS.md](../../../client/AGENTS.md) の「Unityの操作と検証」に従って `Baryonyx.Editor.EditorScenes.SaveNamed()` で保存してから、録るシーンを開く。
 4. `editor_play` でPlayに入り、`editor_status` が `playing` になったことを確かめる。続けて、`eval` で `Application.runInBackground = true` にする。
 5. デバッグルームは、開いた直後に前回の演出を自動で再生する。5秒ほど待ってから録る。
 
 ## 3. 録画する
 
 1. [scripts/start_recording.cs](scripts/start_recording.cs) を作業用の場所（スクラッチパッド）へ写す。
-2. 台本の「ここを書き換える」の3か所を直す。名前と長さ、隠すCanvas、始める処理の3つで、それ以外は変えない。
+2. 台本の「ここを書き換える」の3か所を直す。名前・長さ・コマ数、隠すCanvas、始める処理の3つで、それ以外は変えない。
    名前は録画ごとに新しくする。`Temp/Recordings/` の古いファイルは消さずに残す（ワイルドカードでの削除は止められる）。
 3. `unity --format json command --caller plugin --skill unity-cli eval_file --file <写した台本>` で1回実行する。戻り値が `recording ...` なら録画が始まっている。
 4. `client/Temp/Recordings/<名前>.done` ができるまで待つ。中身が `stopped early` なら、途中でPlayが止まっている。
@@ -61,6 +61,6 @@ ffmpeg -v error -y -i <録画.mp4> -vf "select='not(mod(n\,13))',scale=240:-1,ti
 ## 気を付けること
 
 - 隠す物は Canvas の `enabled` だけを切る。GameObject ごと無効にすると、そこに付いた部品（デバッグルームの操作）の処理やコルーチンまで止まる。
-- 録画中、ゲームの時間は1コマ1/30秒で進む。実時間で進む演出は、実際と違う速さで写ることがある。速さが気になる動画では、そのことを報告に書く（[動画の録画](../../../doc/rules/client-testing.md#動画の録画)）。
-- Editorが背面のときは毎秒約10コマしか進まず、30コマで録ると実時間で進む演出が約3倍速く写る。演出の速さを見せる動画は、台本の `frameRate` を10にし、各フレームの最後で実時間0.1秒まで待つコルーチンを録画の間だけ動かして録り、ffmpegの `-vf fps=30` で直して送る（[Unity EditorとCLIの知見](../shared/unity-editor-notes.md#撮影)）。報告には、コマが粗く見えることと、速さは実際どおりであることを書く。
-- `eval` で足した物や変えた値は、Playを止めても残ることがある。録画のあとで戻ったかを確かめる。
+- 録画中は、実時間で進む演出が実際と違う速さで写ることがある（[動画の録画](../../../doc/rules/client-testing.md#動画の録画)）。速さが気になる動画では、そのことを報告に書く。
+- Editorが背面のときは毎秒約10コマしか進まず、30コマで録ると実時間で進む演出が約3倍速く写る。演出の速さを見せる動画は、台本のコマ数（`frameRate`）を10にし、[Unity EditorとCLIの知見](../shared/unity-editor-notes.md#撮影)のやり方で1フレームを実時間0.1秒にそろえて録り、30コマへ直して送る。報告には、コマが粗く見えることと、速さは実際どおりであることを書く。
+- `eval` で足した物や変えた値は、[client/AGENTS.md](../../../client/AGENTS.md) の「Unityの操作と検証」のとおり、録画のあとで戻ったかを確かめる。

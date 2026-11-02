@@ -1,7 +1,7 @@
 # RPGの技・属性別レシピ
 
-章番号は元のガイド「RPG戦闘VFX：専門用語・計算式・Claudeへの指示ガイド」（2026-10-26）の番号である。第1章・第7章・第8章は [SKILL.md](../SKILL.md)、第2〜3章は [glossary.md](glossary.md)、第4章（F1〜F12）は [formulas.md](formulas.md)、第5章は [recipes.md](recipes.md)、第6章は [prompts.md](prompts.md)、第9章は [sources.md](sources.md)、第10章（P1〜P6）は [procedural.md](procedural.md)、第11章は [lessons.md](lessons.md) にある。[S1] などの記号は [sources.md](sources.md) の資料を指す。
-このゲームで作った技の経験（斬撃に霧を置かない、落雷の光り直し、昇る線と地割れなど）は [lessons.md](lessons.md) を先に読む。
+見出しの番号は、元のガイド「RPG戦闘VFX：専門用語・計算式・Claudeへの指示ガイド」（2026-10-26）の章番号である。[S1] などの記号は [sources.md](sources.md) の資料を指す。
+このゲームで作った技の経験は、決まりを[エフェクトの描き方](../../../../doc/art/direction.md#エフェクトの描き方)で、経緯と注意を [lessons.md](lessons.md) で先に読む（落雷の光り直しは[雷雲の演出の時間設計](../../../../doc/catalog/skills/skill-thundercloud.md#演出の時間設計)）。
 
 ここからは制作上の提案。各項目の「指示例」は、Claudeへ渡す技ごとの追記として使える。
 
@@ -9,14 +9,14 @@
 
 - 用語：Turbulence、Curl Noise、Domain Warping、Procedural Density、Embers、Heat Distortion。
 - 層：明るい炎の芯／薄い炎の舌／煙／火の粉／弱い熱歪み。色だけでなく形と速度を変える。
-- 式・機能：F3・F4・F5と第10章P2・P3・P5。3Dノイズの密度場と上昇する流れで形を作る。薄い炎は手続き的な板・メッシュでも作れるが、厚い炎や煙は密度積分を検討。外部Flipbookは使わない。[S2][P-S1][P-S2]
+- 式・機能：F3・F4・F5と [procedural.md](procedural.md) のP2・P3・P5。3Dノイズの密度場と上昇する流れで形を作る。薄い炎は手続き的な板・メッシュでも作れるが、厚い炎や煙は密度積分を検討。外部Flipbookは使わない。[S2][P-S1][P-S2]
 - 指示例：「大きな炎の巻き上がりと細かな揺らぎを別スケールで作る。炎先端は分裂・侵食して消す。煙はα合成、火の粉と発光層は加算を候補にし、全体を同時に膨張・消滅させない。」
 
 ## 02 氷
 
 - 用語：Refraction、Fresnel、Specular、Roughness Variation、Cracks、Frost Mist。
 - 層：面を持つ氷柱／内部の色の濃淡／霜・亀裂／砕けた破片／冷気。
-- 式・機能：F10・F12。生成メッシュと、コードから生成する法線・粗さ・霜・亀裂。第10章P4・P6。氷全体を発光させるとガラス状の硬さが失われやすい。
+- 式・機能：F10・F12。生成メッシュと、コードから生成する法線・粗さ・霜・亀裂。[procedural.md](procedural.md) のP4・P6。氷全体を発光させるとガラス状の硬さが失われやすい。
 - 指示例：「青い不透明な塊ではなく、透明部・曇り・鋭い反射を混在させる。屈折は弱く、エッジの反射は明瞭に。破片はサイズと回転を変え、冷気だけを柔らかく流す。」
 
 ## 03 雷

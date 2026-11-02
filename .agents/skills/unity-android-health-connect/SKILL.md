@@ -1,6 +1,6 @@
 ---
 name: unity-android-health-connect
-description: Unity Androidプロジェクトで、Health Connectの権限と歩数の取得、Android Java/Kotlin bridge、AndroidManifest、Gradle、端末側の状態とC#の境界を実装・レビュー・検証するときに使う。歩数のサーバー同期の流れやGoogle接続（任意）に触れる変更も含む。Unityの一般的なUI実装や単なるAPKビルドには使わない。
+description: Unity AndroidでHealth Connectの権限と歩数の取得、Android Java/Kotlin bridge、AndroidManifest、Gradle、端末側の状態とC#の境界を実装・レビュー・検証するときに使う。歩数のサーバー同期の流れやGoogle接続（任意）に触れる変更も含む。「歩数が取れない」「歩数が0のまま増えない」「連携の許可が出ない」という相談にも当てはめる。端末へ入れて確かめるのは unity-android-device-validation、APKのビルドは unity-android-ci-distribution、取得したデータの保存先は data-storage の担当とし、Unityの一般的なUI実装には使わない。
 ---
 
 # Unity AndroidとHealth Connectの連携
@@ -45,7 +45,7 @@ Health Connectの権限、歩数の取得、サーバーへの同期、アカウ
 
 1. EditModeで、日付境界、権限結果の変換、キャンセル、再試行、古い応答の破棄、同期の失敗の扱いをFake Providerで検証する。
 2. PlayModeで、起動画面の連携モーダル、許可から同期までの状態遷移、エラー表示と再試行、再入場を検証する。Health Connectとゲームサーバーは端末内の代役へ差し替える（[UnityのテストとCI](../../../doc/rules/client-testing.md)）。
-3. Unityの対象バージョンでIL2CPP・ARM64 APKを生成し、Manifestと依存ライブラリを読み取り専用で確認する。
+3. Androidライブラリは[プラグインとAndroidビルド](../../../doc/features/health-data.md#プラグインとandroidビルド)のGradleの `:health:testDebugUnitTest` で確かめる。APKが要るときはユーザーに確かめてから（[ローカルビルドと配布処理の検証](../../../doc/rules/client-android-testing.md#ローカルビルドと配布処理の検証)）、Unityの対象バージョンでIL2CPP・ARM64 APKを生成し、[プラグインとAndroidビルド](../../../doc/features/health-data.md#プラグインとandroidビルド)の [verify-health-apk.py](../../../client/ci/verify-health-apk.py) で権限とクラスを、Manifestと依存ライブラリを読み取り専用で確認する。
 4. 実端末またはユーザーが起動した指定AVDで、[unity-android-device-validation](../unity-android-device-validation/SKILL.md) の手順に従って確認する。
 5. 検証報告は、unity-android-device-validation の「完了報告」の4区分に分ける。
 

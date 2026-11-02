@@ -3,7 +3,7 @@ name: item-icon
 description: >
   手動呼び出し専用（Claude Code では /item-icon、Codex では $item-icon）。
   アイテム・武器・防具・素材のアイコン候補を、既存のアイテムの絵を画風見本にして Codex CLI の画像生成で作り、
-  32×32のドット絵に直した候補の一覧を見せてユーザーに選ばせる。選ばれた候補を `.aseprite` にするところまで扱う。
+  アイテムの寸法のドット絵に直した候補の一覧を見せてユーザーに選ばせる。選ばれた候補を `.aseprite` にするところまで扱う。
   ドット絵、アイテム、アイコンの話題というだけでは自動で使わない。
 disable-model-invocation: true
 ---
@@ -13,7 +13,7 @@ disable-model-invocation: true
 アイテム・武器・防具・強化素材などのアイコンを、Codex CLIの画像生成で候補として作る。
 寸法・色数・輪郭・ディザ・アンチエイリアスは[ドット絵の制作規格](../../../doc/art/direction.md#ドット絵の制作規格)に従い、[pixel-art-standards](../pixel-art-standards/SKILL.md) と一緒に使う。
 候補から選ぶのはユーザーであり、このスキルは一覧を見せたところで止める。
-PixelLabは使わない（2026-10-24、ユーザーの決定）。
+生成の手段は[アート方針の確定している方針](../../../doc/art/direction.md#確定している方針)に従う。
 
 ## 固定の設定
 
@@ -21,11 +21,11 @@ PixelLabは使わない（2026-10-24、ユーザーの決定）。
 
 | 項目 | 値 |
 |---|---|
-| 生成 | [codex_image.py](../shared/scripts/codex_image.py)。Codex本体のモデルはスクリプトで固定している。組み込みの画像生成の画像モデルは指定しない |
+| 生成 | [codex_image.py](../shared/scripts/codex_image.py)（モデルの扱いは[アート方針の「画像の生成」](../../../doc/art/direction.md#確定している方針)に従う） |
 | 画風の見本 | 既存のアイテム・アクセサリーの `.aseprite` 6枚を4倍にして並べた画像（`item_icons.py style-ref`）。タッチだけを参考にし、形・題材は写さないよう添える |
 | 1枚の画像に描く数 | 色違いのシリーズは1枚に横一列（同じ形・同じ向きで色だけを変える）。形の案を比べるときは2×2の格子に4案 |
 | 背景 | 単色の明るい灰色。模様・影・床・文字は置かない |
-| 仕上げ | `item_icons.py cut` で、マスごとに32×32・透明背景・32色以内にする |
+| 仕上げ | `item_icons.py cut` で、マスごとに規格の寸法・透明背景・規格の色数以内にする |
 | 時間の目安 | 1枚1〜3分。5枚を並列で送っても、利用上限には当たらなかった |
 
 色違いのシリーズを1色ずつ別の画像で頼むと、形と大きさがそろわない。
@@ -46,13 +46,13 @@ PixelLabは使わない（2026-10-24、ユーザーの決定）。
 python3 .agents/skills/shared/scripts/pixel_style.py ja touch light colors detail
 ```
 
-細長い武器は、柄を左下にして右上へ斜めに描かせると、32×32の対角線の長さを使える。
+細長い武器は、柄を左下にして右上へ斜めに描かせると、正方形の対角線の長さを使える。
 細かい装飾は、刃や柄ではなく、鍔・杖の頭・宝石の周りのような広い場所に集める。
 
 ## 手順
 
 1. **アイテムを確認する**：名前、種類、役割、色の違い（シリーズか）を確認する。
-2. **作業フォルダーを作る**：`output/<名前>/`（Git対象外）に依頼文を置き、画風見本を作る。
+2. **作業フォルダーを作る**：`output/<名前>/`（Git対象外）に依頼文を置き、画風見本を作る。`style-ref` はAseprite本体を使う。macOSの `/Applications/Aseprite.app` 以外にあるとき（Windowsなど）は、環境変数 `ASEPRITE` に本体のパスを入れて実行する。
 
    ```bash
    uv run --no-project --with pillow python .agents/skills/item-icon/scripts/item_icons.py style-ref --out output/<名前>/style-ref.png
@@ -64,7 +64,7 @@ python3 .agents/skills/shared/scripts/pixel_style.py ja touch light colors detai
    uv run --no-project python .agents/skills/shared/scripts/codex_image.py --out-dir output/<名前>/<依頼>-1 --name <依頼> --request output/<名前>/<依頼>.md --image output/<名前>/style-ref.png --image-role "ドット絵の画風見本（このゲームの既存のアイテムのアイコン）。タッチ（ドットの大きさ、塗り、描き込み、セルアウトの輪郭、色の段階）だけを参考にする。形・題材は写さない"
    ```
 
-4. **32×32にする**：生成画像を、描かせた並びの列数×行数で切り分ける。
+4. **アイコンの寸法にする**：生成画像を、描かせた並びの列数×行数で切り分ける。
 
    ```bash
    uv run --no-project --with pillow python .agents/skills/item-icon/scripts/item_icons.py cut output/<名前>/<依頼>-1/<依頼>.png 4 1 output/<名前>/<依頼>-1/icon
@@ -77,7 +77,7 @@ python3 .agents/skills/shared/scripts/pixel_style.py ja touch light colors detai
    uv run --no-project --with pillow python .agents/skills/item-icon/scripts/item_icons.py page --out output/<名前>/index.html --group "セットA=output/<名前>/<依頼>-1/icon-1.png,..." --group ...
    ```
 
-7. **選ばれた候補を `.aseprite` にする**：[pixel-art-standards の「PNGから変換する」](../pixel-art-standards/SKILL.md#pngから変換する)で、置き場所（`client/Assets/Baryonyx/Shared/Art/<分類>/<PascalCaseのID>.aseprite`）へ変換する。`cut` の出力（`icon-1.png` など）のように数字で終わるPNGは、Asepriteが連番として隣の画像までコマに読み込む。数字で終わらない名前（`src.png` など）に写してから変換し、書き出して1コマになっていることを確かめる。そのあと、絵を読む生成（`Baryonyx/Inventory/Create Item Art` と、絵を焼き込む画面の生成）を実行し、展示室で確かめる。
+7. **選ばれた候補を `.aseprite` にする**：[pixel-art-standards の「PNGから変換する」](../pixel-art-standards/SKILL.md#pngから変換する)で、置き場所（[ゲーム内の対象の画像](../../../doc/rules/frontend-design.md#ゲーム内の対象の画像)）へ変換する。`cut` の出力は数字で終わる名前なので、変換の注意に従う。そのあと、絵を読む生成（`Baryonyx/Inventory/Create Item Art` と、絵を焼き込む画面の生成）を実行し、展示室で確かめる。
 
 ## 試して採用しなかった方法
 

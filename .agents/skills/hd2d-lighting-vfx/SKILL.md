@@ -3,8 +3,8 @@ name: hd2d-lighting-vfx
 description: >
   手動呼び出し専用（Claude Code では /hd2d-lighting-vfx、Codex では $hd2d-lighting-vfx）。
   3Dの舞台がない、描いた2D背景の画面（案内人の画面、展示室で見る2Dの見た目など）に、光芒・霧・揺らぐ光・火の粉・Bloom・疑似ティルトシフトを重ねる
-  HD-2D風の演出と、キャラクター紹介・報酬・画面遷移のキラキラ粒子を、Unity 6・URPで設計・実装・レビューする。
-  3Dの舞台のカメラ・光・霧・レンズ・物は hd2d-stage-set、技・被弾・報酬のエフェクトの作り方は vfx-authoring の担当とする。
+  HD-2D風の演出と、画面に常に漂うキラキラの粒、キャラクター紹介・画面遷移のキラキラ粒子を、Unity 6・URPで設計・実装・レビューする。
+  3Dの舞台のカメラ・光・霧・レンズ・物と、Topの3Dの舞台に重ねる2Dの塵ときらめきは hd2d-stage-set、技・被弾のエフェクトと報酬を受け取る瞬間の演出は vfx-authoring の担当とする。
 disable-model-invocation: true
 ---
 
@@ -17,8 +17,8 @@ disable-model-invocation: true
 
 | 作業 | 使うスキル |
 |---|---|
-| 3Dの舞台（`Hd2dStageCamera` がある画面）のカメラ・光・霧・光芒・レンズと色・停止中の表示・地面・小物 | [hd2d-stage-set](../hd2d-stage-set/SKILL.md) |
-| 技・被弾・撃破・カットイン・報酬やUIの演出の形・時間・層 | [vfx-authoring](../vfx-authoring/SKILL.md) |
+| 3Dの舞台（`Hd2dStageCamera` がある画面）のカメラ・光・霧・光芒・レンズと色・停止中の表示・地面・小物と、Topの3Dの舞台に重ねる2Dの塵ときらめき（`TopHd2dLightingVfx`） | [hd2d-stage-set](../hd2d-stage-set/SKILL.md) |
+| 技・被弾・撃破・カットイン・報酬を受け取る瞬間やUIの演出の形・時間・層（`Hd2dEmberEmitter` の `Burst` を使うときも） | [vfx-authoring](../vfx-authoring/SKILL.md) |
 | 描いた2D背景に常に出しておく光・霧・粒と、2D背景向けのポストプロセス。キラキラ粒子の構成 | このスキル |
 
 ## 最初に確認すること
@@ -29,7 +29,7 @@ disable-model-invocation: true
 2. 対象シーンのカメラ、CanvasのRender Mode、Sorting Layer、背景の型（`RawImage`、`Image`、`SpriteRenderer`、Tilemap）と、UIがカメラのポストプロセスを通るかを確認する。シーンに `Hd2dStageCamera` があれば3Dの舞台であり、hd2d-stage-set の担当になる。3Dの舞台の画面でも、展示室で画面のPrefabを単体で見るときなどは、2Dのときだけの部品（`Hd2dFlatOnly`）がこのスキルの担当として表示される。
 3. 基準解像度、ピクセル密度、Filter Mode、整数スケール、画面方向、Safe Areaは[UI設計ルール](../../../doc/rules/ui-design.md)に従う。
 4. 表現の目的を「背景の奥行き」「環境の光」「キャラクター紹介の見せ場」「操作中のフィードバック」「画面遷移」のどれかに分け、常時演出と短い演出を区別する。
-5. 公式Unity資料と対象バージョンが一致しない場合は、対象バージョンのマニュアルを再確認してからAPI名や設定値を断定する。調査の入口は [references/research-sources.md](references/research-sources.md) に置く。
+5. 公式Unity資料と対象バージョンが一致しない場合は、対象バージョンのマニュアルを再確認してからAPI名や設定値を断定する。調査の入口は [HD-2Dの調査資料](../shared/hd2d-research-sources.md) に置く。
 
 描いた背景を `RawImage` で表示し、文字と操作をSafe Area配下に置く画面では、次の点に注意する。
 この構造のままでは、ワールド用の `Light 2D` を追加しても `RawImage` が自動で照明を受けるとは限らない。
@@ -40,7 +40,7 @@ disable-model-invocation: true
 HD-2D風の見た目を一つのエフェクトで作ろうとせず、次の層を必要な分だけ組み合わせる。
 光・霧・粒の形を新しく作る・作り直すときは、[エフェクトの描き方](../../../doc/art/direction.md#エフェクトの描き方)に従い、画像を貼らずに計算で描く。式の組み立ては [vfx-authoringの外部画像なしで質感を補う技術](../vfx-authoring/references/procedural.md)と[計算で描くときのつまずき](../vfx-authoring/references/lessons.md#計算で描くときのつまずき) を使う。
 共通の部品（下の表）は、2026-10-26に霧のシェーダー `Baryonyx/HD2D/UI Fog` と、光・粒のシェーダー `Baryonyx/HD2D/UI Ambient`（形ごとのマテリアル）で計算して描くように作り直した。形を足すときも画像を足さず、このシェーダーの形かマテリアルを足す。
-技法ごとの前提、難易度、採用状況は [references/technique-catalog.md](references/technique-catalog.md) にまとめる。
+技法ごとの前提と難易度は [references/technique-catalog.md](references/technique-catalog.md) にまとめる。採用・見送りなどの扱いは[アート方針の描いた2D背景のHD-2D演出](../../../doc/art/direction.md#描いた2d背景のhd-2d演出)を正本とする。
 
 | 層 | 役割 | 第一候補 | 採用条件・注意点 |
 | --- | --- | --- | --- |
@@ -65,13 +65,14 @@ HD-2D風の見た目を一つのエフェクトで作ろうとせず、次の層
 
 | 表現 | Prefab | 使うときの要点 | 調整項目の正本 |
 | --- | --- | --- | --- |
-| 天井や窓から差す光 | `Hd2dLightShaft` | 根元が明るく先へ広がる光芒を、画面外から床へ斜めに通す。太さと濃さの違う複数本を間を空けて並べ、床の光だまりと光の中の埃で出どころと着地点を示す。画面固有の開始位置と光だまりはシーンのPrefabインスタンスで上書きする | [光芒の調整](../../../doc/features/showcase.md#光芒の調整) |
-| 霧・霞 | `Hd2dFog` | 背景の直上（光芒と粒子より下）に置く。奥ほど遅く淡く、手前ほど速く濃くする。画面固有の層はPrefabの既定の層を上書きせず、リストの末尾へ足す | [霧の調整](../../../doc/features/showcase.md#霧の調整) |
-| 背景に描かれた光源の揺らぎ | `Hd2dFlickerLight` | 親を背景と同じ `ResponsiveBackground` で背景画像に揃え、光源を背景画像上の正規化座標で置く。画面座標で置くと、画面比率が変わったときに絵の光源からずれる。光が描き込まれた背景では、芯を小さく周りの光を弱くして白飛びを避ける | [揺らぐ光の調整](../../../doc/features/showcase.md#揺らぐ光の調整) |
-| 火の粉・魔法の粒・報酬のキラキラ | `Hd2dEmberEmitter` | 常時出す発生源と、報酬や画面遷移の瞬間だけ `Burst` で出す発生源を分ける。背景の光源から出す場合は親を背景画像に揃える | [火の粉の調整](../../../doc/features/showcase.md#火の粉の調整) |
-| にじみ・周辺減光・色調 | `Hd2dPostProcess`（Volume Profile） | ポストプロセスを掛ける背景と演出を `Screen Space - Camera` のCanvasへ分け、文字と操作は `ScreenSpaceOverlay` のCanvasに残す。両方のCanvasScalerは同じ設定にする。3Dの舞台は舞台ごとのProfileを使う（hd2d-stage-set） | [ポストプロセスの調整](../../../doc/features/showcase.md#ポストプロセスの調整) |
-| 画面の上下のぼかし | `HD-2D Tilt Shift`（同じProfile） | ドット絵の1粒より大きい半径にしないと見えず、大きすぎると輪郭が濁る。Android端末で負荷を確かめる。3Dの舞台は舞台のレンズを使う（hd2d-stage-set） | [疑似ティルトシフト](../../../doc/features/showcase.md#疑似ティルトシフト) |
-| 画面全体の埃ときらめき | `Hd2dLightingVfx`・`Hd2dParticleField` | 数は多めでも一粒を目立たせない | [塵ときらめきの表示](../../../doc/features/showcase.md#塵ときらめきの表示) |
+| 天井や窓から差す光 | `Hd2dLightShaft` | 根元が明るく先へ広がる光芒を、画面外から床へ斜めに通す。太さと濃さの違う複数本を間を空けて並べ、床の光だまりと光の中の埃で出どころと着地点を示す。画面固有の開始位置と光だまりはシーンのPrefabインスタンスで上書きする | [光芒の調整](../../../doc/features/showcase/hd2d-tuning.md#光芒の調整) |
+| 霧・霞 | `Hd2dFog` | 背景の直上（光芒と粒子より下）に置く。奥ほど遅く淡く、手前ほど速く濃くする。画面固有の層はPrefabの既定の層を上書きせず、リストの末尾へ足す | [霧の調整](../../../doc/features/showcase/hd2d-tuning.md#霧の調整) |
+| 背景に描かれた光源の揺らぎ | `Hd2dFlickerLight` | 背景に描かれた光源に重ねる。親を背景画像に揃える置き方と、光が描き込まれた背景での強さは調整項目の正本に従う | [揺らぐ光の調整](../../../doc/features/showcase/hd2d-tuning.md#揺らぐ光の調整) |
+| 火の粉・魔法の粒 | `Hd2dEmberEmitter` | 常時出す発生源と、画面遷移の瞬間だけ `Burst` で出す発生源を分ける。報酬を受け取る瞬間に出す粒は vfx-authoring の担当とする。背景の光源から出す場合は親を背景画像に揃える | [火の粉の調整](../../../doc/features/showcase/hd2d-tuning.md#火の粉の調整) |
+| にじみ・周辺減光・色調 | `Hd2dPostProcess`（Volume Profile） | ポストプロセスを掛ける背景と演出を `Screen Space - Camera` のCanvasへ分け、文字と操作は `ScreenSpaceOverlay` のCanvasに残す。両方のCanvasScalerは同じ設定にする。3Dの舞台は舞台ごとのProfileを使う（hd2d-stage-set） | [ポストプロセスの調整](../../../doc/features/showcase/hd2d-tuning.md#ポストプロセスの調整) |
+| 画面の上下のぼかし | `HD-2D Tilt Shift`（同じProfile） | 半径の決め方とAndroid端末での負荷は調整項目の正本に従う（大きすぎると輪郭が濁る）。3Dの舞台は舞台のレンズを使う（hd2d-stage-set） | [疑似ティルトシフト](../../../doc/features/showcase/hd2d-tuning.md#疑似ティルトシフト) |
+| 画面全体の埃ときらめき | `Hd2dLightingVfx`・`Hd2dParticleField` | 数は多めでも一粒を目立たせない。Topの3Dの舞台に重ねている `TopHd2dLightingVfx` は hd2d-stage-set の担当とする | [塵ときらめきの表示](../../../doc/features/showcase/hd2d-tuning.md#塵ときらめきの表示) |
+| 小さな暖色の光（柔らかいグローと細い光の筋の組） | `Hd2dVfxLightPoint` | 画像を使わず `Baryonyx/HD2D/UI Ambient` のグローと光の筋で描き、Overlayの背景の上にも置ける。今は `Hd2dLightingVfx` のPrefabの `LightLayer` に4つ残っているが、Topの `TopHd2dLightingVfx` ではその層を無効にしており、どの画面にも出ていない | —（展示室の仕様に節がない） |
 
 ## キラキラ粒子の構成
 
@@ -80,7 +81,7 @@ HD-2D風の見た目を一つのエフェクトで作ろうとせず、次の層
 - **フィールド粒子**：低コントラストの埃、霧、灰。数は多めでも一粒を目立たせない。
 - **アクセント粒子**：四芒星、短い線、火の粉、魔法の点。数を絞り、寿命の途中だけ明るくする。
 - **グロー層**：発光する円、ぼかした光斑、細い光芒。アクセント粒子の背後に置く。
-- **見せ場のバースト**：キャラクター紹介、報酬、画面遷移の瞬間だけ発生させ、常時演出と分ける。
+- **見せ場のバースト**：キャラクター紹介、画面遷移の瞬間だけ発生させ、常時演出と分ける。報酬を受け取る瞬間のバーストは vfx-authoring で作る。
 
 これらを同じ速度、同じ大きさ、同じ色で動かすと平面のノイズになる。
 深度ごとに速度・サイズ・透明度・発生位置を変え、`Color over Lifetime`で出現と消滅を制御する。
@@ -116,7 +117,7 @@ HD-2D風の見た目を一つのエフェクトで作ろうとせず、次の層
 複数画面で使うときは、見た目と設定を次のように分ける。
 
 - **共通の表現部品**：発光スプライト、四芒星、埃、霧、光芒、暗幕、色調整、粒子の再生制御。
-- **画面固有の配置**：描かれた光源の位置、キャラクター紹介の焦点、報酬画面のバースト位置、文字の遮蔽範囲。
+- **画面固有の配置**：描かれた光源の位置、キャラクター紹介の焦点、文字の遮蔽範囲。
 - **品質設定**：高・標準・低、モーション低減、粒子停止、Bloomの強度、同時粒子数、更新頻度。
 - **データ**：色、発生範囲、寿命、速度、サイズ、Sorting Layer、再生条件をPrefabまたはProfileへ寄せ、コードへ直接書き込まない。
 
@@ -132,7 +133,7 @@ HD-2D風の見た目を一つのエフェクトで作ろうとせず、次の層
 
 ## 検証の順序
 
-実装や検証の前に、2Dの演出でつまずいた点（`AddBlitPass` のテクセルサイズ、Renderer Featureの登録、画面座標で置いた光のずれなど）と部品設計の工夫を [references/implementation-notes.md](references/implementation-notes.md) で、Editorの状態と撮影のつまずきを [Unity EditorとCLIの知見](../shared/unity-editor-notes.md) で読み、同じ問題を避ける。
+実装や検証の前に、2Dの演出でつまずいた点（`AddBlitPass` のテクセルサイズ、Renderer Featureの登録、画面座標で置いた光のずれなど）と部品設計の工夫を [HD-2D演出の実装で得た知見](../shared/hd2d-implementation-notes.md) で、Editorの状態と撮影のつまずきを [Unity EditorとCLIの知見](../shared/unity-editor-notes.md) で読み、同じ問題を避ける。
 
 1. **静的確認**：Renderer、Canvas、Material、Sorting Layer、Volume、粒子Prefab、設定の参照切れを確認する。
 2. **Editor確認**：[UI設計ルール](../../../doc/rules/ui-design.md)の機種差を確認する条件の画面比率とSafe Areaで、背景の歪み、文字のコントラスト、粒子のクリップ、UIへの重なりを確認する。

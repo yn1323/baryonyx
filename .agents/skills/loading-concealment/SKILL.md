@@ -23,7 +23,7 @@ Webで調べた一般的な目安と根拠は [references/research-sources.md](r
 
 ## 手順
 
-1. **待ちを書き出す**：何を待っているか（シーンの読み込み、サーバーの読み込み、保存の返事、初めて使う重い絵やシェーダー）と、その結果がないと何が描けないかを並べる。サーバーの往復の時間は、開発用ビルドの計測のログ（[GuidePanelLoad](../../../client/Assets/Baryonyx/Shared/UI/GuideMenu/GuidePanelLoad.cs) が開いてから描き終えるまでを、[ServerApi](../../../client/Assets/Baryonyx/Shared/Networking/ServerApi.cs) が要求ごとの時間を出す）で、描く時間と読む時間を分けて見る。
+1. **待ちを書き出す**：何を待っているか（シーンの読み込み、サーバーの読み込み、保存の返事、初めて使う重い絵やシェーダー）と、その結果がないと何が描けないかを並べる。サーバーの往復の時間は、開発用ビルドとEditorの計測のログ（[処理時間の計測](../../../doc/rules/backend-design.md#処理時間の計測server-timing)）で、描く時間と読む時間を分けて見る。
 2. **見えてしまう姿を書き出す**：待っている間に何が見えるかを、初めて開いたときと開き直したときで分けて書く。読む前の既定値、初期の位置、途中まで描いた姿（駒だけ・地図の外の黒）、空白、ちらつきが対象である。指摘があれば、その言葉をそのまま書く。
 3. **形を選ぶ**：[正本の表](../../../doc/rules/ui-design.md#読み込みの待ち時間を見せない)を上から順に当てはめ、最初に使える形を選ぶ。待ちを削れる（同時に送る、往復を減らす）なら、隠す前に削る。サーバーの往復を減らすのは [server-api-authoring](../server-api-authoring/SKILL.md) の手順で行う。
 4. **今ある部品で作る**：下の「使う部品」から選び、新しい仕組みを足さない。形が表にないときは、作る前にユーザーに確かめる。
@@ -36,7 +36,7 @@ Webで調べた一般的な目安と根拠は [references/research-sources.md](r
 | 形 | 部品 | 使い方の例 |
 |---|---|---|
 | シーンの切り替え | [SceneLoader](../../../client/Assets/Baryonyx/Shared/UI/SceneTransition/SceneLoader.cs)・[SceneTransitionController](../../../client/Assets/Baryonyx/Shared/UI/SceneTransition/SceneTransitionController.cs) | 遷移元の `Exit` が閉じ方と開き方を決める（[画面遷移の演出](../../../doc/features/screens/top-home.md#画面遷移の演出)） |
-| 幕を閉じたまま待つ | `HoldReveal()`（Awakeで呼ぶ）→ 描き終えたら `Reveal()`。上限つきで待つなら `IsCovered` を見て `PlayIn()` | [ExplorationBootstrap](../../../client/Assets/Baryonyx/App/Runtime/ExplorationBootstrap.cs)（描き終えてから開く）、[WorldMapBootstrap](../../../client/Assets/Baryonyx/App/Runtime/WorldMapBootstrap.cs)（3秒の上限） |
+| 幕を閉じたまま待つ | `HoldReveal()`（Awakeで呼ぶ）→ 描き終えたら `Reveal()`。上限つきで待つなら、上限まで待ってから `Reveal()`（`IsCovered` を見て `PlayIn()` でもよい） | [ExplorationBootstrap](../../../client/Assets/Baryonyx/App/Runtime/ExplorationBootstrap.cs)（描き終えてから開く）、[BattleBootstrap](../../../client/Assets/Baryonyx/App/Runtime/BattleBootstrap.cs)（編成を読み終えるまで。上限つき）、前の街道の世界地図の [WorldMapBootstrap](../../../client/Assets/Baryonyx/App/Runtime/WorldMapBootstrap.cs)（`IsCovered` を見て `PlayIn()`。今は入口なし） |
 | 楽観的更新 | [OptimisticState](../../../client/Assets/Baryonyx/Shared/Networking/OptimisticState.cs)・[SaveQueue](../../../client/Assets/Baryonyx/Shared/Networking/SaveQueue.cs)・[RuneBalance](../../../client/Assets/Baryonyx/Shared/Economy/RuneBalance.cs) の取り置き | 装備の変更、世界地図のマスの支払い |
 | 前に読んだ内容の先出し | 各セッションの `Known` と指紋（`Fingerprint`）、[GuidePanel](../../../client/Assets/Baryonyx/Shared/UI/GuideMenu/GuidePanel.cs) の `StartLoad(readAgain: true)` | 編成・装備・ライブラリ |
 | カードを伏せてめくる | [GlassCardBack](../../../client/Assets/Baryonyx/Shared/UI/GlassCard/GlassCardBack.cs) | 編成・商会・ライブラリの一覧（[カードの裏面](../../../doc/features/screens/guide.md#カードの裏面)） |
@@ -59,15 +59,16 @@ Webで調べた一般的な目安と根拠は [references/research-sources.md](r
 
 | 指摘 | 原因 | 直し方 |
 |---|---|---|
-| 世界地図で「一瞬初期値にスポーンしてる」 | 開いてから今いるマスを読み、読み終えて飛んでいた | 読み終えるまで暗転のまま待ち、今いるマスに置いてから開く。3秒を超えたら開いて「読み込み中…」 |
+| 世界地図で「一瞬初期値にスポーンしてる」 | 開いてから今いるマスを読み、読み終えて飛んでいた | 読み終えるまで暗転のまま待ち、今いるマスに置いてから開く。上限を超えたら開いて「読み込み中…」 |
 | ダンジョンで「一瞬ポーンだけが表示されてからマスとルートが表示される」 | 幕をすぐ開けて、冒険を読む間に駒だけが見えていた | `HoldReveal` で幕を閉じたまま読み、部屋を描いてから `Reveal`。ホームへ戻るときは開けずに移る |
 | 「キャラのスキル表示に1秒ちょっとかかる」 | 開くたびに読み直しを待っていた | 前に読んだ内容をすぐ出して裏で読み直し、変わったときだけ描き直す。互いに依存しない読み込みを同時に送る |
 | 「ワールドマップ移動時にルーンの消費が直列になっている」 | 跳ぶ前に支払いの返事を待っていた | 楽観的更新にし、断られた支払いとその後を取り消して駒を戻す |
 | 一覧の「読み込み中…」の文字 | 初めて読む間に見せる物がなかった | 見える所をカードの裏で埋め、読み終えたら一斉にめくる |
+| 戦闘で「仮の4人のHPが見えてから本当のHPへ伸びる」 | 幕をすぐ開けて、編成を読む間にシーンに置いた仮の4人が見えていた | `HoldReveal` で編成を読み終えるまで幕を閉じ、上限を超えたら開ける（[冒険の画面](../../../doc/features/screens/adventure.md#冒険の画面)） |
 
 ## 確かめること
 
-- **通信の状態**：Homeのデバッグルームの一覧の「通信」で、ふつう・遅い（1秒）・とても遅い（3秒）・失敗を切り替え、初めて開いたときと開き直したときを見る。とても遅いときは、幕の上限を超えた動きも見る。
-- **テスト**：幕を閉じたまま待つ画面は、読み終える前に幕が開いていないことと、上限・失敗で開くことをPlayModeテストで確かめる（例：[WorldMapOpeningTests](../../../client/Assets/Baryonyx/Features/WorldMap/Tests/PlayMode/WorldMapOpeningTests.cs)、[AdventureLabTests](../../../client/Assets/Baryonyx/App/Tests/PlayMode/AdventureLabTests.cs)）。前に読んだ内容の先出しは、EditModeでセッションの読み直しを、PlayModeで画面がすぐ出ることを確かめる（例：[LibrarySessionReadAgainTests](../../../client/Assets/Baryonyx/Features/Library/Tests/EditMode/LibrarySessionReadAgainTests.cs)、[LibraryReadAgainTests](../../../client/Assets/Baryonyx/App/Tests/PlayMode/LibraryReadAgainTests.cs)）。実行は[作業中に実行するPlayModeテスト](../../../doc/rules/client-testing.md#作業中に実行するplaymodeテスト)に従う。
+- **通信の状態**：[読み込みの待ち時間を見せない](../../../doc/rules/ui-design.md#読み込みの待ち時間を見せない)の最後の項目のとおり、デバッグルームの「通信」の各状態で確かめる。とても遅いときは、幕の上限を超えた動きも見る。
+- **テスト**：幕を閉じたまま待つ画面は、読み終える前に幕が開いていないことと、上限・失敗で開くことをPlayModeテストで確かめる（例：[WorldMapOpeningTests](../../../client/Assets/Baryonyx/Features/WorldMap/Tests/PlayMode/WorldMapOpeningTests.cs)、[AdventureLabTests](../../../client/Assets/Baryonyx/App/Tests/PlayMode/AdventureLabTests.cs)、[AdventurePartyTests](../../../client/Assets/Baryonyx/Features/Adventure/Tests/PlayMode/AdventurePartyTests.cs)）。前に読んだ内容の先出しは、EditModeでセッションの読み直しを、PlayModeで画面がすぐ出ることを確かめる（例：[LibrarySessionReadAgainTests](../../../client/Assets/Baryonyx/Features/Library/Tests/EditMode/LibrarySessionReadAgainTests.cs)、[LibraryReadAgainTests](../../../client/Assets/Baryonyx/App/Tests/PlayMode/LibraryReadAgainTests.cs)）。実行は[作業中に実行するPlayModeテスト](../../../doc/rules/client-testing.md#作業中に実行するplaymodeテスト)に従う。
 - **見た目**：一瞬の表示はスクリーンショットでは写りにくいため、切り替えの前後を [unity-video-recording](../unity-video-recording/SKILL.md) で録画し、コマ送りで確かめる。
 - **実機の重さ**：シーンを読み込んだ直後の重いフレームや、初めて使うシェーダーの引っかかりはEditorでは出にくい。気になるときはユーザーにエミュレーターでの確認を頼み、確かめていなければ未確認として報告する。

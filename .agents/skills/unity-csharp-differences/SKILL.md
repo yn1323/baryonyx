@@ -1,6 +1,6 @@
 ---
 name: unity-csharp-differences
-description: Unity 6のC#コードを実装・リファクタ・レビューするとき、標準C#とUnityEngine.Object、Unityのライフサイクル、シリアル化、Editor API、アナライザー規則の違いを確認し、安全な書き方と検証方法を選ぶ。重複したロジック・ファイルの共通化や、生成スクリプトとアセットの移動で動作を変えていないことの確かめ方も扱う。
+description: Unity 6のC#（client/ のRuntime・Editor・テスト・生成スクリプト）を書く・直す・リファクタ・レビューするときに使う。UnityEngine.Objectのnull判定と破棄、Unityが呼ぶメソッドの順、シリアル化、OnValidate、EditorとRuntimeの境界、アナライザーの診断を確かめ、ロジックや生成スクリプトの共通化と、移動で動作を変えていないことの確かめ方も扱う。「?.で怒られた」「OnValidateで警告が出る」「この処理共通化して」「生成スクリプトをリファクタして」という依頼にも当てはめる。server/ のTypeScriptは server-api-authoring、画面の構成やUXは ui-advisor の担当で、テストの実行には使わない。
 ---
 
 # Unity C#差分ガイド
@@ -9,10 +9,10 @@ Unityのコードは通常のC#としてコンパイルされるが、`UnityEngi
 
 ## 発動したら最初に確認すること
 
-1. `ProjectSettings/ProjectVersion.txt`、対象の`.asmdef`、`AGENTS.md`、既存のコーディング規約を確認する。`Assets/Analyzers/Microsoft.Unity.Analyzers/Microsoft.Unity.Analyzers.dll`と生成された`.csproj`のAnalyzer参照も確認し、実際に有効な診断を特定する。Unityのバージョンが変わっている場合は、記憶でAPIを断定せず、対象バージョンのUnity公式ドキュメントをWeb検索する。
+1. `ProjectSettings/ProjectVersion.txt`、対象の`.asmdef`、`AGENTS.md`、既存のコーディング規約を確認する。`Assets/Analyzers/Microsoft.Unity.Analyzers/Microsoft.Unity.Analyzers.dll`と生成された`.csproj`のAnalyzer参照も確認し、実際に有効な診断を特定する。Unityのバージョンが変わっている場合は、記憶でAPIを断定せず、対象バージョンのUnity公式ドキュメントをWeb検索する。診断の重大度は[Unityの静的解析](../../../doc/rules/client-code-quality.md#unityの静的解析)を正本とする。
 2. 変数の型を分類する。`UnityEngine.Object`（`GameObject`、`Component`、`MonoBehaviour`、`ScriptableObject`、アセットなど）か、純粋なC#クラス・構造体かを分ける。null、生成、保存、破棄の規則はこの分類で変わる。
 3. 必要な詳細だけを参照する。null・生成・破棄は[Unityオブジェクトの意味](references/unity-object-semantics.md)、アナライザーは[Unityアナライザー規則](references/unity-analyzers.md)、Inspector・ライフサイクル・Editor APIは[Unity実行規則](references/unity-runtime-rules.md)、重複の共通化・ファイルの移動・生成スクリプトの検証は[Unityコードのリファクタ](references/refactoring.md)を読む。公式URLとバージョンの確認には[調査ソース](references/research-sources.md)を使う。
-4. 変更後は、コンパイルまたはプロジェクトのアナライザー検査、対象のEdit Mode/Play Modeテスト、必要ならUnity Editorでのシーン動作を分けて確認する。コードがコンパイルできたことだけで、Inspector保存・ライフサイクル・シーン遷移が正しいとは判断しない。
+4. 変更後は、CSharpierでの整形と検査（[日常の整形](../../../doc/rules/client-code-quality.md#日常の整形)）、再コンパイルと対象のEdit Mode/Play Modeテスト（[作業中に実行するPlayModeテスト](../../../doc/rules/client-testing.md#作業中に実行するplaymodeテスト)のスクリプト）、必要ならUnity Editorでのシーン動作を分けて確認する。コードがコンパイルできたことだけで、Inspector保存・ライフサイクル・シーン遷移が正しいとは判断しない。
 
 ## 実装時の必須判断
 

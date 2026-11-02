@@ -1,6 +1,6 @@
 # 参考資料
 
-章番号は元のガイド「RPG戦闘VFX：専門用語・計算式・Claudeへの指示ガイド」（2026-10-26）の番号である。第1章・第7章・第8章は [SKILL.md](../SKILL.md)、第2〜3章は [glossary.md](glossary.md)、第4章（F1〜F12）は [formulas.md](formulas.md)、第5章は [recipes.md](recipes.md)、第6章は [prompts.md](prompts.md)、第9章は [sources.md](sources.md)、第10章（P1〜P6）は [procedural.md](procedural.md)、第11章は [lessons.md](lessons.md) にある。[S1] などの記号は [sources.md](sources.md) の資料を指す。
+元のガイド「RPG戦闘VFX：専門用語・計算式・Claudeへの指示ガイド」（2026-10-26）の参考資料と、それまでの調査の資料である。[S1] などの記号は、この文書の資料を指す。
 
 2026年10月26日に確認。公式資料の機能説明と、作者本人の制作事例を分けている。リンク先のバージョン・対応パイプラインが現在のプロジェクトと一致するとは限らない。以下の資料が本書のすべてのレシピや数式を保証するわけではない。
 
@@ -27,7 +27,7 @@
 
 ## AIへの指示・制作ワークフロー
 
-- [Coplay：We Taught AI to Build VFX in Unity. It Kinda Worked.](https://coplay.dev/blog/ai-vfx) — AIによるシェーダー選択や構成の問題を、制作レシピ・テクスチャ・視覚フィードバックで改善した開発記録。
+- [Coplay：We Taught AI to Build VFX in Unity. It Kinda Worked.](https://coplay.dev/blog/ai-vfx) — AIによるシェーダー選択や構成の問題を、制作レシピ・テクスチャ・視覚フィードバックで改善した開発記録。AIは空間の推論が弱い、静止画では動きと時間を判断できない、レシピと描画して見る工程が効いた（本文で確認、2026-10-23）。
 - [Unity＋Claude Codeで炎を制作する日本語記事](https://qitz-plus.x0.com/unity-claude-code-%E3%81%A7-particlesystem%EF%BC%88%E7%82%8E%E3%82%A8%E3%83%95%E3%82%A7%E3%82%AF%E3%83%88%EF%BC%89%E3%82%92%E4%BD%9C%E6%88%90%E3%81%99%E3%82%8B%E6%96%B9%E6%B3%95/) — 外部スプライトを使う以前の調査例。今回の実装手順には採用せず、コードへ制御を任せる例としてのみ残す。
 
 ## 外部画像なしの技術（P-S）
@@ -37,7 +37,7 @@
 - [P-S3：Catlike Coding — Pseudorandom Noise](https://catlikecoding.com/unity/tutorials/pseudorandom-noise/) — ハッシュ、Value、Perlin、Voronoi、Simplexノイズの実装を学べる作者のシリーズ。
 - [補助資料：Texture Distortion](https://catlikecoding.com/unity/tutorials/flow/texture-distortion/) — 流れによる座標変形の考え方。元記事は画像を使うため、その素材手順は採用しない。座標変形の原理だけを手続き的ノイズへ応用する。
 
-本資料は指示・設計ガイド。実際のプロジェクトに対する実装・動作確認・描画品質や性能の検証はまだ行っていない。
+ガイドの式とレシピそのものは、このプロジェクトで検証したものではない。当てはめて分かったことは [lessons.md](lessons.md) にある。
 
 ## これまでの調査（2026-10-01〜10-23）
 
@@ -121,7 +121,7 @@
 | [2D Lighting for Pixel Art（Unity Learn）](https://learn.unity.com/course/2d-lighting-for-pixel-art) | 一次 | Unity 6.3でのドット絵向けの2D Light、法線マップ、発光、影、ポストプロセス | 本文 |
 | [Mini rant: stop using mixels（Flowlab Community）](https://community.flowlab.io/t/mini-rant-stop-using-mixels/38287)、[Pixel Art Glossary（pixnote）](https://pixnote.net/en/learn/glossary) | 二次 | ミクセル（ドットの大きさが違う絵の混在）が避けられる理由 | 要約 |
 
-HD-2Dの作品の光と奥行きの構成要素は、[hd2d-lighting-vfxの調査資料](../../hd2d-lighting-vfx/references/research-sources.md) にもまとめている。
+HD-2Dの作品の光と奥行きの構成要素は、[HD-2Dの調査資料](../../shared/hd2d-research-sources.md) にもまとめている。
 
 ### 画面効果と手応え
 
@@ -174,5 +174,4 @@ HD-2Dの作品の光と奥行きの構成要素は、[hd2d-lighting-vfxの調査
 | 資料 | 種類 | 使った内容 | 取得 |
 |---|---|---|---|
 | [AI-generated GLSL shaders（14islands）](https://www.14islands.com/journal/ai-generated-glsl-shaders) | 二次（制作会社の実験記事） | AIは結果を見ないため美的判断が弱い、計画を先に作らせると質が上がりエラーが減る、同じ指示でも結果がぶれる、重くなりやすい | 本文（2026-10-23） |
-| [AI VFX（Coplay）](https://coplay.dev/blog/ai-vfx) | 二次（ツール開発会社の記事） | AIは空間の推論が弱い、静止画では動きと時間を判断できない、レシピと描画して見る工程が効いた | 本文（2026-10-23） |
 

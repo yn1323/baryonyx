@@ -1,7 +1,7 @@
 # HD-2DライティングとVFXの調査資料
 
 調査日は2026-09-22（後半の節は、それぞれの調査日）。
-描いた2D背景の演出（このスキル）と、3Dの舞台（[hd2d-stage-set](../../hd2d-stage-set/SKILL.md)）の両方の根拠をまとめる。3Dの舞台の資料も、仕様からリンクされているためここに置く。
+描いた2D背景の演出（[hd2d-lighting-vfx](../hd2d-lighting-vfx/SKILL.md)）と、3Dの舞台（[hd2d-stage-set](../hd2d-stage-set/SKILL.md)）の両方の根拠をまとめる。両方のスキルと vfx-authoring、3Dの舞台の仕様が使うため、shared/ に置く。
 URLと仕様は更新されるため、UnityのAPIやInspector名を実装へ反映するときは、プロジェクトのUnity `6000.6.0f1`とURP `17.6.0`に対応する公式マニュアルを再確認する。
 
 ## HD-2Dの定義と設計上の扱い
@@ -74,7 +74,7 @@ SQUARE ENIXの資料はHD-2Dの意図と画面上の要素を理解する参考�
 ## HD-2Dの3Dステージ
 
 調査日は2026-10-02。
-3Dの地面と背景にドット絵のキャラを立たせる構成（hd2d-stage-set の [camera-light.md](../../hd2d-stage-set/references/camera-light.md)）を作るときに確かめた資料である。
+3Dの地面と背景にドット絵のキャラを立たせる構成（hd2d-stage-set の [camera-light.md](../hd2d-stage-set/references/camera-light.md)）を作るときに確かめた資料である。
 特定作品の内部実装は公開されていないため、開発者の発言と、Unityで実現した方法を区別する。
 
 - [「オクトパストラベラー」開発者インタビュー（GAME Watch）](https://game.watch.impress.co.jp/docs/interview/1128111.html)
@@ -93,7 +93,7 @@ SQUARE ENIXの資料はHD-2Dの意図と画面上の要素を理解する参考�
 - [Depth of Field volume override（Unity 6 マニュアル）](https://docs.unity3d.com/Manual/urp/depth-of-field-volume-override-reference.html)
   - Gaussianは奥のぼかしだけで軽く、Bokehは手前と奥をぼかすが重い。どちらもポストプロセスの段で全体に掛かり、深度を書かない舞台のUIまでぼかす。1回目は画面の高さで決める疑似ティルトシフトを使い、2回目に、半透明の列の前に舞台だけをぼかす処理（`Hd2dStageFocus`）を作った。
 - [Shadows optimization（Unity 6 マニュアル）](https://docs.unity3d.com/Manual/shadows-optimization.html)
-  - 点光源の影は6方向を描き、スポットライト6つ分の負荷になる。本作は影を落とす点光源をHomeの焚き火1つに絞った。
+  - 点光源の影は6方向を描き、スポットライト6つ分の負荷になる。本作は点光源に影を付けず、キャラの影は主光源で落とす（はじめはHomeの焚き火1つだけに影を付けていた）。
 
 ## HD-2Dのライティング・カメラ・ポストプロセス（2回目）
 
@@ -177,7 +177,7 @@ Unityの資料：
 ## 小物と汚し・法線マップ
 
 調査日は2026-10-03。
-3つの舞台に小物と汚しを足し、光を受ける面に法線マップを付ける作業で調べた資料である（hd2d-stage-set の[小物と汚しで密度を上げる](../../hd2d-stage-set/references/set-dressing.md)）。
+3つの舞台に小物と汚しを足し、光を受ける面に法線マップを付ける作業で調べた資料である（hd2d-stage-set の[小物と汚しで密度を上げる](../hd2d-stage-set/references/set-dressing.md)）。
 密度を上げる根拠は、[2回目](#hd-2dのライティングカメラポストプロセス2回目)の開発者の発言（大きな画面で寂しく見えたためタイルの種類と色を増やした、ドット絵に見えるぎりぎりの密度で描いた）を使った。
 
 - [Simple Lit shader material Inspector window reference for URP（Unity マニュアル）](https://docs.unity3d.com/Manual/urp/simple-lit-shader.html)
@@ -192,7 +192,7 @@ Unityの資料：
 ## 炎の作り方
 
 調査日は2026-10-03。
-Topの松明の炎がろうそくのような1枚の涙形で物足りないと相談を受け、炎を作り直すときに調べた資料である（[炎を実物に近づける](../../hd2d-stage-set/references/camera-light.md#炎とライト)）。
+Topの松明の炎がろうそくのような1枚の涙形で物足りないと相談を受け、炎を作り直すときに調べた資料である（[炎を実物に近づける](../hd2d-stage-set/references/camera-light.md#炎とライト)）。
 実物の炎の性質（何がそう見せるか）と、ゲームの炎の作り方（どう描けるか）と、本作での判断を区別する。
 
 実物の炎の性質：

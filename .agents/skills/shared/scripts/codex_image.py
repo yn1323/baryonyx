@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Codex CLIの組み込み画像生成（image_gen）で画像を1枚作り、生成されたPNGを加工せずに出力先へコピーする。
 
-character-sprite-sheet と character-illustration の両スキルが使う。
+使うスキルは .agents/skills/README.md の「shared/ の役割」を参照。
 3Dの舞台のテクスチャのように人物を描かない依頼では、--profile を省略する（hd2d-stage-set の stage_requests.py が使う）。
 
 Codexは読み取り専用のサンドボックスで動かし、画像の生成だけを頼む。
@@ -27,9 +27,10 @@ from pathlib import Path
 
 CODEX_HOME = Path(os.environ.get("CODEX_HOME", Path.home() / ".codex"))
 # Codex本体のモデルと推論の強さは固定する。~/.codex/config.toml の設定や呼び出し側の指定には任せない
+# （正本は doc/art/direction.md の「確定している方針」の画像の生成）
 MODEL = "gpt-6.1-terra"
 REASONING_EFFORT = "xhigh"
-# どの依頼にも必ず入れる画風の指示（AGENTS.md の「画像の生成」）。呼び出し側では外せない
+# どの依頼にも必ず入れる画風の指示（AGENTS.md の「作業の基本」）。呼び出し側では外せない
 ALWAYS_IN_REQUEST = [
     "細碎な点状テクスチャが多すぎるので抑える",
     "細かい点・粒・ざらつき・ノイズのような模様を描かない。点描のような質感にしない",

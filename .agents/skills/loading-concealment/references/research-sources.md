@@ -42,7 +42,7 @@ UnityのAPIを実装へ使うときは、プロジェクトのUnity `6000.6.0f1`
 - 隠し方より回数（[GamesRadar「The secret art of the video game loading screen」](https://www.gamesradar.com/the-secret-art-of-the-video-game-loading-screen-and-why-they-wont-be-going-away-anytime-soon/)）
   - 1回ごとの短い暗転より、何度も続く暗転のほうが不満を生む。切り替えの回数を減らせないかを先に見る。
 - 移動した感覚を出す切り替え
-  - 地図の上の移動や、近づいて暗くなり次の地図が引きながら明るくなる演出は、読み込みを隠さなくても場所が変わったことを伝える。このプロジェクトでは[入れ子の地図の切り替えの演出](../../../../doc/features/world-atlas.md#切り替えの演出)に当たる。
+  - 地図の上の移動や、近づいて暗くなり次の地図が引きながら明るくなる演出は、読み込みを隠さなくても場所が変わったことを伝える。このプロジェクトでは[入れ子の地図の切り替えの演出](../../../../doc/features/world-atlas/maps.md#切り替えの演出)に当たる。
 
 ## Unityの読み込み
 

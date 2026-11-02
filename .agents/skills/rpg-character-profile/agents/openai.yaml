@@ -1,3 +1,7 @@
 interface:
   display_name: "RPGキャラ設定"
-  short_description: "外見の必須6項目、笑えるフレーバー、6種類・13コマ前後の動作設定、イラストの構図を作成"
+  short_description: "笑えるフレーバー、ドット絵でも残す外見の特徴、ドット絵の動作設計、イラストの構図まで含むキャラ設定を作る"
+  default_prompt: "Use $rpg-character-profile to create or update a character profile with flavor text, the appearance traits kept in pixel art, the sprite animation plan and the illustration composition."
+
+policy:
+  allow_implicit_invocation: true

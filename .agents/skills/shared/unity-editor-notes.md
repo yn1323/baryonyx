@@ -1,6 +1,6 @@
 # Unity EditorとCLIの操作・撮影で得た知見
 
-[hd2d-stage-set](../hd2d-stage-set/SKILL.md)・[vfx-authoring](../vfx-authoring/SKILL.md)・[hd2d-lighting-vfx](../hd2d-lighting-vfx/SKILL.md) の作業で、Unity CLIから接続したEditorを操作・撮影したときにつまずいた点と、その避け方である。
+複数のスキルの作業で、Unity CLIから接続したEditorを操作・撮影したときにつまずいた点と、その避け方である（使うスキルは[スキル索引](../README.md#shared-の役割)）。
 確かめたのは Unity `6000.6.0f1` のEditorで、版が変わったら挙動を確かめ直す。
 
 Editorの札、テストの実行と件数の確かめ方、未保存のシーンの扱い、撮影画像の保存先はこの文書に写さない。
@@ -13,7 +13,7 @@ CLIからPlay Modeに入っても、Editorが背面にあるとフレームが�
 停止中の `[ExecuteAlways]` の `Update` も呼ばれず、停止中のプレビュー用の子オブジェクトが作られていないように見えた。
 `EditorApplication.delayCall` に積んだ処理も、Editorが背面にある間たまり続けた（コマンドから数えて77件）。`EditorApplication.QueuePlayerLoopUpdate` を呼んでも `Update` は呼ばれなかった。
 
-- 撮影の前にEditorを前面に出す。
+- 撮影の前にEditorを前面に出す。前面に出せないPlay中は `Application.runInBackground = true` にすると、背面でも約0.1秒おきに進む（[撮影](#撮影)の「Editorが背面のPlayは毎秒約10コマ」）。
 - Play Modeでは `editor_pause` で一時停止し、`EditorApplication.Step()` で1フレームずつ進めてから撮影する。Editorが背面のまま進めるときは、`Step` をリフレクションで固定の刻みで呼ぶ。
 - 動きの確認は、フレームを進めながらUVのずれや透明度を読み出し、値が設定どおりに変わることで確かめる。
 - 停止中の表示やシーンを開いたときの処理は、イベントの中ですぐ行う。確かめるときは、各部品の `Update`、またはInspectorの変更時と同じ再構築のメソッド（`RebuildLayers` など）を直接呼ぶ。
@@ -47,7 +47,7 @@ Play Modeを止めた直後に `EditorSceneManager.OpenScene` を呼ぶと、Pla
 **再コンパイルの直後に `editor_play` を送ると、Play Modeに入らないことがある。**
 2026-10-23、再コンパイルの完了を待たずにPlay Modeへ入ろうとしたところ、停止したままで、続けて送った撮影の台本が空振りした。
 `recompile_status` が完了を返したあとも、`editor_status` で `status` が `ready`、`compiling` と `domainReloadInProgress` が False になるまで待ってから `editor_play` を送り、Play Modeに入ったことを確かめてから撮る。
-再コンパイルとその完了待ちだけなら、[テストの実行](../../../doc/rules/client-testing.md#作業中に実行するplaymodeテスト)のスクリプトを `--compile-only` で1回呼ぶ。札を取ってから再コンパイルし、Editorが空くまでスクリプトの中で待って、エラーの行だけを出す。`editor_status` を何度も呼ばない。
+再コンパイルとその完了待ちだけなら、[テストの実行](../../../doc/rules/client-testing.md#作業中に実行するplaymodeテスト)のスクリプトを `--compile-only` で1回呼び、`editor_status` を何度も呼ばない。
 
 **コンソールの記録には古いエラーも残る。**
 `console` は過去のエントリーも返すため、作業の前に最後の番号（seq）を控え、それより後のエントリーだけを見る。
@@ -67,10 +67,10 @@ Play Modeを止めた直後に `EditorSceneManager.OpenScene` を呼ぶと、Pla
 - **動いている状態は、1フレームの実時間をそろえて撮る**：`Time.captureDeltaTime` が固定するのはゲームの時間だけで、実時間で進む処理（`Time.unscaledDeltaTime` で進む光や粒）は、撮影にかかった時間だけ進む。`captureDeltaTime` と同じ実時間（たとえば0.05秒）がたつまで各フレームの最後で待つと、両方が同じ速さで進む。
 - **Editorが背面のPlayは毎秒約10コマ**：`Application.runInBackground = true` でも、Editorが背面だとフレームは約0.1秒おきにしか進まない。実時間で進む演出を正しい速さで撮るには、`captureDeltaTime` を0.1にし、各フレームの最後で実時間0.1秒まで待って、1フレームを0.1秒にそろえる。動画も同じく毎秒10コマで録り、ffmpegの `-vf fps=30` で30コマへ直して送る（コマは粗く見えるが、速さは実際どおり）。終わったら `runInBackground` と `PlayerSettings.runInBackground` を戻し、`ProjectSettings` に差分が出ていないかを確かめる。
 - **演出の途中で画面を写し取るときの時点と向き**：`WaitForEndOfFrame` のあとに `ScreenCapture.CaptureScreenshotIntoRenderTexture` を呼ぶと、その時点までに描いた画面が入り、呼んだあとの変更は入らない（2026-11-02に確かめた）。Metalなど `SystemInfo.graphicsUVStartsAtTop` が真の環境では上下が逆に入るため、`RawImage` の `uvRect` の高さを負にして読む。
-- **評価で足した物・変えた値がシーンに残る**：撮影のための `eval`（パーティの差し替え、手札の配り直しなど）をPlay中に行うと、Playを止めたあともシーンのファイルに差分が残ることがある。撮り終えたら `git status` でシーンを確かめ、そのシーンを開いていれば別のシーンを開いてから `git checkout` で戻す。
+- **評価で足した物・変えた値がシーンに残る**：撮影のための `eval`（パーティの差し替え、手札の配り直しなど）の後片付けは [client/AGENTS.md](../../../client/AGENTS.md) の「Unityの操作と検証」に従う。撮り終えたら `git status` でシーンを確かめ、`git checkout` で戻すときは、そのシーンを開いていれば先に別のシーンを開く（開いたシーンを外から差し替えると、外部変更の確認でEditorが止まる）。
 - **一瞬の山場は、明るさの平均で探す**：閃光や落雷のような一瞬の場面は、各コマの画面全体の明るさの平均を出すと、どのコマが山場かをすぐ見つけられる。
 - GameビューのRender Texture（`PlayModeView.m_TargetTexture`）をリフレクションで描かせて読む方法も試したが、Gameビュー自身の描画の外では黒い画像になった。
-- 一時カメラやRender Textureを作って撮ったときは、`finally` で必ず破棄する。カメラが残るとGameビューを塗りつぶす。
+- 一時カメラやRender Textureを作って撮ったときは、`finally` で必ず破棄する。カメラが残るとGameビューを塗りつぶす。別のシーンの写り込みは、`EditorSceneManager.NewPreviewScene` に置いて `cam.scene` をそのシーンにして防ぐ（`NewScene(Additive)` では写り込んだ）。
 
 - **手前のUIは、カメラの最前面の層へ移して撮る**：3Dの舞台やドット絵の板がある画面（戦闘など）では、手前のCanvasを `Screen Space - Camera` にするだけだと、舞台の板がUIの上に描かれた。CanvasをいちばんのSorting Layerにし、`sortingOrder` を大きく足し、`planeDistance` をカメラのnearのすぐ先にして撮る。URPでは、深度だけを消す一時カメラやOverlayのカメラを重ねる方法では写らなかった。停止中の表示の複製（名前の末尾が「(停止中の表示)」）は `FindObjectsByType` で見つからないため、`Resources.FindObjectsOfTypeAll` で探す。複製は次のフレームで描かれるため、表示と撮影は別の評価に分ける。
 - **日本語が四角や別の字に化けたら、フォントと影付きの材質を読み直す**<a id="フォントのメモリだけの字化け"></a>：APKのビルドや全アセットの読み込み直しのあと、Editorのメモリの中だけでKiwi Maruの字の表やアトラスがずれ、撮った画面の文字が化けた。フォントの本体と部品を `Resources.UnloadAsset` で外して読み直し、`ReadFontAssetDefinition()` を呼ぶ。影付きの材質（`GuideMenu/GuideTextShadow.mat`・`Fonts/TextShadow.mat`）も外して読み直し、`TMP_MaterialManager.ClearMaterials()` を呼んで、開いているシーンを開き直す。アトラスは2枚あり、「… + Kiwi Maru - Regular Atlas 1」の材質は2枚目を指すため、名前で1枚目にそろえない。ファイルには差分を出さない。
@@ -79,16 +79,22 @@ Play Modeを止めた直後に `EditorSceneManager.OpenScene` を呼ぶと、Pla
 見た目の変化が小さい効果（手前と奥のぼけ、弱い光など）は、全体を縮小した比較では見分けられなかった。
 変更前後の撮影から、同じ範囲（光源の周り、画面の下半分など）を元の解像度で切り出して並べて比べる。
 
+## 見た目の手直し
+
+見た目の手直しは、Play中の部品の値を `eval` で変えて撮影して詰め、決めた値をまとめてコードへ反映してから、再コンパイルとPrefabの作り直しと撮影を1回で行う。
+直すたびに停止・再コンパイル・作り直し・撮影を繰り返すと、1回ごとに数分かかる。
+`eval` で変えた値や足した物の後片付けは、[client/AGENTS.md](../../../client/AGENTS.md) の「Unityの操作と検証」に従う。
+
 ## テストの実行
 
 テストの選び方、絞り込みの指定、0件のときのやり直し、完了と件数の確かめ方は、[UnityのテストとCI](../../../doc/rules/client-testing.md)に従う。
 そのうえで、次のことに気を付ける。
 
-- `run_tests` の `--filter` に「A|B」のような正規表現を渡すと、0件になった。クラスごとに実行する。
-- コマンドの出力に含まれる結果のJSONは、件数が多いと途中で切れて読めなかった。結果は `test_status` か `Temp/pipeline_test_status.json` から読む。
 - PlayModeテストの実行中は、`Features/*/Tests/PlayMode/Resources` がGitの未追跡ファイルとして現れ、テスト終了時に片付けられる。コミットの対象に含めない。
+- 位置や大きさを確かめるPlayModeテストが環境によって落ちたら、まずGameビューの解像度を確かめる（[Gameビューの縦横比](../../../doc/rules/client-testing.md#gameビューの縦横比)）。
 
 ## ファイルの扱い
 
-`client/AGENTS.md`・`.agents/skills/shared/scripts/codex_image.py` など、改行がCRLFのファイルがある。`git ls-files --eol <ファイル>` で確かめる。
+doc・スキル・AGENTS.md の `.md` は LF にそろえた（[MDの形式と状態](../../../doc/rules/documentation-policy.md#mdの形式と状態)）。Windows で編集して CRLF が入ったら LF に戻す。
+`.md` 以外には、`.agents/skills/shared/scripts/codex_image.py` など改行がCRLFのファイルがある。`git ls-files --eol <ファイル>` で確かめる。
 スクリプトで書き換えるときはバイト列で読み、改行をCRLFのまま書き戻す。LFに変えると、全行が差分になる。

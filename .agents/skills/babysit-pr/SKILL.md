@@ -12,14 +12,14 @@ disable-model-invocation: true
 ## 検証と進捗
 
 commit前の検証は、ルートの `AGENTS.md` の[commitの手順](../../../AGENTS.md#commitの手順)に従う。
-commitの後は、最後の関連変更より後に成功した検証を再利用し、監視段階へ進んだという理由だけで再実行しない。
+commitの後の検証の再利用は [検証と報告](../../../AGENTS.md#検証と報告) に従い、監視段階へ進んだという理由だけで再実行しない。
 長い処理では、状態変化、失敗原因、次の対応を簡潔に共有する。
 
 ## 最初に読む
 
 1. rootと対象に近い`AGENTS.md`
-2. `client/` のUnity設定とテスト設定、`server/` のパッケージ・テスト・DB設定のうち実在し、変更に関係するもの
-3. `.github/workflows/` と `doc/` の開発・CI手順があれば読む
+2. [UnityのテストとCI](../../../doc/rules/client-testing.md)、[バックエンドのGitHub Actions](../../../doc/rules/backend-design.md#github-actions)、[Androidビルドと実機確認](../../../doc/rules/client-android-testing.md)、[文書の索引生成と検査](../../../doc/tools/README.md)のうち、変更に関係するもの
+3. `.github/workflows/` の、変更が起動するworkflow（client-ci・client-distribute・docs-ci・server-ci・server-deploy）
 4. [create-pr](../create-pr/SKILL.md)（ベースブランチの取得、差分の確かめ方、既存PRの再利用、PR本文の形式）と [japanese-tech-writing](../japanese-tech-writing/SKILL.md)
 
 コマンド、test project、workflow、check名の現在値はリポジトリを正本とし、このSkillの例より優先する。
@@ -48,7 +48,7 @@ bareなlocal branchは更新が遅れている可能性があるため、比較�
 - `client/` の変更は、設定済みのC#整形・解析、Unityコンパイル、EditMode・PlayModeテストから関係する確認を選ぶ。
 - Androidネイティブや歩数取得の変更は、該当プラグインのビルド・テスト、必要に応じて実機で確認する。
 - `server/` の変更は、実在するパッケージスクリプトとテスト設定を確認し、API契約、二重付与防止、DBマイグレーションなど変更した境界を検証する。
-- 文書・スキル・設定だけの変更では、構文や参照先など対象に適した確認を行う。
+- 文書・スキル・設定だけの変更では、[文書検査](../../../doc/tools/README.md)など対象に適した確認を行う。
 - まだ導入されていないツール、テスト、CIを実行済みとして扱わない。必要な実機・認証情報・実行環境がなければ未確認内容と理由を示す。
 - 意図した仕様変更で契約が変わった場合、またはテスト自体に欠陥がある場合だけテストを修正する。期待値の緩和、skip、retry増加、assertion削除だけで不具合を隠さない。
 
@@ -66,7 +66,7 @@ bareなlocal branchは更新が遅れている可能性があるため、比較�
 初回push前、またはGHA失敗への修正後に差分を読み直し、不要な複雑さ、重複、弱めた検証、依頼外変更がないことを確認する。
 
 1. `git status`、unstaged diff、staged diffを確認する。
-2. 対象ファイルの選び方、除外するファイル、論理単位への分割、`git add` の仕方、メッセージの形式、禁止事項は[commit](../commit/SKILL.md)のワークフローに従う。
+2. 対象ファイルの選び方、除外するファイル、論理単位への分割、`git add` の仕方、メッセージの形式、使わない操作は[commitの分け方とメッセージ](../../../doc/rules/git-commit.md)に従い、進める順番は[commit](../commit/SKILL.md)のワークフローに従う。
 3. hookがファイルを変更した場合は差分を確認し、修正に対応する対象限定のローカル確認を再実行してから新しいcommitを作る。
 
 ## 5. pushしてPull Requestを作成する

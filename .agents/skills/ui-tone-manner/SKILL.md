@@ -11,7 +11,7 @@ description: >
 
 画面ごとに窓・ボタン・分類・札を作り分けず、共通の部品から組んで、どの画面も同じ見た目と押し方にする進め方を扱う。
 画面の型、窓の種類、決めるボタン、分類、持ち物の札、読み込み中と失敗の出し方の正本は [共通の部品](../../../doc/rules/ui-design.md#共通の部品) であり、このスキルには写さない。
-色・文字・余白の数値は、生成処理の定数（`UiPalette`・`GuideFrameAssets`・`GuideMenuAssets`）を正本にする。
+色・文字の大きさ・余白の値の正本は、[基本の値](../../../doc/rules/ui-design.md#基本の値)の定数（`UiPalette`・`UiType`・`UiSpace`）である。
 
 ## 使う場面
 
@@ -22,7 +22,7 @@ description: >
 
 ## 手順
 
-1. **テンプレートを選ぶ**：作る画面が [画面の型](../../../doc/rules/ui-design.md#画面の型) のどれ（A〜F）かを決め、そのテンプレートから骨組みを作る。窓なら [窓](../../../doc/rules/ui-design.md#窓) の表のどれか、ボタンなら [決めるボタン](../../../doc/rules/ui-design.md#決めるボタン) のどれかを先に決める。どれにも当たらないときは、作る前にユーザーに見本を見せて相談する。
+1. **テンプレートを選ぶ**：作る画面が [画面の型](../../../doc/rules/ui-design.md#画面の型) のどれ（A〜F、何かを1つ選ばせるなら「1つを選ぶ画面」）かを決め、そのテンプレートから骨組みを作る。窓なら [窓](../../../doc/rules/ui-design.md#窓) の表のどれか、ボタンなら [決めるボタン](../../../doc/rules/ui-design.md#決めるボタン) のどれかを先に決める。どれにも当たらないときは、作る前にユーザーに見本を見せて相談する。
 2. **見本の画面を見る**：同じ型の今ある画面を、停止中の表示の切り替えで撮って見る（下の「撮って見比べる」）。新しい形を考える前に、見本に合わせる。
 3. **共通の部品で組む**：テンプレートが返した場所に、下の「使う部品」で中身を入れる。色・文字の大きさ・余白は基本の値から選ぶ。暗い幕の色・窓の縁・×・題・決めるボタン・縦の分類を機能の中で作り直さない。部品に足りない形が要るときは、部品の側に引数を足して、ほかの画面も使えるようにする。
 4. **撮って見比べる**：作った画面と見本の画面を、同じ大きさで並べた1枚にし、違いを確かめる。前の版があれば、前と後も並べる。
@@ -33,24 +33,23 @@ description: >
 ## 使う部品
 
 部品は、基本の値・部品・テンプレートの3つの層でできている（[共通の部品](../../../doc/rules/ui-design.md#共通の部品)）。
-新しい画面は、まずテンプレートを選び、返ってきた場所に中身を入れる。
 
 | 層 | 形 | 部品 | 例 |
 |---|---|---|---|
-| 基本の値 | 色・文字の大きさ・余白と大きさ | `UiPalette`（役割の名前）・`UiType`・`UiSpace` | 幕は `Veil` と `VeilDeep` の2つだけ |
+| 基本の値 | 色・文字の大きさ・余白と大きさ | `UiPalette`（役割の名前）・`UiType`・`UiSpace` | `UiPalette.Veil`・`UiType.Body`・`UiSpace.Edge` |
 | テンプレート | 格子と詳細（A） | `GuidePanelTemplate.GridDetail` | 商会の買う・売る、ライブラリの各分類 |
 | テンプレート | 行と詳細（B） | `GuidePanelTemplate.RowsDetail` | 商会の合成・品質強化 |
 | テンプレート | 全幅の一覧（C） | `GuidePanelTemplate.FullList` | 商会のスキル覚醒、ライブラリの日々の歩数 |
 | テンプレート | 冒険者のシート（D） | 分け目は `UiSpace.SheetSplit` か `SheetSplitWide` | 育成・装備・突破／スキル |
-| テンプレート | 窓（E） | `GuideFrameAssets.MessageWindow`・`ListWindow`・`CenteredWindow`（幅は `WindowSize` の小・中・大） | ダイアログと連携（中）、お宝（大）、レベルアップ（小） |
-| 部品 | 窓の縁 | `GuideFrameAssets.WindowFrame`・`Window` | [TrainingAssets](../../../client/Assets/Baryonyx/Features/Training/Editor/TrainingAssets.cs) のレベルアップの確認 |
+| テンプレート | 窓（E） | `GuideFrameAssets.MessageWindow`・`ListWindow`・`CenteredWindow`（幅は `WindowSize`） | ダイアログと連携、お宝、レベルアップ |
+| 部品 | 窓の縁 | `GuideFrameAssets.WindowFrame`・`Window` | [AdventureResultAssets](../../../client/Assets/Baryonyx/Features/Adventure/Editor/AdventureResultAssets.cs) の冒険の結果、地図の出来事の窓 |
 | 部品 | 知らせる窓 | [GameDialogAssets](../../../client/Assets/Baryonyx/Shared/UI/Dialog/Editor/GameDialogAssets.cs) と [GameDialog](../../../client/Assets/Baryonyx/Shared/UI/Dialog/GameDialog.cs) | 冒険のメニュー、全滅、失敗 |
 | 部品 | 窓のボタン | `GuideFrameAssets.WindowButton`（決める方は `primary: true`。並べる窓では大きさだけを渡す版）と `ButtonRow` | レベルアップ、もう一度、連携のモーダル |
 | 部品 | × | `GuideFrameAssets.CloseButton`（置いた矩形に作るときは `CloseMark`） | 一覧の窓、戦闘の山札 |
 | 部品 | 外す札の面 | `GuideFrameAssets.RemoveFace` | 編成のスキル、冒険者の一覧 |
 | 部品 | 縦の分類 | `GuideFrameAssets.SideTabs`（準備中は `locked`） | 商会、ライブラリの装備 |
 | 部品 | 状態の文字 | `GuideFrameAssets.ListStatus` | 一覧の読み込み・失敗・空 |
-| 部品 | ルーンの数 | `GuideFrameAssets.RuneAmount`（使う額は本文の色） | 値段、報酬、レベルアップの費用 |
+| 部品 | ルーンの数 | `GuideFrameAssets.RuneAmount` | 値段、報酬、レベルアップの費用 |
 | 部品 | パネルの上の帯 | `GuideFrameAssets.FramedPanel` | 商会・編成・ライブラリの各項目 |
 | 部品 | 持ち物の札 | 型は `ItemTile` の1つ。品質・数・右上の印・「？」は `ItemTileAssets` | 商会・ライブラリ・お宝・召喚・冒険の結果の札 |
 | 部品 | 読み込み中 | 札の裏面（`GlassCardAssets.AddBack`） | 商会・ライブラリ・編成の一覧 |
@@ -61,11 +60,10 @@ description: >
 
 - [ ] 画面の生成処理の中で、色・文字の大きさ・窓の幅・分け目の新しい値を決めていない（基本の値から選んでいる）。
 - [ ] 一覧の画面をテンプレートから作っている。テンプレートにない並びが要るときは、テンプレートの側に足している。
-- [ ] 窓の後ろの幕が `UiPalette.Veil`（全画面で選ばせる重ねは `VeilDeep`）で、窓が濃い紺に金の細い縁になっている。青緑など別の色の窓を作っていない。
-- [ ] 1つの画面に、決めるボタンの形が混ざっていない。窓のボタンは、決める方だけ金の縁で光っている。
-- [ ] 分類を横に並べたタブにしていない。
-- [ ] 持ち物の札の品質の文字が左上、数が右下、名前が下にある。
-- [ ] まだ見つけていない物を、影と「？？？」で伏せている（スキルは「？」）。
+- [ ] 幕・窓・×が[窓](../../../doc/rules/ui-design.md#窓)のとおりで、機能の中で別の色や形の窓を作っていない。
+- [ ] 1つの画面の決めるボタンが、[決めるボタン](../../../doc/rules/ui-design.md#決めるボタン)の1つの形にそろっている。
+- [ ] 分類が[分類の切り替え](../../../doc/rules/ui-design.md#分類の切り替え)のとおりに並んでいる。
+- [ ] 持ち物の札の中身の位置と、まだ見つけていない物の伏せ方が[持ち物の札](../../../doc/rules/ui-design.md#持ち物の札)のとおりである。
 - [ ] 説明の小見出しや注釈を足さず、配置で意味が分かる（[AGENTS.md](../../../AGENTS.md)）。
 - [ ] 同じ見た目の生成処理を、機能の中に書き写していない。
 - [ ] 停止中の表示の切り替えに、足した窓・状態が入っている（[停止中の表示の切り替え](../../../doc/rules/ui-design.md#停止中の表示の切り替え)）。
@@ -73,7 +71,7 @@ description: >
 ## 撮って見比べる
 
 - 停止中の表示の切り替え（`IEditModePreview`）で、状態ごとに撮る。撮り方とつまずきは [Unity EditorとCLIの知見](../shared/unity-editor-notes.md) にある。Play中にしか作られない画面（世界地図など）は、Play中に撮る。
-- 全画面を見直すときは、ラボ（デバッグルーム）を除くシーンを開き、`IEditModePreview` を持つ部品の状態をすべて撮って、シーンごとに4列の一覧画像にする。窓・パネル・決めるボタンは、型ごとに並べた見比べ用の画像も作る。
+- 全画面を見直すときは、[eval/inventory.cs](scripts/eval/inventory.cs) に並べたシーン（`App/Scenes/Debug/` を除く）を開き、`IEditModePreview` を持つ部品の状態をすべて撮って、シーンごとに4列の一覧画像にする。窓・パネル・決めるボタンは、型ごとに並べた見比べ用の画像も作る。
 - 撮影の前に、Editorの日本語が化けていないかを確かめる。化けていたら、フォントと影付きの材質を読み直してから撮る（[フォントのメモリだけの字化け](../shared/unity-editor-notes.md#フォントのメモリだけの字化け)）。
 - 撮影のあとは、`git status` で撮影の副作用（シーン・フォント・`ProjectSettings` の差分）を確かめて戻す。
 
@@ -81,7 +79,7 @@ description: >
 
 作業用の置き場は `output/ui-audit/work/`（gitに入れない）である。
 Unityの評価（`eval/*.cs`）は `unity --format json command --caller plugin --skill unity-cli eval_file --file <台本>` で呼び、呼ぶ前に `client/ci/editor-lock.py` で札を取る。
-評価の応答は5秒で切れることがあるが、処理は続く。
+評価の応答が時間切れになったときの扱いは[Unity CLIのコマンド](../shared/unity-editor-notes.md#unity-cliのコマンド)に従う。
 
 | 順 | 台本 | すること |
 |---|---|---|
@@ -95,8 +93,7 @@ Unityの評価（`eval/*.cs`）は `unity --format json command --caller plugin 
 
 撮影の台本は、最初に作業中のシーン（名前のあるもの）だけを保存し（[eval/prepare.cs](scripts/eval/prepare.cs)）、撮影中はシーンを保存せずに替える。
 停止中の表示はシーンにPrefabの古い上書き（窓の高さ0、アンカー0など）を残すことがあり、保存するとそれがシーンに入るためである。
-名前のない新しいシーンを開いたまま保存を呼ぶと「名前を付けて保存」の窓が開いてEditorが止まるため、生成の評価のあとは名前のあるシーンを開いておく。
-撮り終えたら `git status` で、シーンと `client/ProjectSettings/ProjectSettings.asset` に差分が出ていないかを確かめる。
+名前のないシーンの扱いは [client/AGENTS.md](../../../client/AGENTS.md#unityの操作と検証) に従い、生成の評価のあとは名前のあるシーンを開いておく。
 画面を組み直したあとは、組み直した画面を含むシーンを撮り直してから前後を並べる（ホームはPrefabだけを組み直すとシーンの上書きと合わなくなることがある）。
 
 ## 確かめること
