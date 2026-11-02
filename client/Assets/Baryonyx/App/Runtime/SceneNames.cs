@@ -65,6 +65,9 @@ namespace Baryonyx.App
         // 地図エディター。入れ子の地図の上で、マスの出来事と戦闘の設定を変えて試す。
         public const string WorldEventLab = "WorldEventLab";
 
+        // ドロップエディター。ダンジョンのドロップの一覧とクリア回数の報酬を選び、JSONにしてコピーする。
+        public const string DropLab = "DropLab";
+
         /// <summary>
         /// The debugging rooms Home's list opens, in its order: the name shown, the scene,
         /// whether the room has its own button back to Home, and for the others where the one
@@ -89,6 +92,7 @@ namespace Baryonyx.App
             ("TempLab", TempLab, false, DebugRoomCorner.TopRight),
             ("入れ子の地図（試作）", WorldAtlas, false, DebugRoomCorner.BottomLeft),
             ("地図エディター", WorldEventLab, false, DebugRoomCorner.BottomLeft),
+            ("ドロップエディター", DropLab, true, DebugRoomCorner.TopRight),
         };
 
         // Homeの左下のボタンと、冒険していないときの右下のカード（旅の案内所）が開く案内人の画面。

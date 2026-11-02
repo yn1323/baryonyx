@@ -77,8 +77,8 @@ namespace Baryonyx.Home.Editor
         private static Texture2D destinationArt;
         private static Texture2D travelArt;
 
-        // デバッグルームの一覧の選択肢（「ルーン+10000」、8つのルーム、「閉じる」）と、それを並べる列の数。
-        private const int DebugRoomChoices = 15;
+        // デバッグルームの一覧の選択肢（「ルーン+10000」、通信、13のルーム、「閉じる」）と、それを並べる列の数。
+        private const int DebugRoomChoices = 16;
         private const int DebugRoomColumns = 3;
 
         public const string RoomReturnPath =

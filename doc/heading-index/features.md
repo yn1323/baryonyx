@@ -138,7 +138,7 @@
 
 ## [features/drops.md](../features/drops.md)
 
-20KB・153行
+21KB・154行
 
 - 8: # 冒険のドロップ
 - 16: ## 確定している方針
@@ -154,7 +154,7 @@
 - 97: ### 行き先ごとの一覧
 - 120: ## 未決事項
 - 128: ## 実装との対応
-- 146: ## 変更と判断の記録
+- 147: ## 変更と判断の記録
 
 ## [features/economy-history.md](../features/economy-history.md)
 
@@ -464,7 +464,7 @@
 
 ## [features/screens-history.md](../features/screens-history.md)
 
-42KB・73行
+43KB・74行
 
 - 8: # 画面一覧と操作の変更と判断の記録
 
@@ -571,7 +571,7 @@
 
 ## [features/screens/debug-rooms.md](../features/screens/debug-rooms.md)
 
-47KB・367行
+54KB・406行
 
 - 8: # 画面一覧：デバッグルーム
 - 16: ## スキルのデバッグルーム
@@ -584,7 +584,8 @@
 - 292: ## 冒険のデバッグルーム
 - 307: ## 入れ子の地図（試作）
 - 312: ## 地図エディター
-- 352: ## TempLab
+- 352: ## ドロップエディター
+- 391: ## TempLab
 
 ## [features/screens/guide.md](../features/screens/guide.md)
 
@@ -599,7 +600,7 @@
 
 ## [features/screens/implementation.md](../features/screens/implementation.md)
 
-11KB・44行
+12KB・45行
 
 - 8: # 画面一覧：画面と実装の対応
 - 12: ## 実装との対応
@@ -639,7 +640,7 @@
 
 ## [features/screens/top-home.md](../features/screens/top-home.md)
 
-19KB・106行
+20KB・106行
 
 - 8: # 画面一覧：Topとホーム
 - 12: ## Top
@@ -671,7 +672,7 @@
 
 ## [features/showcase/battle-checks.md](../features/showcase/battle-checks.md)
 
-16KB・47行
+16KB・48行
 
 - 8: # クライアントアセット展示室：横画面と戦闘・デバッグルームの確かめ方
 - 12: ## 横画面UIの確認
@@ -860,7 +861,7 @@
 
 ## [features/stage-progression/destinations.md](../features/stage-progression/destinations.md)
 
-18KB・195行
+19KB・197行
 
 - 8: # 探索とダンジョンの進行：行き先と敵・解放・クリア回数の報酬
 - 12: ## 確定している方針
@@ -868,12 +869,12 @@
 - 18: #### 街とダンジョン（仮）
 - 47: ### ダンジョンの解放
 - 56: ### ダンジョンのクリア回数の報酬
-- 94: ## 設計方針
-- 96: ### 行き先と敵
-- 139: #### 戦闘の編成（2026-11-01）
-- 166: ### 段階的な解放
-- 173: ### クリア回数の報酬の例
-- 188: ### アセットを増やしすぎない構成
+- 96: ## 設計方針
+- 98: ### 行き先と敵
+- 141: #### 戦闘の編成（2026-11-01）
+- 168: ### 段階的な解放
+- 175: ### クリア回数の報酬の例
+- 190: ### アセットを増やしすぎない構成
 
 ## [features/stage-progression/rooms.md](../features/stage-progression/rooms.md)
 

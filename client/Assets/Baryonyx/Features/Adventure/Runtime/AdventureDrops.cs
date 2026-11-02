@@ -362,6 +362,34 @@ namespace Baryonyx.Adventure
                 .ToArray();
         }
 
+        /// <summary>
+        /// The chance that one thing falling in a room of <paramref name="row"/> is
+        /// <paramref name="entry"/>, when <paramref name="pool"/> is the destination's list: its
+        /// category's share of the categories that can fall there, times its stars' share of its
+        /// category. 0 when it cannot fall there (a boss-only kind on the way, stars 1–2 at the boss).
+        /// </summary>
+        public static float ChanceOf(IReadOnlyList<Entry> pool, Entry entry, AdventureRoomKind row)
+        {
+            var weights = StarWeights(row);
+            bool boss = row == AdventureRoomKind.Boss;
+            var eligible = pool.Where(choice =>
+                    (boss || !choice.BossOnly) && weights[choice.Stars - 1] > 0
+                )
+                .ToArray();
+            if (!eligible.Contains(entry))
+                return 0f;
+            var categories = CategoryWeights
+                .Where(choice => eligible.Any(each => each.Category == choice.Category))
+                .ToArray();
+            float category =
+                (float)categories.First(choice => choice.Category == entry.Category).Weight
+                / categories.Sum(choice => choice.Weight);
+            int stars = eligible
+                .Where(choice => choice.Category == entry.Category)
+                .Sum(choice => weights[choice.Stars - 1]);
+            return category * weights[entry.Stars - 1] / stars;
+        }
+
         /// <summary>Picks the drops of a room, as the server's rollDrops does.</summary>
         public static IReadOnlyList<AdventureDrop> Roll(
             string destinationId,

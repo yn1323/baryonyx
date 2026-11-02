@@ -18,7 +18,7 @@ updated: 2026-10-25
 | 戦闘画面 | [battle.md](screens/battle.md) | 戦闘画面の見た目と操作、山札と捨て札の一覧、勝ったあとの手札、戦闘の背景を選べる戦闘シーン |
 | 戦闘のスキルの山札と手札 | [battle-deck.md](screens/battle-deck.md) | スキルの山札、カードと手札を見ながら調整する |
 | 戦闘のスキルの演出と背景 | [battle-effects.md](screens/battle-effects.md) | スキルの演出と背景、敵の技の演出、当たりの瞬間と読みやすさ、勝利の演出、カメラの中心のゆっくりした円運動 |
-| デバッグルーム | [debug-rooms.md](screens/debug-rooms.md) | スキル・品質・持ち物・敵の挙動・戦闘の演出・探索の演出・召喚の演出・冒険のデバッグルーム、入れ子の地図（試作）、地図エディター、TempLab |
+| デバッグルーム | [debug-rooms.md](screens/debug-rooms.md) | スキル・品質・持ち物・敵の挙動・戦闘の演出・探索の演出・召喚の演出・冒険のデバッグルーム、入れ子の地図（試作）、地図エディター、ドロップエディター、TempLab |
 | 編成・商会・神殿・旅の案内所の共通 | [guide.md](screens/guide.md) | 案内人の画面の形、停止中の確認、枠つきの表示、すりガラスのカード |
 | パーティと冒険者のタブ | [adventurers.md](screens/adventurers.md) | パーティ、冒険者のタブ（左の人の列と右のタブ）、ステータス、絆 |
 | 冒険者の装備とスキルのタブ | [loadout.md](screens/loadout.md) | 育成の人選び、装備、スキル |

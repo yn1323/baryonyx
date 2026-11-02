@@ -28,7 +28,7 @@ client/
 │   │   │   ├── Runtime/                 起動、Providerの選択、前面・背面通知、シーン名（SceneNames）
 │   │   │   ├── Scenes/                   Top.unity、Home.unity、Showcase.unity、World.unity、WorldAtlas.unity、WorldMap.unity、Exploration.unity、Battle.unity
 │   │   │   │   ├── Guide/                案内人の画面（Pub・Shop・Temple・TravelOffice・Library）
-│   │   │   │   └── Debug/                デバッグ用のシーン（BattleLab・CardSkillLab・EnemyLab・BattleMomentLab・ExplorationMomentLab・QualityLab・InventoryLab・TempleSummonLab・AdventureLab・WorldEventLab・TempLab）
+│   │   │   │   └── Debug/                デバッグ用のシーン（BattleLab・CardSkillLab・EnemyLab・BattleMomentLab・ExplorationMomentLab・QualityLab・InventoryLab・TempleSummonLab・AdventureLab・WorldEventLab・DropLab・TempLab）
 │   │   │   ├── Editor/                  シーンへの機能の配置、HD-2Dの演出と3Dの舞台のシーンへの配置
 │   │   │   ├── UI/                      冒険のデバッグルームの操作盤のPrefab
 │   │   │   └── Tests/                   EditMode（サーバーの接続先、開発用のプレイヤー、3Dの舞台の配置）とPlayMode（起動、案内人の画面、編成・商会・ライブラリの操作、デバッグルーム、展示室のシーン）
@@ -201,6 +201,7 @@ client/
 | `Debug/TempleSummonLab.unity` | 召喚の演出を再生するデバッグルーム | `Baryonyx > App > Create Temple Summon Lab Scene` | [召喚の演出デバッグルーム](../features/screens/debug-rooms.md#召喚の演出デバッグルーム) |
 | `Debug/AdventureLab.unity` | 選んだ種類のマスの手前から、本物の画面の流れで冒険を進めるデバッグルーム | `Baryonyx > App > Create Adventure Lab Scene` | [冒険のデバッグルーム](../features/screens/debug-rooms.md#冒険のデバッグルーム) |
 | `Debug/WorldEventLab.unity` | 地図エディター。入れ子の地図の上で、マスの出来事と戦闘の設定を変えて試す | `Baryonyx > App > Create World Event Lab Scene` | [地図エディター](../features/screens/debug-rooms.md#地図エディター) |
+| `Debug/DropLab.unity` | ドロップエディター。ダンジョンごとのドロップの一覧とクリア回数の報酬を選び、変えたものをJSONにしてコピーする | `Baryonyx > App > Create Drop Lab Scene` | [ドロップエディター](../features/screens/debug-rooms.md#ドロップエディター) |
 | `Debug/TempLab.unity` | 聞かれたことを仮に組んで撮影するデバッグルーム。夕暮れの高原の3Dの舞台と空のCanvasだけを置く | `Baryonyx > App > Create Temp Lab Scene` | [TempLab](../features/screens/debug-rooms.md#templab) |
 
 Top・Home・BattleLab・Battleは、3Dの地面と背景にドット絵のキャラを立たせるHD-2Dの構成である（[3Dの舞台](../art/hd2d-stage.md)）。

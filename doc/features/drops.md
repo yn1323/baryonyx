@@ -130,6 +130,7 @@ updated: 2026-11-02
 | 項目 | 実装 |
 |---|---|
 | マスの種類と報酬の行 | 2026-10-22に足したマス（休憩・行商人・怪しい宝箱・試練・歩数の扉・覚醒の祭壇）は、[落ちる数](#落ちる数)などの表の行を借りる。どの行を借りるかと、中身を作るまでの仮の扱いは[マスの中身](stage-progression/rooms.md#マスの中身仮)と[実装との対応](stage-progression/status.md#実装との対応)に記す（`rewardOf`） |
+| 一覧の決め方 | ダンジョンごとの一覧は、[ドロップエディター](screens/debug-rooms.md#ドロップエディター)で選んで「コピー」したJSONを、AIがサーバーとクライアントの表へ同じ値で書く（2026-11-02） |
 | 抽選と一覧 | サーバーの [drops.ts](../../server/src/features/adventure/drops.ts)。マスを終える処理（[repository.ts](../../server/src/features/adventure/repository.ts) の `clear`）が抽選し、落ちた物の記録・持ち物への追加・ライブラリの見つけた記録を1回のbatchで書く |
 | 落ちた物の記録 | `adventure_drops`（[0013_drops.sql](../../server/migrations/0013_drops.sql)）。1つのマスに落ちた数だけ行を持つ |
 | 持ち物 | スキルは `skill_cards`（1枚ずつ、倍率つき）、アイテムは `item_holdings`（種類ごとの数）、アクセサリーは武器・防具と同じ `equipment_items` |
