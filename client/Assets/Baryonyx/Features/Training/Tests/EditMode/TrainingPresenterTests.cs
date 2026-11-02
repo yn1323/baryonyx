@@ -33,6 +33,10 @@ namespace Baryonyx.Tests.EditMode
 
             public void ShowNotice(string message) => Notices.Add(message);
 
+            public int LevelUpsShown;
+
+            public void ShowLevelUp() => LevelUpsShown++;
+
             public void Prev() => PrevPressed?.Invoke();
 
             public void Next() => NextPressed?.Invoke();
@@ -330,10 +334,12 @@ namespace Baryonyx.Tests.EditMode
                 view.Notices,
                 Is.EqualTo(new[] { "トーマが Lv 15 になり、「炎の心得」を覚えました" })
             );
+            Assert.That(view.LevelUpsShown, Is.EqualTo(1));
 
             view.LevelUp();
             view.Confirm();
             Assert.That(view.Notices.Last(), Is.EqualTo("トーマが Lv 16 になりました"));
+            Assert.That(view.LevelUpsShown, Is.EqualTo(2));
         }
 
         [Test]

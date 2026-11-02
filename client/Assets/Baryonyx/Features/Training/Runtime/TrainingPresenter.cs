@@ -390,6 +390,7 @@ namespace Baryonyx.Training
                 dialog = false;
                 view.ShowNotice(message);
                 Refresh();
+                view.ShowLevelUp();
                 return;
             }
 
@@ -398,6 +399,7 @@ namespace Baryonyx.Training
             dialog = false;
             view.ShowNotice(message);
             Refresh();
+            view.ShowLevelUp();
             await saved;
             if (disposed)
                 return;
@@ -561,5 +563,8 @@ namespace Baryonyx.Training
 
         // 操作を求めない通知（共通の通知の帯）を出す。
         void ShowNotice(string message);
+
+        // レベルを上げて窓を閉じたあと、上がったLvとステータスの数字を2回ふくらむように光らせる。
+        void ShowLevelUp();
     }
 }

@@ -509,13 +509,14 @@
 
 ## [features/screens/adventurers.md](../features/screens/adventurers.md)
 
-21KB・161行
+23KB・177行
 
 - 8: # 画面一覧：パーティと冒険者のタブ
 - 12: ## パーティ
 - 56: ## 冒険者のタブ
 - 80: ## ステータス
-- 111: ## 突破
+- 112: ### レベルアップしたときの演出
+- 127: ## 突破
 
 ## [features/screens/battle-deck.md](../features/screens/battle-deck.md)
 
@@ -607,12 +608,13 @@
 
 ## [features/screens/loadout.md](../features/screens/loadout.md)
 
-20KB・108行
+23KB・134行
 
 - 8: # 画面一覧：冒険者の装備とスキルのタブ
 - 12: ## 育成の人選び
 - 32: ## 装備
 - 66: ## スキル
+- 110: ## 付け替えたときの演出
 
 ## [features/screens/shop.md](../features/screens/shop.md)
 
@@ -692,7 +694,7 @@
 
 ## [features/showcase/screen-checks.md](../features/showcase/screen-checks.md)
 
-15KB・25行
+16KB・25行
 
 - 8: # クライアントアセット展示室：案内人の画面・冒険・地図の確かめ方
 

@@ -5,6 +5,7 @@ using Baryonyx.Equipment;
 using Baryonyx.Party;
 using Baryonyx.Tavern;
 using Baryonyx.Training;
+using Baryonyx.UI;
 using Baryonyx.UI.GuideMenu;
 using NUnit.Framework;
 using UnityEngine;
@@ -160,10 +161,22 @@ namespace Baryonyx.Tests.PlayMode
             var dagger = Row(panel, "炎のダガー");
             Assert.That(dagger.Mark.gameObject.activeSelf, Is.False);
             dagger.Button.onClick.Invoke();
+            // 付け替えた武器の枠のカードは、前の中身の写しを閉じてから縦に開く。防具の枠は回らない。
+            var weapon = panel.Slots[0].Button.GetComponent<GlassCard>();
+            var turn = weapon.GetComponent<GlassCardTurn>();
+            Assert.That(turn != null && turn.Turning, Is.True);
+            Assert.That(Ghosts(weapon), Is.EqualTo(1));
+            Assert.That(panel.Slots[1].Button.GetComponent<GlassCardTurn>(), Is.Null);
             yield return SceneTests.WaitForTask(panel.Presenter.ChangeTask);
-            // 変わったことは枠と一覧を見ればわかるので、通知の帯は出さない。
+            // 変わったことは通知の帯で知らせず、カードを回して見せる。
             Assert.That(panel.LastNotice, Is.Empty);
             Assert.That(panel.Slots[0].Name.text, Is.EqualTo("炎のダガー"));
+            // 回り終えて上下の辺の線が消えると、写しも線も残らず、元の大きさに戻る。
+            yield return SceneTests.WaitUntil(() => !turn.Turning);
+            yield return null;
+            Assert.That(Ghosts(weapon), Is.Zero);
+            Assert.That(weapon.Body.localScale, Is.EqualTo(Vector3.one));
+            Assert.That(panel.transform.Find("TurnLines").childCount, Is.Zero);
             Assert.That(Row(panel, "炎のダガー").Mark.text, Is.EqualTo("装備中"));
             // 左の枠にも、付けている装備の効果を一覧の行と同じ文で出す。
             Assert.That(panel.Slots[0].Detail.text, Is.Not.Empty);
@@ -191,6 +204,10 @@ namespace Baryonyx.Tests.PlayMode
         // 左の列で光っている人のID。
         private static string Chosen(PartySheet sheet) =>
             sheet.People.Single(person => person.Selected.activeSelf).Id;
+        // 付け替えたカードに重ねた、前の中身の写しの数。
+        private static int Ghosts(GlassCard card) =>
+            card.GetComponentsInChildren<Transform>(true).Count(child => child.name == "TurnGhost");
+
 
         private static PartySheetPersonWidget Person(PartySheet sheet, string id) =>
             sheet.People.Single(person => person.Id == id);

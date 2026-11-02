@@ -130,7 +130,7 @@ namespace Baryonyx.Training
         private static readonly Color LockedIcon = new(0.25f, 0.25f, 0.3f, 1f);
         private static readonly Color LockedText = new(0.55f, 0.58f, 0.66f, 1f);
 
-        // コストの数字の画像に、0〜9が横に並んでいる（戦闘のカードと同じ）。
+        // コストの数字の画像に、0〜9が横に並んでいる（戦闘のカードと同じ。切り出しは BattleInspectCardView.CostUv）。
         private const int CostDigits = 10;
 
         public PartyMockData Party;
@@ -415,6 +415,14 @@ namespace Baryonyx.Training
                 Guide.RefreshTrail();
         }
 
+        // 窓を閉じた直後に、上がったLvとステータスの数字をそろえて2回ふくらむように光らせる（色は変えず明るさだけ）。
+        public void ShowLevelUp()
+        {
+            TextGlow.Pulse(Level);
+            foreach (var stat in Stats)
+                TextGlow.Pulse(stat);
+        }
+
         // パンくずの「冒険者 › アリア」（育成の人選びから開いたら「育成 › アリア」）。読み込むまでは人の名前を出さない。
         public IReadOnlyList<string> Trail =>
             new[] { Guide != null ? Guide.LabelOf(TrainingSession.ReturnKeyOrRoster) : "", person };
@@ -628,11 +636,8 @@ namespace Baryonyx.Training
             if (widget.Cost != null)
                 widget.Cost.SetActive(filled && card.Cost >= 0 && card.Cost < CostDigits);
             if (widget.CostDigit != null && filled)
-                widget.CostDigit.uvRect = new Rect(
-                    card.Cost / (float)CostDigits,
-                    0f,
-                    1f / CostDigits,
-                    1f
+                widget.CostDigit.uvRect = Baryonyx.Combat.Presentation.BattleInspectCardView.CostUv(
+                    card.Cost
                 );
             if (widget.Element != null)
             {

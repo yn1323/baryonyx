@@ -113,6 +113,9 @@ namespace Baryonyx.Equipment
         private EquipmentPresenter presenter;
         private readonly ButtonBindings bindings = new();
 
+        // 付け替えた枠のカードを縦に回す（武器・防具、続けてアクセサリーの枠の順）。
+        private GlassCardTurns turns;
+
         public event Action PrevPressed;
         public event Action NextPressed;
         public event Action<int> SlotPressed;
@@ -124,6 +127,7 @@ namespace Baryonyx.Equipment
         private void OnEnable()
         {
             person = null;
+            Turns().Forget();
             if (Swipe != null)
                 Swipe.Flicked += Flick;
             if (Sheet != null)
@@ -276,6 +280,7 @@ namespace Baryonyx.Equipment
         // 読み込むまで、仮データの装備を本当の装備として見せない。
         private void ShowLoading()
         {
+            Turns().Forget();
             Set(Status, LoadingText);
             foreach (var widget in Slots)
                 ShowSlot(widget, null, null, false);
@@ -335,25 +340,34 @@ namespace Baryonyx.Equipment
                 Sheet.Show(people, partyCount, state.PersonId);
             }
             bool accessory = state.Accessory >= 0;
+            // 同じ人の枠の中身が変わったら、描き替える前のカードを写して縦に回す。
+            var turning = Turns();
+            turning.Begin(state.PersonId);
             for (int i = 0; i < Slots.Length; i++)
             {
                 var item = i < state.Slots.Count ? state.Slots[i] : null;
-                ShowSlot(
-                    Slots[i],
-                    item,
-                    IconOf(item, (EquipmentSlot)i),
-                    !accessory && i == (int)state.Slot
+                var icon = IconOf(item, (EquipmentSlot)i);
+                turning.Show(
+                    i,
+                    CardOf(Slots[i].Button),
+                    item?.ItemId ?? "",
+                    icon != null ? icon.texture : null
                 );
+                ShowSlot(Slots[i], item, icon, !accessory && i == (int)state.Slot);
             }
             for (int i = 0; i < Accessories.Length; i++)
-                ShowAccessory(
-                    Accessories[i],
-                    i,
-                    member != null ? level : 0,
-                    i == state.Accessory,
-                    i < state.Accessories.Count ? state.Accessories[i] : null,
-                    i < state.Accessories.Count ? ArtOf(state.Accessories[i]) : null
+            {
+                var item = i < state.Accessories.Count ? state.Accessories[i] : null;
+                var art = item != null ? ArtOf(item) : null;
+                int shownLevel = member != null ? level : 0;
+                turning.Show(
+                    Slots.Length + i,
+                    CardOf(Accessories[i].Button),
+                    AccessorySlots.IsOpen(i, shownLevel) ? item?.ItemId ?? "" : "locked",
+                    art != null ? art.texture : null
                 );
+                ShowAccessory(Accessories[i], i, shownLevel, i == state.Accessory, item, art);
+            }
             // ステータスは装備を入れた値だけを出す。上昇分は添えない。
             StatGrid.Show(Stats, state.Stats);
             // 一覧の面の文字は、アクセサリーの枠を選んでいて、付けられる物がないときだけ出す
@@ -405,6 +419,16 @@ namespace Baryonyx.Equipment
             SetRich(widget.Stars, filled ? Grade(worn) : "");
             Set(widget.Detail, filled ? worn.Detail : "");
         }
+
+        // 付け替えた枠を回す部品。線の光は、新しく付けた物の絵の色から取る。
+        private GlassCardTurns Turns() =>
+            turns ??= new GlassCardTurns(
+                transform,
+                art => Combat.Presentation.CardArtColor.Of(art, Color.white)
+            );
+
+        private static GlassCard CardOf(Button button) =>
+            button != null && button.TryGetComponent(out GlassCard card) ? card : null;
 
         // 装備の種類ごとの絵。絵がなければ null。
         private Sprite ArtOf(EquipmentItemState item) =>

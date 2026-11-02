@@ -179,6 +179,9 @@ namespace Baryonyx.CardLoadout
         private readonly ButtonBindings bindings = new();
         private readonly GlassCardCover cover = new();
 
+        // 付け替えた左の行のカードを縦に回す（固有スキルの3行、続けてカスタムスキルの3行の順）。
+        private GlassCardTurns turns;
+
         public event Action PrevPressed;
         public event Action NextPressed;
         public event Action<int> SlotPressed;
@@ -193,6 +196,7 @@ namespace Baryonyx.CardLoadout
         {
             person = null;
             shownTree = null;
+            Turns().Forget();
             if (Swipe != null)
                 Swipe.Flicked += Flick;
             if (Sheet != null)
@@ -292,6 +296,7 @@ namespace Baryonyx.CardLoadout
         // 読み込むまで、仮データのカードを本当のカードとして見せない。左の6行と右の一覧の先頭はカードの裏で埋める。
         private void ShowLoading()
         {
+            Turns().Forget();
             ShowTree(false);
             ShowTabs(CardLoadoutPresenter.SkillTab);
             Set(Status, "");
@@ -430,10 +435,19 @@ namespace Baryonyx.CardLoadout
                 var (people, partyCount) = PartySession.Formation(Party).TabOrder();
                 Sheet.Show(people, partyCount, state.PersonId);
             }
+            // 同じ人の行の中身が変わったら、描き替える前のカードを写して縦に回す。
+            var turning = Turns();
+            turning.Begin(state.PersonId);
             for (int i = 0; i < UniqueRows.Length; i++)
             {
                 var unique =
                     state.Uniques != null && i < state.Uniques.Count ? state.Uniques[i] : null;
+                turning.Show(
+                    i,
+                    CardOf(UniqueRows[i]),
+                    TurnKey(unique?.Card, unique?.Card != null, unique != null && unique.Locked),
+                    unique?.Card != null ? ArtOf(unique.Card) : null
+                );
                 ShowDeckRow(
                     UniqueRows[i],
                     unique?.Card,
@@ -445,7 +459,14 @@ namespace Baryonyx.CardLoadout
             for (int i = 0; i < SlotRows.Length; i++)
             {
                 var card = i < state.Slots.Count ? state.Slots[i] : null;
-                ShowDeckRow(SlotRows[i], card, card != null && card.Id != null, false, 0);
+                bool filled = card != null && card.Id != null;
+                turning.Show(
+                    UniqueRows.Length + i,
+                    CardOf(SlotRows[i]),
+                    TurnKey(card, filled, false),
+                    filled ? ArtOf(card) : null
+                );
+                ShowDeckRow(SlotRows[i], card, filled, false, 0);
             }
             ShowChosen(state.Unique, state.Slot);
             ShowUsable(Usable, state.Usable, IconOf);
@@ -479,6 +500,25 @@ namespace Baryonyx.CardLoadout
                 empty
             );
         }
+
+        // 付け替えた行を回す部品。線の光は、新しく入れたカードの挿絵の色から取る。
+        private GlassCardTurns Turns() =>
+            turns ??= new GlassCardTurns(
+                transform,
+                art => Combat.Presentation.CardArtColor.Of(art, Color.white)
+            );
+
+        private static GlassCard CardOf(CardLoadoutDeckRowWidget row) =>
+            row.Card.Button != null && row.Card.Button.TryGetComponent(out GlassCard card)
+                ? card
+                : null;
+
+        // 行が見せている物。カード（覚醒の段階で名前が変わる）、空き、未解放を区別する。
+        private static string TurnKey(CardLoadoutCardState card, bool filled, bool locked) =>
+            locked ? "locked"
+            : filled ? $"{card.Id}/{card.Name}/{card.ItemId}"
+            : card != null ? "empty"
+            : "";
 
         // 左の6行のうち、選んでいる固有スキル（unique）かカスタムスキルの枠（slot）を金の枠で囲む。
         private void ShowChosen(int unique, int slot)
@@ -605,9 +645,7 @@ namespace Baryonyx.CardLoadout
         public Sprite IconOf(CardElement element)
         {
             int index = (int)element;
-            return element != CardElement.None && index < ElementIcons.Length
-                ? ElementIcons[index]
-                : null;
+            return index < ElementIcons.Length ? ElementIcons[index] : null;
         }
 
         private void BindRow(CardLoadoutRowWidget row) =>

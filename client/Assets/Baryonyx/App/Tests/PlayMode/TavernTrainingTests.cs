@@ -10,6 +10,7 @@ using Baryonyx.Party;
 using Baryonyx.SkillEvolution;
 using Baryonyx.Tavern;
 using Baryonyx.Training;
+using Baryonyx.UI;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -166,11 +167,23 @@ namespace Baryonyx.Tests.PlayMode
                 training.Cost.text,
                 Is.EqualTo(cost.ToString("#,0", CultureInfo.InvariantCulture))
             );
+            var levelColor = training.Level.color;
             training.Confirm.onClick.Invoke();
             Assert.That(training.Dialog.activeSelf, Is.False);
             Assert.That(PartySession.LevelOf(training.Party, first.Id), Is.EqualTo(target));
             Assert.That(training.Level.text, Is.EqualTo(target.ToString()));
             Assert.That(view.ToastMessage, Does.StartWith($"{first.Name}が Lv {target} になり"));
+            // 窓を閉じた直後に、上がったLvとステータスの数字がそろって2回光り、元の色に戻る。
+            var glows = training
+                .Stats.Prepend(training.Level)
+                .Select(text => text.GetComponent<TextGlow>())
+                .ToArray();
+            Assert.That(glows.All(glow => glow != null && glow.Glowing), Is.True);
+            yield return SceneTests.WaitUntil(() => glows.All(glow => !glow.Glowing));
+            yield return null;
+            Assert.That(training.Level.transform.parent.Find("TextGlowHalo"), Is.Null);
+            // TMPは誤差の範囲で同じ色の代入を省くため、Colorの == （同じ誤差）で比べる。
+            Assert.That(training.Level.color == levelColor, Is.True);
 
             // 右のタブの「スキル」は、同じ人の1つ目のカスタムスキルの枠を選んで開く。
             Flick(training, -1);
