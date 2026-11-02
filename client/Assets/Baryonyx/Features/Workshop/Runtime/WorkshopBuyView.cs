@@ -88,7 +88,7 @@ namespace Baryonyx.Workshop
         public TMP_Text Missing;
         public Button Confirm;
 
-        // 買ったときの演出：画面を沈め、買った物を中央へ出して弾けさせ、右の面へ戻す（合成の演出の終わりと同じ）。
+        // 買ったときの演出：画面を沈め、買った物を中央で弾けさせて光らせ、暗転と一緒に消す（合成の演出の終わりと同じ部品）。
         public WorkshopCraftSwirl Reveal;
 
         private readonly HashSet<Component> bound = new();
@@ -275,34 +275,19 @@ namespace Baryonyx.Workshop
             RefreshConfirm();
         }
 
-        // 買った物を中央へ出して見せる。装備は右の面の絵を、出ている間だけ隠す。
+        // 買った物を中央で光らせて見せる。
         private void PlayReveal(WorkshopGood good)
         {
             if (Reveal == null || !isActiveAndEnabled)
                 return;
-            var plan = RevealPlan(good, UnityEngine.Random.value);
-            bool gear = good.Kind != LibraryKind.Skill;
             if (Confirm != null)
                 StartCoroutine(Press(Confirm.transform));
-            if (gear)
-                SetDetailArtShown(false);
-            Reveal.Play(
-                plan,
-                () =>
-                {
-                    if (this == null)
-                        return;
-                    SetDetailArtShown(true);
-                    // 画面を閉じて演出が切れたときは、閉じる途中なので跳ねさせない。
-                    if (gear && gameObject.activeInHierarchy && DetailArt != null)
-                        StartCoroutine(Punch(DetailArt.rectTransform));
-                }
-            );
+            Reveal.Play(RevealPlan(good, UnityEngine.Random.value), null);
         }
 
         /// <summary>
-        /// What the buy effect shows for <paramref name="good"/>: its art coming out from the big
-        /// art on the right (a skill's deck card), at the bought quality's colour.
+        /// What the buy effect shows for <paramref name="good"/>: its art bursting into view in the
+        /// middle, at the bought quality's colour.
         /// </summary>
         public WorkshopCraftSwirl.Plan RevealPlan(WorkshopGood good, float seed)
         {
@@ -322,22 +307,9 @@ namespace Baryonyx.Workshop
                 );
                 plan.ItemSize = dots * dot;
             }
-            var home =
-                good.Kind == LibraryKind.Skill && DetailCard.Frame != null
-                    ? DetailCard.Frame.rectTransform
-                : DetailArt != null ? DetailArt.rectTransform
-                : null;
-            if (home != null)
-                plan.ItemHome = Reveal.PlaceOf(home);
             plan.Quality = QualityPalette.Of(BoughtQuality);
             plan.Look = WorkshopCraftSwirl.LookOf(good.Stars);
             return plan;
-        }
-
-        private void SetDetailArtShown(bool shown)
-        {
-            if (DetailArt != null)
-                DetailArt.canvasRenderer.SetAlpha(shown ? 1f : 0f);
         }
 
         private static IEnumerator Press(Transform button)
@@ -350,19 +322,6 @@ namespace Baryonyx.Workshop
                 yield return null;
             }
             button.localScale = Vector3.one;
-        }
-
-        // 戻ってきた瞬間：絵を大きくして戻す。
-        private static IEnumerator Punch(RectTransform rect)
-        {
-            const float duration = 0.5f;
-            for (float t = 0f; t < duration; t += Time.unscaledDeltaTime)
-            {
-                float k = t / duration;
-                rect.localScale = Vector3.one * (1f + 0.3f * (1f - k) * (1f - k));
-                yield return null;
-            }
-            rect.localScale = Vector3.one;
         }
 
         // 保存できなかったら、値段と一緒に、手元で足した持っている数の1つも戻す。
@@ -557,10 +516,9 @@ namespace Baryonyx.Workshop
             bool FromBurst
         )[] RevealStates =
         {
-            ("買ったときの演出・出てくる", WorkshopCraftSwirl.Look.Plain, 0.18f, false),
             ("買ったときの演出・弾ける", WorkshopCraftSwirl.Look.Plain, 0.05f, true),
             ("買ったときの演出・現れる", WorkshopCraftSwirl.Look.Plain, 0.25f, true),
-            ("買ったときの演出・戻る", WorkshopCraftSwirl.Look.Plain, 0.9f, false),
+            ("買ったときの演出・消える", WorkshopCraftSwirl.Look.Plain, 0.6f, true),
             ("買ったときの演出・☆4 現れる", WorkshopCraftSwirl.Look.Gold, 0.2f, true),
             ("買ったときの演出・☆5 現れる", WorkshopCraftSwirl.Look.Rainbow, 0.2f, true),
         };
@@ -570,7 +528,6 @@ namespace Baryonyx.Workshop
         {
             if (Reveal != null)
                 Reveal.gameObject.SetActive(false);
-            SetDetailArtShown(true);
             if (index >= RevealStateFirst && index < RevealStateFirst + RevealStates.Length)
             {
                 ShowPreviewState(1);
@@ -608,7 +565,6 @@ namespace Baryonyx.Workshop
             var plan = RevealPlan(good, 0.37f);
             plan.Look = look;
             Reveal.gameObject.SetActive(true);
-            SetDetailArtShown(seconds >= WorkshopCraftSwirl.Beats.Of(look, true).Seconds);
             Reveal.Show(seconds, plan);
         }
 

@@ -464,7 +464,7 @@
 
 ## [features/screens-history.md](../features/screens-history.md)
 
-42KB・72行
+42KB・73行
 
 - 8: # 画面一覧と操作の変更と判断の記録
 
@@ -615,7 +615,7 @@
 
 ## [features/screens/shop.md](../features/screens/shop.md)
 
-23KB・147行
+23KB・146行
 
 - 8: # 画面一覧：商会
 - 12: ## 商会
@@ -623,11 +623,11 @@
 - 44: ### 買う
 - 60: ### 売る
 - 74: ### 買ったときの演出
-- 91: ### 売ったときの演出
-- 99: ### 合成
-- 114: #### 使う物を選ぶ画面
-- 129: ### 品質強化とスキル覚醒
-- 133: ### スキル覚醒
+- 90: ### 売ったときの演出
+- 98: ### 合成
+- 113: #### 使う物を選ぶ画面
+- 128: ### 品質強化とスキル覚醒
+- 132: ### スキル覚醒
 
 ## [features/screens/temple.md](../features/screens/temple.md)
 
@@ -691,7 +691,7 @@
 
 ## [features/showcase/screen-checks.md](../features/showcase/screen-checks.md)
 
-16KB・25行
+15KB・25行
 
 - 8: # クライアントアセット展示室：案内人の画面・冒険・地図の確かめ方
 

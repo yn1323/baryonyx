@@ -16,9 +16,8 @@ namespace Baryonyx.Workshop
     /// large and goes back to its place. A ☆4 thing makes it gold and a ☆5 one faintly rainbow,
     /// each a little richer and longer (<see cref="Look"/>). <see cref="Show"/> draws it at a
     /// time since the press, so <see cref="Play"/> runs it frame by frame and any moment can be
-    /// shown still. Buying plays only its end (<see cref="Plan.Reveal"/>): the bought thing comes
-    /// out from its place to the middle and bursts into view there (doc/features/screens/shop.md
-    /// 買ったときの演出).
+    /// shown still. Buying plays only its end (<see cref="Plan.Reveal"/>): the bought thing bursts
+    /// into view in the middle and fades with the dark (doc/features/screens/shop.md 買ったときの演出).
     /// </summary>
     public sealed class WorkshopCraftSwirl : MonoBehaviour
     {
@@ -41,9 +40,8 @@ namespace Baryonyx.Workshop
             public const float SwirlStart = 0.27f;
             public const float CollapseStart = 0.78f;
 
-            // 買ったとき：品物が元の位置を離れて中央へ出てくる拍と、弾けるまで。
-            public const float RiseStart = 0.03f;
-            public const float RevealBurst = 0.3f;
+            // 買ったとき：画面が沈みきって、中央で弾けるまで。
+            public const float RevealBurst = 0.15f;
 
             public Beats(float hold, float linger, bool reveal = false)
             {
@@ -152,7 +150,7 @@ namespace Baryonyx.Workshop
             public Look Look;
             public float Seed;
 
-            // 買ったとき：材料も渦もなく、品物が ItemHome から中央へ出てきて弾ける。
+            // 買ったとき：材料も渦もなく、品物が中央で弾けて現れ、戻らずに暗転と一緒に消える。
             public bool Reveal;
         }
 
@@ -773,11 +771,11 @@ namespace Baryonyx.Workshop
         }
 
         // 出来た物：弾けた所に大きく現れ、少し浮いてから、右上の絵の位置へ縮みながら戻る。
+        // 買ったときは戻らずに、その場で暗転と一緒に消える。
         private void ShowItem(float t)
         {
             float burst = beats.Burst;
-            bool rising = plan.Reveal && t >= Beats.RiseStart && t < burst;
-            bool on = t >= burst || rising;
+            bool on = t >= burst;
             if (Item != null)
                 Item.gameObject.SetActive(on && plan.ItemArt != null);
             if (!on)
@@ -792,29 +790,16 @@ namespace Baryonyx.Workshop
             }
             float appear = Ramp(t, burst, burst + 0.2f);
             float back = Smooth(Ramp(t, beats.ReturnStart, beats.Seconds));
+            float home = plan.Reveal ? 0f : back;
+            float fade = plan.Reveal ? 1f - back : 1f;
             float bob = Mathf.Sin(Mathf.Max(0f, t - burst) * 6f) * 6f * (1f - back);
-            Vector2 at = Vector2.Lerp(new Vector2(0f, bob), plan.ItemHome, back);
-            float scale = Mathf.Lerp(ItemScale * OvershootOut(appear), 1f, back);
-            // 買ったとき：元の位置から大きくなりながら中央へ出てきて、弾けると少し跳ねて止まる。
-            float rise = plan.Reveal ? Smooth(Ramp(t, Beats.RiseStart, burst)) : 1f;
-            if (plan.Reveal)
-            {
-                const float risen = 0.85f;
-                at = rising ? Vector2.Lerp(plan.ItemHome, Vector2.zero, rise) : at;
-                scale = rising
-                    ? Mathf.Lerp(1f, ItemScale * risen, rise)
-                    : Mathf.Lerp(
-                        ItemScale * Mathf.LerpUnclamped(risen, 1f, OvershootOut(appear)),
-                        1f,
-                        back
-                    );
-                ShowRiseTrail(t, rising);
-            }
+            Vector2 at = Vector2.Lerp(new Vector2(0f, bob), plan.ItemHome, home);
+            float scale = Mathf.Lerp(ItemScale * OvershootOut(appear), 1f, home);
             if (Item != null && plan.ItemArt != null)
             {
                 Item.texture = plan.ItemArt;
                 Item.uvRect = plan.ItemUv;
-                Item.color = plan.ItemTint;
+                Item.color = WithAlpha(plan.ItemTint, plan.ItemTint.a * fade);
                 var rect = Item.rectTransform;
                 rect.anchoredPosition = at;
                 rect.sizeDelta = plan.ItemSize;
@@ -828,7 +813,7 @@ namespace Baryonyx.Workshop
                 plan.ItemSize * (scale * 1.35f),
                 0f,
                 plan.Look == Look.Rainbow ? WarmWhite : Color.Lerp(plan.Quality, Gold, 0.4f),
-                rising ? 0.35f * rise : glow * Smooth(appear),
+                glow * Smooth(appear),
                 plan.Seed + 0.75f,
                 k: t,
                 eaten: 0f,
@@ -859,7 +844,7 @@ namespace Baryonyx.Workshop
                     Vector2.one * (70f + 40f * a),
                     0f,
                     plan.Look == Look.Rainbow ? Pastel(a) : WarmWhite,
-                    Mathf.Sin(age / life * Mathf.PI),
+                    Mathf.Sin(age / life * Mathf.PI) * fade,
                     a,
                     k: age,
                     eaten: 0f,
@@ -900,41 +885,6 @@ namespace Baryonyx.Workshop
                     brightness: 1f
                 );
             }
-        }
-
-        // 買ったとき：中央へ出てくる品物の後ろに、元の位置の方へ細い金の光の筋を引く。
-        private void ShowRiseTrail(float t, bool rising)
-        {
-            var trail = PieceTrails.Length > 0 ? PieceTrails[0] : null;
-            if (!rising)
-            {
-                Hide(trail);
-                return;
-            }
-            float rise = Smooth(Ramp(t, Beats.RiseStart, beats.Burst));
-            Vector2 at = Vector2.Lerp(plan.ItemHome, Vector2.zero, rise);
-            Vector2 toward = -plan.ItemHome;
-            float travelled = toward.magnitude * rise;
-            float length = Mathf.Min(travelled, 360f);
-            if (length < 12f)
-            {
-                Hide(trail);
-                return;
-            }
-            Vector2 dir = toward / Mathf.Max(toward.magnitude, 1e-3f);
-            ShowBoard(
-                trail,
-                true,
-                at - dir * length * 0.45f,
-                new Vector2(40f, length),
-                AngleOf(dir),
-                Gold,
-                0.8f * (1f - Ramp(t, beats.Burst - 0.08f, beats.Burst)),
-                Hash(3, plan.Seed),
-                k: t,
-                eaten: 0f,
-                brightness: 1.2f
-            );
         }
 
         private static void ShowBoard(

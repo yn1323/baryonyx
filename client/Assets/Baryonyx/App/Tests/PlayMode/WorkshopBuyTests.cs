@@ -115,9 +115,16 @@ namespace Baryonyx.Tests.PlayMode
             int price = expected[0].Price;
             shop.Hold = true;
             buy.Confirm.onClick.Invoke();
-            // 通知の帯は出さず、画面を沈めて買った物を中央に出す。
+            // 通知の帯は出さず、画面を沈めて買った物を中央で光らせる。右の面の絵は隠さない。
             Assert.That(buy.LastNotice, Is.Empty);
             Assert.That(buy.Reveal.Playing, Is.True);
+            Assert.That(buy.DetailArt.canvasRenderer.GetAlpha(), Is.EqualTo(1f));
+            // 買った物は右の面へ戻らず、中央のまま暗転と一緒に消えていく。
+            var plan = buy.RevealPlan(buy.Shown[0], 0.37f);
+            var beats = WorkshopCraftSwirl.Beats.Of(plan.Look, true);
+            buy.Reveal.Show((beats.ReturnStart + beats.Seconds) / 2f, plan);
+            Assert.That(buy.Reveal.Item.rectTransform.anchoredPosition.x, Is.EqualTo(0f));
+            Assert.That(buy.Reveal.Item.color.a, Is.InRange(0.05f, 0.95f));
             Assert.That(RuneBalance.Known, Is.EqualTo(Balance - price));
             Assert.That(buy.BuyTask.IsCompleted, Is.False);
             // 保存を待つ間も、同じ物を続けて買える。
