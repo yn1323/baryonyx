@@ -2,7 +2,6 @@ using System.Linq;
 using Baryonyx.Combat.Editor;
 using Baryonyx.Combat.Presentation;
 using Baryonyx.Editor;
-using Baryonyx.Enhancement;
 using Baryonyx.Inventory.Editor;
 using Baryonyx.Library;
 using Baryonyx.Library.Editor;
@@ -74,11 +73,6 @@ namespace Baryonyx.Workshop.Editor
             craft.Tabs = panel.Tabs;
             craft.ListTitle = panel.Title;
             craft.ListCount = panel.Count;
-            // 磨き石のタブの石の絵。強化の画面と同じ ItemArt から写す。
-            var itemArt = ItemArtAssets.Load();
-            craft.StoneArts = EnhancementMaterials
-                .Polishes.Select(stone => (Texture)itemArt.TextureOf(stone.Id))
-                .ToArray();
 
             var content = panel.Content;
             craft.Content = content;

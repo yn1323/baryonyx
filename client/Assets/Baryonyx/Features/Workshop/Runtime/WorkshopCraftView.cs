@@ -5,7 +5,6 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Baryonyx.Economy;
-using Baryonyx.Enhancement;
 using Baryonyx.Inventory;
 using Baryonyx.Library;
 using Baryonyx.Networking;
@@ -27,8 +26,6 @@ namespace Baryonyx.Workshop
     /// piece's quality and opens <see cref="Picker"/> to change it) and the runes. Press "craft" to
     /// make it: the made thing shows at once with the quality the same rule as the server's gives
     /// (optimistic, doc/rules/data-storage.md), and the screen reads things again if the save fails.
-    /// The last tab makes polishing stones: three of a colour and runes make one of the next
-    /// (doc/features/enhancement.md), shown when the server answers.
     /// </summary>
     public sealed class WorkshopCraftView : GuidePanel, IEditModePreview
     {
@@ -83,13 +80,6 @@ namespace Baryonyx.Workshop
         // 合成したときの、画面全体の演出（光の渦）。
         public WorkshopCraftSwirl Swirl;
 
-        // 磨き石のタブの、石の絵（白・青・紫・金の順）。生成で ItemArt から写す。
-        public Texture[] StoneArts = Array.Empty<Texture>();
-
-        // 磨き石のタブに並べる、合成で作れる色（青・紫・金）。
-        public static readonly IReadOnlyList<EnhancementMaterial> Stones =
-            EnhancementMaterials.Combined.ToArray();
-
         private readonly HashSet<Component> bound = new();
         private readonly GlassCardCover cover = new();
         private readonly List<WorkshopOwned> special = new();
@@ -100,10 +90,6 @@ namespace Baryonyx.Workshop
         private int tab;
         private int selected = -1;
         private int crafts;
-        private bool combining;
-
-        // 直前の石の合成が保存できなかったか。演出が戻ったときに「作った」と知らせない。
-        private bool stoneFailed;
 
         public IReadOnlyList<WorkshopRecipe> Recipes => recipes;
         public IReadOnlyList<WorkshopRecipe> Shown => shown;
@@ -114,12 +100,6 @@ namespace Baryonyx.Workshop
 
         public int Tab => tab;
         public int Selected => selected;
-
-        /// <summary>Whether the polishing stones' tab (the last one) is shown.</summary>
-        public bool StonesTab => tab == WorkshopCraft.Kinds.Count;
-
-        private EnhancementMaterial SelectedStone =>
-            StonesTab && selected >= 0 && selected < Stones.Count ? Stones[selected] : null;
 
         // 直前の合成。テストで完了を待つために公開する。
         public Task Work { get; private set; } = Task.CompletedTask;
@@ -168,10 +148,8 @@ namespace Baryonyx.Workshop
         private async Task LoadAsync(CancellationToken token)
         {
             var stock = WorkshopStock.LoadAsync(Party, token);
-            var stones = EnhancementSession.LoadAsync(token);
             var read = await LibrarySession.LoadAsync(token);
             var held = await stock;
-            await stones;
             if (!token.IsCancellationRequested)
                 Render(WorkshopCraft.Recipes(Data, read), held, read);
         }
@@ -196,12 +174,6 @@ namespace Baryonyx.Workshop
                 if (Tabs[i] != null)
                     Tabs[i].Chosen = i == tab;
             Set(ListTitle, WorkshopCraft.TabLabels[tab]);
-            if (StonesTab)
-            {
-                Set(ListCount, "");
-                ShowStones();
-                return;
-            }
             shown = recipes.Where(recipe => recipe.Kind == WorkshopCraft.Kinds[tab]).ToArray();
             selected = -1;
             PaintRows();
@@ -223,11 +195,6 @@ namespace Baryonyx.Workshop
 
         public void Select(int index)
         {
-            if (StonesTab)
-            {
-                SelectStone(index);
-                return;
-            }
             if (index < 0 || index >= shown.Count)
                 return;
             selected = index;
@@ -278,11 +245,6 @@ namespace Baryonyx.Workshop
         /// </summary>
         public void Craft()
         {
-            if (StonesTab)
-            {
-                Combine();
-                return;
-            }
             if (!CanCraft())
                 return;
             var recipe = SelectedRecipe;
@@ -600,11 +562,6 @@ namespace Baryonyx.Workshop
 
         private void RefreshDetail()
         {
-            if (StonesTab)
-            {
-                RefreshStone();
-                return;
-            }
             var recipe = SelectedRecipe;
             if (DetailArt != null)
             {
@@ -740,277 +697,6 @@ namespace Baryonyx.Workshop
             }
         }
 
-        // 磨き石のタブ：作れる色を並べ、先頭を選んでおく。
-        private void ShowStones()
-        {
-            shown = Array.Empty<WorkshopRecipe>();
-            selected = -1;
-            special.Clear();
-            EnsureRows(Stones.Count);
-            for (int i = 0; i < Rows.Count; i++)
-                Rows[i].gameObject.SetActive(i < Stones.Count);
-            PaintStones();
-            Set(Status, "");
-            cover.Reveal(
-                Rows.Take(Stones.Count).Select(row => row.gameObject),
-                Rows.Skip(Stones.Count).Take(CoverRows - Stones.Count).Select(row => row.gameObject)
-            );
-            if (List != null)
-                List.verticalNormalizedPosition = 1f;
-            SelectStone(0);
-        }
-
-        private void PaintStones()
-        {
-            for (int i = 0; i < Stones.Count && i < Rows.Count; i++)
-                PaintStone(
-                    Rows[i],
-                    Stones[i],
-                    CanCombine(Stones[i]),
-                    StoneArtOf(Stones[i]),
-                    ArtBox
-                );
-        }
-
-        public void SelectStone(int index)
-        {
-            if (index < 0 || index >= Stones.Count)
-                return;
-            selected = index;
-            for (int i = 0; i < Stones.Count && i < Rows.Count; i++)
-                if (Rows[i].Card != null)
-                    Rows[i].Card.Selected = i == index;
-            RefreshStone();
-        }
-
-        /// <summary>Writes a stone's row: its art, name and stars, dim when it cannot be made now.</summary>
-        public static void PaintStone(
-            ItemTile row,
-            EnhancementMaterial stone,
-            bool canMake,
-            Texture art,
-            float artBox
-        )
-        {
-            PaintTexture(row.Art, art, artBox);
-            Set(row.Name, stone.Name);
-            Set(row.Detail, WorkshopBuyView.StarsText(stone.Stars));
-            Set(row.Price, "");
-            if (row.Card != null)
-            {
-                row.Card.Selected = false;
-                row.Card.Dimmed = !canMake;
-            }
-        }
-
-        // 右の面：作る石の絵・名前・☆・上げ幅と上限、持っている数。材料は1つ下の色の札を1枚。
-        private void RefreshStone()
-        {
-            var made = SelectedStone;
-            var from = EnhancementMaterials.CombineFrom(made);
-            if (DetailArt != null)
-            {
-                DetailArt.transform.parent.gameObject.SetActive(made != null);
-                if (made != null)
-                    PaintTexture(DetailArt, StoneArtOf(made), DetailArtBox);
-            }
-            Set(DetailName, made?.Name ?? "");
-            Set(DetailStars, made != null ? WorkshopBuyView.StarsText(made.Stars) : "");
-            Set(DetailEffect, made != null ? StoneEffect(made) : "");
-            Set(
-                DetailQuality,
-                made != null
-                    ? WorkshopEnhanceView.CountText(EnhancementSession.CountOf(made.Id))
-                    : ""
-            );
-            if (MaterialsTitle != null)
-                MaterialsTitle.SetActive(made != null);
-            for (int i = 0; i < MaterialRows.Count; i++)
-            {
-                var row = MaterialRows[i];
-                bool visible = i == 0 && from != null;
-                row.gameObject.SetActive(visible);
-                if (!visible)
-                    continue;
-                PaintTexture(row.Art, StoneArtOf(from), MaterialArtBox);
-                Set(row.Name, from.Name);
-                Set(
-                    row.Count,
-                    CountText(
-                        EnhancementSession.CountOf(from.Id),
-                        EnhancementMaterials.CombineInputs
-                    )
-                );
-                if (row.Quality != null)
-                    row.Quality.transform.parent.gameObject.SetActive(false);
-                if (row.Mark != null)
-                    row.Mark.SetActive(false);
-            }
-            if (Price != null)
-                Price.SetActive(made != null);
-            Set(PriceLabel, made != null ? made.CombineRunes.ToString("N0") : "");
-            Set(Missing, made != null ? StoneMissingText(made, RuneBalance.Known) : "");
-            if (Confirm != null)
-                Confirm.interactable = CanCombine(made);
-        }
-
-        private bool CanCombine(EnhancementMaterial made)
-        {
-            var from = EnhancementMaterials.CombineFrom(made);
-            return !combining
-                && from != null
-                && EnhancementSession.CountOf(from.Id) >= EnhancementMaterials.CombineInputs
-                && (RuneBalance.Known is not { } runes || runes >= made.CombineRunes);
-        }
-
-        /// <summary>
-        /// Makes one stone of the chosen colour from three of the one below, and shows it when
-        /// the server answers. The effect plays at once, the three stones flying into the swirl.
-        /// </summary>
-        public void Combine()
-        {
-            var made = SelectedStone;
-            if (!CanCombine(made))
-                return;
-            var plan = StonePlan(made, UnityEngine.Random.value);
-            combining = true;
-            stoneFailed = false;
-            RefreshStone();
-            string text = CombinedText(made);
-            if (Swirl != null)
-            {
-                if (Confirm != null)
-                    StartCoroutine(Press(Confirm.transform));
-                SetDetailArtShown(false);
-                SetMaterialArtShown(false);
-                Swirl.Play(plan, () => Landed(stoneFailed ? null : text));
-            }
-            Work = CombineAsync(made, Swirl == null ? text : null);
-        }
-
-        private async Task CombineAsync(EnhancementMaterial made, string notice)
-        {
-            try
-            {
-                await EnhancementSession.CombineAsync(made, 1);
-                if (notice != null && this != null && isActiveAndEnabled)
-                    ShowNotice(notice);
-            }
-            catch (OperationCanceledException) { }
-            catch (Exception exception)
-            {
-                Debug.LogWarning(FailedMessage + "。" + exception.Message);
-                stoneFailed = true;
-                if (this == null || !isActiveAndEnabled)
-                    SaveQueue.Report(FailedMessage);
-                else
-                    ShowNotice(FailedMessage);
-            }
-            finally
-            {
-                combining = false;
-                if (this != null && isActiveAndEnabled && StonesTab)
-                {
-                    PaintStones();
-                    if (selected >= 0 && selected < Rows.Count && Rows[selected].Card != null)
-                        Rows[selected].Card.Selected = true;
-                    RefreshStone();
-                }
-            }
-        }
-
-        /// <summary>
-        /// What the combine effect shows: three of the lower stone flying from its tile, side by
-        /// side, the made stone going back to the big art, ringed in the made stone's colour.
-        /// </summary>
-        public WorkshopCraftSwirl.Plan StonePlan(EnhancementMaterial made, float seed)
-        {
-            var plan = new WorkshopCraftSwirl.Plan { Seed = seed };
-            if (Swirl == null || made == null)
-                return plan;
-            var tile = MaterialRows.Count > 0 ? MaterialRows[0] : null;
-            var art = tile != null ? tile.Art : null;
-            if (art != null && art.texture != null && tile.gameObject.activeInHierarchy)
-            {
-                var size = art.rectTransform.rect.size;
-                var from = Swirl.PlaceOf(art.rectTransform);
-                int pieces = Math.Min(EnhancementMaterials.CombineInputs, Swirl.Pieces.Length);
-                for (int i = 0; i < pieces; i++)
-                    plan.Pieces.Add(
-                        new WorkshopCraftSwirl.Piece
-                        {
-                            Art = art.texture,
-                            Uv = art.uvRect,
-                            Tint = art.color,
-                            Size = size,
-                            // 3つの石が札の上で横に並んで飛び立つ。
-                            From = from + new Vector2((i - (pieces - 1) / 2f) * size.x * 0.7f, 0f),
-                        }
-                    );
-            }
-            var madeArt = StoneArtOf(made);
-            if (madeArt != null)
-            {
-                plan.ItemArt = madeArt;
-                var dots = new Vector2(madeArt.width, madeArt.height);
-                float dot = Mathf.Max(
-                    1f,
-                    Mathf.Floor(DetailArtBox / Mathf.Max(1f, Mathf.Max(dots.x, dots.y)))
-                );
-                plan.ItemSize = dots * dot;
-            }
-            if (DetailArt != null)
-                plan.ItemHome = Swirl.PlaceOf(DetailArt.rectTransform);
-            plan.Quality = WorkshopEnhanceView.StoneColor(made);
-            plan.Look = WorkshopCraftSwirl.LookOf(made.Stars);
-            return plan;
-        }
-
-        private Texture StoneArtOf(EnhancementMaterial stone)
-        {
-            for (int i = 0; i < EnhancementMaterials.Polishes.Count && i < StoneArts.Length; i++)
-                if (EnhancementMaterials.Polishes[i] == stone)
-                    return StoneArts[i];
-            return null;
-        }
-
-        /// <summary>How far a stone moves the quality gauge, and up to where: "ゲージを10%進める（Aまで）".</summary>
-        public static string StoneEffect(EnhancementMaterial stone) =>
-            $"ゲージを{stone.RatePercent}%進める（"
-            + (stone.Ceiling is { } ceiling ? $"{Quality.Letter(ceiling)}まで" : "上限まで")
-            + "）";
-
-        /// <summary>What is short to make <paramref name="made"/>: the lower stones, or the runes. Empty when nothing is.</summary>
-        public static string StoneMissingText(EnhancementMaterial made, long? runes)
-        {
-            var from = EnhancementMaterials.CombineFrom(made);
-            if (from == null)
-                return "";
-            int have = EnhancementSession.CountOf(from.Id);
-            if (have < EnhancementMaterials.CombineInputs)
-                return $"{from.Name}が {EnhancementMaterials.CombineInputs - have} つ足りません";
-            return runes is { } balance && balance < made.CombineRunes
-                ? $"ルーンが {made.CombineRunes - balance:N0} 足りません"
-                : "";
-        }
-
-        public static string CombinedText(EnhancementMaterial made) => $"{made.Name}を作った";
-
-        // ドット絵を、枠に収まるいちばん大きい整数倍で出す。
-        private static void PaintTexture(RawImage image, Texture art, float box)
-        {
-            if (image == null)
-                return;
-            image.texture = art;
-            image.enabled = art != null;
-            if (art == null)
-                return;
-            image.uvRect = new Rect(0f, 0f, 1f, 1f);
-            image.color = Color.white;
-            float dot = Mathf.Max(1f, Mathf.Floor(box / Mathf.Max(art.width, art.height)));
-            image.rectTransform.sizeDelta = new Vector2(art.width, art.height) * dot;
-        }
-
         // 押した瞬間：ボタンが沈んで戻る。
         private static IEnumerator Press(Transform button)
         {
@@ -1073,7 +759,6 @@ namespace Baryonyx.Workshop
             new[] { "作れる物", "選んだとき", "使う物を選ぶ" }
                 .Concat(GuidePanelLoad.PreviewStates)
                 .Concat(SwirlStates.Select(state => state.Name))
-                .Concat(StoneStates.Select(state => state.Name))
                 .ToArray();
 
         // 合成の演出の止めたコマ：見た目と、押してからの秒（弾ける拍からの秒は Burst に足す）。
@@ -1100,23 +785,6 @@ namespace Baryonyx.Workshop
         };
         private const int SwirlStateFirst = 5;
 
-        // 磨き石のタブと、石の合成の演出の止めたコマ：作る色（Stones の番号）と押してからの秒（負なら一覧だけ）。
-        private static readonly (
-            string Name,
-            int Stone,
-            float Seconds,
-            bool FromBurst
-        )[] StoneStates =
-        {
-            ("磨き石", 0, -1f, false),
-            ("磨き石の合成・飛ぶ", 0, 0.18f, false),
-            ("磨き石の合成・渦", 0, 0.55f, false),
-            ("磨き石の合成・現れる", 0, 0.22f, true),
-            ("磨き石の合成・金 渦", 2, 0.55f, false),
-            ("磨き石の合成・金 現れる", 2, 0.25f, true),
-        };
-        private static int StoneStateFirst => SwirlStateFirst + SwirlStates.Length;
-
         public void ShowPreviewState(int index)
         {
             if (Picker != null)
@@ -1125,15 +793,6 @@ namespace Baryonyx.Workshop
                 Swirl.gameObject.SetActive(false);
             SetDetailArtShown(true);
             SetMaterialArtShown(true);
-            if (index >= StoneStateFirst && index < StoneStateFirst + StoneStates.Length)
-            {
-                var state = StoneStates[index - StoneStateFirst];
-                float burst = WorkshopCraftSwirl
-                    .Beats.Of(WorkshopCraftSwirl.LookOf(Stones[state.Stone].Stars))
-                    .Burst;
-                ShowStoneState(state.Stone, state.Seconds + (state.FromBurst ? burst : 0f));
-                return;
-            }
             if (index >= SwirlStateFirst && index < SwirlStateFirst + SwirlStates.Length)
             {
                 var state = SwirlStates[index - SwirlStateFirst];
@@ -1163,28 +822,6 @@ namespace Baryonyx.Workshop
             ShowLoading();
             if (index == 4)
                 ShowLoadFailed();
-        }
-
-        // 仮の素材で磨き石のタブを開いて色を選び、seconds が0以上なら石の合成の演出の1コマを止めて描く。
-        private void ShowStoneState(int stone, float seconds)
-        {
-            // 停止中はサーバーがなく、仮の素材がその場で読める。
-            if (EnhancementSession.Source == null)
-                _ = EnhancementSession.LoadAsync(CancellationToken.None);
-            var mock = LibraryMemorySource.Mock();
-            Render(WorkshopCraft.Recipes(Data, mock), WorkshopStock.Mock(), mock);
-            ShowTab(WorkshopCraft.Kinds.Count);
-            SelectStone(stone);
-            if (seconds < 0f || Swirl == null || SelectedStone is not { } made)
-                return;
-            Combat.Presentation.BattleVfxNoise.Ensure();
-            Combat.Presentation.BattleVfxImage.EnableShapeChannel(Swirl.transform);
-            Canvas.ForceUpdateCanvases();
-            var plan = StonePlan(made, 0.37f);
-            Swirl.gameObject.SetActive(true);
-            SetDetailArtShown(seconds >= WorkshopCraftSwirl.Beats.Of(plan.Look).Seconds);
-            SetMaterialArtShown(seconds < WorkshopCraftSwirl.Beats.FlyStart);
-            Swirl.Show(seconds, plan);
         }
 
         // 仮の持ち物で鉄の剣（材料の札が2つ）を選び、合成の演出の1コマを止めて描く。

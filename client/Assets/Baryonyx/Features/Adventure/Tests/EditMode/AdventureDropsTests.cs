@@ -224,5 +224,25 @@ namespace Baryonyx.Tests.EditMode
                 Is.EqualTo("何も見つからなかった")
             );
         }
+
+        // 一度に何個か落ちる磨き石は1枚の札にまとめ、名前に数を添える。ほかの物は1つずつ並べる。
+        [Test]
+        public void TheSameMaterialShowsOnOnePlateWithItsCount()
+        {
+            var stone = Enhancement.EnhancementMaterials.White;
+            var items = AdventureDropItems.All(
+                new[]
+                {
+                    new AdventureDrop("a", AdventureDropCategory.Material, stone),
+                    new AdventureDrop("a", AdventureDropCategory.Item, "herb"),
+                    new AdventureDrop("a", AdventureDropCategory.Material, stone),
+                    new AdventureDrop("a", AdventureDropCategory.Item, "herb"),
+                    new AdventureDrop("a", AdventureDropCategory.Material, stone),
+                }
+            );
+            Assert.That(items.Count, Is.EqualTo(3));
+            Assert.That(items[0].Name, Is.EqualTo("磨き石 ×3"));
+            Assert.That(items[1].Name, Is.EqualTo(items[2].Name));
+        }
     }
 }

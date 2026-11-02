@@ -332,7 +332,7 @@ namespace Baryonyx.Tests.EditMode
             var plates = AdventureDropItems.FromClearReward(second, null, null);
             Assert.That(plates, Has.Count.EqualTo(2));
             Assert.That(plates.Select(plate => plate.Tag), Is.All.EqualTo("2回目のクリア報酬"));
-            Assert.That(plates[0].Name, Does.EndWith("×3"));
+            Assert.That(plates[0].Name, Does.EndWith("×10"));
             Assert.That(plates[1].Kind, Is.EqualTo(AdventureDropItems.RunesKind));
             Assert.That(plates[1].Name, Is.EqualTo("300"));
             Assert.That(AdventureDropItems.FromClearReward(null, null, null), Is.Empty);

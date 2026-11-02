@@ -11,7 +11,8 @@ namespace Baryonyx.WorldMap
     /// the same, given once when the square is first cleared. The server keeps the same contents
     /// (server/src/features/world-map/catalog.ts) and gives them; this copy shows them without a
     /// server (the showcase, or no server URL). Equipment and skills come with their quality, at
-    /// the bottom of its range; materials are listed one by one. All contents are provisional.
+    /// the bottom of its range; materials are listed one by one, an entry for each stone. All
+    /// contents are provisional.
     /// </summary>
     public static class WorldMapChests
     {
@@ -24,27 +25,49 @@ namespace Baryonyx.WorldMap
             ["n8-5"] = new[]
             {
                 Graded(AdventureDropCategory.Weapon, "frost-wand"),
-                Material("polish-blue"),
-                Material("polish-blue"),
+                Material("polish-white"),
+                Material("polish-white"),
+                Material("polish-white"),
+                Material("polish-white"),
+                Material("polish-white"),
+                Material("polish-white"),
             },
             // 内の輪の東の寄り道。鐘の町カンパネラ（推奨Lv30）へ向かう前に。
             ["n17-7"] = new[]
             {
                 Graded(AdventureDropCategory.Accessory, "crystal-ring"),
-                Material("polish-purple"),
+                Material("polish-white"),
+                Material("polish-white"),
+                Material("polish-white"),
+                Material("polish-white"),
+                Material("polish-white"),
+                Material("polish-white"),
+                Material("polish-white"),
+                Material("polish-white"),
             },
             // サッビアの北の寄り道。南の砂の町へ向かう前に。
             ["n15-15"] = new[]
             {
                 Graded(AdventureDropCategory.Armor, "clay-armor"),
-                Material("polish-blue"),
-                Material("polish-blue"),
+                Material("polish-white"),
+                Material("polish-white"),
+                Material("polish-white"),
+                Material("polish-white"),
+                Material("polish-white"),
+                Material("polish-white"),
             },
             // ドゥーナの北の寄り道。
             ["n20-14"] = new[]
             {
                 Graded(AdventureDropCategory.Weapon, "tomb-khopesh"),
-                Material("polish-purple"),
+                Material("polish-white"),
+                Material("polish-white"),
+                Material("polish-white"),
+                Material("polish-white"),
+                Material("polish-white"),
+                Material("polish-white"),
+                Material("polish-white"),
+                Material("polish-white"),
             },
             // サッビアの南の寄り道。
             ["n16-18"] = new[]

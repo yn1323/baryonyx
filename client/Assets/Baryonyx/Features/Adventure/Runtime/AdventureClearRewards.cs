@@ -30,8 +30,8 @@ namespace Baryonyx.Adventure
     /// <summary>
     /// The rewards of the first five clears of each destination, the same as the server's
     /// CLEAR_REWARDS. One pattern for every destination, filled from its own list (2026-11-01):
-    /// the first clear the starriest equipment that is not the boss's (quality A), the second three
-    /// polishing stones (blue for the near four, purple for the far four), the third the starriest
+    /// the first clear the starriest equipment that is not the boss's (quality A), the second
+    /// polishing stones (ten for the near four, twenty for the far four), the third the starriest
     /// skill (quality A), the fourth two awakening shards, the fifth the boss's ☆5 accessory
     /// (quality S), and each the same 300 runes whatever the destination.
     /// </summary>
@@ -44,20 +44,20 @@ namespace Baryonyx.Adventure
 
         private static readonly Dictionary<string, AdventureClearReward[]> Table = new()
         {
-            [AdventureCatalog.ForestRuins] = Of(AdventureDropCategory.Accessory, "dew-pendant", EnhancementMaterials.Blue, "Hone", "guardian-circlet"),
-            ["port-portoria"] = Of(AdventureDropCategory.Weapon, "flame-dagger", EnhancementMaterials.Blue, "ManaPrayer", "kraken-pearl"),
-            ["glaciera-cave"] = Of(AdventureDropCategory.Armor, "crystal-shield", EnhancementMaterials.Blue, "IceMirror", "troll-heartstone"),
-            ["hush-mire"] = Of(AdventureDropCategory.Accessory, "frog-crown", EnhancementMaterials.Blue, "QuickCast", "croc-fang"),
-            ["almaja-tomb"] = Of(AdventureDropCategory.Armor, "ancient-plate", EnhancementMaterials.Purple, "Revelation", "golden-mask"),
-            ["moonshade-graveyard"] = Of(AdventureDropCategory.Weapon, "moonshade-staff", EnhancementMaterials.Purple, "Resurrection", "lich-signet"),
-            ["volgan-volcano"] = Of(AdventureDropCategory.Armor, "obsidian-shield", EnhancementMaterials.Purple, "Meteor", "obsidian-crown"),
-            ["neve-peaks"] = Of(AdventureDropCategory.Weapon, "glacier-greatsword", EnhancementMaterials.Purple, "AbsoluteZero", "mistdragon-eye"),
+            [AdventureCatalog.ForestRuins] = Of(AdventureDropCategory.Accessory, "dew-pendant", 10, "Hone", "guardian-circlet"),
+            ["port-portoria"] = Of(AdventureDropCategory.Weapon, "flame-dagger", 10, "ManaPrayer", "kraken-pearl"),
+            ["glaciera-cave"] = Of(AdventureDropCategory.Armor, "crystal-shield", 10, "IceMirror", "troll-heartstone"),
+            ["hush-mire"] = Of(AdventureDropCategory.Accessory, "frog-crown", 10, "QuickCast", "croc-fang"),
+            ["almaja-tomb"] = Of(AdventureDropCategory.Armor, "ancient-plate", 20, "Revelation", "golden-mask"),
+            ["moonshade-graveyard"] = Of(AdventureDropCategory.Weapon, "moonshade-staff", 20, "Resurrection", "lich-signet"),
+            ["volgan-volcano"] = Of(AdventureDropCategory.Armor, "obsidian-shield", 20, "Meteor", "obsidian-crown"),
+            ["neve-peaks"] = Of(AdventureDropCategory.Weapon, "glacier-greatsword", 20, "AbsoluteZero", "mistdragon-eye"),
         };
 
         private static AdventureClearReward[] Of(
             AdventureDropCategory gearCategory,
             string gear,
-            string polish,
+            int polishes,
             string skill,
             string bossAccessory
         )
@@ -66,7 +66,7 @@ namespace Baryonyx.Adventure
             return new[]
             {
                 new AdventureClearReward(1, new AdventureDrop("", gearCategory, gear, 0f, ItemQuality.A), 1, runes),
-                new AdventureClearReward(2, new AdventureDrop("", AdventureDropCategory.Material, polish), 3, runes),
+                new AdventureClearReward(2, new AdventureDrop("", AdventureDropCategory.Material, EnhancementMaterials.White), polishes, runes),
                 new AdventureClearReward(3, new AdventureDrop("", AdventureDropCategory.Skill, skill, 0f, ItemQuality.A), 1, runes),
                 new AdventureClearReward(4, new AdventureDrop("", AdventureDropCategory.Material, EnhancementMaterials.Shard), 2, runes),
                 new AdventureClearReward(5, new AdventureDrop("", AdventureDropCategory.Accessory, bossAccessory, 0f, ItemQuality.S), 1, runes),

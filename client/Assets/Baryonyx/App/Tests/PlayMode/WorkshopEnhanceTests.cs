@@ -35,9 +35,6 @@ namespace Baryonyx.Tests.PlayMode
                 new Dictionary<string, int>
                 {
                     [EnhancementMaterials.White] = 3,
-                    [EnhancementMaterials.Blue] = 0,
-                    [EnhancementMaterials.Purple] = 1,
-                    [EnhancementMaterials.Gold] = 0,
                     [EnhancementMaterials.Shard] = 1,
                 }
             );
@@ -55,7 +52,7 @@ namespace Baryonyx.Tests.PlayMode
         }
 
         // 商会の「強化」は、案内人を隠して画面いっぱいに、タブで持っているスキル・装備・固有スキルを並べ、選んだ物を右に出す。
-        // 行と磨き石の色・数を選んで押すと、サーバーの答えを待ってから品質を書き換え、素材と所持ルーンを減らして知らせる。
+        // 行と上げる段階の数を選んで押すと、サーバーの答えを待ってから品質を書き換え、素材と所持ルーンを減らして知らせる。
         // スキル覚醒の項目では1本の一覧から覚醒の場面を開いて覚醒させ、覚醒した段階は一覧から消える。失敗したら知らせて読み直す。
         [UnityTest]
         public IEnumerator EnhanceRaisesTheChosenQualityAndAwakensAUniqueSkill()
@@ -97,30 +94,30 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(enhance.Gauge.activeSelf, Is.True);
             // 初めは石を選んでいないため、押せない。
             Assert.That(enhance.Confirm.interactable, Is.False);
-            // 持っている数を札に出す。札は磨き石4色だけで、覚醒の欠片はスキル覚醒の画面で使う。
+            // 持っている数を札に出す。札は磨き石の1枚だけで、覚醒の欠片はスキル覚醒の画面で使う。
             Assert.That(enhance.Chips[0].Count.text, Is.EqualTo("×3"));
-            Assert.That(enhance.Chips.Length, Is.EqualTo(EnhancementMaterials.Polishes.Count));
+            Assert.That(enhance.Chips.Length, Is.EqualTo(1));
             SceneTests.AssertTouchSize(enhance.Confirm.transform, 0.7f);
 
-            // 白い磨き石の札を2回押すと2つ使う。押すと、答えを待ってから倍率を上げる。
+            // 札を2回押すと2段階上げる。品質Cでは1段階に1つ使う。押すと、答えを待ってから倍率を上げる。
             rows[0].Card.Click();
             var target = enhance.Targets[0];
-            Assert.That(enhance.Stone.Id, Is.EqualTo(EnhancementMaterials.White));
+            Assert.That(enhance.Chips[0].Cancel.gameObject.activeSelf, Is.False);
             enhance.Chips[0].Card.Click();
             enhance.Chips[0].Card.Click();
-            Assert.That(enhance.Count, Is.EqualTo(2));
+            Assert.That(enhance.Steps, Is.EqualTo(2));
+            Assert.That(enhance.Stones, Is.EqualTo(2));
             Assert.That(enhance.Chips[0].Count.text, Does.Contain("2</color>/3"));
             Assert.That(enhance.Chips[0].Card.Selected, Is.True);
-            // 使っている色の札の右上の赤い×で、その色をやめる。使っていない色には出さない。
+            // 使っているときは札の右上の赤い×で、使うのをやめる。
             Assert.That(enhance.Chips[0].Cancel.gameObject.activeSelf, Is.True);
-            Assert.That(enhance.Chips[1].Cancel.gameObject.activeSelf, Is.False);
             enhance.Chips[0].Cancel.onClick.Invoke();
-            Assert.That(enhance.Count, Is.Zero);
+            Assert.That(enhance.Steps, Is.Zero);
             Assert.That(enhance.Chips[0].Cancel.gameObject.activeSelf, Is.False);
             Assert.That(enhance.Confirm.interactable, Is.False);
             enhance.Chips[0].Card.Click();
             enhance.Chips[0].Card.Click();
-            Assert.That(enhance.Count, Is.EqualTo(2));
+            Assert.That(enhance.Steps, Is.EqualTo(2));
             Assert.That(enhance.DetailName.text, Is.EqualTo(target.Name));
             Assert.That(enhance.Info.text, Does.Contain("200 ルーン"));
             // 右に、品質の前と後と、ゲージの今と上がった後を出す。
@@ -140,12 +137,7 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(RuneBalance.Known, Is.EqualTo(4800));
             source.Answer();
             yield return SceneTests.WaitForTask(enhance.Work);
-            float expected = EnhancementMaterials.Polished(
-                1f,
-                EnhancementMaterials.Polishes[0],
-                2,
-                target.MaxMultiplier
-            );
+            float expected = EnhancementMaterials.Polished(1f, 2, target.MaxMultiplier);
             Assert.That(enhance.Targets[0].Multiplier, Is.EqualTo(expected).Within(0.001f));
             Assert.That(rows[0].Price.text, Does.Contain(Quality.Times(expected)));
             Assert.That(
@@ -155,13 +147,11 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(enhance.Chips[0].Count.text, Is.EqualTo("×1"));
             Assert.That(RuneBalance.Known, Is.EqualTo(4800));
 
-            // 持っていない色は押せない。持っている数より多くは選べない。
-            enhance.ChooseStone(1);
-            Assert.That(enhance.Confirm.interactable, Is.False);
-            Assert.That(enhance.Info.text, Does.Contain("青い磨き石が足りません"));
-            enhance.ChooseStone(0);
+            // 持っている数より多くは選べない（残り1つで1段階まで）。
             enhance.Chips[0].Card.Click();
-            Assert.That(enhance.Count, Is.EqualTo(1));
+            enhance.Chips[0].Card.Click();
+            Assert.That(enhance.Steps, Is.EqualTo(1));
+            Assert.That(enhance.Chips[0].Count.text, Does.Contain("1</color>/1"));
 
             // 失敗したら知らせ、読み直す。
             source.Fail = true;
@@ -258,17 +248,13 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(awaken.gameObject.activeInHierarchy, Is.False);
         }
 
-        // 白い磨き石はBの入口で止まる。札を何度押しても入口までの数しか選べず、届いたら白の札を暗くし、
-        // 押せなくして、白で上げられるのはBまでと書く。ゲージには上限の壁の線を立てる。選び直すと、上げられる色へ替える。
+        // 1段階に使う石は品質が上がるほど増え、持っている数を超えては選べない。届かない段階は押しても増えず、
+        // 1段階も上げられないときは札を暗くして「磨き石が足りません」と書く。
         [UnityTest]
-        public IEnumerator WhiteStopsAtTheEntranceOfQualityB()
+        public IEnumerator StepsNeverUseMoreStonesThanHeld()
         {
             source = new FakeEnhancement(
-                new Dictionary<string, int>
-                {
-                    [EnhancementMaterials.White] = 20,
-                    [EnhancementMaterials.Blue] = 1,
-                }
+                new Dictionary<string, int> { [EnhancementMaterials.White] = 9 }
             );
             EnhancementSession.Source = source;
             var guide = default(GuideSceneBootstrap);
@@ -285,103 +271,49 @@ namespace Baryonyx.Tests.PlayMode
             yield return SceneTests.WaitForTask(enhance.LoadTask);
             yield return TurnedFaceUp(enhance);
 
-            var white = EnhancementMaterials.Polishes[0];
             var target = enhance.Targets[0];
-            Assert.That(enhance.Stone, Is.EqualTo(white));
-            Assert.That(enhance.GaugeWall.gameObject.activeSelf, Is.True);
-            Assert.That(
-                enhance.GaugeWall.rectTransform.anchorMin.x,
-                Is.EqualTo(0.4f).Within(0.02f)
-            );
-            int useful = EnhancementMaterials.UsefulCount(1f, white, target.MaxMultiplier);
             for (int i = 0; i < 30; i++)
                 enhance.Chips[0].Card.Click();
-            Assert.That(enhance.Count, Is.EqualTo(useful));
+            // 9つで上げられる所まで：Cは1つずつ、Bに入ると2つずつ。次の1段階は足りない。
+            int steps = enhance.Steps;
+            Assert.That(enhance.Stones, Is.LessThanOrEqualTo(9));
+            Assert.That(
+                enhance.Stones,
+                Is.EqualTo(EnhancementMaterials.StonesFor(1f, steps, target.MaxMultiplier))
+            );
+            Assert.That(
+                EnhancementMaterials.StonesFor(1f, steps + 1, target.MaxMultiplier),
+                Is.GreaterThan(9)
+            );
+            Assert.That(enhance.Info.text, Does.Contain($"磨き石×{enhance.Stones}"));
             enhance.Confirm.onClick.Invoke();
             yield return SceneTests.WaitForTask(enhance.Work);
-            Assert.That(enhance.Targets[0].Quality, Is.EqualTo(ItemQuality.B));
-
-            Assert.That(enhance.Stone, Is.EqualTo(white));
-            Assert.That(enhance.Chips[0].Card.Dimmed, Is.True);
-            Assert.That(enhance.Chips[1].Card.Dimmed, Is.False);
-            Assert.That(enhance.Confirm.interactable, Is.False);
-            Assert.That(enhance.Info.text, Is.EqualTo(WorkshopEnhanceView.CeilingText(white)));
-            // 行を選び直すと、上げられる色（青）へ替え、壁の線をAの入口へ移す。
-            enhance.Rows[0].Card.Click();
-            Assert.That(enhance.Stone.Id, Is.EqualTo(EnhancementMaterials.Blue));
             Assert.That(
-                enhance.GaugeWall.rectTransform.anchorMin.x,
-                Is.EqualTo(0.7f).Within(0.02f)
+                EnhancementSession.CountOf(EnhancementMaterials.White),
+                Is.EqualTo(9 - EnhancementMaterials.StonesFor(1f, steps, target.MaxMultiplier))
             );
-            enhance.ChooseStone(1);
-            Assert.That(enhance.Count, Is.EqualTo(1));
-            Assert.That(enhance.Confirm.interactable, Is.True);
-        }
-
-        // 選んだ色が足りなくても、下の色から作れる数までは選べる。「強化」で確かめの画面を開き、使う石と作る石、
-        // 合成と強化のルーンの合計を見せる。暗い所を押すと何も使わずに閉じ、チェックで作ってから強化する。
-        [UnityTest]
-        public IEnumerator ShortStonesAreMadeFromTheColourBelowAfterTheCheck()
-        {
-            source = new FakeEnhancement(
-                new Dictionary<string, int> { [EnhancementMaterials.White] = 6 }
-            );
-            EnhancementSession.Source = source;
-            var guide = default(GuideSceneBootstrap);
-            yield return SceneTests.LoadGuide(SceneNames.Shop, value => guide = value);
-            yield return SceneTests.WaitForTask(guide.RunesTask);
-            RuneBalance.Set(5000);
-            var view = guide.View;
-            int item = Array.FindIndex(
-                view.Definition.Items,
-                entry => entry.Key == EnhancementSession.GuideItemKey
-            );
-            var enhance = view.PanelFor(item).GetComponent<WorkshopEnhanceView>();
-            view.MenuItems[item].onClick.Invoke();
-            yield return SceneTests.WaitForTask(enhance.LoadTask);
-            yield return TurnedFaceUp(enhance);
-
-            var blue = EnhancementMaterials.Polishes[1];
-            var target = enhance.Targets[0];
-            enhance.ChooseStone(1);
-            Assert.That(enhance.Count, Is.EqualTo(1));
-            // 白6個から青は2個まで作れる。
-            for (int i = 0; i < 5; i++)
-                enhance.Chips[1].Card.Click();
-            Assert.That(enhance.Count, Is.EqualTo(2));
-            int runes = blue.Runes * 2 + blue.CombineRunes * 2;
-            Assert.That(enhance.Info.text, Does.Contain("（2個は合成）"));
-            Assert.That(enhance.Info.text, Does.Contain($"{runes:N0} ルーン"));
-            Assert.That(enhance.Confirm.interactable, Is.True);
-
-            var prompt = enhance.Prompt;
-            enhance.Confirm.onClick.Invoke();
-            Assert.That(prompt.IsOpen, Is.True);
-            Assert.That(
-                prompt.Dim.GetComponent<UnityEngine.UI.Image>().color.a,
-                Is.GreaterThan(0.5f)
-            );
-            Assert.That(prompt.Steps[0].activeSelf, Is.True);
-            Assert.That(prompt.Steps[1].activeSelf, Is.False);
-            Assert.That(prompt.From[0].Count.text, Is.EqualTo("×6"));
-            Assert.That(prompt.To[0].Count.text, Is.EqualTo("×2"));
-            Assert.That(prompt.Runes.text, Is.EqualTo(runes.ToString("N0")));
-            // 暗い所を押すと、何も使わずに閉じる。
-            prompt.Dim.onClick.Invoke();
-            Assert.That(prompt.IsOpen, Is.False);
-            Assert.That(EnhancementSession.CountOf(EnhancementMaterials.White), Is.EqualTo(6));
-
-            enhance.Confirm.onClick.Invoke();
-            prompt.Confirm.onClick.Invoke();
-            Assert.That(prompt.IsOpen, Is.False);
-            yield return SceneTests.WaitForTask(enhance.Work);
-            Assert.That(EnhancementSession.CountOf(EnhancementMaterials.White), Is.Zero);
-            Assert.That(EnhancementSession.CountOf(EnhancementMaterials.Blue), Is.Zero);
-            Assert.That(RuneBalance.Known, Is.EqualTo(5000 - runes));
             Assert.That(
                 enhance.Targets[0].Multiplier,
-                Is.EqualTo(EnhancementMaterials.Polished(1f, blue, 2, target.MaxMultiplier))
+                Is.EqualTo(EnhancementMaterials.Polished(1f, steps, target.MaxMultiplier))
                     .Within(0.001f)
+            );
+
+            // 残りで1段階も上げられなければ、札を暗くして足りないと書く。
+            if (
+                EnhancementMaterials.StonesFor(
+                    enhance.Targets[0].Multiplier,
+                    1,
+                    target.MaxMultiplier
+                ) > EnhancementSession.CountOf(EnhancementMaterials.White)
+            )
+            {
+                Assert.That(enhance.Chips[0].Card.Dimmed, Is.True);
+                Assert.That(enhance.Info.text, Does.Contain("磨き石が足りません"));
+            }
+            enhance.Chips[0].Card.Click();
+            Assert.That(
+                enhance.Stones,
+                Is.LessThanOrEqualTo(EnhancementSession.CountOf(EnhancementMaterials.White))
             );
         }
 
@@ -428,21 +360,14 @@ namespace Baryonyx.Tests.PlayMode
 
             public Task<EnhancementOutcome> PolishAsync(
                 EnhancementTarget target,
-                EnhancementMaterial stone,
-                int count,
+                int steps,
                 CancellationToken token
-            ) => Run(() => memory.PolishAsync(target, stone, count, token));
+            ) => Run(() => memory.PolishAsync(target, steps, token));
 
             public Task<EnhancementOutcome> AwakenAsync(
                 AwakeningOption option,
                 CancellationToken token
             ) => Run(() => memory.AwakenAsync(option, token));
-
-            public Task<EnhancementOutcome> CombineAsync(
-                EnhancementMaterial made,
-                int count,
-                CancellationToken token
-            ) => Run(() => memory.CombineAsync(made, count, token));
 
             private Task<EnhancementOutcome> Run(Func<Task<EnhancementOutcome>> run)
             {

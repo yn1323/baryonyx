@@ -42,63 +42,6 @@ namespace Baryonyx.Tests.PlayMode
             yield return SceneTests.UnloadAll(nameof(WorkshopCraftTests));
         }
 
-        // 合成の最後のタブ「磨き石」は、合成で作れる青・紫・金を並べ、選ぶと1つ下の色の札を材料に1枚出す。
-        // 下の色3個とルーンがそろうと押せ、演出が流れ、サーバーの答えで石の数と残高を書き換える。
-        [UnityTest]
-        public IEnumerator StonesTabMakesOneStoneFromThreeOfTheColourBelow()
-        {
-            EnhancementSession.Source = new EnhancementMemorySource(
-                new Dictionary<string, int> { [EnhancementMaterials.White] = 7 },
-                1000,
-                shownBalance: false
-            );
-            var guide = default(GuideSceneBootstrap);
-            yield return SceneTests.LoadGuide(SceneNames.Shop, value => guide = value);
-            yield return SceneTests.WaitForTask(guide.RunesTask);
-            RuneBalance.Set(1000);
-            var view = guide.View;
-            int item = Array.FindIndex(
-                view.Definition.Items,
-                entry => entry.Key == WorkshopSession.CraftItemKey
-            );
-            var craft = view.PanelFor(item).GetComponent<WorkshopCraftView>();
-            view.MenuItems[item].onClick.Invoke();
-            yield return SceneTests.WaitForTask(craft.LoadTask);
-
-            craft.Tabs[WorkshopCraft.Kinds.Count].Button.onClick.Invoke();
-            Assert.That(craft.StonesTab, Is.True);
-            Assert.That(
-                craft.Rows.Count(row => row.gameObject.activeSelf),
-                Is.EqualTo(WorkshopCraftView.Stones.Count)
-            );
-            Assert.That(craft.Rows[0].Name.text, Is.EqualTo("青い磨き石"));
-            // 青がないので、紫は作れず薄い。先頭の青を選んでおく。
-            Assert.That(craft.Rows[1].Card.Dimmed, Is.True);
-            Assert.That(craft.Selected, Is.EqualTo(0));
-            Assert.That(craft.DetailName.text, Is.EqualTo("青い磨き石"));
-            Assert.That(craft.MaterialRows.Count(row => row.gameObject.activeSelf), Is.EqualTo(1));
-            Assert.That(craft.MaterialRows[0].Count.text, Is.EqualTo("7/3"));
-            Assert.That(craft.MaterialRows[0].Name.text, Is.EqualTo("白い磨き石"));
-            var blue = EnhancementMaterials.Find(EnhancementMaterials.Blue);
-            Assert.That(craft.PriceLabel.text, Is.EqualTo(blue.CombineRunes.ToString("N0")));
-            Assert.That(craft.Confirm.interactable, Is.True);
-
-            craft.Confirm.onClick.Invoke();
-            Assert.That(craft.Swirl.Playing, Is.True);
-            yield return SceneTests.WaitForTask(craft.Work);
-            craft.Swirl.Finish();
-            Assert.That(view.ToastMessage, Is.EqualTo(WorkshopCraftView.CombinedText(blue)));
-            Assert.That(EnhancementSession.CountOf(EnhancementMaterials.White), Is.EqualTo(4));
-            Assert.That(EnhancementSession.CountOf(EnhancementMaterials.Blue), Is.EqualTo(1));
-            Assert.That(RuneBalance.Known, Is.EqualTo(1000 - blue.CombineRunes));
-            Assert.That(craft.MaterialRows[0].Count.text, Is.EqualTo("4/3"));
-
-            // 紫は、青が2つ足りない。
-            craft.Rows[1].Card.Click();
-            Assert.That(craft.Confirm.interactable, Is.False);
-            Assert.That(craft.Missing.text, Is.EqualTo("青い磨き石が 2 つ足りません"));
-        }
-
         // 商会の「合成」は、案内人を隠して画面いっぱいに、レシピの材料を1つでも見つけた物を分類のタブごとに並べる。
         // 選ぶと、レシピの材料を札で横に並べ、持っている数と要る数を出す。特別な材料（装備）の札を押すと使う物を
         // 選ぶ画面を開き、品質の違う物に替えられる。「合成」を押すと、サーバーの答えを待たずに材料を減らし、

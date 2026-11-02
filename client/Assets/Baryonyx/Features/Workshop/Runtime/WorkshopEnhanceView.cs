@@ -73,7 +73,7 @@ namespace Baryonyx.Workshop
         public TMP_Text ListTitle;
         public TMP_Text ListCount;
 
-        // 一覧の下：磨き石4色。札を押すたびにその色を使う数が増え、右上の×でやめる。
+        // 一覧の下：磨き石の札（1枚）。押すたびに1段階ずつ上げる数が増え、右上の×でやめる。
         public WorkshopMaterialChip[] Chips = Array.Empty<WorkshopMaterialChip>();
 
         public TMP_Text Info;
@@ -105,13 +105,6 @@ namespace Baryonyx.Workshop
         public RectTransform GaugeNow;
         public RectTransform GaugeAfter;
 
-        // 選んだ色の上限：そこから先を暗く覆い（Blocked）、上限に石の色の壁の線（Wall）を立てる。金は出さない。
-        public RectTransform GaugeBlocked;
-        public Image GaugeWall;
-
-        // 選んだ色が足りないが下の色から作れるとき、「強化」で開く確かめの画面。
-        public WorkshopCombinePrompt Prompt;
-
         // 「強化」で流す、カードが中央で回って裏返る演出（doc/features/enhancement.md 品質強化の演出）。
         public WorkshopEnhanceFlip Flip;
 
@@ -125,23 +118,19 @@ namespace Baryonyx.Workshop
         private IReadOnlyList<PartyMember> roster = Array.Empty<PartyMember>();
         private Tab tab;
         private int selected = -1;
-        private int stone;
 
-        // 色ごとの使う数（白・青・紫・金の順）。札を押すたびに1つ増え、低い色から順に使う。
-        private readonly int[] uses = new int[EnhancementMaterials.Polishes.Count];
+        // 上げる段階の数。札を押すたびに1つ増える。1段階に使う石の数は品質が上がるほど増える。
+        private int steps;
         private bool busy;
 
         public Tab Current => tab;
         public int Selected => selected;
 
-        /// <summary>The colour last chosen: the one whose ceiling the gauge shows.</summary>
-        public EnhancementMaterial Stone => EnhancementMaterials.Polishes[stone];
+        /// <summary>How many steps the stones raise the chosen thing.</summary>
+        public int Steps => steps;
 
-        /// <summary>How many of the chosen colour are used.</summary>
-        public int Count => uses[stone];
-
-        /// <summary>How many of each colour are used, white to gold.</summary>
-        public IReadOnlyList<int> Uses => uses;
+        /// <summary>How many stones the steps use.</summary>
+        public int Stones => StonesOf(SelectedTarget, steps);
 
         // 直前の強化。テストで完了を待つために公開する。
         public Task Work { get; private set; } = Task.CompletedTask;
@@ -192,10 +181,9 @@ namespace Baryonyx.Workshop
                 var chip = Chips[i];
                 if (chip == null || chip.Card == null || !bound.Add(chip))
                     continue;
-                int index = i;
-                chip.Card.Clicked += () => ChooseStone(index);
+                chip.Card.Clicked += AddStep;
                 if (chip.Cancel != null)
-                    chip.Cancel.onClick.AddListener(() => CancelStone(index));
+                    chip.Cancel.onClick.AddListener(ClearSteps);
             }
             if (Confirm != null && bound.Add(Confirm))
                 Confirm.onClick.AddListener(Enhance);
@@ -274,7 +262,7 @@ namespace Baryonyx.Workshop
         {
             tab = next;
             selected = -1;
-            ClearUses();
+            steps = 0;
             for (int i = 0; i < Tabs.Length; i++)
                 if (Tabs[i] != null)
                     Tabs[i].Chosen = i < TabOrder.Length && TabOrder[i] == tab;
@@ -307,7 +295,6 @@ namespace Baryonyx.Workshop
                 if (Rows.Count > 0 && Rows[0].Card != null)
                     Rows[0].Card.Selected = true;
             }
-            stone = PreferredStone();
             RefreshMaterials();
             RefreshInfo();
         }
@@ -325,95 +312,55 @@ namespace Baryonyx.Workshop
             if (busy || index < 0 || index >= RowCount)
                 return;
             selected = index;
-            ClearUses();
+            steps = 0;
             for (int i = 0; i < RowCount && i < Rows.Count; i++)
                 if (Rows[i].Card != null)
                     Rows[i].Card.Selected = i == index;
-            stone = PreferredStone();
             RefreshMaterials();
             RefreshInfo();
         }
 
-        /// <summary>Chooses a colour and uses one more of it, when one more still raises the multiplier and can be had.</summary>
-        public void ChooseStone(int index)
+        /// <summary>Raises the chosen thing one step more, when one more still raises it and enough stones are held.</summary>
+        public void AddStep()
         {
-            if (busy || index < 0 || index >= EnhancementMaterials.Polishes.Count)
+            if (busy)
                 return;
-            stone = index;
-            if (CanAdd(index))
-                uses[index]++;
+            if (CanAdd())
+                steps++;
             RefreshMaterials();
             RefreshInfo();
         }
 
-        /// <summary>Stops using a colour: its count goes back to none.</summary>
-        public void CancelStone(int index)
+        /// <summary>Stops using the stones: the steps go back to none.</summary>
+        public void ClearSteps()
         {
-            if (busy || index < 0 || index >= uses.Length)
+            if (busy)
                 return;
-            uses[index] = 0;
+            steps = 0;
             RefreshMaterials();
             RefreshInfo();
         }
 
-        private void ClearUses() => Array.Clear(uses, 0, uses.Length);
+        private static int Held() => EnhancementSession.CountOf(EnhancementMaterials.White);
 
-        private int UsedCount() => uses.Sum();
+        private static int StonesOf(EnhancementTarget target, int count) =>
+            target == null
+                ? 0
+                : EnhancementMaterials.StonesFor(target.Multiplier, count, target.MaxMultiplier);
 
-        // 1つ増やせるか：増やしても、どの石も何かを上げ（色の上限で無駄にならず）、足りない分を下の色から作れる。
-        private bool CanAdd(int index)
+        // 1段階増やせるか：増やしても上限を超えず（最後の段階も何かを上げ）、持っている石で足りる。
+        private bool CanAdd()
         {
             var target = SelectedTarget;
             if (target == null || target.AtMax)
                 return false;
-            var next = (int[])uses.Clone();
-            next[index]++;
-            EnhancementMaterials.PolishedAll(
-                target.Multiplier,
-                next,
-                target.MaxMultiplier,
-                out bool allRaise
-            );
-            return allRaise && PlanFor(next) != null;
+            return steps < EnhancementMaterials.UsefulSteps(target.Multiplier, target.MaxMultiplier)
+                && StonesOf(target, steps + 1) <= Held();
         }
 
-        // 使う数をそろえるのに足りない分を、下の色から作る段取り（足りていれば空、作れなければ null）。
-        private static IReadOnlyList<CombineStep> PlanFor(IReadOnlyList<int> counts) =>
-            EnhancementMaterials.CombinePlan(counts, EnhancementSession.CountOf);
-
-        // 使う石と、足りない分を作る変換に払うルーン。
-        private int RunesFor(IReadOnlyList<CombineStep> plan)
-        {
-            int runes = EnhancementMaterials.CombineRunesOf(plan);
-            for (int i = 0; i < uses.Length; i++)
-                runes += EnhancementMaterials.Polishes[i].Runes * uses[i];
-            return runes;
-        }
-
-        // 押したときに増える色の初め：今の色を持っていて1つ増やせればそのまま。増やせなければ、持っていて増やせる
-        // いちばん低い色、下の色から作って増やせるいちばん低い色、上限に届いていないいちばん低い色の順に替える。
-        private int PreferredStone()
-        {
-            var target = SelectedTarget;
-            bool Held(int i) => EnhancementSession.CountOf(EnhancementMaterials.Polishes[i].Id) > 0;
-            bool Raises(int i) =>
-                target == null
-                || EnhancementMaterials.CanRaise(
-                    target.Multiplier,
-                    EnhancementMaterials.Polishes[i],
-                    target.MaxMultiplier
-                );
-            if (Held(stone) && CanAdd(stone))
-                return stone;
-            int colors = EnhancementMaterials.Polishes.Count;
-            foreach (
-                var pick in new Func<int, bool>[] { i => Held(i) && CanAdd(i), CanAdd, Raises }
-            )
-                for (int i = 0; i < colors; i++)
-                    if (pick(i))
-                        return i;
-            return stone;
-        }
+        // 使う石とルーン。
+        private int RunesOf(EnhancementTarget target) =>
+            EnhancementMaterials.RunesFor(StonesOf(target, steps));
 
         /// <summary>
         /// Makes the chosen enhancement, and shows it when the server answers: the row's new
@@ -424,29 +371,14 @@ namespace Baryonyx.Workshop
             if (!CanEnhance())
                 return;
             var target = SelectedTarget;
-            var counts = (int[])uses.Clone();
-            var plan = PlanFor(counts);
-            // 足りない色は、確かめの画面で下の色から作ってから使う。
-            if (plan is { Count: > 0 } && Prompt != null)
-            {
-                Prompt.Open(
-                    plan,
-                    RunesFor(plan),
-                    () =>
-                    {
-                        PlayFlip(target, counts);
-                        Work = PolishAsync(target, counts, plan);
-                    }
-                );
-                return;
-            }
-            PlayFlip(target, counts);
-            Work = PolishAsync(target, counts, null);
+            int count = steps;
+            PlayFlip(target, count);
+            Work = PolishAsync(target, count);
         }
 
         // 押した瞬間に、右の面の強化する前と後の札で演出を流す。強化した後は石の数から決まるため、
         // サーバーの答えを待たない。
-        private void PlayFlip(EnhancementTarget target, IReadOnlyList<int> counts)
+        private void PlayFlip(EnhancementTarget target, int count)
         {
             if (Flip == null || target == null)
                 return;
@@ -454,7 +386,7 @@ namespace Baryonyx.Workshop
             if (before == null)
                 return;
             Flip.UseFaces(before, after);
-            Flip.Play(FlipPlan(target, counts, before, UnityEngine.Random.value), null);
+            Flip.Play(FlipPlan(target, count, before, UnityEngine.Random.value), null);
         }
 
         // 今出している強化する前と後の札（スキル・固有スキルはデッキのカード、装備は札）。
@@ -470,13 +402,13 @@ namespace Baryonyx.Workshop
         }
 
         /// <summary>
-        /// What the flip shows for using <paramref name="counts"/> stones (white to gold) on
-        /// <paramref name="target"/>, whose card on the panel is <paramref name="card"/>: the
-        /// stones fly from their tiles, low colours first, and the quality after sets how rich it is.
+        /// What the flip shows for raising <paramref name="target"/> by <paramref name="count"/>
+        /// steps, whose card on the panel is <paramref name="card"/>: the stones fly from their
+        /// tile, and the quality after sets how rich it is.
         /// </summary>
         public WorkshopEnhanceFlip.Plan FlipPlan(
             EnhancementTarget target,
-            IReadOnlyList<int> counts,
+            int count,
             RectTransform card,
             float seed
         )
@@ -489,62 +421,35 @@ namespace Baryonyx.Workshop
                 plan.CardHome = Flip.PlaceOf(card);
                 plan.CardSize = card.rect.size;
             }
-            for (int i = 0; i < counts.Count && i < Chips.Length; i++)
-            {
-                if (counts[i] <= 0)
-                    continue;
-                plan.StoneColor = StoneColor(EnhancementMaterials.Polishes[i]);
-                var art = Chips[i] != null ? Chips[i].Art : null;
-                for (int n = 0; n < counts[i] && plan.Stones.Count < Flip.Stones.Length; n++)
-                    plan.Stones.Add(
-                        new WorkshopEnhanceFlip.Stone
-                        {
-                            Art = art != null ? art.texture : null,
-                            Size = art != null ? art.rectTransform.rect.size : new Vector2(64f, 64f),
-                            From = art != null ? Flip.PlaceOf(art.rectTransform) : Vector2.zero,
-                        }
-                    );
-            }
+            var art = Chips.Length > 0 && Chips[0] != null ? Chips[0].Art : null;
+            int stones = StonesOf(target, count);
+            plan.StoneColor = StoneColor;
+            for (int n = 0; n < stones && plan.Stones.Count < Flip.Stones.Length; n++)
+                plan.Stones.Add(
+                    new WorkshopEnhanceFlip.Stone
+                    {
+                        Art = art != null ? art.texture : null,
+                        Size = art != null ? art.rectTransform.rect.size : new Vector2(64f, 64f),
+                        From = art != null ? Flip.PlaceOf(art.rectTransform) : Vector2.zero,
+                    }
+                );
             float after = target.AtMax
                 ? target.Multiplier
-                : EnhancementMaterials.PolishedAll(
-                    target.Multiplier,
-                    counts,
-                    target.MaxMultiplier,
-                    out _
-                );
+                : EnhancementMaterials.Polished(target.Multiplier, count, target.MaxMultiplier);
             plan.Look = WorkshopEnhanceFlip.LookOf(
                 Inventory.Quality.Of(after, target.MaxMultiplier)
             );
             return plan;
         }
 
-        private async Task PolishAsync(
-            EnhancementTarget target,
-            IReadOnlyList<int> counts,
-            IReadOnlyList<CombineStep> plan
-        )
+        private async Task PolishAsync(EnhancementTarget target, int count)
         {
             busy = true;
             RefreshInfo();
             try
             {
-                // 足りない色を、下の色から順に作る。作った石は、強化に失敗しても残る。
-                foreach (var step in plan ?? Array.Empty<CombineStep>())
-                    await EnhancementSession.CombineAsync(step.Made, step.Count);
-                // 選んだ石を、低い色から1色ずつ使う。
-                var after = target;
-                for (int i = 0; i < counts.Count; i++)
-                {
-                    if (counts[i] <= 0)
-                        continue;
-                    var outcome = await EnhancementSession.PolishAsync(
-                        after,
-                        EnhancementMaterials.Polishes[i],
-                        counts[i]
-                    );
-                    after = after.WithMultiplier(outcome.Multiplier);
-                }
+                var outcome = await EnhancementSession.PolishAsync(target, count);
+                var after = target.WithMultiplier(outcome.Multiplier);
                 Replace(target, after);
                 ShowNotice(PolishedText(after));
                 if (selected >= 0 && selected < Rows.Count && after.Quality > target.Quality)
@@ -561,7 +466,7 @@ namespace Baryonyx.Workshop
             finally
             {
                 busy = false;
-                ClearUses();
+                steps = 0;
                 if (this != null && isActiveAndEnabled)
                 {
                     RefreshMaterials();
@@ -594,16 +499,9 @@ namespace Baryonyx.Workshop
             if (busy)
                 return false;
             var target = SelectedTarget;
-            if (target == null || target.AtMax || UsedCount() == 0)
+            if (target == null || target.AtMax || steps == 0)
                 return false;
-            EnhancementMaterials.PolishedAll(
-                target.Multiplier,
-                uses,
-                target.MaxMultiplier,
-                out bool allRaise
-            );
-            var plan = PlanFor(uses);
-            return allRaise && plan != null && Affordable(RunesFor(plan));
+            return StonesOf(target, steps) <= Held() && Affordable(RunesOf(target));
         }
 
         // 残高を読めていないときは、サーバーに任せる。
@@ -613,26 +511,18 @@ namespace Baryonyx.Workshop
         private void RefreshMaterials()
         {
             var target = SelectedTarget;
+            int used = StonesOf(target, steps);
             for (int i = 0; i < Chips.Length; i++)
             {
                 var chip = Chips[i];
                 if (chip == null)
                     continue;
-                var material =
-                    i < EnhancementMaterials.Polishes.Count
-                        ? EnhancementMaterials.Polishes[i]
-                        : null;
-                bool shown = material != null;
-                chip.gameObject.SetActive(shown);
-                if (!shown)
-                    continue;
-                int used = material.IsPolish && i < uses.Length ? uses[i] : 0;
-                Set(chip.Count, UseText(used, EnhancementSession.CountOf(material.Id)));
+                Set(chip.Count, UseText(used, Held()));
                 if (chip.Card != null)
                 {
-                    // 使う色を選んだ印にし、もう1つも増やせない色（上限に届いた・作れない）は暗くする。
+                    // 使っているときは選んだ印にし、1段階も上げられない（石が足りない・上限）ときは暗くする。
                     chip.Card.Selected = used > 0;
-                    chip.Card.Dimmed = target != null && !target.AtMax && used == 0 && !CanAdd(i);
+                    chip.Card.Dimmed = target != null && !target.AtMax && steps == 0 && !CanAdd();
                 }
                 if (chip.Cancel != null)
                     chip.Cancel.gameObject.SetActive(!busy && used > 0);
@@ -655,8 +545,7 @@ namespace Baryonyx.Workshop
                 before = "",
                 after = "";
             float now = 0f,
-                next = 0f,
-                ceiling = 1f;
+                next = 0f;
             bool gauge = false;
             CardSkill beforeCard = null,
                 afterCard = null;
@@ -672,7 +561,7 @@ namespace Baryonyx.Workshop
                 beforeMultiplier = target.Multiplier;
                 afterMultiplier = target.AtMax
                     ? target.Multiplier
-                    : EnhancementMaterials.PolishedAll(target.Multiplier, uses, max, out _);
+                    : EnhancementMaterials.Polished(target.Multiplier, steps, max);
                 if (target.Category is EnhancementCategory.Skill or EnhancementCategory.Unique)
                     beforeCard = afterCard = CardOf(target);
                 else
@@ -683,10 +572,6 @@ namespace Baryonyx.Workshop
                     : QualityText(Inventory.Quality.Of(afterMultiplier, max), afterMultiplier);
                 now = Inventory.Quality.Place(beforeMultiplier, max);
                 next = Inventory.Quality.Place(afterMultiplier, max);
-                ceiling = Inventory.Quality.Place(
-                    EnhancementMaterials.CeilingPercent(Stone, max) / 100f,
-                    max
-                );
                 gauge = true;
             }
             bool cards = beforeCard != null;
@@ -712,37 +597,10 @@ namespace Baryonyx.Workshop
                 Gauge.SetActive(gauge);
             Fill(GaugeNow, now);
             Fill(GaugeAfter, next);
-            ShowCeiling(gauge && ceiling < 1f ? ceiling : 1f, now, StoneColor(Stone));
         }
 
-        // 選んだ色の上限の位置に壁の線を立て、そこから先（今の位置より先）を赤みで覆う。上限が種類の上限（1）なら隠す。
-        private void ShowCeiling(float place, float now, Color color)
-        {
-            bool shown = place < 1f;
-            if (GaugeBlocked != null)
-            {
-                GaugeBlocked.gameObject.SetActive(shown);
-                GaugeBlocked.anchorMin = new Vector2(Mathf.Clamp01(Mathf.Max(place, now)), 0f);
-                GaugeBlocked.anchorMax = Vector2.one;
-            }
-            if (GaugeWall != null)
-            {
-                GaugeWall.gameObject.SetActive(shown);
-                GaugeWall.color = color;
-                var rect = GaugeWall.rectTransform;
-                rect.anchorMin = rect.anchorMax = new Vector2(Mathf.Clamp01(place), 0.5f);
-            }
-        }
-
-        /// <summary>The colour of a stone, for the wall of its ceiling on the gauge.</summary>
-        public static Color StoneColor(EnhancementMaterial stone) =>
-            stone?.Id switch
-            {
-                EnhancementMaterials.Blue => new Color(0.42f, 0.71f, 1f),
-                EnhancementMaterials.Purple => new Color(0.78f, 0.55f, 1f),
-                EnhancementMaterials.Gold => new Color(1f, 0.84f, 0.4f),
-                _ => new Color(0.93f, 0.95f, 0.98f),
-            };
+        /// <summary>The colour of the stone, for the flip's light.</summary>
+        public static readonly Color StoneColor = new(0.93f, 0.95f, 0.98f);
 
         // スキル・固有スキルのカードを、倍率を当てて戦闘と同じ形で出す。null なら隠す。
         private void ShowCard(
@@ -843,71 +701,32 @@ namespace Baryonyx.Workshop
 
         private const string GainHex = "7fe3ff";
 
-        private string InfoText()
-        {
-            return SelectedTarget is { } target
-                ? PolishInfo(
-                    target,
-                    Stone,
-                    uses,
-                    EnhancementSession.CountOf,
-                    RuneBalance.Known,
-                    PlanFor(uses)
-                )
+        private string InfoText() =>
+            SelectedTarget is { } target
+                ? PolishInfo(target, steps, Held(), RuneBalance.Known)
                 : "";
-        }
 
         /// <summary>
-        /// The stones and their runes beside the button ("白い磨き石×3・青い磨き石×2・700 ルーン"),
-        /// how many are made from the colours below, and what is missing. With none chosen yet, why
-        /// the chosen colour cannot be used, if it cannot.
+        /// The stones and their runes beside the button ("磨き石×6・600 ルーン") and what is
+        /// missing. With no step chosen yet, that the stones fall short of one step, if they do.
         /// </summary>
-        public static string PolishInfo(
-            EnhancementTarget target,
-            EnhancementMaterial chosen,
-            IReadOnlyList<int> uses,
-            Func<string, int> held,
-            long? runes,
-            IReadOnlyList<CombineStep> plan
-        )
+        public static string PolishInfo(EnhancementTarget target, int steps, int held, long? runes)
         {
             if (target.AtMax)
                 return "上限に届いています";
-            var parts = new List<string>();
-            int cost = EnhancementMaterials.CombineRunesOf(plan);
-            int made = 0;
-            for (int i = 0; i < uses.Count && i < EnhancementMaterials.Polishes.Count; i++)
-            {
-                if (uses[i] <= 0)
-                    continue;
-                var stone = EnhancementMaterials.Polishes[i];
-                parts.Add($"{stone.Name}×{uses[i]}");
-                cost += stone.Runes * uses[i];
-                made += Math.Max(0, uses[i] - held(stone.Id));
-            }
-            if (parts.Count == 0)
-            {
-                if (!EnhancementMaterials.CanRaise(target.Multiplier, chosen, target.MaxMultiplier))
-                    return CeilingText(chosen);
-                return
-                    held(chosen.Id) == 0
-                    && EnhancementMaterials.CombinePlan(chosen, 1, held) == null
-                    ? Missing($"{chosen.Name}が足りません").TrimStart('　')
+            var stone = EnhancementMaterials.Stone;
+            if (steps <= 0)
+                return StonesOf(target, 1) > held
+                    ? Missing($"{stone.Name}が足りません").TrimStart('　')
                     : "";
-            }
-            string combined = made > 0 && plan != null ? $"（{made}個は合成）" : "";
+            int stones = StonesOf(target, steps);
+            int cost = EnhancementMaterials.RunesFor(stones);
             string missing =
                 runes is { } balance && balance < cost
                     ? Missing($"ルーンが {cost - balance:N0} 足りません")
                     : "";
-            return $"{string.Join("・", parts)}{combined}・{cost:N0} ルーン{missing}";
+            return $"{stone.Name}×{stones}・{cost:N0} ルーン{missing}";
         }
-
-        /// <summary>What the button's line says when the chosen colour cannot raise the thing past its ceiling.</summary>
-        public static string CeilingText(EnhancementMaterial stone) =>
-            stone.Ceiling is { } ceiling
-                ? $"{stone.Name}で上げられるのは品質{Inventory.Quality.Letter(ceiling)}まで"
-                : "上限に届いています";
 
         private static string Missing(string text) => $"　<color=#ff8a7a>{text}</color>";
 
@@ -916,7 +735,7 @@ namespace Baryonyx.Workshop
 
         public static string CountText(int count) => $"×{count}";
 
-        /// <summary>A stone's chip: how many are held ("×8"), and how many are used when any ("3/8", the used in the gain's light blue).</summary>
+        /// <summary>The stone's chip: how many are held ("×8"), and how many are used when any ("3/8", the used in the gain's light blue).</summary>
         public static string UseText(int used, int held) =>
             used > 0 ? $"<color=#{GainHex}>{used}</color>/{held}" : CountText(held);
 
@@ -1070,28 +889,29 @@ namespace Baryonyx.Workshop
                 label.text = text ?? "";
         }
 
-        // 停止中の表示の切り替え：焼いた仮のスキル、サーバーから読み込む間、読めなかったとき。
+        // 停止中の表示の切り替え：焼いた仮のスキル、石を選んだとき、サーバーから読み込む間、読めなかったとき。
         public IReadOnlyList<string> PreviewStates =>
-            new[] { "一覧", "色の上限", "足りない石を作る" }
+            new[] { "一覧", "石を選んだとき" }
                 .Concat(GuidePanelLoad.PreviewStates)
                 .Concat(FlipStates.Select(state => state.Name))
                 .ToArray();
 
-        // 強化の演出の止めたコマ：見た目、押してからの秒数（null は表を向いた直後）、元の品質の位置（0〜1）、使う石。
+        // 強化の演出の止めたコマ：見た目、押してからの秒数（null は表を向いた直後）、元の品質の位置（0〜1）、上げる段階の数。
+        // 金はAへ、虹はSへ上がる段階の数にする。
         private static readonly (
             string Name,
             WorkshopEnhanceFlip.Look Look,
             float? Seconds,
             float Place,
-            int[] Stones
+            int Steps
         )[] FlipStates =
         {
-            ("強化の演出・回る", WorkshopEnhanceFlip.Look.Plain, 0.4f, 0.1f, new[] { 1 }),
-            ("強化の演出・普通 現れる", WorkshopEnhanceFlip.Look.Plain, null, 0.1f, new[] { 1 }),
-            ("強化の演出・金 溜める", WorkshopEnhanceFlip.Look.Gold, 0.86f, 0.5f, new[] { 1, 1 }),
-            ("強化の演出・金 ピカーン", WorkshopEnhanceFlip.Look.Gold, null, 0.5f, new[] { 1, 1 }),
-            ("強化の演出・虹 溜める", WorkshopEnhanceFlip.Look.Rainbow, 1.12f, 0.8f, new[] { 2 }),
-            ("強化の演出・虹 キラーン", WorkshopEnhanceFlip.Look.Rainbow, null, 0.8f, new[] { 2 }),
+            ("強化の演出・回る", WorkshopEnhanceFlip.Look.Plain, 0.4f, 0.1f, 1),
+            ("強化の演出・普通 現れる", WorkshopEnhanceFlip.Look.Plain, null, 0.1f, 1),
+            ("強化の演出・金 溜める", WorkshopEnhanceFlip.Look.Gold, 0.86f, 0.5f, 4),
+            ("強化の演出・金 ピカーン", WorkshopEnhanceFlip.Look.Gold, null, 0.5f, 4),
+            ("強化の演出・虹 溜める", WorkshopEnhanceFlip.Look.Rainbow, 1.12f, 0.8f, 2),
+            ("強化の演出・虹 キラーン", WorkshopEnhanceFlip.Look.Rainbow, null, 0.8f, 2),
         };
 
         public void ShowPreviewState(int index)
@@ -1101,7 +921,7 @@ namespace Baryonyx.Workshop
                 Flip.UseFaces(null, null);
                 Flip.gameObject.SetActive(false);
             }
-            int flipState = index - (3 + GuidePanelLoad.PreviewStates.Count);
+            int flipState = index - (2 + GuidePanelLoad.PreviewStates.Count);
             if (flipState >= 0)
             {
                 ShowFlipState(FlipStates[flipState]);
@@ -1116,74 +936,18 @@ namespace Baryonyx.Workshop
                 Set(Status, "");
                 return;
             }
-            if (Prompt != null)
-                Prompt.Close();
             if (index == 1)
             {
-                ShowCeilingState();
-                return;
-            }
-            if (index == 2)
-            {
-                ShowCombineState();
+                ShowChosenState();
                 return;
             }
             ShowLoading();
-            if (index == 4)
+            if (index == 3)
                 ShowLoadFailed();
         }
 
-        // 仮の編成のスキルの先頭を品質の位置 place に置き、石を選んで、強化の演出をその秒数で止めて見せる。
-        private void ShowFlipState(
-            (string Name, WorkshopEnhanceFlip.Look Look, float? Seconds, float Place, int[] Stones) state
-        )
-        {
-            if (EnhancementSession.Source == null)
-                _ = EnhancementSession.LoadAsync(CancellationToken.None);
-            cover.Clear();
-            Use(PartyFormation.From(Party), null, null);
-            ShowTab(Tab.Skills);
-            if (skills.Count == 0 || Flip == null)
-                return;
-            var first = skills[0];
-            float multiplier = (float)
-                Math.Round(
-                    Inventory.Quality.MinMultiplier
-                        + (first.MaxMultiplier - Inventory.Quality.MinMultiplier) * state.Place,
-                    2
-                );
-            Replace(first, first.WithMultiplier(multiplier));
-            Select(0);
-            foreach (int stone in state.Stones)
-                ChooseStone(stone);
-            var (before, after) = Faces();
-            Flip.UseFaces(before, after);
-            var plan = FlipPlan(SelectedTarget, uses, before, 0.37f);
-            var beats = WorkshopEnhanceFlip.Beats.Of(plan.Look);
-            Flip.gameObject.SetActive(true);
-            Flip.Show(state.Seconds ?? beats.Burst + 0.06f, plan);
-        }
-
-        // 仮の素材（金1個・紫2個・青4個）で、品質Cの先頭のスキルの金の札を2回押して「強化」を押す。
-        // 足りない金1個を紫3個から、足りない紫1個を青3個から作る確かめの画面が開く。
-        private void ShowCombineState()
-        {
-            if (EnhancementSession.Source == null)
-                _ = EnhancementSession.LoadAsync(CancellationToken.None);
-            cover.Clear();
-            Use(PartyFormation.From(Party), null, null);
-            ShowTab(Tab.Skills);
-            if (skills.Count == 0)
-                return;
-            Select(0);
-            ChooseStone(EnhancementMaterials.Polishes.Count - 1);
-            ChooseStone(EnhancementMaterials.Polishes.Count - 1);
-            Enhance();
-        }
-
-        // 仮の編成のスキルの先頭を品質B（ゲージの55%）にして選び、白い磨き石を選ぶ。白の札が暗くなり、
-        // ゲージのBの入口に白い壁の線が立って、その先が暗く覆われる。
-        private void ShowCeilingState()
+        // 仮の編成のスキルの先頭を品質の位置 place に置いて選び、steps 段階分だけ札を押す。
+        private void ChooseFirst(float place, int count)
         {
             // 停止中はサーバーがなく、仮の素材がその場で読める。
             if (EnhancementSession.Source == null)
@@ -1194,7 +958,6 @@ namespace Baryonyx.Workshop
             if (skills.Count == 0)
                 return;
             var first = skills[0];
-            float place = 0.55f;
             float multiplier = (float)
                 Math.Round(
                     Inventory.Quality.MinMultiplier
@@ -1203,7 +966,28 @@ namespace Baryonyx.Workshop
                 );
             Replace(first, first.WithMultiplier(multiplier));
             Select(0);
-            ChooseStone(0);
+            for (int i = 0; i < count; i++)
+                AddStep();
+        }
+
+        // 石を選んだとき：品質Cの終わり（ゲージの30%）の先頭のスキルで札を3回押し、Cの2段階（石1個ずつ）と
+        // Bの1段階（石2個）で、石を4個使う。
+        private void ShowChosenState() => ChooseFirst(0.3f, 3);
+
+        // 強化の演出をその秒数で止めて見せる。
+        private void ShowFlipState(
+            (string Name, WorkshopEnhanceFlip.Look Look, float? Seconds, float Place, int Steps) state
+        )
+        {
+            ChooseFirst(state.Place, state.Steps);
+            if (skills.Count == 0 || Flip == null)
+                return;
+            var (before, after) = Faces();
+            Flip.UseFaces(before, after);
+            var plan = FlipPlan(SelectedTarget, steps, before, 0.37f);
+            var beats = WorkshopEnhanceFlip.Beats.Of(plan.Look);
+            Flip.gameObject.SetActive(true);
+            Flip.Show(state.Seconds ?? beats.Burst + 0.06f, plan);
         }
     }
 }

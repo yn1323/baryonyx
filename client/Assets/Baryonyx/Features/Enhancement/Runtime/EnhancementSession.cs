@@ -52,17 +52,17 @@ namespace Baryonyx.Enhancement
         }
 
         /// <summary>
-        /// Raises <paramref name="target"/>'s multiplier with <paramref name="count"/> stones and
+        /// Raises <paramref name="target"/>'s multiplier by <paramref name="steps"/> steps and
         /// waits for the result. A raised unique skill's multiplier goes to its progress at once.
         /// </summary>
-        public static Task<EnhancementOutcome> PolishAsync(
-            EnhancementTarget target,
-            EnhancementMaterial stone,
-            int count
-        ) =>
+        public static Task<EnhancementOutcome> PolishAsync(EnhancementTarget target, int steps) =>
             Send(
-                (stone?.Runes ?? 0) * count,
-                (source, token) => source.PolishAsync(target, stone, count, token),
+                EnhancementMaterials.RunesFor(
+                    target == null
+                        ? 0
+                        : EnhancementMaterials.StonesFor(target.Multiplier, steps, target.MaxMultiplier)
+                ),
+                (source, token) => source.PolishAsync(target, steps, token),
                 outcome =>
                 {
                     if (target.Category == EnhancementCategory.Unique)
@@ -92,17 +92,6 @@ namespace Baryonyx.Enhancement
                             null
                         );
                 }
-            );
-
-        /// <summary>
-        /// Makes <paramref name="count"/> of <paramref name="made"/> from three each of the colour
-        /// below and waits for the result: the stones held go to the counts it gave.
-        /// </summary>
-        public static Task<EnhancementOutcome> CombineAsync(EnhancementMaterial made, int count) =>
-            Send(
-                (made?.CombineRunes ?? 0) * count,
-                (source, token) => source.CombineAsync(made, count, token),
-                _ => { }
             );
 
         private static async Task<EnhancementOutcome> Send(

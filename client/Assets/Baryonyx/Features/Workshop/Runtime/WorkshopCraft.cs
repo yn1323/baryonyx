@@ -63,15 +63,8 @@ namespace Baryonyx.Workshop
             LibraryKind.Skill,
         };
 
-        // タブの見出し。分類のタブのあとに、磨き石の合成のタブを置く（doc/features/enhancement.md）。
-        public static readonly string[] TabLabels =
-        {
-            "武器",
-            "防具",
-            "アクセサリー",
-            "スキル",
-            "磨き石",
-        };
+        // タブの見出し。磨き石は1種類になり、合成のタブはない（2026-11-02）。
+        public static readonly string[] TabLabels = { "武器", "防具", "アクセサリー", "スキル" };
 
         // 費用（ルーン）：出来上がる物の☆で、買う値段の半分（仮）。
         private static readonly int[] StarRunes = { 0, 200, 400, 800, 1600 };

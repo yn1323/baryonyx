@@ -43,19 +43,12 @@ namespace Baryonyx.Workshop.Editor
         private const float CardDot = 4f;
         private const float CardsTop = 232f;
         private const float ArrowWidth = 96f;
-
-        // 足りない石を作る確かめの画面：中央の列の幅、1行の高さ、石の絵（32ドットを2倍）、矢印の幅、行の片側の幅。
-        private const float PromptWidth = 760f;
-        private const float PromptLine = 64f;
-        private const float PromptArt = 64f;
-        private const float PromptArrow = 96f;
-        private const float PromptSide = 180f;
         private const float GearArt = 128f;
 
         // 行の右端の品質・費用の幅。
         private const float ValueWidth = 230f;
 
-        // 素材の段：磨き石と欠片の札、使う数の「－」「＋」。その下に、費用と足りない物を1行で書く。
+        // 素材の段：磨き石の札。その下に、費用と足りない物を1行で書く。
         private const float MaterialsTop = 776f;
         private const float BarHeight = 120f;
         private const float InfoHeight = 48f;
@@ -232,10 +225,6 @@ namespace Baryonyx.Workshop.Editor
         private static readonly Color GaugeBack = new(0.02f, 0.03f, 0.08f, 0.8f);
         private static readonly Color GaugeGain = new(0.5f, 0.89f, 1f, 1f);
 
-        // 選んだ色で届かない所は赤みで覆い、上限には太い壁の線を立てる。
-        private static readonly Color GaugeBlocked = new(0.62f, 0.13f, 0.16f, 0.6f);
-        private const float GaugeWall = 8f;
-
         /// <summary>
         /// Builds the polishing panel: skills, equipment and unique skills in the tabs. The skill
         /// awakening is a panel of its own (<see cref="WorkshopAwakenAssets"/>).
@@ -352,7 +341,6 @@ namespace Baryonyx.Workshop.Editor
                 layer,
                 WorkshopEnhanceView.PolishLabel
             );
-            enhance.Prompt = BuildCombinePrompt((RectTransform)enhance.transform);
             enhance.Flip = BuildFlip((RectTransform)enhance.transform);
             return enhance.gameObject;
         }
@@ -559,18 +547,8 @@ namespace Baryonyx.Workshop.Editor
             float barTop = GaugeTop + 44f;
             var bar = Layout.Box(gauge, "Bar", left, barTop, width, GaugeBar);
             AddImage(bar, GaugeBack, false);
-            // 選んだ色で届かない所の覆い。位置は表示のときに上限から決める。
-            enhance.GaugeBlocked = FillBar(bar, "Blocked", GaugeBlocked);
-            enhance.GaugeBlocked.gameObject.SetActive(false);
             enhance.GaugeAfter = FillBar(bar, "After", GaugeGain);
             enhance.GaugeNow = FillBar(bar, "Now", UiPalette.TextMain);
-            // 選んだ色の上限に立てる壁の線。棒より上下にはみ出させ、境目の細い線と見分ける。
-            var wall = Rect("Wall", bar);
-            wall.anchorMin = wall.anchorMax = new Vector2(0.4f, 0.5f);
-            wall.pivot = new Vector2(0.5f, 0.5f);
-            wall.sizeDelta = new Vector2(GaugeWall, GaugeBar + 32f);
-            enhance.GaugeWall = AddImage(wall, Color.white, false);
-            wall.gameObject.SetActive(false);
             foreach (
                 var (letter, place) in new[] { ("C", 0f), ("B", 0.4f), ("A", 0.7f), ("S", 0.9f) }
             )
@@ -610,125 +588,7 @@ namespace Baryonyx.Workshop.Editor
             return fill;
         }
 
-        // 足りない石を作る確かめの画面：画面全体を薄暗くし、中央に一文と、変換する石を小さな絵と矢印の行
-        // （「白×6 ▶ 青×2」）で下の色から並べ、下に払うルーン（変換と強化の合計）、右下に戦闘と同じ丸いチェック。
-        // 合成の演出のような大きな札は使わない（2026-10-31、ユーザーの指示「そんなにガッツリ合成っぽく見せなくていい」）。
-        // 行は実行中に使う数だけ出し、中央に寄る。
-        private static WorkshopCombinePrompt BuildCombinePrompt(RectTransform root)
-        {
-            var screen = Rect("CombinePrompt", root);
-            Stretch(screen);
-            var prompt = screen.gameObject.AddComponent<WorkshopCombinePrompt>();
-            prompt.ArtBox = PromptArt;
-            var art = ItemArtAssets.Load();
-            prompt.StoneArts = EnhancementMaterials
-                .Polishes.Select(stone => (Texture)art.TextureOf(stone.Id))
-                .ToArray();
-
-            // 背面の「もどる」や強化を押せないよう、Safe Areaの外まで暗くする。暗い所を押すと閉じる。
-            var dim = Rect("Dim", screen);
-            Stretch(dim);
-            dim.offsetMin = new Vector2(-400, -400);
-            dim.offsetMax = new Vector2(400, 400);
-            prompt.Dim = GuideMenuAssets.AddButton(
-                dim,
-                AddImage(dim, new Color(0f, 0f, 0.02f, 0.78f), true)
-            );
-
-            var layer = Layout.Layer(screen, "Layout");
-            var column = Layout.Box(layer, "Steps", 0f, 0f, Layout.Design.x, Layout.Design.y);
-            var group = column.gameObject.AddComponent<VerticalLayoutGroup>();
-            group.childAlignment = TextAnchor.MiddleCenter;
-            group.spacing = 12f;
-            group.childControlWidth = group.childControlHeight = true;
-            group.childForceExpandWidth = group.childForceExpandHeight = false;
-
-            var message = Layout.Text(
-                column,
-                "Message",
-                WorkshopCombinePrompt.Message,
-                34,
-                UiPalette.TextMain,
-                TextAlignmentOptions.Center,
-                0f,
-                0f,
-                PromptWidth,
-                PromptLine
-            );
-            var messageElement = message.gameObject.AddComponent<LayoutElement>();
-            messageElement.preferredWidth = PromptWidth;
-            messageElement.preferredHeight = PromptLine + 16f;
-
-            int steps = EnhancementMaterials.Polishes.Count - 1;
-            prompt.Steps = new GameObject[steps];
-            prompt.From = new ItemTile[steps];
-            prompt.To = new ItemTile[steps];
-            float half = PromptWidth / 2f;
-            for (int i = 0; i < steps; i++)
-            {
-                var step = Rect("Step" + i, column);
-                var element = step.gameObject.AddComponent<LayoutElement>();
-                element.preferredWidth = PromptWidth;
-                element.preferredHeight = PromptLine;
-                prompt.From[i] = PromptStone(step, "From", half - PromptArrow / 2f - PromptSide);
-                prompt.To[i] = PromptStone(step, "To", half + PromptArrow / 2f);
-                var mark = Layout.Box(
-                    step,
-                    "Arrow",
-                    half - PromptArrow / 4f,
-                    PromptLine / 4f,
-                    PromptArrow / 2f,
-                    PromptLine / 2f
-                );
-                SpriteImage(mark, ArrowPath, UiPalette.Gold).preserveAspect = true;
-                prompt.Steps[i] = step.gameObject;
-            }
-            var runes = Rect("Runes", column);
-            var runesElement = runes.gameObject.AddComponent<LayoutElement>();
-            runesElement.preferredWidth = PromptWidth;
-            runesElement.preferredHeight = PromptLine + 8f;
-            prompt.Runes = RunePrice(
-                runes,
-                "Price",
-                0f,
-                8f,
-                PromptWidth,
-                PromptLine,
-                40f,
-                TextAnchor.MiddleCenter
-            );
-
-            prompt.Confirm = RoundCheck(layer);
-            screen.gameObject.SetActive(false);
-            return prompt;
-        }
-
-        // 確かめの画面の行の片側：石の絵と、その右に数（「×6」）。
-        private static ItemTile PromptStone(RectTransform step, string name, float x)
-        {
-            var side = Layout.Box(step, name, x, 0f, PromptSide, PromptLine);
-            var row = side.gameObject.AddComponent<ItemTile>();
-            var box = Layout.Box(side, "Art", 0f, 0f, PromptLine, PromptLine);
-            var image = Rect("Image", box);
-            Place(image, Vector2.zero, Vector2.one * PromptArt);
-            row.Art = image.gameObject.AddComponent<RawImage>();
-            row.Art.raycastTarget = false;
-            row.Count = Layout.Text(
-                side,
-                "Count",
-                "",
-                34,
-                UiPalette.TextMain,
-                TextAlignmentOptions.MidlineLeft,
-                PromptLine + 4f,
-                0f,
-                PromptSide - PromptLine - 4f,
-                PromptLine
-            );
-            return row;
-        }
-
-        // 素材の段：左から磨き石4色と覚醒の欠片の札（覚醒のタブでは欠片だけを出す）、右端に使う数。
+        // 素材の段：磨き石の札1枚を左に置く。幅は右の面の右端までを4等分した1つ分にする。
         private static void BuildMaterials(
             RectTransform layer,
             WorkshopEnhanceView enhance,
@@ -738,11 +598,11 @@ namespace Baryonyx.Workshop.Editor
         )
         {
             var art = ItemArtAssets.Load();
-            var materials = EnhancementMaterials.Polishes;
-            enhance.Chips = new WorkshopMaterialChip[materials.Count];
-            // 4色の札で右端までを等分する。
-            float width = (right - left - ChipGap * (materials.Count - 1)) / materials.Count;
-            for (int i = 0; i < materials.Count; i++)
+            var materials = new[] { EnhancementMaterials.Stone };
+            enhance.Chips = new WorkshopMaterialChip[materials.Length];
+            const int columns = 4;
+            float width = (right - left - ChipGap * (columns - 1)) / columns;
+            for (int i = 0; i < materials.Length; i++)
             {
                 var rect = Layout.Box(
                     layer,
@@ -787,11 +647,8 @@ namespace Baryonyx.Workshop.Editor
                 );
                 // 使う数を水色で「3/8」と書くため、色の指定を読む。
                 chip.Count.richText = true;
-                if (materials[i].IsPolish)
-                    chip.Cancel = CancelMark(rect, width);
+                chip.Cancel = CancelMark(rect, width);
                 enhance.Chips[i] = chip;
-                // 欠片は覚醒のタブでだけ出す。
-                rect.gameObject.SetActive(materials[i].IsPolish);
             }
         }
 

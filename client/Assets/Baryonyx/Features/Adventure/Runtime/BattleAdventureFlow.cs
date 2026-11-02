@@ -277,9 +277,8 @@ namespace Baryonyx.Adventure
             var items = AdventureDropItems
                 .FromClearReward(clearReward, overlay.ItemArt, overlay.RuneIcon)
                 .Concat(
-                    (drops ?? Array.Empty<AdventureDrop>())
-                        .Select(drop => AdventureDropItems.From(drop, overlay.ItemArt))
-                        .Where(item => item != null)
+                    AdventureDropItems
+                        .All(drops, overlay.ItemArt)
                         .OrderByDescending(item => item.Graded ? Quality.Grade(item.Quality) : -1)
                 )
                 .ToList();

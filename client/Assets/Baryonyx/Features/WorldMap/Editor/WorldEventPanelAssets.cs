@@ -227,7 +227,7 @@ namespace Baryonyx.WorldMap.Editor
                 "Gifts",
                 new Vector2(0f, 640f),
                 (Art + "/Accessories/MossCharm.aseprite", "苔玉のお守り"),
-                (Art + "/Materials/PolishBlue.aseprite", "青い磨き石 ×2"),
+                (Art + "/Materials/PolishWhite.aseprite", "磨き石 ×6"),
                 (Art + "/Materials/AwakeningShard.aseprite", "覚醒の欠片")
             );
             return panel;

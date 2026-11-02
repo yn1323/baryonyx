@@ -746,9 +746,8 @@ namespace Baryonyx.Adventure
             IReadOnlyList<AdventureDrop> drops
         )
         {
-            var items = (drops ?? Array.Empty<AdventureDrop>())
-                .Select(drop => AdventureDropItems.From(drop, view.ItemArt))
-                .Where(item => item != null)
+            var items = AdventureDropItems
+                .All(drops, view.ItemArt)
                 .OrderByDescending(item => item.Graded ? Quality.Grade(item.Quality) : -1)
                 .ToList();
             try

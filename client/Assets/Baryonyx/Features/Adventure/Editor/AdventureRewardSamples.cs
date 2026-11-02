@@ -29,9 +29,6 @@ namespace Baryonyx.Adventure.Editor
 
         private static readonly string[] Materials =
         {
-            EnhancementMaterials.Gold,
-            EnhancementMaterials.Purple,
-            EnhancementMaterials.Blue,
             EnhancementMaterials.White,
             EnhancementMaterials.Shard,
         };

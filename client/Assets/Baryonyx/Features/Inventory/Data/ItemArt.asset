@@ -223,12 +223,6 @@ MonoBehaviour:
     Sprite: {fileID: 5349011544834349465, guid: 03d55e236353f2f498fbd0b0de93e9e0, type: 3}
   - Id: polish-white
     Sprite: {fileID: 5349011544834349465, guid: b2d244a92f72944a69312f410b0b4cb8, type: 3}
-  - Id: polish-blue
-    Sprite: {fileID: 5349011544834349465, guid: a85f0dc75d9d248878ecff8a6f344232, type: 3}
-  - Id: polish-purple
-    Sprite: {fileID: 5349011544834349465, guid: 8043d373c7a694a92a043e2b8ea05c45, type: 3}
-  - Id: polish-gold
-    Sprite: {fileID: 5349011544834349465, guid: 036be9ef0a17248d79647971a4e22e2b, type: 3}
   - Id: awakening-shard
     Sprite: {fileID: 5349011544834349465, guid: 8ef325244f31a40fa8d500912af939ab, type: 3}
   - Id: Slash

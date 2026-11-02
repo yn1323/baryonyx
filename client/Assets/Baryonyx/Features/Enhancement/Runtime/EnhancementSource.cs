@@ -38,21 +38,14 @@ namespace Baryonyx.Enhancement
     {
         Task<IReadOnlyDictionary<string, int>> LoadAsync(CancellationToken token);
 
+        /// <summary>Raises <paramref name="target"/> by <paramref name="steps"/> steps with polishing stones.</summary>
         Task<EnhancementOutcome> PolishAsync(
             EnhancementTarget target,
-            EnhancementMaterial stone,
-            int count,
+            int steps,
             CancellationToken token
         );
 
         Task<EnhancementOutcome> AwakenAsync(AwakeningOption option, CancellationToken token);
-
-        /// <summary>Makes <paramref name="count"/> of <paramref name="made"/> from three each of the colour below.</summary>
-        Task<EnhancementOutcome> CombineAsync(
-            EnhancementMaterial made,
-            int count,
-            CancellationToken token
-        );
     }
 
     /// <summary>Enhances on the game server with the shared session. The server decides the result and the cost.</summary>
@@ -76,13 +69,12 @@ namespace Baryonyx.Enhancement
 
         public async Task<EnhancementOutcome> PolishAsync(
             EnhancementTarget target,
-            EnhancementMaterial stone,
-            int count,
+            int steps,
             CancellationToken token
         )
         {
-            if (target == null || stone == null)
-                throw new ArgumentNullException(target == null ? nameof(target) : nameof(stone));
+            if (target == null)
+                throw new ArgumentNullException(nameof(target));
             // 応答が届かずに送り直しても、同じ要求IDで二重に使わない。
             var request = new EnhancementApiClient.PolishRequest
             {
@@ -91,8 +83,7 @@ namespace Baryonyx.Enhancement
                 itemId = target.ItemId,
                 characterId = target.CharacterId,
                 index = Math.Max(0, target.Index),
-                materialId = stone.Id,
-                count = count,
+                steps = steps,
             };
             var result = await sessions.WithSessionAsync(
                 session => api.PolishAsync(session, request, token),
@@ -160,35 +151,6 @@ namespace Baryonyx.Enhancement
             );
         }
 
-        public async Task<EnhancementOutcome> CombineAsync(
-            EnhancementMaterial made,
-            int count,
-            CancellationToken token
-        )
-        {
-            if (made == null)
-                throw new ArgumentNullException(nameof(made));
-            // 応答が届かずに送り直しても、同じ要求IDで二重に作らない。
-            var request = new EnhancementApiClient.CombineRequest
-            {
-                requestId = Guid.NewGuid().ToString("D"),
-                materialId = made.Id,
-                count = count,
-            };
-            var result = await sessions.WithSessionAsync(
-                session => api.CombineAsync(session, request, token),
-                token
-            );
-            var combined =
-                result?.combine ?? throw new InvalidOperationException("合成の結果がありません。");
-            return new EnhancementOutcome(
-                0f,
-                -1,
-                combined.balanceAfter,
-                CountsOf(result.materials)
-            );
-        }
-
         private static IReadOnlyDictionary<string, int> CountsOf(
             IEnumerable<EnhancementApiClient.Material> materials
         ) =>
@@ -212,10 +174,7 @@ namespace Baryonyx.Enhancement
             int
         >
         {
-            [EnhancementMaterials.White] = 8,
-            [EnhancementMaterials.Blue] = 4,
-            [EnhancementMaterials.Purple] = 2,
-            [EnhancementMaterials.Gold] = 1,
+            [EnhancementMaterials.White] = 20,
             [EnhancementMaterials.Shard] = 2,
         };
 
@@ -242,30 +201,34 @@ namespace Baryonyx.Enhancement
 
         public Task<EnhancementOutcome> PolishAsync(
             EnhancementTarget target,
-            EnhancementMaterial stone,
-            int count,
+            int steps,
             CancellationToken token
         )
         {
             token.ThrowIfCancellationRequested();
-            if (target == null || stone == null || !stone.IsPolish || count < 1)
+            if (target == null || steps < 1)
                 return Fail("強化できない組み合わせです。");
             if (target.AtMax)
                 return Fail("上限に届いています。");
-            if (!EnhancementMaterials.CanRaise(target.Multiplier, stone, target.MaxMultiplier))
-                return Fail("この色の上限に届いています。");
-            if (
-                count
-                > EnhancementMaterials.UsefulCount(target.Multiplier, stone, target.MaxMultiplier)
-            )
+            if (steps > EnhancementMaterials.UsefulSteps(target.Multiplier, target.MaxMultiplier))
                 return Fail("上限を超える数です。");
-            int cost = stone.Runes * count;
-            if (!Spend(stone.Id, count, cost, out string reason))
+            int stones = EnhancementMaterials.StonesFor(
+                target.Multiplier,
+                steps,
+                target.MaxMultiplier
+            );
+            if (
+                !Spend(
+                    EnhancementMaterials.White,
+                    stones,
+                    EnhancementMaterials.RunesFor(stones),
+                    out string reason
+                )
+            )
                 return Fail(reason);
             float after = EnhancementMaterials.Polished(
                 target.Multiplier,
-                stone,
-                count,
+                steps,
                 target.MaxMultiplier
             );
             return Task.FromResult(new EnhancementOutcome(after, -1, runes, Snapshot()));
@@ -286,30 +249,6 @@ namespace Baryonyx.Enhancement
             )
                 return Fail(reason);
             return Task.FromResult(new EnhancementOutcome(0f, option.Stage, runes, Snapshot()));
-        }
-
-        public Task<EnhancementOutcome> CombineAsync(
-            EnhancementMaterial made,
-            int count,
-            CancellationToken token
-        )
-        {
-            token.ThrowIfCancellationRequested();
-            var from = EnhancementMaterials.CombineFrom(made);
-            if (from == null || count < 1)
-                return Fail("合成できない色です。");
-            if (
-                !Spend(
-                    from.Id,
-                    EnhancementMaterials.CombineInputs * count,
-                    made.CombineRunes * count,
-                    out string reason
-                )
-            )
-                return Fail(reason);
-            materials.TryGetValue(made.Id, out int held);
-            materials[made.Id] = held + count;
-            return Task.FromResult(new EnhancementOutcome(0f, -1, runes, Snapshot()));
         }
 
         private bool Spend(string materialId, int count, int cost, out string reason)

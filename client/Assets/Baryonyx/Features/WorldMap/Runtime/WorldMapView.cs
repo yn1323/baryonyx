@@ -745,13 +745,7 @@ namespace Baryonyx.WorldMap
             IReadOnlyList<AdventureDrop> chest
         )
         {
-            var items = new List<RewardItem>();
-            foreach (var drop in chest)
-            {
-                var item = AdventureDropItems.From(drop, ItemArt);
-                if (item != null)
-                    items.Add(item);
-            }
+            var items = AdventureDropItems.All(chest, ItemArt);
             items.Sort(
                 (a, b) =>
                     (b.Graded ? Quality.Grade(b.Quality) : -1)

@@ -43,20 +43,6 @@ namespace Baryonyx.Enhancement
                 token
             );
 
-        /// <summary>Makes stones of a colour from three each of the colour below (doc/features/enhancement.md).</summary>
-        public Task<CombineResult> CombineAsync(
-            AccountSession session,
-            CombineRequest request,
-            CancellationToken token
-        ) =>
-            server.SendAsync<CombineResult>(
-                "/v1/enhancement/combine",
-                "POST",
-                request,
-                session.Token,
-                token
-            );
-
         /// <summary>Awakens an owned skill card into a branch (doc/features/skill-awakening.md).</summary>
         public Task<AwakenResult> AwakenSkillCardAsync(
             AccountSession session,
@@ -85,6 +71,7 @@ namespace Baryonyx.Enhancement
         }
 
         // 品質強化の要求。スキル・装備は itemId、固有スキルは characterId と index で選ぶ。
+        // 上げる段階の数を送り、使う磨き石の数とルーンはサーバーが決める。
         // JsonUtilityは空の項目も送るため、サーバーは分類で使う項目だけを読む。
         [Serializable]
         public sealed class PolishRequest
@@ -94,8 +81,7 @@ namespace Baryonyx.Enhancement
             public string itemId;
             public string characterId;
             public int index;
-            public string materialId;
-            public int count;
+            public int steps;
         }
 
         [Serializable]
@@ -114,32 +100,6 @@ namespace Baryonyx.Enhancement
             public string requestId;
             public string cardId;
             public int branch;
-        }
-
-        // 磨き石の合成の要求。作る色（青・紫・金）と作る数。
-        [Serializable]
-        public sealed class CombineRequest
-        {
-            public string requestId;
-            public string materialId;
-            public int count;
-        }
-
-        [Serializable]
-        public sealed class Combined
-        {
-            public string materialId;
-            public string from;
-            public int count;
-            public int runes;
-            public long balanceAfter;
-        }
-
-        [Serializable]
-        public sealed class CombineResult
-        {
-            public Combined combine;
-            public Material[] materials;
         }
 
         [Serializable]

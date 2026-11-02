@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Linq;
+using Baryonyx.Adventure;
 using Baryonyx.App;
 using Baryonyx.WorldMap;
 using NUnit.Framework;
@@ -54,7 +55,11 @@ namespace Baryonyx.Tests.PlayMode
                 10f,
                 "The chest's plates did not show."
             );
-            Assert.That(reveal.ShownCount, Is.EqualTo(WorldMapChests.Of(Chest).Count));
+            // 同じ素材（磨き石の何個か）は1枚の札にまとめる。
+            Assert.That(
+                reveal.ShownCount,
+                Is.EqualTo(AdventureDropItems.All(WorldMapChests.Of(Chest)).Count)
+            );
             Assert.That(view.Dialog.IsShown, Is.False);
             Assert.That(WorldMapSession.Known.Cleared, Has.Member(Chest));
             Assert.That(view.Opening, Is.True);

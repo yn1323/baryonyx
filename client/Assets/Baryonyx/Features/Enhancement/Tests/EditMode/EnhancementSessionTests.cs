@@ -24,8 +24,7 @@ namespace Baryonyx.Tests.EditMode
 
             public async Task<EnhancementOutcome> PolishAsync(
                 EnhancementTarget target,
-                EnhancementMaterial stone,
-                int count,
+                int steps,
                 CancellationToken token
             )
             {
@@ -35,12 +34,6 @@ namespace Baryonyx.Tests.EditMode
 
             public Task<EnhancementOutcome> AwakenAsync(
                 AwakeningOption option,
-                CancellationToken token
-            ) => throw new NotSupportedException();
-
-            public Task<EnhancementOutcome> CombineAsync(
-                EnhancementMaterial made,
-                int count,
                 CancellationToken token
             ) => throw new NotSupportedException();
         }
@@ -68,15 +61,17 @@ namespace Baryonyx.Tests.EditMode
             EnhancementSession.Source = server;
             await EnhancementSession.LoadAsync(CancellationToken.None);
             RuneBalance.Set(1000);
-            var white = EnhancementMaterials.Find(EnhancementMaterials.White);
-
             var polishing = EnhancementSession.PolishAsync(
-                new EnhancementTarget { Category = EnhancementCategory.Weapon },
-                white,
+                new EnhancementTarget
+                {
+                    Category = EnhancementCategory.Weapon,
+                    Multiplier = 1f,
+                    MaxMultiplier = 2f,
+                },
                 2
             );
-            // 答えを待つ間は、払うルーンを残高から引いて見せる。
-            Assert.That(RuneBalance.Known, Is.EqualTo(1000 - white.Runes * 2));
+            // 答えを待つ間は、払うルーン（品質Cの2段階で石2個）を残高から引いて見せる。
+            Assert.That(RuneBalance.Known, Is.EqualTo(1000 - EnhancementMaterials.RunesFor(2)));
 
             server.Gate.SetResult(true);
             ServerApiException failure = null;

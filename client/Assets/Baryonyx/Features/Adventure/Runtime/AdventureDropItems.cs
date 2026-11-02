@@ -31,6 +31,38 @@ namespace Baryonyx.Adventure
         }
 
         /// <summary>
+        /// The drops as plates, in their order, with the same material (the polishing stones
+        /// that fall several at once) on one plate whose name ends in its count ("磨き石 ×3").
+        /// </summary>
+        public static List<RewardItem> All(IEnumerable<AdventureDrop> drops, ItemArt art = null)
+        {
+            var items = new List<RewardItem>();
+            var materials = new Dictionary<string, (RewardItem Item, int Count)>();
+            foreach (var drop in drops ?? System.Array.Empty<AdventureDrop>())
+            {
+                if (drop?.Category == AdventureDropCategory.Material)
+                {
+                    if (materials.TryGetValue(drop.Id, out var held))
+                    {
+                        materials[drop.Id] = (held.Item, held.Count + 1);
+                        continue;
+                    }
+                    var plate = From(drop, art);
+                    materials[drop.Id] = (plate, 1);
+                    items.Add(plate);
+                    continue;
+                }
+                var item = From(drop, art);
+                if (item != null)
+                    items.Add(item);
+            }
+            foreach (var (item, count) in materials.Values)
+                if (count > 1)
+                    item.Name += $" ×{count}";
+            return items;
+        }
+
+        /// <summary>
         /// A clear's reward as the plates shown with the boss's drops: the thing (with its count)
         /// and the runes, each tagged "N回目のクリア報酬" at the top right (2026-11-01, the user).
         /// None when <paramref name="reward"/> is null.

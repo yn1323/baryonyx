@@ -404,8 +404,8 @@ namespace Baryonyx.Adventure
             return drops;
         }
 
-        // 磨き石が落ちる確率（千分率）と色の重み、覚醒の欠片が落ちる確率（千分率）。サーバーの
-        // POLISH_DROP_CHANCE・POLISH_DROP_WEIGHTS・SHARD_DROP_CHANCE と同じ値（doc/features/enhancement.md）。
+        // 磨き石が落ちる確率（千分率）と落ちたときの個数、覚醒の欠片が落ちる確率（千分率）。サーバーの
+        // POLISH_DROP_CHANCE・POLISH_DROP_COUNTS・SHARD_DROP_CHANCE と同じ値（doc/features/enhancement.md）。
         private static int PolishChance(AdventureRoomKind row) =>
             row switch
             {
@@ -414,7 +414,7 @@ namespace Baryonyx.Adventure
                 _ => 200,
             };
 
-        // 磨き石の色の重みを分ける行き先の深さ。サーバーの polishDepthOf と同じく、近い順の初めの2つを浅い、
+        // 磨き石の個数を分ける行き先の深さ。サーバーの polishDepthOf と同じく、近い順の初めの2つを浅い、
         // 次の3つを中ほど、残りを奥とする。一覧にない行き先は浅いとする。
         private static int PolishDepthOf(string destinationId)
         {
@@ -431,88 +431,16 @@ namespace Baryonyx.Adventure
                 : 2;
         }
 
-        // [深さ][魔物・強い魔物と宝箱・最奥の間]
-        private static readonly (string Id, int Weight)[][][] PolishWeightTable =
+        // [深さ][魔物・強い魔物と宝箱・最奥の間]。強い魔物と宝箱はどの深さでも同じ個数。
+        private static readonly int[][] PolishCountTable =
         {
-            new[]
-            {
-                new[]
-                {
-                    (EnhancementMaterials.White, 920),
-                    (EnhancementMaterials.Blue, 80),
-                    (EnhancementMaterials.Purple, 0),
-                    (EnhancementMaterials.Gold, 0),
-                },
-                new[]
-                {
-                    (EnhancementMaterials.White, 780),
-                    (EnhancementMaterials.Blue, 200),
-                    (EnhancementMaterials.Purple, 20),
-                    (EnhancementMaterials.Gold, 0),
-                },
-                new[]
-                {
-                    (EnhancementMaterials.White, 500),
-                    (EnhancementMaterials.Blue, 400),
-                    (EnhancementMaterials.Purple, 95),
-                    (EnhancementMaterials.Gold, 5),
-                },
-            },
-            new[]
-            {
-                new[]
-                {
-                    (EnhancementMaterials.White, 840),
-                    (EnhancementMaterials.Blue, 150),
-                    (EnhancementMaterials.Purple, 10),
-                    (EnhancementMaterials.Gold, 0),
-                },
-                new[]
-                {
-                    (EnhancementMaterials.White, 640),
-                    (EnhancementMaterials.Blue, 310),
-                    (EnhancementMaterials.Purple, 47),
-                    (EnhancementMaterials.Gold, 3),
-                },
-                new[]
-                {
-                    (EnhancementMaterials.White, 320),
-                    (EnhancementMaterials.Blue, 500),
-                    (EnhancementMaterials.Purple, 165),
-                    (EnhancementMaterials.Gold, 15),
-                },
-            },
-            new[]
-            {
-                new[]
-                {
-                    (EnhancementMaterials.White, 780),
-                    (EnhancementMaterials.Blue, 205),
-                    (EnhancementMaterials.Purple, 15),
-                    (EnhancementMaterials.Gold, 0),
-                },
-                new[]
-                {
-                    (EnhancementMaterials.White, 560),
-                    (EnhancementMaterials.Blue, 380),
-                    (EnhancementMaterials.Purple, 55),
-                    (EnhancementMaterials.Gold, 5),
-                },
-                new[]
-                {
-                    (EnhancementMaterials.White, 220),
-                    (EnhancementMaterials.Blue, 545),
-                    (EnhancementMaterials.Purple, 200),
-                    (EnhancementMaterials.Gold, 35),
-                },
-            },
+            new[] { 1, 2, 3 },
+            new[] { 1, 2, 4 },
+            new[] { 2, 3, 5 },
         };
 
-        private static (string Id, int Weight)[] PolishWeights(
-            string destinationId,
-            AdventureRoomKind row
-        ) =>
-            PolishWeightTable[PolishDepthOf(destinationId)][
+        private static int PolishCount(string destinationId, AdventureRoomKind row) =>
+            PolishCountTable[PolishDepthOf(destinationId)][
                 row switch
                 {
                     AdventureRoomKind.Battle => 0,
@@ -531,7 +459,8 @@ namespace Baryonyx.Adventure
 
         /// <summary>
         /// The enhancement materials of a room, rolled after its other drops as the server's
-        /// rollRoomDrops does: a polishing stone and an awakening shard, each rolled once.
+        /// rollRoomDrops does: polishing stones and an awakening shard, each rolled once. When the
+        /// stones fall, as many as the destination's depth and the room give fall, one drop each.
         /// </summary>
         public static IReadOnlyList<AdventureDrop> RollMaterials(
             string destinationId,
@@ -542,13 +471,14 @@ namespace Baryonyx.Adventure
         {
             var drops = new List<AdventureDrop>();
             if (random.Next(1000) < PolishChance(row))
-                drops.Add(
-                    new AdventureDrop(
-                        roomId,
-                        AdventureDropCategory.Material,
-                        Pick(PolishWeights(destinationId, row), entry => entry.Weight, random).Id
-                    )
-                );
+                for (int i = 0; i < PolishCount(destinationId, row); i++)
+                    drops.Add(
+                        new AdventureDrop(
+                            roomId,
+                            AdventureDropCategory.Material,
+                            EnhancementMaterials.White
+                        )
+                    );
             if (random.Next(1000) < ShardChance(row))
                 drops.Add(
                     new AdventureDrop(
