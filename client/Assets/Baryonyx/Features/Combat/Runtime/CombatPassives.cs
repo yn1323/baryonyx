@@ -123,7 +123,7 @@ namespace Baryonyx.Combat
                 CombatPassiveKind.HolyFlameHammer,
                 "holy-flame-hammer",
                 "聖火の鉄槌",
-                "アンセルムの打属性の攻撃は、[やけど]2ターンを付ける。"
+                "アンセルムの打属性の攻撃は、60%で[やけど]2ターンを付ける。"
             ),
             Second(
                 "anselm",
