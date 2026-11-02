@@ -116,6 +116,12 @@
 |---|---|---|---|---|
 | [sound-authoring](sound-authoring/SKILL.md) | 効果音とBGMをフリー素材から選び、演出に合わせて伸ばす・切る・重ねる加工をして、Unityで鳴らす・直す・レビューする。音は必ず、鳴らす場面の動画に重ねてユーザーに聞かせてから決める。音を測る・加工する・動画に重ねるスクリプトを持つ | 自動 | [効果音とBGM](../../doc/rules/sound.md)、[外部素材のクレジット](../../doc/rules/credits.md) | 演出の見た目は vfx-authoring。場面の録画は unity-video-recording |
 
+## 見た目と音の決め方
+
+| スキル | 使う場面 | 呼び出し | 正本のdoc | 担当外・一緒に使うスキル |
+|---|---|---|---|---|
+| [creative-direction](creative-direction/SKILL.md) | 演出・画像・アセット・効果音・BGMを、ユーザーと一緒に決める・作り直す。今の状態を撮って課題を挙げ、今の画面を土台に方向性の違う案を作って選んでもらい、作って動画や画像で確かめて送り、指摘を1つずつ直す | 自動 | [アート方針](../../doc/art/direction.md)、[効果音とBGM](../../doc/rules/sound.md) | 作る技法は vfx-authoring・pixel-art-standards・sound-authoring・ui-advisor。録画は unity-video-recording |
+
 ## 迷ったとき
 
 | 依頼の例 | 使うスキル |
@@ -123,6 +129,7 @@
 | Top・Home・戦闘の背景の光が足りない、霧・光芒・ぼけ・カメラの動きを直す（3Dの舞台に常設する光と空気） | hd2d-stage-set |
 | 3Dの舞台の背景が寂しい・平ら、地面・遠景・小物・草・テクスチャを足す | hd2d-stage-set |
 | 技の攻撃・回復・防御、被弾、撃破、カットイン、報酬を受け取る瞬間の演出 | vfx-authoring |
+| 演出・画像・音が「ダサい」「作り直して」「何パターンか見せて」、見た目や音をユーザーと選びながら決めたい | creative-direction と、対象を作るスキル（vfx-authoring・pixel-art-standards・sound-authoring など） |
 | カードやキャラの絵をレアっぽくキラキラさせる（ラメ・光の帯・ホロ） | card-foil-sparkle |
 | ボタン・技・被弾・報酬に効果音を付ける、BGMを付ける、音が短い・長い・遅れる | sound-authoring。技の音は vfx-authoring の演出の拍に合わせる |
 | 3Dの舞台がない画面（描いた2D背景）の光・霧・火の粉、キャラ紹介やホームのキラキラ | hd2d-lighting-vfx（手動専用。使ってよいかユーザーに確認する） |
@@ -149,11 +156,11 @@
 
 | ファイル | 内容 | 使うスキル |
 |---|---|---|
-| [scripts/codex_image.py](shared/scripts/codex_image.py) | Codex CLIの画像生成で1枚作り、加工せずに回収する。どの依頼にも「細碎な点状テクスチャが多すぎるので抑える」と、その具体的な指示を足す（[AGENTS.md](../../AGENTS.md#作業の基本)） | character-sprite-sheet、character-illustration、item-icon、hd2d-stage-set |
+| [scripts/codex_image.py](shared/scripts/codex_image.py) | Codex CLIの画像生成で1枚作り、加工せずに回収する。どの依頼にも「細碎な点状テクスチャが多すぎるので抑える」と、その具体的な指示を足す（[AGENTS.md](../../AGENTS.md#作業の基本)） | character-sprite-sheet、character-illustration、item-icon、hd2d-stage-set、creative-direction |
 | [prompts/pixel-style.ja.txt](shared/prompts/pixel-style.ja.txt) | ドット絵の規格を指示文にした固定文。正本は[ドット絵の制作規格](../../doc/art/direction.md#ドット絵の制作規格) | pixel-art-standards、character-sprite-sheet、item-icon、hd2d-stage-set |
 | [scripts/pixel_style.py](shared/scripts/pixel_style.py) | 上の固定文を部品ごとに読み、組み合わせて出力する | pixel-art-standards、item-icon、hd2d-stage-set |
 | [character-pipeline.md](shared/character-pipeline.md) | キャラ制作の共通手順（出力先、キャラ設定の探し方、必ず残す特徴の1行、Codexへの依頼、見せ方） | character-sprite-sheet、character-illustration |
-| [unity-editor-notes.md](shared/unity-editor-notes.md) | Unity EditorとCLIの操作・撮影で得た知見 | hd2d-stage-set、vfx-authoring、hd2d-lighting-vfx、unity-video-recording |
+| [unity-editor-notes.md](shared/unity-editor-notes.md) | Unity EditorとCLIの操作・撮影で得た知見 | hd2d-stage-set、vfx-authoring、hd2d-lighting-vfx、unity-video-recording、creative-direction |
 
 ## スキルを足す・直すとき
 

@@ -1,0 +1,7 @@
+interface:
+  display_name: "見た目と音を一緒に決める"
+  short_description: "今の状態を撮って課題を挙げ、今の画面を土台に複数の案を作って選んでもらい、作って動画で確かめ、指摘を1つずつ直す"
+  default_prompt: "Use $creative-direction when deciding or redoing how an effect, image, asset, sound effect or music looks or sounds together with the user, so options are shown on the real screen and every change is checked on video before it is sent."
+
+policy:
+  allow_implicit_invocation: true
