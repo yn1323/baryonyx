@@ -26,18 +26,16 @@ Unity CLIの利用手順は、Unityプラグインの `unity:unity-cli` スキ�
 
 ## Unityの操作と検証
 
-- WindowsのAndroidエミュレーターでAPKを確認するときは [専用の手順](../doc/rules/client-android-emulator.md) とルートの [手動実行用ショートカット](../AGENTS.md#手動実行用ショートカット) を使う。起動確認のためにビルド対象のABIを変更せず、同じ手順に記載したAPKとAVDを使う。
-- 再コンパイル、テスト、PlayMode、シーンの切り替え、アセットの生成し直しなど、Editorの状態を変える操作は、Editorの札を取ってから行い、終えたら返す。複数のチャットが1台のEditorを共有するためである。手順は [複数のチャットで1台のEditorを使うとき](../doc/rules/client-testing.md#複数のチャットで1台のeditorを使うとき) に従う。
-- C#変更後は、再コンパイルの完了とConsoleのエラーを確認する。
+- Androidエミュレーターでの確認は [WindowsでのUnityとAndroidエミュレーター](../doc/rules/client-android-emulator.md) に従う。起動確認のためにビルド対象のABIを変えない。
+- 再コンパイル、テスト、Play、シーンの切り替え、アセットの生成し直しなど、Editorの状態を変える操作は、[Editorの札](../doc/rules/client-testing.md#複数のチャットで1台のeditorを使うとき)を取ってから行い、終えたら返す。
+- C#を変えたら、変更した動作に対応するテストを、再コンパイルと合わせて [run-editor-tests.py](ci/run-editor-tests.py) の `--recompile` で1回で実行し、コンパイルエラーとテストの結果を確かめる。接続中のEditorで `run_tests` を直接使わない（保存の確認ダイアログでEditorが止まる）。テスト0件は合格にしない。手順は [実行と結果確認](../doc/rules/client-testing.md#実行と結果確認) に従う。
 - C#変更後は、CIと同じCSharpierで整形・検査する。実行に必要な.NET SDKの導入と実行手順は [整形と静的解析](../doc/rules/client-code-quality.md) に従う。
-- 変更した動作に対応するテストを実行する。テスト0件は合格として扱わない。
 - PlayModeの開始やシーンの切り替えは、実行中の作業を確認してから行う。
 - PlayMode中のEditorは、ユーザーに確認せずに停止してよい。
-- 接続中のEditorでのテストは [run-editor-tests.py](ci/run-editor-tests.py) で実行し、`run_tests` を直接使わない。スクリプトは、開いているシーンの保存と実行の開始を1回の呼び出しで行うため、Unityの保存の確認ダイアログ（人が押すまでEditorが止まる）が出ない。開始直後の0件の検出とやり直しも行う。手順は [実行と結果確認](../doc/rules/client-testing.md#実行と結果確認) に従う。
-- シーンの切り替え・作り直しの前に、開いているシーンに未保存の変更（`isDirty`）があるかを確認する。未保存の変更は、ユーザーに確認せずに保存してよい。保存は名前のあるシーンだけを保存する [EditorScenes.SaveNamed](Assets/Baryonyx/Editor/EditorScenes.cs) で行い、`EditorSceneManager.SaveOpenScenes` は使わない。画面のPrefabを生成し直すと、そのPrefabを置いた開いているシーンが未保存になる（Prefab内の部品のIDが振り直され、シーン側の上書きが記録し直されるため）。スクリプトでシーンを開き直すと未保存の変更が黙って消えるため、保存せずに開き直さない。
-- 名前のないシーン（`NewScene` で作ったUntitled）に変更があるまま保存を呼ぶと、スクリプトからでも「名前を付けて保存」の窓が開き、人が閉じるまでEditorが止まってCLIの命令がすべてタイムアウトする。`eval` で空のシーンを作ったら、終える前に名前のあるシーンを開き直し、Untitledのシーンを残さない。CLIが何を送ってもタイムアウトするときは、Editorに窓が出ていないかをユーザーに確かめてもらう。
+- シーンの切り替え・作り直しの前に、開いているシーンの未保存の変更（`isDirty`）を確かめ、あれば確認せずに [EditorScenes.SaveNamed](Assets/Baryonyx/Editor/EditorScenes.cs) で保存する（`EditorSceneManager.SaveOpenScenes` は使わない）。スクリプトで開き直すと未保存の変更が黙って消える。画面のPrefabを作り直すと、それを置いた開いているシーンも未保存になる（部品のIDが振り直され、シーンの上書きが記録し直されるため）。
+- `eval` で作った名前のないシーン（`NewScene` のUntitled）は、終える前に名前のあるシーンを開き直して残さない。変更のあるUntitledに保存を呼ぶと、スクリプトからでも「名前を付けて保存」の窓が開き、人が閉じるまでEditorが止まってCLIの命令がすべてタイムアウトする。そうなったら、Editorに窓が出ていないかをユーザーに確かめてもらう。
 - アセットの移動・名前変更・削除はUnityの機能を使い、対応する `.meta` とGUIDの整合を保つ。
-- 見た目の手直しは、Play中の部品の値を `eval` で変えて撮影して詰め、決めた値をまとめてコードへ反映してから、再コンパイルとPrefabの作り直しと撮影を1回で行う。直すたびに停止・再コンパイル・作り直し・撮影を繰り返すと、1回ごとに数分かかる。`eval` で変えた値や足した物は、Playを止めても残ることがあるため、撮影後に戻す。
+- `eval` で変えた値や足した物は、Playを止めても残ることがあるため、撮影後に戻す。見た目の手直しの段取りは[見た目の手直し](../.agents/skills/shared/unity-editor-notes.md#見た目の手直し)にある。
 - 画面変更後はGameビューを撮影し、保存した画像を開いて確認する。Overlay UIを含める場合はPlayModeで `capture_game_view --source screen` を使う。保存先と記録する内容は [機種差を確認する条件](../doc/rules/ui-design.md#機種差を確認する条件) に従う。
 
 ## フォントアセットの差分
@@ -48,3 +46,4 @@ Editorで新しい文字を表示すると、Unityが文字の一覧とアトラ
 - コミットするときは、この差分もコミットの対象に含める。作業内容とは別の `chore` コミットに分ける。
 - `.gitignore` や `git update-index --skip-worktree` で除外しない。このアセットはTMPの既定フォント設定やシーン・PrefabからGUIDで参照されており、手元にない環境では文字を表示できなくなる。
 - 追加された文字データはビルド時に消える（Clear Dynamic Data On Build）ため、コミットしても実機の表示や容量には影響しない。
+- APKのビルドで文字データが消えた差分（大量の削除）はcommitせず、[ローカルビルドと配布処理の検証](../doc/rules/client-android-testing.md#ローカルビルドと配布処理の検証)に従って戻す。

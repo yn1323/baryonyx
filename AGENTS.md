@@ -4,13 +4,13 @@
 
 ## IMPORTANT
 - 必ず日本語で返答してください
-- local開発時の/server の pnpm dev はユーザが手動で起動します。
+- local開発時の `/server` の `pnpm dev` の起動・起動し直しは、Workspace3 のセッションが行う。ほかのセッションは Workspace3 へ頼む。
 - 不要なセカンダリラベルや説明を避ける。レイアウトに説明させる。
 - リモートコントロール利用時、処理が完了した段階でスマホのClaudeに通知するようにしてください。
 
 ## 作業の基本
 
-- ユーザーへの説明、文書、PR本文、レビューは日本語で書く。コードの識別子や既存の技術用語は維持する。
+- 文書、PR本文、レビューも日本語で書く。コードの識別子や既存の技術用語は維持する。
 - 作業対象のコード、設定、関連文書を確認してから変更する。下位に `AGENTS.md` があれば併せて読む。
 - 依頼の目的を満たす範囲で変更し、無関係な整理や共通基盤の追加へ広げない。
 - 調べものは[コードと文書の読み方](doc/rules/code-reading.md)に従い、当たりを絞ってから必要な範囲だけを読む。
@@ -23,17 +23,14 @@
 
 ## ゲーム開発の進め方と提案
 
-- ユーザーはゲーム開発が初めてであることを前提に、作法、工程、用語を必要に応じて平易に説明する。依頼された作業の順序や前提に問題があれば、理由と適切な進め方を伝える。
-- ゲーム開発の作業を提案する際は、都度Web検索を行い、関連する開発手順や推奨事項を確認する。公式ドキュメントや開発元の資料などの一次情報を優先し、対象のUnityバージョン・OS・現在の実装に適用できるかを確認する。
-- 提案の前に、現在の開発段階、今取り組むべきこと、その理由、先に決める・検証する事項を短く説明し、参照した情報源へのリンクを示す。そのうえで、今回の作業範囲、進める順序、完了条件を提案する。
-- 一般的な開発手順と、このプロジェクトの状況から判断した提案を区別する。依頼の目的と合意済みの方針を尊重し、工程の助言を理由に無関係な実装へ広げない。
-- Web検索できない場合はその旨を伝え、確認済みの情報と未確認の判断を分ける。
+- ユーザーはゲーム開発が初めてである。作法・工程・用語を必要に応じて平易に説明し、依頼の順序や前提に問題があれば、理由と適切な進め方を伝える。
+- ゲーム開発の作業を提案するときは、都度Web検索で関連する開発手順や推奨事項を確かめる。公式ドキュメントや開発元の資料などの一次情報を優先し、対象のUnityの版・OS・今の実装に当てはまるかを見る。検索できなければその旨を伝え、確認済みの情報と未確認の判断を分ける。
+- 提案は、今の開発段階・今やること・その理由・先に決める／確かめる事項と、参照した情報源へのリンクを短く示してから、今回の作業範囲・進める順序・完了条件を出す。一般的な手順とこのプロジェクトでの判断を分け、依頼の目的と合意済みの方針を尊重し、工程の助言を理由に無関係な実装へ広げない。
 
 ## クライアントアセット展示室
 
-- `client/` には[クライアントアセット展示室](doc/features/showcase.md)を必ず設け、ゲームを進行させずにアセットを一覧・プレビューで確認できる状態を維持する。
-- クライアントの画像、キャラクター、UI、Prefab、アニメーション、VFX、音声、シーンなどを追加・変更・移動・削除した場合は、同じ変更で展示室の登録内容とプレビューも更新する。表示・操作・再生結果に影響する実装変更も展示室へ反映する。
-- カタログ更新と個別登録は展示室の仕様に従う。自動検出だけで完了とせず、対象が一覧に反映され、変更後の内容をプレビューで確認できることを検証する。検証できない場合は未確認事項として報告する。
+- `client/` には[クライアントアセット展示室](doc/features/showcase.md)を必ず設け、ゲームを進めずにアセットを一覧・プレビューで確かめられる状態を保つ。
+- 画像・キャラクター・UI・Prefab・アニメーション・VFX・音声・シーンなどを足す・変える・移す・消したとき、また表示・操作・再生の結果が変わる実装をしたときは、同じ変更で展示室の登録とプレビューを直す。カタログの更新と個別の登録は展示室の仕様に従い、自動検出だけで終えず、一覧に載って変更後の内容をプレビューで見られることまで確かめる。確かめられなければ未確認として報告する。
 
 ## 構成と参照先
 
@@ -43,49 +40,19 @@
 | [server/AGENTS.md](server/AGENTS.md) | Honoバックエンドの配置と作業ルール |
 | [doc/README.md](doc/README.md) | 機能、設計ルール、計画、QAの入口 |
 | [文書管理方針](doc/rules/documentation-policy.md) | `doc/` の配置と役割、文書の形式と更新方法 |
-| `shortcuts/` | ユーザーが手動実行する、1ファイルで完結するコマンド（[一覧](#手動実行用ショートカット)） |
+| `shortcuts/` | ユーザーが手動実行する、1ファイルで完結するコマンド（[一覧](doc/rules/local-shortcuts.md#ファイルの一覧)） |
 | [.agents/skills/README.md](.agents/skills/README.md) | スキル（特定作業の進め方）の索引と呼び出し方 |
 
 技術固有の指示と実行コマンドは、採用技術や実際の設定を確認してから追加する。
 
 ## ディレクトリ構成と狙い
 
-実行・ビルド・依存管理の単位を `client/` と `server/` で分け、機能仕様と開発ルールは `doc/` から横断して参照する。
-配置の共通方針はこのファイル、各実装の具体的な配置はそれぞれの `AGENTS.md` またはそこから参照する設計文書で管理する。
-
-```text
-baryonyx/
-├── client/                 Unityクライアント
-│   ├── Assets/            Unityが読み込むコードとアセット
-│   ├── Packages/          Unityパッケージの依存管理
-│   ├── ProjectSettings/   Unityプロジェクトの設定
-│   ├── ArtSource/         Unityに読み込ませない制作元（画像の生成指示の記録）
-│   └── ci/                クライアントのビルド・検証補助
-├── server/                 Honoバックエンド
-│   ├── src/               実装と近接するテスト
-│   ├── tests/             結合・横断シナリオのテスト
-│   ├── migrations/        DB全体の変更履歴
-│   └── scripts/           開発・公開処理とそのテスト
-├── doc/                   仕様・設計ルール・計画・QAなどの文書（配置は文書管理方針）
-├── shortcuts/            手動実行用の単体スクリプト
-├── .github/workflows/     CIの起動条件と実行順序
-└── .agents/skills/        特定作業の手順
-```
-
-### 配置の共通方針
-
-- 機能単位で整理し、一緒に変更する実装・テスト・専用アセットを近くに置く。ファイルの種類だけでプロジェクト全体を分割しない。
-- 専用のものは所有する機能内に置き、複数機能で実際に共有するものだけを `Shared/` または `shared/` へ置く。単に将来使いそうという理由で共通化しない。
-- 単体テストと機能内のシナリオテストは対象機能の近くに置く。複数機能をまたぐシナリオは、その範囲をまとめるテスト置き場へ置く。
-- 起動処理が機能を組み立て、共通部品は個別機能へ依存させない。物理的な近さと依存方向を分けて設計する。
-- clientとserverで同じ業務を扱う機能は、各言語の命名規則に合わせて名前を対応させる。API契約は生成元を一つに定め、言語間の型共有だけを目的としたルートの `shared/` は設けない。
-- アセンブリ、ルーティング、外部プラグイン、配信対象、DBマイグレーションなど、技術上の境界を優先する。設定・生成物・キャッシュは、それぞれのツールが管理できる場所へ置く。
-- 必要なフォルダーだけを作る。下位の構成図は新規配置・移行時の基準であり、未作成の配置先も含む。既存構成を移行するときは、対象作業に必要な範囲で参照・設定・CI・文書を併せて更新する。
+構成図と配置の共通方針は[リポジトリの配置](doc/architecture.md#リポジトリの配置)、各実装の具体的な配置はそれぞれの `AGENTS.md` から参照する設計文書に従う。
 
 ## Skill
 
 - 作業に適用するSkillの発動条件と本文を確認し、その範囲で使う。スキルの一覧と呼び出し方は[スキル索引](.agents/skills/README.md)にある。
-- docとスキルの使い分けは[文書管理方針](doc/rules/documentation-policy.md#docとスキルの使い分け)に従う。規則・数値・配置はdocを正本にし、スキルにはその作業の進め方とdocへのリンクだけを書く。
+- docとスキルの使い分けは[文書管理方針](doc/rules/documentation-policy.md#docとスキルの使い分け)に従う。
 - 日本語の技術文書やPR本文を作成・推敲するときは [japanese-tech-writing](.agents/skills/japanese-tech-writing/SKILL.md) を使う。
 - 読み物としての長い文章を扱う場合は、必要に応じて [cognitive-rhythm-writing](.agents/skills/cognitive-rhythm-writing/SKILL.md) を使う。
 - 演出・画像・アセット・効果音・BGMの見た目や音をユーザーと決める・作り直すときは [creative-direction](.agents/skills/creative-direction/SKILL.md) を使う。
@@ -105,36 +72,13 @@ baryonyx/
 - 端末環境での確認が必要なデバッグは、Androidエミュレーターで行う。
 - エミュレーターの起動は、必ずユーザーが手動で行う。AIは、検証時も含めてエミュレーターを起動しない。
 - 調査・実装は、これらのデバッグ環境を前提に進める。
-- ログの取得・確認や操作が必要な場合は、ユーザーに依頼する。
+- Unityエディターの操作と、起動済みの端末へのadbでのAPKのインストール・ログの取得は、AIが行ってよい。
 
 ## 手動実行用ショートカット
 
-ルートの `shortcuts/` に、1ファイルで処理が完結するWindows用 `.bat` ファイルと、macOS用 `.command` ファイルを置く。
-共通スクリプトへの依存を作らず、実行時の作業ディレクトリに依存しないパスを使う。
-`shortcuts/` にファイルを追加するときは、同じ変更でこの `AGENTS.md` の一覧にファイルへのリンク・用途・実行方法を記載し、必要な引数や前提条件も追記する。
-各ファイルの動作・前提・ログは[手動実行用ショートカットの動作](doc/rules/local-shortcuts.md)、エミュレーターの構成・初回準備・起動できない場合の確認は[WindowsでのUnityとAndroidエミュレーター](doc/rules/client-android-emulator.md)に従う。
-
-| ファイル | ユーザーの操作と動作 |
-|---|---|
-| [build-apk.bat](shortcuts/build-apk.bat) | このプロジェクトをUnityで閉じてからダブルクリックし、`client/Builds/Android/baryonyx.apk` をビルドする。 |
-| [build-apk-dev-to-drive.bat](shortcuts/build-apk-dev-to-drive.bat) | このプロジェクトをUnityで閉じ、Google Drive for desktopを起動してからダブルクリックする。Dev環境へ接続するAPKをビルドし、成功後に `G:\マイドライブ\71_プロジェクト\baryonyx\baryonyx-dev.apk` へ上書きコピーする。 |
-| [build-apk-prod-to-drive.bat](shortcuts/build-apk-prod-to-drive.bat) | 操作は `build-apk-dev-to-drive.bat` と同じ。Prod環境へ接続するAPKをビルドし、成功後に `G:\マイドライブ\71_プロジェクト\baryonyx\baryonyx-prod.apk` へ上書きコピーする。ProdのURLが未設定の間はビルドを止める。 |
-| [build-apk-dev-to-drive.command](shortcuts/build-apk-dev-to-drive.command) | macOS用。このプロジェクトをUnityで閉じ、Google Drive for desktopを起動してからFinderでダブルクリックする。Dev環境へ接続するAPKをビルドし、成功後に `~/Google Drive/マイドライブ/71_プロジェクト/baryonyx/baryonyx-dev.apk` へ上書きコピーする。 |
-| [build-apk-prod-to-drive.command](shortcuts/build-apk-prod-to-drive.command) | macOS用。操作は `build-apk-dev-to-drive.command` と同じ。Prod環境へ接続するAPKをビルドし、成功後に `~/Google Drive/マイドライブ/71_プロジェクト/baryonyx/baryonyx-prod.apk` へ上書きコピーする。ProdのURLが未設定の間はビルドを止める。 |
-| [start-pixel-8a.bat](shortcuts/start-pixel-8a.bat) | 初回準備後にダブルクリックして `Pixel_8a_API_36` をPCのGPU・Vulkan無効・スナップショット無効で起動する。AIによる実行は禁止する。 |
-| [install-apk-pixel-8a.bat](shortcuts/install-apk-pixel-8a.bat) | `Pixel_8a_API_36` の起動完了後にダブルクリックし、`client/Builds/Android/baryonyx.apk` を送信・インストールする。別のAPKは、このファイルへ1つドラッグ＆ドロップするか、第1引数にパスを指定する。 |
-
-APKビルドが成功したら、実行方法にかかわらず、生成したAPKを必ず次の配置先へ、接続先の環境に対応するファイル名で上書きコピーする。
-Dev向けとProd向けは同じフォルダーに並べて置く。
-
-| OS | 配置先フォルダー | ファイル名 | 一致させる定義 |
-|---|---|---|---|
-| Windows | `G:\マイドライブ\71_プロジェクト\baryonyx` | `baryonyx-dev.apk`・`baryonyx-prod.apk` | [build-apk-dev-to-drive.bat](shortcuts/build-apk-dev-to-drive.bat)・[build-apk-prod-to-drive.bat](shortcuts/build-apk-prod-to-drive.bat) の `$destinationDirectory`・`$destinationApk` |
-| macOS | `~/Google Drive/マイドライブ/71_プロジェクト/baryonyx` | `baryonyx-dev.apk`・`baryonyx-prod.apk` | [build-apk-dev-to-drive.command](shortcuts/build-apk-dev-to-drive.command)・[build-apk-prod-to-drive.command](shortcuts/build-apk-prod-to-drive.command) の `destination_directory`・`destination_apk` |
-
-通常はWindowsで `build-apk-dev-to-drive.bat`・`build-apk-prod-to-drive.bat`、macOSで `build-apk-dev-to-drive.command`・`build-apk-prod-to-drive.command` を使う。
-`build-apk.bat` やUnity CLI・Editorでビルドした場合も、成功後に接続先の環境に対応するファイル名で同じフォルダーへコピーする。
-コピー完了までをビルド作業に含め、配置先へアクセスできない場合やコピーに失敗した場合は未完了として報告する。
+- `shortcuts/` には、1ファイルで完結し実行時の作業ディレクトリに依存しないWindows用 `.bat` とmacOS用 `.command` を置く。一覧・動作・前提・ログは[手動実行用ショートカットの動作](doc/rules/local-shortcuts.md)にあり、ファイルを足すときは同じ変更で[一覧](doc/rules/local-shortcuts.md#ファイルの一覧)を更新する。
+- `start-pixel-8a.bat` はAIが実行しない。エミュレーターの構成・初回準備・起動できない場合の確認は[WindowsでのUnityとAndroidエミュレーター](doc/rules/client-android-emulator.md)に従う。
+- APKのビルドが成功したら、実行方法にかかわらず、生成したAPKを接続先の環境に対応するファイル名で[Driveの配置先](doc/rules/local-shortcuts.md#google-driveへの配置)へ上書きコピーする。コピー完了までをビルド作業に含め、配置先へアクセスできない場合やコピーに失敗した場合は未完了として報告する。
 
 ## Asepriteの正本とタブレットの受け渡し
 
@@ -145,9 +89,9 @@ Dev向けとProd向けは同じフォルダーに並べて置く。
 
 - 変更した動作を直接確認できるテストや検査を選ぶ。実行方法はリポジトリ内の設定から確認する。
 - 戦闘の強さを変える変更（敵の倍率・敵の定義・カード・装備・ステータス・戦闘の計算）をしたら、[戦闘の自動対戦](doc/rules/client-testing.md#戦闘の自動対戦)で勝率とターン数を測り直す。
-- 文書だけの変更では、リンク、参照パス、記述の整合を確認する。
-- 作業中は、変更した動作に関連するテストだけを実行する。Unity PlayModeは関連するテストクラスに絞る（[選び方](doc/rules/client-testing.md#作業中に実行するplaymodeテスト)）。
-- Unityの再コンパイルとテストは、[テストの実行](doc/rules/client-testing.md#作業中に実行するplaymodeテスト)のスクリプトで1回にまとめる。
+- 文書だけの変更では、[文書検査](doc/tools/README.md)でリンク、参照パス、見出しの索引を確かめ、記述の整合を確認する。
+- 作業中は、変更した動作に関連するテストだけを実行する。serverの変更は `server/` で `pnpm test` を実行する。
+- clientの変更は、`Baryonyx.EditModeTests`・`Baryonyx.PlayModeTests` のテストを、[作業中に実行するPlayModeテスト](doc/rules/client-testing.md#作業中に実行するplaymodeテスト)のスクリプト（run-editor-tests.py）で、再コンパイルと合わせて1回で実行する。Unity PlayModeは関連するテストクラスに絞る。
 - 作業中は、同じ変更後に成功した検証を再利用し、追加変更や未解決の懸念がある場合に再実行する。commit前の全件実行には、それまでの結果を再利用しない。
 - 実装の失敗と、権限・接続・ツール不足による検証不能を区別する。
 - 完了時に差分を見直し、変更内容、検証結果、残っている未確認事項を報告する。
@@ -157,11 +101,11 @@ Dev向けとProd向けは同じフォルダーに並べて置く。
 ユーザーからcommitを指示されたら、次の順に進める。
 
 1. commit対象の変更を含む領域のテストを全件実行する。
-   - clientの変更：`Baryonyx.EditModeTests` と `Baryonyx.PlayModeTests` の全件（[実行方法](doc/rules/client-testing.md#実行と結果確認)）
-   - serverの変更：`server/` で `pnpm test`
-   - 文書だけの変更：リンク、参照パス、記述の整合の確認
+   - clientの変更：`Baryonyx.EditModeTests` と `Baryonyx.PlayModeTests` の全件（[実行方法](doc/rules/client-testing.md#実行と結果確認)）。`client/ci` を変えたときは、加えて `python3 -B -m unittest discover -s client/ci -p 'test_*.py'` と `node --test client/ci/resolve-drive-distribution.test.cjs`
+   - serverの変更：`server/` で `pnpm test`・`pnpm test:ci`・`pnpm lint`・`pnpm typecheck`
+   - 文書だけの変更：[文書検査](doc/tools/README.md)（`python -B doc/tools/check_docs.py --write-index` のあと `python -B doc/tools/check_docs.py`）と、記述の整合の確認
 2. 1件でも失敗したら、原因を直してから手順1に戻る。失敗したテストだけでなく、全件を実行し直す。
-3. すべて成功したら、変更を意味のまとまりごとに分け、まとまりごとにcommitする。
+3. すべて成功したら、変更を意味のまとまりごとに分け、まとまりごとにcommitする。対象の選び方・分け方・メッセージ、並行作業中の控え方は[commitの分け方とメッセージ](doc/rules/git-commit.md)に従う。
 
 テスト0件と全件Skipは成功に含めない。
 権限・接続・ツール不足で全件を実行できない場合や、変更と無関係な失敗で修正が依頼の範囲を超える場合は、commitせずに状況を報告し、ユーザーの判断を待つ。
