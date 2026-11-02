@@ -144,35 +144,15 @@ namespace Baryonyx.Training.Editor
                 widget.Description.textWrappingMode = TextWrappingModes.Normal;
             }
 
-            var costFrame = CardArt("CardCostFrame");
-            var costDigits = CardArt("CardCostDigits");
-            var cost = Image(
-                card,
-                "Cost",
-                5,
-                5,
-                new Vector2(costFrame.width, costFrame.height),
-                dot,
-                costFrame
-            );
+            // コストの数字と属性の印は、台を置かずに角へ寄せる（doc/rules/ui-design.md#属性とコストの印）。
+            float mark = BattleInspectAssets.MarkDots * dot;
+            float inset = BattleInspectAssets.MarkInset * dot;
+            var cost = Layout.Box(card, "Cost", inset, inset, mark, mark);
             widget.Cost = cost.gameObject;
-            var digit = Rect("Digit", cost.rectTransform);
-            Place(
-                digit,
-                Vector2.zero,
-                new Vector2(costDigits.width / 10f, costDigits.height) * dot
-            );
-            widget.CostDigit = digit.gameObject.AddComponent<RawImage>();
-            widget.CostDigit.texture = costDigits;
+            widget.CostDigit = cost.gameObject.AddComponent<RawImage>();
+            widget.CostDigit.texture = AttributeIconArt.LoadCostDigits();
             widget.CostDigit.raycastTarget = false;
-            var element = Layout.Box(
-                card,
-                "Element",
-                (70 - 5 - 12) * dot,
-                5 * dot,
-                12 * dot,
-                12 * dot
-            );
+            var element = Layout.Box(card, "Element", 70 * dot - inset - mark, inset, mark, mark);
             widget.Element = element.gameObject.AddComponent<Image>();
             widget.Element.raycastTarget = false;
 
@@ -263,7 +243,7 @@ namespace Baryonyx.Training.Editor
             return image;
         }
 
-        /// <summary>A battle card's picture (frame, cost), borrowed from the battle mock like the skills' art.</summary>
+        /// <summary>A battle card's picture (frame), borrowed from the battle mock like the skills' art.</summary>
         public static Texture2D CardArt(string name) =>
             ArtAssets.LoadTexture($"{BattleInspectAssets.ArtFolder}/{name}.aseprite");
     }

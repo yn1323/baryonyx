@@ -50,6 +50,7 @@ description: >
 | 部品 | 縦の分類 | `GuideFrameAssets.SideTabs`（準備中は `locked`） | 商会、ライブラリの装備 |
 | 部品 | 状態の文字 | `GuideFrameAssets.ListStatus` | 一覧の読み込み・失敗・空 |
 | 部品 | ルーンの数 | `GuideFrameAssets.RuneAmount` | 値段、報酬、レベルアップの費用 |
+| 部品 | 属性とコストの印 | `AttributeIconArt`（`IconPath`・`Load`・`LoadUnknown`・`LoadCostDigits`。数字の切り出しは `BattleInspectCardView.CostUv`） | カードのコストと属性、敵の弱点、ライブラリの弱点、冒険者の使える属性、地図の出来事の印 |
 | 部品 | パネルの上の帯 | `GuideFrameAssets.FramedPanel` | 商会・編成・ライブラリの各項目 |
 | 部品 | 持ち物の札 | 型は `ItemTile` の1つ。品質・数・右上の印・「？」は `ItemTileAssets` | 商会・ライブラリ・お宝・召喚・冒険の結果の札 |
 | 部品 | 読み込み中 | 札の裏面（`GlassCardAssets.AddBack`） | 商会・ライブラリ・編成の一覧 |
@@ -66,6 +67,7 @@ description: >
 - [ ] 持ち物の札の中身の位置と、まだ見つけていない物の伏せ方が[持ち物の札](../../../doc/rules/ui-design.md#持ち物の札)のとおりである。
 - [ ] 説明の小見出しや注釈を足さず、配置で意味が分かる（[AGENTS.md](../../../AGENTS.md)）。
 - [ ] 同じ見た目の生成処理を、機能の中に書き写していない。
+- [ ] 属性・コストの印や、それに並ぶ新しい印（状態異常など）を、ドット絵・金の縁・宝石・板で作っていない。`AttributeIconArt` に記号と色を足し、[属性とコストの印](../../../doc/rules/ui-design.md#属性とコストの印)の描き方（生成り色の単純な記号＋属性の色の暗がり＋弱い発光）にそろえ、既存の印と並べて形だけで見分けられるかを確かめている。印の画像をPointで取り込み直したり、ドット絵の倍率（`texture.width × ドット`）で大きさを決めたりしていない。
 - [ ] 停止中の表示の切り替えに、足した窓・状態が入っている（[停止中の表示の切り替え](../../../doc/rules/ui-design.md#停止中の表示の切り替え)）。
 
 ## 撮って見比べる

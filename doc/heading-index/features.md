@@ -519,7 +519,7 @@
 
 ## [features/screens/battle-deck.md](../features/screens/battle-deck.md)
 
-17KB・122行
+17KB・123行
 
 - 8: # 画面一覧：戦闘のスキルの山札と手札
 - 12: ## スキルの山札

@@ -1,6 +1,6 @@
 // 弱点のアイコンが開示される瞬間の光（キラーン）を、アイコンの上に計算で描くuGUI用シェーダー。
-// アイコンと同じ絵・同じ大きさの板に掛け、絵からは不透明度だけを読む。光はアイコンの形の内側にだけ出る。
-// 光の帯は右上がりの斜めの縞で、アイコンのドットの格子にそろえ、ドット単位で左から右へ進む（ドット絵の光沢に見える）。
+// アイコンと同じ絵・同じ大きさの板に掛け、絵からは明るい記号の形だけを読む。光は記号の内側にだけ出て、後ろの暗がりは光らない。
+// 光の帯は右上がりの斜めの縞で、絵の画素の格子にそろえて左から右へ進む。
 // 1枚ずつの値（追加のUV1。BattleVfxImage.Shapeで渡す）。Canvasの追加のシェーダーチャンネルにTexCoord1が要る。
 // - x 全体の光（0〜1）：アイコン全体を白く光らせる割合。
 // - y 光の帯の進み具合（0で左の外、1で右の外）。
@@ -62,7 +62,6 @@ Shader "Baryonyx/Combat/Battle Weakness Glint"
 
             #include "UnityCG.cginc"
             #include "UnityUI.cginc"
-            #include "../../UI/Shaders/PixelArtSampling.cginc"
 
             #pragma multi_compile_local _ UNITY_UI_CLIP_RECT
             #pragma multi_compile_local _ UNITY_UI_ALPHACLIP
@@ -132,8 +131,10 @@ Shader "Baryonyx/Combat/Battle Weakness Glint"
 
             half4 frag(v2f IN) : SV_Target
             {
-                // Only the icon's shape; its edge is smoothed as the icon's own is.
-                half cover = SamplePixelArt(_MainTex, IN.texcoord, _MainTex_TexelSize).a;
+                // Only the icon's symbol: the light cream shape, not the dark glow behind it
+                // (doc/rules/ui-design.md). The mark is drawn smooth, so it is sampled as it is.
+                half4 icon = tex2D(_MainTex, IN.texcoord);
+                half cover = icon.a * smoothstep(0.35, 0.75, dot(icon.rgb, half3(0.299, 0.587, 0.114)));
 
                 // The middle of the dot this pixel is in, so the band steps a whole dot at a time.
                 float2 cell = (floor(IN.texcoord * _MainTex_TexelSize.zw) + 0.5) * _MainTex_TexelSize.xy;

@@ -110,6 +110,7 @@ Play前の画面で並びを確かめるときは、シーンの `BattleInspectS
 カードの枠（`CardFrame<属性>`、70×98）、コストの札（`CardCostFrame`、11×11）と数字（`CardCostDigits`、5×7を10個）も同日にPythonのスクリプトで描き直した（`output/card-redesign/final_art.py`、Git対象外）。
 弱点のアイコン（属性の6つは `Shared/Art/Attributes/`、未開示の「？」は `Art/Elements/`）、カードの部品（属性ごとの枠 `CardFrame<属性>`・`CardCostFrame`・`CardCostDigits`）、エネルギーの宝石（`EnergyGem`）、ターン終了の枠（`EndTurnFrame`）は、2026-09-29にPythonのスクリプトで1ドットずつ描き、インデックスカラーの `.aseprite` へ変換した。
 打と貫の属性のアイコン（`ElementBlunt`・`ElementPierce`、12×12ドット）と、カードの枠（`CardFrameBlunt`・`CardFramePierce`、70×98ドット）は、2026-10-03にほかの属性と同じスクリプトで描いた（`output/card-skills/new_elements.py`、Git対象外）。打は青銅の地に槌、貫は青緑の地に槍の穂先である。
+2026-11-02に、属性の印（未開示の「？」を含め `Shared/Art/Attributes/` のPNG）とコストの数字（`CardCostDigits.png`）をドット絵からなめらかな印へ替え、コストの札（`CardCostFrame`）をなくした（[属性とコストの印](../../rules/ui-design.md#属性とコストの印)）。
 対象を選ぶときのカーソル（`TargetCursor`、11×7ドット）と、引っぱるときに並べる点（`AimDot`、5×5ドット）は、2026-09-30に同じ方法で描いて `.aseprite` へ変換し、1ドット4pxで表示する。
 使い手の足元の輪（`CasterRing`、38×10ドット、4色）は、2026-10-01に同じ方法で描いて `.aseprite` へ変換し、1ドット4pxで表示する。左上からの光に合わせて奥の左側を明るく、手前の右側を暗くし、内側はディザで薄くしている。
 カードの裏面（`CardBack`、70×98ドット。紺の地に菱形の格子、くすんだ金の縁、中央に水色のルーンの星）と山札の絵（`DeckIcon`、15×19ドット。裏面を3枚、右下へずらして重ねた絵）は、2026-09-30に同じ方法で描いて `.aseprite` へ変換した。裏面は1ドット3px、山札の絵は1ドット4pxで表示する。

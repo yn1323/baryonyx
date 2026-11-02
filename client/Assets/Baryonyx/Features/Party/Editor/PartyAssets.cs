@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Linq;
 using Baryonyx.Combat;
+using Baryonyx.Combat.Editor;
 using Baryonyx.Editor;
 using Baryonyx.Editor.Art;
 using Baryonyx.SkillEvolution;
@@ -23,7 +24,6 @@ namespace Baryonyx.Party.Editor
         public const string DataPath = Folder + "/Data/PartyMockData.asset";
         public const string CharacterArtFolder = "Assets/Baryonyx/Shared/Art/Characters";
         public const string IllustrationFolder = CharacterArtFolder + "/Illustrations";
-        public const string AttributeArtFolder = "Assets/Baryonyx/Shared/Art/Attributes";
         public const string SkillArtFolder = "Assets/Baryonyx/Features/Combat/UI/Art";
 
         [MenuItem("Baryonyx/Party/Create Mock Data")]
@@ -71,11 +71,7 @@ namespace Baryonyx.Party.Editor
                 member.Illustration = Illustration(member.Id);
             data.Formation = new[] { "toma", "luka", "aria", "mina" };
             data.ElementIcons = ((CardElement[])Enum.GetValues(typeof(CardElement)))
-                .Select(element =>
-                    element == CardElement.None
-                        ? null
-                        : Guide.Icon($"{AttributeArtFolder}/Element{element}.aseprite")
-                )
+                .Select(element => Guide.Icon(AttributeIconArt.IconPath(element)))
                 .ToArray();
             data.SkillArts = CardSkills
                 .All.Select(card => new PartySkillArt

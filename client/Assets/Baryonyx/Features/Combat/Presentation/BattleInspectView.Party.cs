@@ -202,7 +202,7 @@ namespace Baryonyx.Combat.Presentation
                 ally?.Stats ?? default,
                 art,
                 At(CardFrames, element),
-                skill.Element == CardElement.None ? null : At(ElementIcons, element),
+                At(ElementIcons, element),
                 TodayAct
             );
             data.Card = skill;

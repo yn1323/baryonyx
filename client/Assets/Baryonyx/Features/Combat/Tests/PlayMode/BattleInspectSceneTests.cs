@@ -59,10 +59,12 @@ namespace Baryonyx.Tests.PlayMode
                     Assert.That(face.Description.text, Does.Contain(CardRules.PartName(first)));
                     Assert.That(face.Description.text, Does.Not.Contain(">" + card.Power + "<"));
                 }
+                // Every card shows its element's mark; one without an element shows the ring.
+                Assert.That(face.Element.enabled, Is.True);
                 Assert.That(
-                    face.Element.enabled,
-                    Is.EqualTo(card.Element != BattleInspectElement.None),
-                    "Cards without an element show no element icon."
+                    face.Element.texture,
+                    Is.SameAs(view.ElementIcons[(int)card.Element]),
+                    "Each card shows its own element's mark."
                 );
             }
         }

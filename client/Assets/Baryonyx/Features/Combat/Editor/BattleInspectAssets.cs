@@ -77,8 +77,12 @@ namespace Baryonyx.Combat.Editor
         private const float BandTop = 39;
         private const float BandBottom = 65;
 
+        // The cost and element marks: squares of 15 dots whose glow fades out at the edge, centred
+        // 10.5 dots in from the card's top corners.
+        internal const float MarkDots = 15;
+        internal const float MarkInset = 3;
+
         private static readonly Color CardOwner = new(1f, 0.93f, 0.76f);
-        private const int CostDigits = BattleInspectCardView.CostDigits;
 
         // Party turn, then enemies by index (slime 0, wolf 1, guardian 2). The two party turns in
         // a row show the consecutive turn that a large speed gap gives.
@@ -384,15 +388,16 @@ namespace Baryonyx.Combat.Editor
             Directory.CreateDirectory(Path.GetDirectoryName(PrefabPath));
             AssetDatabase.Refresh();
             UiArt.EnsureAll();
+            AttributeIconArt.EnsureAll();
             var font = GameFontAssets.GetOrCreate();
             var shadowText = UiArt.EnsureTextShadow(font);
             foreach (
-                var path in AssetDatabase.FindAssets(
-                    "t:Texture2D",
-                    new[] { ArtFolder, AttributeArtFolder }
-                )
+                var path in AssetDatabase
+                    .FindAssets("t:Texture2D", new[] { ArtFolder, AttributeArtFolder })
+                    .Select(AssetDatabase.GUIDToAssetPath)
+                    .Where(path => !AttributeIconArt.Owns(path))
             )
-                ArtAssets.ImportTexture(AssetDatabase.GUIDToAssetPath(path), FilterMode.Point);
+                ArtAssets.ImportTexture(path, FilterMode.Point);
             // Only the party's sprites: the character folder also holds Home's art.
             foreach (var ally in Allies)
                 ArtAssets.ImportTexture(
@@ -418,9 +423,7 @@ namespace Baryonyx.Combat.Editor
                     .Select(element => (Texture)Art("CardFrame" + element))
                     .ToArray();
                 view.ElementIcons = elements
-                    .Select(element =>
-                        element == CardElement.None ? null : (Texture)Art("Element" + element)
-                    )
+                    .Select(element => (Texture)Art("Element" + element))
                     .ToArray();
                 var stageCanvas = CanvasRoot("StageCanvas");
                 stageCanvas.SetParent(root, false);
@@ -617,30 +620,25 @@ namespace Baryonyx.Combat.Editor
             cardView.Description.textWrappingMode = TextWrappingModes.Normal;
             cardView.Description.enableAutoSizing = false;
 
-            // The cost: a quiet badge with a digit (0 to 9, side by side) centred on it. The badge
-            // is odd and the digit cell is odd, so the centred digit sits on whole dots.
-            var costFrame = Art("CardCostFrame");
-            var costDigits = Art("CardCostDigits");
+            // The cost digit (0 to 9, side by side) and the element mark, each a cream symbol on a
+            // soft dark glow with no badge (doc/rules/ui-design.md), centred on the art's corners.
+            var costDigits = AttributeIconArt.LoadCostDigits();
             var cost = Rect("Cost", card);
             Corner(
                 cost,
                 new Vector2(0, 1),
-                new Vector2(5, -5) * CardDot,
-                new Vector2(costFrame.width, costFrame.height) * CardDot
+                new Vector2(MarkInset, -MarkInset) * CardDot,
+                Vector2.one * MarkDots * CardDot
             );
-            AddRaw(cost, costFrame);
-            float cell = costDigits.width / (float)CostDigits;
-            var digit = Rect("Digit", cost);
-            Place(digit, Vector2.zero, new Vector2(cell, costDigits.height) * CardDot);
-            cardView.CostDigit = AddRaw(digit, costDigits);
+            cardView.CostDigit = AddRaw(cost, costDigits);
 
-            var fireIcon = Art("ElementFire");
+            var fireIcon = AttributeIconArt.Load(CardElement.Fire);
             var element = Rect("Element", card);
             Corner(
                 element,
                 new Vector2(0, 1),
-                new Vector2(70 - 5 - fireIcon.width, -5) * CardDot,
-                new Vector2(fireIcon.width, fireIcon.height) * CardDot
+                new Vector2(70 - MarkInset - MarkDots, -MarkInset) * CardDot,
+                Vector2.one * MarkDots * CardDot
             );
             cardView.Element = AddRaw(element, fireIcon);
 
@@ -713,7 +711,7 @@ namespace Baryonyx.Combat.Editor
                 back.gameObject.SetActive(false);
             }
             // Bottom to top: the face, the cost, the shade (over the cost too), the back.
-            var cost = cardView.CostDigit.rectTransform.parent;
+            var cost = cardView.CostDigit.rectTransform;
             cost.SetAsLastSibling();
             cardView.Shade.rectTransform.SetAsLastSibling();
             cardView.Back.rectTransform.SetAsLastSibling();
@@ -1057,17 +1055,16 @@ namespace Baryonyx.Combat.Editor
             var slot = Rect("Weakness" + element, row);
             var size = slot.gameObject.AddComponent<LayoutElement>();
             size.preferredWidth = size.preferredHeight = WeakIconSize;
-            var known = PixelIcon(slot, "Known", Art("Element" + element));
-            var unknown = Art("ElementUnknown");
-            var unknownIcon = PixelIcon(slot, "Unknown", unknown);
+            var known = MarkIcon(slot, "Known", Art("Element" + element));
+            var unknown = AttributeIconArt.LoadUnknown();
+            var unknownIcon = MarkIcon(slot, "Unknown", unknown);
             // Drawn over the icons; it takes on the shown icon's picture as it glints.
             var glint = Rect("Glint", slot);
-            Place(glint, Vector2.zero, new Vector2(unknown.width, unknown.height) * DotSize);
+            Place(glint, Vector2.zero, Vector2.one * WeakIconSize);
             var light = glint.gameObject.AddComponent<BattleVfxImage>();
             light.texture = unknown;
             light.material = BattleSkillVfxAssets.EnsureGlintMaterial();
             light.raycastTarget = false;
-            glint.gameObject.AddComponent<PixelPerfectRawImage>().DotSize = DotSize;
             glint.gameObject.SetActive(false);
             var weakness = new BattleInspectWeakness
             {
@@ -1079,6 +1076,18 @@ namespace Baryonyx.Combat.Editor
             };
             weakness.Show(revealed);
             return weakness;
+        }
+
+        /// <summary>
+        /// An attribute mark on the stage (doc/rules/ui-design.md): drawn large and shown smaller,
+        /// smoothly, so not on the pixel grid. Centered in its parent.
+        /// </summary>
+        private static GameObject MarkIcon(RectTransform parent, string name, Texture2D texture)
+        {
+            var icon = Rect(name, parent);
+            Place(icon, Vector2.zero, Vector2.one * WeakIconSize);
+            AddRaw(icon, texture);
+            return icon.gameObject;
         }
 
         /// <summary>A pixel-art image on the stage at 4 px per dot, centered in its parent.</summary>
@@ -2285,7 +2294,7 @@ namespace Baryonyx.Combat.Editor
                 ally.Stats,
                 Art(skill.Art),
                 Art("CardFrame" + skill.Element),
-                skill.Element == CardElement.None ? null : Art("Element" + skill.Element),
+                Art("Element" + skill.Element),
                 act
             );
         }

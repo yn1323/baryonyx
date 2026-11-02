@@ -85,11 +85,7 @@ namespace Baryonyx.Workshop.Editor
                 .Select(element => (Texture)BattleInspectAssets.Art("CardFrame" + element))
                 .ToArray();
             view.ElementArts = elements
-                .Select(element =>
-                    element == CardElement.None
-                        ? null
-                        : (Texture)BattleInspectAssets.Art("Element" + element)
-                )
+                .Select(element => (Texture)BattleInspectAssets.Art("Element" + element))
                 .ToArray();
 
             var content = panel.Content;

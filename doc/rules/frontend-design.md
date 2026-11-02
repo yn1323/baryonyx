@@ -94,7 +94,7 @@ client/
 │   │   │   ├── Economy/                 所持ルーンの残高（RuneBalance）
 │   │   │   ├── Art/                     ゲーム内の対象の画像。カタログの分類ごとに分ける
 │   │   │   │   ├── Accessories/・Armor/・Items/・Materials/・Weapons/  アクセサリー・防具・アイテム・強化素材・武器
-│   │   │   │   ├── Attributes/          属性のアイコン
+│   │   │   │   ├── Attributes/          属性の印（未開示の「？」を含む。AttributeIconArt が描くPNG）
 │   │   │   │   ├── Characters/          キャラクター
 │   │   │   │   ├── Stages/              探索する場所の背景（森、TopとHomeのダンジョンの広間）、3Dの舞台、探索の地図の素材
 │   │   │   │   │   ├── DungeonHall/     3Dのダンジョンの広間（今は画面で使わない）
@@ -314,7 +314,7 @@ Unityが使わない制作元が必要になった場合だけ `client/ArtSource
 ### ゲーム内の対象の画像
 
 キャラ・敵・アイテム・武器・素材など、[データ索引](../catalog/README.md)に定義がある対象の画像は、使う画面が1つでも `Baryonyx/Shared/Art/<分類>/` に置く。
-ただし、敵・スキル（カードの挿絵）・パッシブのアイコンと、属性が分からないときのアイコンは、まだ移しておらず、戦闘の機能の `Features/Combat/UI/Art/` にある。ライブラリ・編成・地図エディターなどの生成処理とカタログの `art_files` も、今はそこを指す（下の2つめの表）。
+ただし、敵・スキル（カードの挿絵）・パッシブのアイコンは、まだ移しておらず、戦闘の機能の `Features/Combat/UI/Art/` にある。ライブラリ・編成・地図エディターなどの生成処理とカタログの `art_files` も、今はそこを指す（下の2つめの表）。
 画像の持ち主は表示する画面ではなく対象そのものであり、同じ対象を複数の画面が表示するためである。
 枠・影・ボタンのアイコンなど、画面専用のUI部品は従来どおり機能内の `UI/` に置く。
 
@@ -336,7 +336,6 @@ Unityが使わない制作元が必要になった場合だけ `client/ArtSource
 | `enemies` | `Features/Combat/UI/Art/Enemies/<名前>.aseprite` | [BattleEnemyLooksAssets](../../client/Assets/Baryonyx/Features/Combat/Editor/BattleEnemyLooksAssets.cs)・[LibraryScreenAssets](../../client/Assets/Baryonyx/Features/Library/Editor/LibraryScreenAssets.cs)・[WorldEventPanelAssets](../../client/Assets/Baryonyx/Features/WorldMap/Editor/WorldEventPanelAssets.cs) |
 | `skills` | `Features/Combat/UI/Art/Card<ID>.aseprite`（覚醒版は `Card<ID><枝の番号>`。`CardSkill.Art`） | `BattleInspectAssets`・[CardLoadoutAssets](../../client/Assets/Baryonyx/Features/CardLoadout/Editor/CardLoadoutAssets.cs)・[PartyAssets](../../client/Assets/Baryonyx/Features/Party/Editor/PartyAssets.cs)（`SkillArtFolder`）・`ItemArtAssets` |
 | `passives` | `Features/Combat/UI/Art/Passives/Passive<種類>.aseprite`（`CombatPassive.Icon`） | [TrainingAssets](../../client/Assets/Baryonyx/Features/Training/Editor/TrainingAssets.cs)（`PassiveArtFolder`） |
-| `attributes` のうち、属性が分からないとき | `Features/Combat/UI/Art/Elements/ElementUnknown.aseprite` | `BattleInspectAssets` |
 
 持ち物（アイテム・強化素材・アクセサリー・武器・防具）の絵のファイル名は、対象のIDをPascalCaseにしたものとする（`dew-vial` は `DewVial.aseprite`。`ItemArt.FileName`）。
 
