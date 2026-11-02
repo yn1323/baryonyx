@@ -11,13 +11,14 @@
 
 ## [catalog/accessories/README.md](../catalog/accessories/README.md)
 
-5KB・54行
+7KB・89行
 
 - 1: # アクセサリーの定義
 - 10: ## 個別データの索引
-- 16: ## 合成のレシピ
-- 41: ## 記入する項目
-- 52: ## 追加方法
+- 16: ## 属性
+- 50: ## 合成のレシピ
+- 75: ## 記入する項目
+- 87: ## 追加方法
 
 ## [catalog/achievements/README.md](../catalog/achievements/README.md)
 
@@ -39,22 +40,23 @@
 
 ## [catalog/armor/README.md](../catalog/armor/README.md)
 
-5KB・58行
+6KB・85行
 
 - 1: # 防具の定義
 - 10: ## 個別データの索引
-- 16: ## 合成のレシピ
-- 44: ## 記入する項目
-- 56: ## 追加方法
+- 16: ## 属性
+- 42: ## 合成のレシピ
+- 70: ## 記入する項目
+- 83: ## 追加方法
 
 ## [catalog/attributes/README.md](../catalog/attributes/README.md)
 
-1KB・29行
+1KB・30行
 
 - 1: # 属性の定義
 - 9: ## 個別データの索引
 - 15: ## 記入する項目
-- 27: ## 追加方法
+- 28: ## 追加方法
 
 ## [catalog/characters/README.md](../catalog/characters/README.md)
 
@@ -188,13 +190,14 @@
 
 ## [catalog/weapons/README.md](../catalog/weapons/README.md)
 
-5KB・58行
+6KB・85行
 
 - 1: # 武器の定義
 - 10: ## 個別データの索引
-- 16: ## 合成のレシピ
-- 43: ## 記入する項目
-- 56: ## 追加方法
+- 16: ## 属性
+- 42: ## 合成のレシピ
+- 69: ## 記入する項目
+- 83: ## 追加方法
 
 ## [catalog/world/README.md](../catalog/world/README.md)
 

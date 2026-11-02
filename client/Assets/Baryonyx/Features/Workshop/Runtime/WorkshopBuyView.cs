@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Baryonyx.Combat;
 using Baryonyx.Economy;
+using Baryonyx.Equipment;
 using Baryonyx.Inventory;
 using Baryonyx.Library;
 using Baryonyx.Party;
@@ -75,6 +76,9 @@ namespace Baryonyx.Workshop
         public TMP_Text DetailName;
         public TMP_Text DetailLine;
         public TMP_Text DetailEffect;
+
+        // 装備の効果の下に、左右中央にそろえて並べる属性のアイコン。
+        public ElementIconRow DetailElements;
         public TMP_Text DetailOwned;
 
         // スキルを選んだときに、絵・名前・効果の代わりに出すデッキのカード。属性ごとの枠とアイコン。
@@ -379,6 +383,11 @@ namespace Baryonyx.Workshop
             Set(DetailName, card == null ? good?.Name : "");
             Set(DetailLine, good != null ? StarsText(good.Stars) : "");
             Set(DetailEffect, good != null && card == null ? EffectOf(good) : "");
+            if (DetailElements != null)
+            {
+                DetailElements.Show(card == null ? ElementsOf(good) : null);
+                DetailElements.gameObject.SetActive(DetailElements.Any);
+            }
             Set(
                 DetailOwned,
                 good != null && owned != null
@@ -483,6 +492,12 @@ namespace Baryonyx.Workshop
                 : entry.Description;
         }
 
+        /// <summary>The attributes of a piece of equipment on sale, or none for skills.</summary>
+        public static IReadOnlyList<CardElement> ElementsOf(WorkshopGood good) =>
+            good != null && good.Kind != LibraryKind.Skill
+                ? EquipmentCatalog.Find(good.Id)?.Elements
+                : null;
+
         public static string OwnedText(int count) => $"持っている数　{count}";
 
         /// <summary>How many runes are missing to buy <paramref name="good"/>, or empty.</summary>
@@ -544,7 +559,7 @@ namespace Baryonyx.Workshop
                 Set(Status, "");
                 for (int i = 0; i < Rows.Count; i++)
                     if (Rows[i] != null && Rows[i].Card != null)
-                        Rows[i].Card.Selected = index == 1 && i == 1;
+                        Rows[i].Card.Selected = index == 1 && i == PreviewIndex;
                 ShowDetail(index == 1 ? PreviewGood : null);
                 return;
             }
@@ -568,10 +583,12 @@ namespace Baryonyx.Workshop
             Reveal.Show(seconds, plan);
         }
 
-        // 停止中に選んだときの見た目を確かめる品物（焼いた2枚目）。
+        // 停止中に選んだときの見た目を確かめる品物（焼いた4枚目、属性のある鉄の剣）。
+        private const int PreviewIndex = 3;
+
         private WorkshopGood PreviewGood =>
-            WorkshopGoods.Of(Data, LibraryMemorySource.Mock()) is { Count: > 1 } mock
-                ? mock[1]
+            WorkshopGoods.Of(Data, LibraryMemorySource.Mock()) is { Count: > PreviewIndex } mock
+                ? mock[PreviewIndex]
                 : null;
     }
 }

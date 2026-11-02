@@ -334,20 +334,25 @@ namespace Baryonyx.Tests.EditMode
             }
         }
 
+        // 付けられるカードを上にコストの低い順、属性が合わず付けられないカードを下に薄く並べる（2026-11-03）。
         [Test]
-        public void TheRightListsTheCardsThePersonCanSetByCost()
+        public void TheRightListsTheCardsThePersonCanSetByCostThenTheOthersDimmed()
         {
             view.Person("toma");
             var state = view.Last;
             // トーマは炎と氷、属性のないカードは誰でも付けられる（仮）。
             Assert.That(state.Usable, Is.EqualTo(new[] { CardElement.Fire, CardElement.Ice }));
+            var usable = state.Choices.TakeWhile(card => !card.Unavailable).ToArray();
+            var others = state.Choices.Skip(usable.Length).ToArray();
             Assert.That(
-                state.Choices.Select(card => card.Element).Distinct(),
+                usable.Select(card => card.Element).Distinct(),
                 Is.SubsetOf(new[] { CardElement.None, CardElement.Fire, CardElement.Ice })
             );
-            Assert.That(state.Choices.Select(card => card.Id), Does.Contain("Heal"));
-            Assert.That(state.Choices.Select(card => card.Id), Does.Not.Contain("Slash"));
-            Assert.That(state.Choices.Select(card => card.Cost), Is.Ordered);
+            Assert.That(usable.Select(card => card.Id), Does.Contain("Heal"));
+            Assert.That(usable.Select(card => card.Cost), Is.Ordered);
+            Assert.That(others.Select(card => card.Id), Does.Contain("Slash"));
+            Assert.That(others.All(card => card.Unavailable), Is.True);
+            Assert.That(others.Select(card => card.Cost), Is.Ordered);
             Assert.That(state.Tab, Is.EqualTo(CardLoadoutPresenter.SkillTab));
             // 付けているカードには、何枚目に入っているかを出す。
             Assert.That(state.Choices.Single(card => card.Id == "Ice").Slot, Is.EqualTo(1));

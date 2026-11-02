@@ -806,7 +806,11 @@ namespace Baryonyx.CardLoadout
                 widget.Mark.text = card.Mark ?? "";
             }
             if (widget.Button != null)
+            {
                 widget.Button.interactable = !card.Unavailable;
+                if (widget.Button.TryGetComponent(out GlassCard glass))
+                    glass.Interactable = !card.Unavailable;
+            }
         }
 
         /// <summary>The icons of the elements the person can set, with the unused icons hidden.</summary>

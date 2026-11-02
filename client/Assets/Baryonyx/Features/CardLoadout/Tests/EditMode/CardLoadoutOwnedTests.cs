@@ -110,14 +110,15 @@ namespace Baryonyx.Tests.EditMode
             Assert.That(state.PersonId, Is.EqualTo("toma"));
             // 同じファイアでも、1枚ずつ別の行になり、品質の高い順に並ぶ。持っていないスキルは出ない。
             Assert.That(
-                state.Choices.Select(card => card.Id),
+                state.Choices.Where(card => !card.Unavailable).Select(card => card.Id),
                 Is.EquivalentTo(new[] { TomaFire, GoodFire, TomaIce, Embers })
             );
             var fires = state.Choices.Where(card => card.Name == "ファイア").ToArray();
             Assert.That(fires.Select(card => card.Id), Is.EqualTo(new[] { GoodFire, TomaFire }));
             Assert.That(fires[0].Quality, Is.EqualTo(ItemQuality.S));
-            // 雷のカード（ルカのサンダー）はトーマには付けられない。
-            Assert.That(state.Choices.Select(card => card.Id), Does.Not.Contain(LukaThunder));
+            // 雷のカード（ルカのサンダー）はトーマには付けられず、一覧の最後に薄く出す。
+            Assert.That(state.Choices.Last().Id, Is.EqualTo(LukaThunder));
+            Assert.That(state.Choices.Last().Unavailable, Is.True);
             Assert.That(state.Slots[0].Id, Is.EqualTo(TomaFire));
             Assert.That(state.Slots[0].ArtId, Is.EqualTo("Fire"));
             Assert.That(state.Choices.Single(card => card.Id == TomaIce).Mark, Is.EqualTo("2枚目"));

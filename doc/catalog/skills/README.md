@@ -72,7 +72,7 @@ IDの接頭辞は `skill-`、メタデータの `category` は `skills` とす�
 | スキル・固有スキルの分類、所持者 | 個別設定は未決。構成は[キャラクターの構成](../../features/party.md#キャラクターの構成)に従う |
 | カードの種類（攻撃・バフ・デバフ・回復・コスト軽減・持続攻撃など） | 個別設定は未決。種類は[カードの種類と流れ](../../features/combat/rules.md#カードの種類と流れ)に従う |
 | 対象（単体・全体）・発動条件 | 個別設定は未決 |
-| 属性 | 個別設定は未決。種類は[属性と弱点](../../features/combat/rules.md#属性と弱点)に従う |
+| 属性 | 個別設定は未決。種類は[属性と弱点](../../features/combat/rules.md#属性と弱点)に従う。属性なしのスキルは誰でも付けられる |
 | コスト | 個別値は未決。[エネルギーとコスト](../../features/combat/rules.md#エネルギーとコスト)に従う |
 | レア度・倍率の上限 | 個別値は未決。レア度（☆1〜☆5）は種類ごとに決める（[レア度](../../features/inventory.md#レア度)）。1枚ずつ倍率と品質（S〜C）を持ち（[品質](../../features/inventory.md#品質)）、上限の倍率は[上限の決め方](../../features/inventory.md#上限の決め方)に従う（値の正本は [CardSkills](../../../client/Assets/Baryonyx/Features/Combat/Runtime/CardSkills.cs)）。固有スキルはレア度を持たず、品質C（×1.00）で始まる。キラキラの強さは品質、光り方はカードごとに決まる（[カードのキラキラ](../../art/direction.md#カードのキラキラ)） |
 | 合成の材料 | 「分類固有のデータ」の「倍率の上限」の次の行に書く。☆2以上のカスタムスキルだけがレシピを持ち、☆1は「なし」とする（[合成](../../features/synthesis.md#レシピ)、2026-10-31）。この行はサーバーの [recipes.ts](../../../server/src/features/workshop/recipes.ts) とクライアントの [WorkshopRecipes](../../../client/Assets/Baryonyx/Features/Workshop/Runtime/WorkshopRecipes.cs) の写しで、正本はコードである（2026-11-02、ユーザーの判断）。直すときはコードを先に直し、同じ変更で行をそろえる。値の列には材料と数を並べ、品質を持つ特別な材料（武器・防具・アクセサリー・スキル）に「（特別）」を付ける。3列目には☆と[費用](../../features/synthesis.md#費用)へのリンクを書く。合成すると材料をすべて使い（[レシピ](../../features/synthesis.md#レシピ)）、出来上がる品質は（特別）の材料の品質の平均、（特別）がなければ品質Cになる（[出来上がる品質](../../features/synthesis.md#出来上がる品質)） |

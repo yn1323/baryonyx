@@ -1,3 +1,4 @@
+using Baryonyx.UI;
 using Baryonyx.UI.Cards;
 using TMPro;
 using UnityEngine;
@@ -25,6 +26,11 @@ namespace Baryonyx.Equipment
 
         // 選んでいる枠に付けたときのステータスの増減（「属攻 ▲43　会心 ▲2」）。効果の右に出す。
         public TMP_Text Change;
+
+        // 右上の属性のアイコン。右端からの距離。誰かが付けている印があれば、その左へずらす。
+        public ElementIconRow Elements;
+        public const float ElementsRight = 24f;
+        public const float ElementsGap = 12f;
 
         // 行が出している装備のID。
         public string ItemId { get; set; }

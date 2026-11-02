@@ -1,4 +1,5 @@
 using System.Linq;
+using Baryonyx.Editor.UI;
 using Baryonyx.Library;
 using Baryonyx.Library.Editor;
 using Baryonyx.Party;
@@ -33,6 +34,11 @@ namespace Baryonyx.Workshop.Editor
         private const float ChosenHeight = 150f;
         private const float ChosenArt = 72f;
         private const float ChosenValue = 180f;
+
+        // 値段は品質・効果の行の高さ、属性のアイコンは名前の行の高さにそろえる（行の下・上から）。
+        private const float ChosenValueBottom = 20f;
+        private const float ChosenValueHeight = 40f;
+        private const float ChosenElementsTop = 38f;
 
         public static GameObject BuildPanel(RectTransform safe, GuideMenuView view)
         {
@@ -145,11 +151,24 @@ namespace Baryonyx.Workshop.Editor
             return sell.gameObject;
         }
 
-        // 選んだ物の行：左に絵、名前と品質・効果、右端にルーンのアイコンつきの値段。
+        // 選んだ物の行：左に絵、名前と品質・効果。右上（名前の行）に装備の属性のアイコン、
+        // 右下（品質・効果の行）にルーンのアイコンつきの値段（2026-11-03）。
         private static ItemTile ChosenRow(RectTransform content, string name)
         {
             var row = ListRow(content, name, ChosenHeight, ChosenArt, 34f, ChosenValue);
             RuneValue(row, ChosenValue, 34f);
+            var price = (RectTransform)row.Price.transform.parent;
+            price.anchorMin = price.anchorMax = new Vector2(1f, 0f);
+            price.offsetMin = new Vector2(-24f - ChosenValue, ChosenValueBottom);
+            price.offsetMax = new Vector2(-24f, ChosenValueBottom + ChosenValueHeight);
+            var elements = UiBuild.Rect("Elements", row.Name.transform.parent);
+            UiBuild.Corner(
+                elements,
+                Vector2.one,
+                new Vector2(-24f, -ChosenElementsTop),
+                new Vector2(ElementIconRowAssets.Width(), ElementIconRowAssets.Size)
+            );
+            row.Elements = ElementIconRowAssets.Add(elements, TextAnchor.MiddleRight);
             return row;
         }
 

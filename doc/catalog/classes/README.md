@@ -29,7 +29,7 @@ IDの接頭辞は `class-`、メタデータの `category` は `classes` とす�
 | 癒し手 | `healer` | [ミナ](../characters/character-mina.md)・[リタ](../characters/character-rita.md) | 癒しの風・蘇生・裁きの光 |
 
 固有スキルの中身は[固有スキルの覚醒のツリー](../../features/skill-evolution/trees.md)にある。
-職による装備の制限はなく、職ごとの役割・得意不得意は未決である。
+職による装備の制限はなく、職ごとの役割・得意不得意は未決である。[装備の属性](../../features/equipment.md#装備の属性)で付けられる装備も、職ではなくカードの属性で決める（2026-11-03）。
 
 ## 記入する項目
 

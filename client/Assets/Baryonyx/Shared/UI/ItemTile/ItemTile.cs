@@ -37,6 +37,9 @@ namespace Baryonyx.UI
         public GameObject Mark;
         public GameObject Unknown;
 
+        // 行の右上の、装備の属性のアイコン（売る物の行）。
+        public ElementIconRow Elements;
+
         /// <summary>
         /// Shows <paramref name="sprite"/> as the art (an icon cut from an atlas shows only its
         /// own part); none hides the art.

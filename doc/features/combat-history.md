@@ -2,7 +2,7 @@
 id: feature-combat-history
 type: reference
 status: 記録
-updated: 2026-11-02
+updated: 2026-11-03
 ---
 
 # 戦闘システムの変更と判断の記録
@@ -10,6 +10,7 @@ updated: 2026-11-02
 [戦闘システム](combat.md)
 
 
+- 2026-11-03：[属性と弱点](combat/rules.md#属性と弱点)に、属性なしのカードを誰でも付けられること（今のコードの決まり）と、装備も属性を持つこと（[装備の属性](equipment.md#装備の属性)）を書き足した。
 - 2026-11-02：スキルとdocの整理で、今のコードに合わせて、固有スキルの数（3つ）と覚醒の抽選の時点（引いたとき）、蛇牙の連撃の確率、合体カードの使い手と属性、聖なる鉄槌と浄化の光の効き方、エネルギーの仮の上限9、「カードバトルのルールは未実装」の行、ルーン復活後のターン、モックの山札の内訳を直し、説明文の書き方（`{0}`・`{1}` と4行）をスキルから移した（根拠：CardSkills.cs・BattleInspectView.cs の `MaxEnergyCap`・BattleInspectView.Cards.cs・BattleInspectView.Moments.cs・BattleInspectAssets.cs の `DeckIds`・BattleInspectView.Evolution.cs）。
 - 2026-10-26：テストプレイの報告を受け、ユーザーの依頼「ルーンの値段も、リスクがほぼないので上げてほしいです」により、ルーン復活の費用を1回目100ルーン（以後100ずつ）から上げた（[未決事項](combat/implementation.md#未決事項)のルーン復活）。初めて受け取る1週間分の歩数（約4万ルーン）に比べ、100ルーンでは全滅の重みがなかったためである。初めは1回目2,000ルーン（以後2,000ずつ）にしたが、ユーザーの「復活の費用高いな、、、300ルーンにしておいて」により、1回目300ルーン（以後300ずつ）にした。正本はサーバーの [catalog.ts](../../server/src/features/adventure/catalog.ts) の `REVIVE_COST_BASE`。
 - 2026-10-26：テストプレイで、「[弱点]を突くとエネルギー+1」（急所突き・蛇牙の連撃など）が、突いても働かず、突かなくても使い手の上に斬撃の演出が出ていた。誰にも向かない働きを、使い手への別の当たりとして計画していたため、弱点を突いたかをその当たりで確かめられなかった。当たりで決まる条件のついた、誰にも向かない働きは、直前の当たりに載せるようにした（[BattleCardPlan](../../client/Assets/Baryonyx/Features/Combat/Presentation/BattleCardPlan.cs)）。エネルギーや手札の知らせは、使い手の上に出す。

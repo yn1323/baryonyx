@@ -179,6 +179,21 @@ namespace Baryonyx.Workshop.Editor
             );
             buy.DetailEffect.richText = true;
             buy.DetailEffect.textWrappingMode = TextWrappingModes.Normal;
+            // 装備の効果の下に、属性のアイコンを左右中央にそろえて並べる（2026-11-03）。
+            var elements = Layout.Box(
+                detail,
+                "DetailElements",
+                0f,
+                0f,
+                width,
+                ElementIconRowAssets.DetailSize
+            );
+            buy.DetailElements = ElementIconRowAssets.Add(
+                elements,
+                TextAnchor.MiddleCenter,
+                ElementIconRowAssets.DetailSize
+            );
+            Fixed(elements, ElementIconRowAssets.DetailSize);
             buy.DetailOwned = Layout.Text(
                 detail,
                 "DetailOwned",

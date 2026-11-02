@@ -32,6 +32,9 @@ namespace Baryonyx.Equipment
         public TMP_Text Name;
         public TMP_Text Stars;
         public TMP_Text Detail;
+
+        // 右上の属性のアイコン。
+        public ElementIconRow Elements;
     }
 
     /// <summary>One of the three accessory slots on the left, baked by the generator.</summary>
@@ -54,6 +57,9 @@ namespace Baryonyx.Equipment
 
         // 付けているアクセサリーの効果。
         public TMP_Text Detail;
+
+        // 右上の属性のアイコン。
+        public ElementIconRow Elements;
     }
 
     /// <summary>
@@ -418,6 +424,8 @@ namespace Baryonyx.Equipment
             );
             SetRich(widget.Stars, filled ? Grade(worn) : "");
             Set(widget.Detail, filled ? worn.Detail : "");
+            if (widget.Elements != null)
+                widget.Elements.Show(filled ? worn.Elements : null);
         }
 
         // 付け替えた枠を回す部品。線の光は、新しく付けた物の絵の色から取る。
@@ -510,6 +518,8 @@ namespace Baryonyx.Equipment
             Set(widget.Name, item == null ? "" : item.Name);
             SetRich(widget.Stars, filled ? Grade(item) : "");
             Set(widget.Detail, filled ? item.Detail : "");
+            if (widget.Elements != null)
+                widget.Elements.Show(filled ? item.Elements : null);
         }
 
         /// <summary>
@@ -534,12 +544,33 @@ namespace Baryonyx.Equipment
             SetRich(row.Stars, Grade(item));
             Set(row.Detail, item.Detail);
             SetRich(row.Change, ChangeText(item.Changes));
+            // 属性が合わず付けられない装備は、薄くして押せなくする。
+            if (row.Button != null)
+            {
+                row.Button.interactable = item.Usable;
+                if (row.Button.TryGetComponent(out GlassCard card))
+                    card.Interactable = item.Usable;
+            }
             if (row.Mark != null)
             {
                 row.Mark.gameObject.SetActive(item.Mark.Length > 0);
                 row.Mark.text = item.Mark;
                 row.Mark.alpha = item.Worn ? 1f : 0.75f;
             }
+            ShowElements(row, item);
+        }
+
+        // 行の右上の属性のアイコン。誰かが付けている印（右上）があれば、その左に並べる。
+        private static void ShowElements(EquipmentRow row, EquipmentItemState item)
+        {
+            if (row.Elements == null)
+                return;
+            row.Elements.Show(item.Elements);
+            var rect = (RectTransform)row.Elements.transform;
+            float right = EquipmentRow.ElementsRight;
+            if (row.Mark != null && item.Mark.Length > 0)
+                right += row.Mark.GetPreferredValues(item.Mark).x + EquipmentRow.ElementsGap;
+            rect.anchoredPosition = new Vector2(-right, rect.anchoredPosition.y);
         }
 
         /// <summary>

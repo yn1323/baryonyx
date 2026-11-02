@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Baryonyx.CardLoadout;
 using Baryonyx.Combat;
 using Baryonyx.Inventory;
 using Baryonyx.Party;
@@ -29,6 +30,14 @@ namespace Baryonyx.Equipment
 
         // 効果の短い説明。数字は倍率を掛けた後の値。
         public string Detail { get; internal set; }
+
+        // 種類ごとの属性。属性なしと空いている枠では空。
+        public IReadOnlyList<CardElement> Elements { get; internal set; } =
+            Array.Empty<CardElement>();
+
+        // 選んでいる人が付けられる（属性が合う）。付けられない行は薄くして押せなくする。
+        // 付けられない装備をもう付けていても外さず、外したあとは付け直せない。
+        public bool Usable { get; internal set; } = true;
 
         // 右の行の右上に出す、誰が付けているか（「装備中」「アリアが装備中」）。誰も付けていなければ空。
         public string Mark { get; internal set; } = "";
@@ -227,6 +236,7 @@ namespace Baryonyx.Equipment
                 || definition == null
                 || definition.Slot != place.Slot
                 || !IsOpen(member)
+                || !definition.Fits(CardLoadoutRules.Usable(member))
             )
                 return;
             string before = state.ItemIn(member.Id, place);
@@ -312,7 +322,7 @@ namespace Baryonyx.Equipment
             bool open = IsOpen(member);
             // Lvと絆を入れたステータス。装備の上昇分と、右の行の増減はここから求める。
             var stats = statsOf?.Invoke(member.Id);
-            var choices = open ? Choices(member.Id, stats) : Array.Empty<EquipmentItemState>();
+            var choices = open ? Choices(member, stats) : Array.Empty<EquipmentItemState>();
             string current = open ? state.ItemIn(member.Id, Place) : null;
             State = new EquipmentViewState
             {
@@ -348,9 +358,12 @@ namespace Baryonyx.Equipment
 
         private string TitleOf() => accessory >= 0 ? AccessoryTitle : EquipmentCatalog.NameOf(slot);
 
-        // 選んでいる枠に付けられる持っている装備。レア度の高い順、同じなら仮データの順、続けて入手の順。
-        private IReadOnlyList<EquipmentItemState> Choices(string personId, CharacterStats? stats) =>
-            state
+        // 選んでいる枠の種類の持っている装備。属性が合って付けられる物を上に、付けられない物を下に
+        // まとめ、それぞれレア度の高い順、同じなら仮データの順、続けて倍率の高い順、入手の順。
+        private IReadOnlyList<EquipmentItemState> Choices(PartyMember member, CharacterStats? stats)
+        {
+            var usable = CardLoadoutRules.Usable(member);
+            return state
                 .Items.Select(
                     (item, index) =>
                         (
@@ -360,17 +373,24 @@ namespace Baryonyx.Equipment
                         )
                 )
                 .Where(entry => entry.Definition != null && entry.Definition.Slot == Place.Slot)
-                .OrderByDescending(entry => entry.Definition.Rarity)
+                .Select(entry =>
+                    (entry.Item, entry.Index, entry.Definition, Fits: entry.Definition.Fits(usable))
+                )
+                .OrderByDescending(entry => entry.Fits)
+                .ThenByDescending(entry => entry.Definition.Rarity)
                 .ThenBy(entry => EquipmentCatalog.IndexOf(entry.Item.EquipmentId))
                 .ThenByDescending(entry => Inventory.Quality.Percent(entry.Item.Multiplier))
                 .ThenBy(entry => entry.Index)
                 .Select(entry =>
                 {
-                    var choice = ItemState(personId, entry.Item);
-                    choice.Changes = ChangesOf(personId, entry.Item, stats);
+                    var choice = ItemState(member.Id, entry.Item);
+                    choice.Usable = entry.Fits;
+                    if (entry.Fits)
+                        choice.Changes = ChangesOf(member.Id, entry.Item, stats);
                     return choice;
                 })
                 .ToArray();
+        }
 
         // 選んでいる枠にその装備を付けたときの、今と比べたステータスの増減。付けている装備では空。
         private IReadOnlyList<(int Stat, int Amount)> ChangesOf(
@@ -415,6 +435,7 @@ namespace Baryonyx.Equipment
                 Multiplier = item.Multiplier,
                 FoilStyle = EquipmentCatalog.FoilStyleOf(definition.Id),
                 Detail = definition.DetailAt(item.Multiplier),
+                Elements = definition.Elements,
                 Worn = wearer != null && wearer == personId,
                 Mark =
                     wearer == null ? ""

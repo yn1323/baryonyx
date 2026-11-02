@@ -201,7 +201,7 @@ namespace Baryonyx.Tests.PlayMode
                 }
             }
             var usable = CardLoadoutRules.Usable(member);
-            var expected = CardLoadoutRules.Choices(usable).Select(card => card.Id).ToArray();
+            var expected = CardLoadoutRules.Listed(usable).Select(card => card.Id).ToArray();
             Assert.That(Rows(panel).Select(row => row.Id), Is.EqualTo(expected), member.Id);
             Assert.That(panel.Status.text, Is.Empty);
             Assert.That(panel.UsableLine.activeSelf, Is.True);

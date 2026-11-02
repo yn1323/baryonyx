@@ -2,7 +2,7 @@
 id: feature-party-history
 type: reference
 status: 記録
-updated: 2026-11-02
+updated: 2026-11-03
 ---
 
 # キャラクターとパーティ編成の変更と判断の記録
@@ -10,6 +10,8 @@ updated: 2026-11-02
 [キャラクターとパーティ編成](party.md)
 
 
+- 2026-11-03：ユーザーの指示で、装備の属性が1つも合わないキャラは、その装備を付けられなくした（[装備の属性](equipment.md#装備の属性)）。
+- 2026-11-03：ユーザーの判断で、装備の条件には職業ではなく、キャラが付けられるカードの属性を使うと決めた（[装備の属性](equipment.md#装備の属性)）。「基本的に」どのキャラでも装備を付けられるとした例外は置かない。属性なしのスキルを誰でも付けられること（今のコードの決まり）を[キャラクターの構成](party.md#キャラクターの構成)に書いた。
 - 2026-11-02：ユーザーの判断で、今のコードの4つの職（魔法使い・弓使い・騎士・癒し手。サーバーの `CHARACTER_CLASSES`）を、職業の仮の設定として[職業の定義](../catalog/classes/README.md#今の職仮設定)に書いた。[確認待ち](party.md#確認待ち)の「職業の扱い」は閉じていない。
 - 2026-11-02：スキルとdocの整理で、今のコードに合わせて、アクセサリーの枠の開き方、商会での固有スキルの覚醒、スキルとキャラの入手方法、限界突破の呼び名、`GET /v1/party` の返す物、`party_unique_skills` の保存、アイテムをデッキに入れることとアクセサリーの枠の実装を直した（根拠：client/Assets/Baryonyx/Features/Equipment/Runtime/AccessorySlots.cs、server/src/features/party/db-schema.ts・routes.ts、server/src/features/summon/catalog.ts、server/src/features/adventure/clear-rewards.ts、client/Assets/Baryonyx/Features/Training/Editor/TrainingAssets.Bond.cs）。
 - 2026-10-23：ユーザーの指示「MAX6枚入れられるようにしたい。固有スキルをもう1つ、カスタムスキルを1つほしい。固有スキルのみレベルで解放」「枚数の選択は特になしで固定。カスタムスキルのみ0枚でもOK。レベルが低いうちは枚数が少なくなるけどOK」により、固有スキルを3つ、カスタムスキルを3枠にした（[キャラクターの構成](party.md#キャラクターの構成)）。戦闘で1人だけ残ると同じカードばかり引く問題（[戦闘の未決事項](combat/implementation.md#未決事項)）から始まった変更である。3つ目の固有スキルはLv40で解放する（ユーザーの選択）。4系統の3つ目の固有スキルの効果は[固有スキルの進化](skill-evolution.md)に置いた。カスタムスキルを外す操作は足していない。新しい3枠目は空きのまま始まる。

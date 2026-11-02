@@ -13,6 +13,32 @@ IDの接頭辞は `weapon-`、メタデータの `category` は `weapons` とす
 登録された個別データはまだない。
 <!-- entries:end -->
 
+## 属性
+
+種類ごとの属性である。決まりは[装備の属性](../../features/equipment.md#装備の属性)に従い、2026-11-03に名前と手に入る行き先から決めた。
+武器は持ち主を選ぶ装備として、☆2以上の多くに属性を2つ付けた。☆1は誰もが最初に使う装備として属性なしにした。
+
+| ID | 名前 | ☆ | 属性 |
+|---|---|---|---|
+| flame-dagger | 炎のダガー | ☆4 | 炎・斬 |
+| thunder-spear | 雷鳴の槍 | ☆3 | 雷・貫 |
+| frost-wand | 氷晶のワンド | ☆3 | 氷・貫 |
+| war-hammer | 戦鎚 | ☆2 | 打・雷 |
+| iron-sword | 鉄の剣 | ☆2 | 斬・貫 |
+| short-bow | 短弓 | ☆1 | 属性なし |
+| oak-staff | 樫の杖 | ☆1 | 属性なし |
+| wooden-sword | 木の剣 | ☆1 | 属性なし |
+| reed-bow | 葦の長弓 | ☆2 | 貫・雷 |
+| wisp-staff | 鬼火の杖 | ☆3 | 炎・氷 |
+| scorpion-bow | 砂蠍の弓 | ☆2 | 貫・炎 |
+| tomb-khopesh | 王墓の鎌剣 | ☆3 | 斬・貫 |
+| bone-axe | 骨の大斧 | ☆2 | 斬・打 |
+| moonshade-staff | 月影の杖 | ☆4 | 属性なし |
+| firebird-bow | 炎尾の弓 | ☆2 | 炎・貫 |
+| magma-hammer | 溶岩の大槌 | ☆3 | 打・炎 |
+| hailstone-staff | 雹の杖 | ☆3 | 氷・雷 |
+| glacier-greatsword | 氷河の大剣 | ☆4 | 氷・斬 |
+
 ## 合成のレシピ
 
 [合成](../../features/synthesis.md#レシピ)で作るときの材料である。決まりは[レシピ](../../features/synthesis.md#レシピ)・[出来上がる品質](../../features/synthesis.md#出来上がる品質)・[費用](../../features/synthesis.md#費用)に従う。
@@ -44,7 +70,8 @@ IDの接頭辞は `weapon-`、メタデータの `category` は `weapons` とす
 
 | 項目 | 初期の扱い |
 |---|---|
-| 武器種・装備枠 | 未決。基本的にどのキャラでも装備できる（[装備](../../features/equipment.md)） |
+| 武器種・装備枠 | 武器種は未決。どのキャラでも装備できる（[装備](../../features/equipment.md)） |
+| 属性 | [属性](#属性)の表に書く。決まりは[装備の属性](../../features/equipment.md#装備の属性)に従う。追加効果の中身と値は未決 |
 | 参照するステータスと割合 | 固定値は持たない。個別値は未決。[装備の効果](../../features/equipment.md#装備の効果)に従う |
 | レア度（☆1〜☆5）・Affix候補・固有効果・数値幅・倍率の上限 | 未決。レア度は種類ごとに決め、1つずつ倍率と品質を持つ（[品質](../../features/inventory.md#品質)） |
 | 強化定義ID・入手テーブルとの関係 | 強化は[品質強化](../../features/enhancement.md#品質強化)、入手は[冒険のドロップ](../../features/drops.md#行き先ごとの一覧)に従う |

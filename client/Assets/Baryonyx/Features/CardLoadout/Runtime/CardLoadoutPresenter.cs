@@ -462,19 +462,21 @@ namespace Baryonyx.CardLoadout
             view.Render(State);
         }
 
-        // その人が付けられるスキルのキー。持っている1枚ずつを、コストの低い順・仮データの順・品質の高い順に並べる。
+        // 持っているスキルのキー。その人が付けられる物を上に、属性が合わず付けられない物を下にまとめ、
+        // それぞれコストの低い順・仮データの順・品質の高い順に並べる。付けられない物は薄くして押せなくする。
         // 持ち物を読んでいなければ、50枚すべて（スキルID）。
         private IEnumerable<string> SkillChoices(IReadOnlyList<CardElement> usable)
         {
             var owned = store.OwnedSkills;
             if (owned == null)
-                return CardLoadoutRules.Choices(usable).Select(card => card.Id);
+                return CardLoadoutRules.Listed(usable).Select(card => card.Id);
             var catalog = CardSkills.All.ToList();
             int Order(CardSkill card) => catalog.FindIndex(entry => entry.Id == card.Id);
             return owned
                 .Select(key => (Key: key, Card: store.SkillOf(key)))
-                .Where(entry => CardLoadoutRules.CanUse(usable, entry.Card))
-                .OrderBy(entry => entry.Card.Cost)
+                .Where(entry => entry.Card != null)
+                .OrderByDescending(entry => CardLoadoutRules.CanUse(usable, entry.Card))
+                .ThenBy(entry => entry.Card.Cost)
                 .ThenBy(entry => Order(entry.Card))
                 .ThenByDescending(entry => entry.Card.Multiplier)
                 .Select(entry => entry.Key);
@@ -491,6 +493,16 @@ namespace Baryonyx.CardLoadout
         {
             var state = Card(person, key, slotIndex);
             var item = PartyCardKey.IsItem(key) ? OwnedItem(key) : null;
+            // 属性が合わないスキルは入れられない。もう入っていれば外せるが、入れ直せない。
+            if (
+                item == null
+                && store.SkillOf(key) is { } skill
+                && people.FirstOrDefault(entry => entry.Id == person) is { } member
+            )
+                state.Unavailable = !CardLoadoutRules.CanUse(
+                    CardLoadoutRules.Usable(member),
+                    skill
+                );
             if (slotIndex >= 0)
                 state.Mark = $"{slotIndex + 1}枚目";
             else if (item != null)

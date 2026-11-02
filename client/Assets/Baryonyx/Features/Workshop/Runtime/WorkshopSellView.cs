@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Baryonyx.Combat;
 using Baryonyx.Economy;
 using Baryonyx.Equipment;
 using Baryonyx.Inventory;
@@ -353,6 +354,8 @@ namespace Baryonyx.Workshop
             Set(row.Name, thing.Name);
             Set(row.Detail, ChosenLine(thing));
             Set(row.Price, PriceOf(thing).ToString("N0"));
+            if (row.Elements != null)
+                row.Elements.Show(GearElementsOf(thing));
         }
 
         /// <summary>
@@ -391,6 +394,12 @@ namespace Baryonyx.Workshop
         public static string GearEffectOf(WorkshopOwned thing) =>
             thing != null && thing.Kind != LibraryKind.Skill && thing.Kind != LibraryKind.Item
                 ? EquipmentCatalog.Find(thing.KindId)?.DetailAt(thing.Multiplier)
+                : null;
+
+        /// <summary>The attributes of a piece of equipment, or none for others.</summary>
+        public static IReadOnlyList<CardElement> GearElementsOf(WorkshopOwned thing) =>
+            thing != null && thing.Kind != LibraryKind.Skill && thing.Kind != LibraryKind.Item
+                ? EquipmentCatalog.Find(thing.KindId)?.Elements
                 : null;
 
         public static string EmptyText(string kind) => $"{kind}を持っていません";

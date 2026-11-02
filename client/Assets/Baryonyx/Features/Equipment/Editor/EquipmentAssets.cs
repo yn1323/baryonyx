@@ -10,6 +10,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using static Baryonyx.Editor.UI.UiBuild;
 using ChangeScreen = Baryonyx.Party.Editor.PartyChangeScreenAssets;
+using ElementIconRowAssets = Baryonyx.UI.Editor.ElementIconRowAssets;
 using Frame = Baryonyx.UI.GuideMenu.Editor.GuideFrameAssets;
 using GlassCardAssets = Baryonyx.UI.Editor.GlassCardAssets;
 using Guide = Baryonyx.UI.GuideMenu.Editor.GuideMenuAssets;
@@ -52,6 +53,8 @@ namespace Baryonyx.Equipment.Editor
         private const float SlotInset =
             (SlotHeight - SlotTagHeight - SlotNameHeight - 6f - SlotDetailHeight) / 2f;
         private const float SlotTextLeft = 112f;
+        private const float SlotRight = 20f;
+        private const float SlotStarsWidth = 150f;
         private const float RowHeight = 128f;
         private const float RowTextLeft = 132f;
 
@@ -136,6 +139,7 @@ namespace Baryonyx.Equipment.Editor
             widget.Foil = CardFoilAssets.Add(widget.Icon);
             SlotTag(row, EquipmentCatalog.NameOf(slot));
             (widget.Name, widget.Stars, widget.Detail) = SlotTexts(row);
+            widget.Elements = SlotElements(row);
             return widget;
         }
 
@@ -165,6 +169,7 @@ namespace Baryonyx.Equipment.Editor
             widget.Lock = lockImage.gameObject;
             SlotTag(row, EquipmentPresenter.AccessoryTitle);
             (widget.Name, widget.Stars, widget.Detail) = SlotTexts(row);
+            widget.Elements = SlotElements(row);
             widget.Name.text = AccessorySlots.UnlockText(index);
             return widget;
         }
@@ -188,10 +193,12 @@ namespace Baryonyx.Equipment.Editor
                 SlotTagHeight
             );
 
-        // 枠の名前の下の、装備の名前と右端の★・品質、その下の効果（「属攻 +20%｜会心 +8%」）。
+        // 枠の名前の下の装備の名前、その下の効果（「属攻 +20%｜会心 +8%」）と右端の★・品質。
+        // 右上（枠の名前の行）に属性のアイコンを置くため、★・品質は効果の行へ下げる（2026-11-03）。
         private static (TMP_Text Name, TMP_Text Stars, TMP_Text Detail) SlotTexts(RectTransform row)
         {
             float top = SlotInset + SlotTagHeight;
+            float detailTop = top + SlotNameHeight + 6;
             var name = Layout.Text(
                 row,
                 "Name",
@@ -201,7 +208,7 @@ namespace Baryonyx.Equipment.Editor
                 TextAlignmentOptions.BottomLeft,
                 SlotTextLeft,
                 top,
-                Left.width - SlotTextLeft - 170,
+                Left.width - SlotTextLeft - SlotRight,
                 SlotNameHeight
             );
             Guide.Shrink(name, 22);
@@ -211,13 +218,13 @@ namespace Baryonyx.Equipment.Editor
                 "",
                 26,
                 UiPalette.Gold,
-                TextAlignmentOptions.BottomRight,
-                Left.width - 170,
-                top,
-                150,
-                SlotNameHeight
+                TextAlignmentOptions.TopRight,
+                Left.width - SlotRight - SlotStarsWidth,
+                detailTop,
+                SlotStarsWidth,
+                SlotDetailHeight
             );
-            // 長い効果（「攻撃スキルが10%で2回発動」など）も1行に収まるよう縮めて入れる。
+            // 長い効果（「攻撃スキルが10%で2回発動」など）も、★・品質の左の1行に収まるよう縮めて入れる。
             var detail = Layout.Text(
                 row,
                 "Detail",
@@ -226,12 +233,27 @@ namespace Baryonyx.Equipment.Editor
                 UiPalette.TextSub,
                 TextAlignmentOptions.TopLeft,
                 SlotTextLeft,
-                top + SlotNameHeight + 6,
-                Left.width - SlotTextLeft - 24,
+                detailTop,
+                Left.width - SlotTextLeft - SlotRight - SlotStarsWidth - 8,
                 SlotDetailHeight
             );
             Guide.Shrink(detail, 16);
             return (name, stars, detail);
+        }
+
+        // 枠の右上、枠の名前の行の高さに並べる属性のアイコン。右端は★・品質にそろえる。
+        private static ElementIconRow SlotElements(RectTransform row)
+        {
+            float width = ElementIconRowAssets.Width();
+            var rect = Layout.Box(
+                row,
+                "Elements",
+                Left.width - SlotRight - width,
+                SlotInset + (SlotTagHeight - ElementIconRowAssets.Size) / 2f,
+                width,
+                ElementIconRowAssets.Size
+            );
+            return ElementIconRowAssets.Add(rect, TextAnchor.MiddleRight);
         }
 
         // --- Right: the owned items for the chosen slot, then "外す" -------------------------
@@ -323,6 +345,18 @@ namespace Baryonyx.Equipment.Editor
             row.Mark = Label(card, "Mark", "", 24, UiPalette.Gold, TextAlignmentOptions.TopRight);
             Guide.Band((RectTransform)row.Mark.transform, top: true, 20, 32, RowTextLeft, 24);
             row.Mark.gameObject.SetActive(false);
+            // 名前の行の高さの右上に属性のアイコン（増減の真上）。印があれば、ビューがその左へずらす。
+            var elements = Rect("Elements", card);
+            Corner(
+                elements,
+                Vector2.one,
+                new Vector2(
+                    -EquipmentRow.ElementsRight,
+                    -(12 + 44 / 2f - ElementIconRowAssets.Size / 2f)
+                ),
+                new Vector2(ElementIconRowAssets.Width(), ElementIconRowAssets.Size)
+            );
+            row.Elements = ElementIconRowAssets.Add(elements, TextAnchor.MiddleRight);
             return row;
         }
 

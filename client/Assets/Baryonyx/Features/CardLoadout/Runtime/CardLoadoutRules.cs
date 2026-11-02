@@ -75,5 +75,15 @@ namespace Baryonyx.CardLoadout
         /// <summary>The cards the character can choose from: those they can use, by cost, then in the catalog's order.</summary>
         public static IReadOnlyList<CardSkill> Choices(IReadOnlyList<CardElement> usable) =>
             CardSkills.All.Where(card => CanUse(usable, card)).OrderBy(card => card.Cost).ToArray();
+
+        /// <summary>
+        /// Every card for the list on the right: those the character can use first, then the
+        /// ones they cannot (shown dimmed), each by cost, then in the catalog's order.
+        /// </summary>
+        public static IReadOnlyList<CardSkill> Listed(IReadOnlyList<CardElement> usable) =>
+            CardSkills
+                .All.OrderByDescending(card => CanUse(usable, card))
+                .ThenBy(card => card.Cost)
+                .ToArray();
     }
 }

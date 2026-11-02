@@ -446,6 +446,42 @@ namespace Baryonyx.Tests.EditMode
                 .First();
         }
 
+        // 属性の合わない装備は一覧の下に薄く並べ、付けられない。もう付けていれば外せるが、付け直せない
+        // （doc/features/equipment.md#装備の属性）。
+        [Test]
+        public async Task ItemsWhoseElementsDoNotFitComeLastAndCannotBePutOn()
+        {
+            presenter.Dispose();
+            // アリアは初めから鉄の剣（斬・貫）を付けている。炎のカードだけにして、属性を合わなくする。
+            var aria = Member("aria", "アリア");
+            aria.Cards = new[] { new PartyCard { Skill = "Fire" } };
+            var (people, _) = new PartyFormation(new[] { aria }, new[] { "aria" }).TabOrder();
+            var state = EquipmentLocalSource.Starter();
+            string sword = state.ItemIn("aria", EquipmentSlot.Weapon);
+            string dagger = state.Items.First(item => item.EquipmentId == "flame-dagger").Id;
+            presenter = new EquipmentPresenter(view, people, state, source);
+
+            var choices = view.Last.Choices;
+            int fit = choices.TakeWhile(item => item.Usable).Count();
+            Assert.That(choices.Skip(fit).All(item => !item.Usable), Is.True);
+            var worn = choices.Single(item => item.ItemId == sword);
+            Assert.That(worn.Usable, Is.False);
+            Assert.That(worn.Changes, Is.Empty);
+            Assert.That(choices.Single(item => item.ItemId == dagger).Usable, Is.True);
+
+            view.Remove();
+            await presenter.ChangeTask;
+            Assert.That(view.Last.Slots[0].ItemId, Is.Null);
+            int saves = source.Saves;
+            view.Item(sword);
+            await presenter.ChangeTask;
+            Assert.That(view.Last.Slots[0].ItemId, Is.Null);
+            Assert.That(source.Saves, Is.EqualTo(saves));
+            view.Item(dagger);
+            await presenter.ChangeTask;
+            Assert.That(view.Last.Slots[0].ItemId, Is.EqualTo(dagger));
+        }
+
         private static PartyMember Member(string id, string name) => new() { Id = id, Name = name };
     }
 }
