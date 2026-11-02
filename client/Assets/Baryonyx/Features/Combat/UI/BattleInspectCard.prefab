@@ -209,78 +209,6 @@ MonoBehaviour:
     y: 0
     width: 1
     height: 1
---- !u!1 &1646974914355826264
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1906199790465476860}
-  - component: {fileID: 7700577192738548581}
-  - component: {fileID: 8150438230002721588}
-  m_Layer: 0
-  m_Name: Digit
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!224 &1906199790465476860
-RectTransform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1646974914355826264}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 8733994324859475183}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.5, y: 0.5}
-  m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 15, y: 21}
-  m_Pivot: {x: 0.5, y: 0.5}
---- !u!222 &7700577192738548581
-CanvasRenderer:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1646974914355826264}
-  m_CullTransparentMesh: 1
---- !u!114 &8150438230002721588
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1646974914355826264}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 1344c3c82d62a2a41a3576d8abb8e3ea, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.RawImage
-  m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
-  m_RaycastTarget: 0
-  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
-  m_Maskable: 1
-  m_OnCullStateChanged:
-    m_PersistentCalls:
-      m_Calls: []
-  m_Texture: {fileID: -6622703189942226176, guid: 8575058edc16f4c409b8812957d9921f, type: 3}
-  m_UVRect:
-    serializedVersion: 2
-    x: 0.2
-    y: 0
-    width: 0.1
-    height: 1
 --- !u!1 &2253439295054605743
 GameObject:
   m_ObjectHideFlags: 0
@@ -362,7 +290,7 @@ MonoBehaviour:
   Art: {fileID: 4827638043472110252}
   Foil: {fileID: 5331052302697383702}
   Element: {fileID: 5055470477764816046}
-  CostDigit: {fileID: 8150438230002721588}
+  CostDigit: {fileID: 6455055538015199422}
   Owner: {fileID: 8288489541435336460}
   Name: {fileID: 6438418484250081352}
   Kind: {fileID: 116935665067122934}
@@ -894,14 +822,13 @@ RectTransform:
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
-  m_Children:
-  - {fileID: 1906199790465476860}
+  m_Children: []
   m_Father: {fileID: 3539806729213964269}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 15, y: -15}
-  m_SizeDelta: {x: 33, y: 33}
+  m_AnchoredPosition: {x: 9, y: -9}
+  m_SizeDelta: {x: 45, y: 45}
   m_Pivot: {x: 0, y: 1}
 --- !u!222 &1010078163914403793
 CanvasRenderer:
@@ -931,12 +858,12 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Texture: {fileID: -6622703189942226176, guid: faae2faa4f646479a89c15ed9d2874ce, type: 3}
+  m_Texture: {fileID: 2800000, guid: 97056a17d2b854ca3aa42856b99f2e64, type: 3}
   m_UVRect:
     serializedVersion: 2
-    x: 0
+    x: 0.0625
     y: 0
-    width: 1
+    width: 0.0625
     height: 1
 --- !u!1 &6374217924668719715
 GameObject:
@@ -1318,8 +1245,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 159, y: -15}
-  m_SizeDelta: {x: 36, y: 36}
+  m_AnchoredPosition: {x: 156, y: -9}
+  m_SizeDelta: {x: 45, y: 45}
   m_Pivot: {x: 0, y: 1}
 --- !u!222 &54365024084877674
 CanvasRenderer:
@@ -1349,7 +1276,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Texture: {fileID: -6622703189942226176, guid: 01996a57fd5fa4c4aad13dd9932e35f9, type: 3}
+  m_Texture: {fileID: 2800000, guid: cd35a89165e1e43dcb3b9b7522821581, type: 3}
   m_UVRect:
     serializedVersion: 2
     x: 0

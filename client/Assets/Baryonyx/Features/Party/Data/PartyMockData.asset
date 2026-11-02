@@ -109,13 +109,13 @@ MonoBehaviour:
   - aria
   - mina
   ElementIcons:
-  - {fileID: 0}
-  - {fileID: 5349011544834349465, guid: c48ff8983364a4ca28e3cb8722fdd9f4, type: 3}
-  - {fileID: 5349011544834349465, guid: 01996a57fd5fa4c4aad13dd9932e35f9, type: 3}
-  - {fileID: 5349011544834349465, guid: 45510a39ed1c0460d9924f51fc678464, type: 3}
-  - {fileID: 5349011544834349465, guid: e043fd0bb51324659a68206e1c3cd8a6, type: 3}
-  - {fileID: 5349011544834349465, guid: b013b1a4cf4ba428c8683162ee5f63ca, type: 3}
-  - {fileID: 5349011544834349465, guid: 24e9d679459a7487b94cc095f4558c75, type: 3}
+  - {fileID: 21300000, guid: 1a89cdb3fc1a2434788214601099c42e, type: 3}
+  - {fileID: 21300000, guid: d7f35e8865fcc47828374eda1d95285d, type: 3}
+  - {fileID: 21300000, guid: cd35a89165e1e43dcb3b9b7522821581, type: 3}
+  - {fileID: 21300000, guid: 97b33d7819cd04296963f1102270e2ff, type: 3}
+  - {fileID: 21300000, guid: 1dfa555031c3e49acaa7ed6a2e219826, type: 3}
+  - {fileID: 21300000, guid: 82b5aa484c282426aa92c4a49a508131, type: 3}
+  - {fileID: 21300000, guid: 6dc7cff22fc47431b86ef959c5ff1591, type: 3}
   SkillArts:
   - Skill: Slash
     Art: {fileID: -6622703189942226176, guid: 4f1bf86aa23663f458bd6832aef91787, type: 3}
