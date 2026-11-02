@@ -2231,15 +2231,24 @@ half4 ShapeCrack(ShapeIn s)
 // the board's radius): nothing before the first, 0.15 after it and 0.95 after the fourth.
 static const float GlassSnaps = 4.0;
 
+// The card's half width on the board (a battle card is 70 by 98 dots), how far in its frame the
+// cracks stop, and how many pixels tall a card is where the cracks are drawn at their full width.
+static const float GlassCardHalfWidth = 70.0 / 98.0;
+static const float GlassFrameInset = 0.04;
+static const float GlassFullPixels = 470.0;
+
 float GlassReach(float n)
 {
     return n <= 0 ? 0 : 0.15 + 0.8 * pow(saturate(n / GlassSnaps), 1.1);
 }
 
-// A card cracking like glass round a point, on an upright board: a web of hairline cracks (the
-// borders of Voronoi cells, small near the point and larger further out, so they run out from it
-// and are joined across) with a white-hot core of one to two and a half pixels and a fine glow of
-// the tint, the faces between them not lit. It cracks outward in sudden snaps (ぴき): k counts the
+// A card cracking like glass round a point, on an upright board as tall as the card: a web of
+// hairline cracks (the borders of Voronoi cells, small near the point and larger further out, so
+// they run out from it and are joined across) with a white-hot core and a fine glow of the tint,
+// the faces between them not lit. The cracks stay inside the card (GlassCardHalfWidth of the
+// board across, inside its frame) and are as fine for its size on a small card as on a large one:
+// their core is one to two and a half pixels on a card GlassFullPixels tall, a little thinner and
+// fainter on a smaller one (never under about a pixel, so the lines do not break into dots). It cracks outward in sudden snaps (ぴき): k counts the
 // snaps so far (0 to 4, its whole part), each reaching at once a step further out, and its
 // fraction is the time since the last, the cracks that snap just broke flashing white for a
 // moment. It is eaten from the outside in as rem falls. Light only (alpha 0).
@@ -2255,19 +2264,27 @@ half4 ShapeGlassCrack(ShapeIn s)
     float border;
     float2 cell = VoronoiCellBorder(m, border);
     float bw = max(fwidth(border), 1e-4);
+    // How large the card is on the screen, against the size the cracks are drawn for.
+    float fine = clamp(2.0 / max(fwidth(s.p.y), 1e-5) / GlassFullPixels, 0.35, 1.0);
     float jag = (Noise(float3(cell, o.x)) - 0.5) * 0.08;
     float rr = r + jag;
     float shown = 1 - smoothstep(reach - 0.03, reach, rr);
     float fresh = shown * smoothstep(before - 0.02, before + 0.02, rr) * (1 - since) * (1 - since);
     // Not every border breaks, so the cracks run out and branch instead of closing into a net.
     float breaks = step(0.3, Hash(float3(cell, o.y + 2.7)));
-    float core = (1 - smoothstep(bw * 0.7, bw * 1.8, border)) * shown * breaks;
-    float halo = exp(-(border / bw) * (border / bw) / 4.0) * shown * breaks * 0.12;
+    // Never under about a pixel, or a thin line breaks into dots; a small card's are fainter instead.
+    float wide = lerp(1.25, 1.8, fine);
+    float core = (1 - smoothstep(bw * max(0.6, wide * 0.4), bw * wide, border)) * shown * breaks
+        * lerp(0.55, 1.0, fine);
+    float halo = exp(-(border / (bw * wide)) * (border / (bw * wide)) / 4.0) * shown * breaks * 0.12;
     float impact = Gauss(s.r, 0.03) * step(0.5, snaps) + Gauss(s.r, 0.08) * 0.3 * step(0.5, snaps);
+    float aa = max(fwidth(s.p.x), 1e-4);
+    float inside = (1 - smoothstep(GlassCardHalfWidth - GlassFrameInset - aa, GlassCardHalfWidth - GlassFrameInset, abs(s.p.x)))
+        * (1 - smoothstep(1 - GlassFrameInset - aa, 1 - GlassFrameInset, abs(s.p.y)));
     half3 col = half3(1, 1, 1) * core * (1.4 + 2.2 * fresh)
         + s.tint * (halo + core * 0.3)
         + lerp(s.tint, 1, 0.6) * impact * s.rem;
-    return half4(col * BoardFade(s.p), 0);
+    return half4(col * BoardFade(s.p) * inside, 0);
 }
 
 // A whirlwind seen from the side, its foot at the bottom: a funnel widening upward, made of bands

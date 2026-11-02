@@ -235,7 +235,12 @@ namespace Baryonyx.Combat.Presentation
                 caster >= 0 && caster < Allies.Length ? Allies[caster].TargetArea : PartyAnchor;
             // From a branch's first step, it evolves into the branch's last.
             bool deep = !owned && BattleSkillVfx.TierOf(data.Skill) == 1;
-            yield return Vfx.EvolutionOmen((RectTransform)face.transform, user, deep);
+            yield return Vfx.EvolutionOmen(
+                (RectTransform)face.transform,
+                user,
+                deep,
+                CardArtColor.Of(data.Art, BattleSkillVfx.ColorOf(data.Skill))
+            );
             yield return Vfx.EvolutionPresent();
 
             const int none = -1;
@@ -262,8 +267,9 @@ namespace Baryonyx.Combat.Presentation
                 Evolution?.Awakened?.Invoke(data.OwnedCard, pick + 1);
             else
                 Evolution?.Evolved?.Invoke(data.Person, data.Unique, stages[pick]);
+            // 光の色は、カードの挿絵の色から取る（挿絵がなければスキルごとの色）。
             yield return Vfx.EvolutionBurst(
-                BattleSkillVfx.ColorOf(skill.Id),
+                CardArtColor.Of(evolved.Art, BattleSkillVfx.ColorOf(skill.Id)),
                 deep,
                 () => ShowFace(face, evolved)
             );

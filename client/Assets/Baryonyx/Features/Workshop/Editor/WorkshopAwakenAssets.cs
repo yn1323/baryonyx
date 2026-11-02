@@ -259,12 +259,6 @@ namespace Baryonyx.Workshop.Editor
 
             BuildCost(SafeArea(scene), view);
 
-            var flight = Rect("ShardFlight", scene);
-            flight.anchorMin = flight.anchorMax = flight.pivot = new Vector2(0.5f, 0.5f);
-            flight.sizeDelta = Vector2.one * ShardArt * 1.5f;
-            view.ShardFlight = ShardImage(flight);
-            flight.GetComponent<PixelPerfectRawImage>().DotSize = 3f;
-            flight.gameObject.SetActive(false);
             BuildBack(scene, view);
             scene.gameObject.SetActive(false);
         }

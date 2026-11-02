@@ -49,6 +49,12 @@ namespace Baryonyx.Workshop
         public List<WorkshopAwakenRow> Rows = new();
         public TMP_Text Status;
 
+        // 覚醒した段階を大きく見せておく秒数。
+        public const float RevealSeconds = 1.6f;
+
+        // 覚醒した段階を見せる大きさ（戦闘の手札のカードに対する倍率）。戦闘より大きく、説明文まで読ませる。
+        public const float RevealScale = 2.5f;
+
         // 行の高さと、キャラが替わる行の上に空ける間（設計座標）。
         public float RowHeight = 132f;
         public float GroupGap = 36f;
@@ -68,14 +74,11 @@ namespace Baryonyx.Workshop
         public BattleEvolutionChoice Choice;
 
         // 払う物の札：覚醒の欠片の絵と「使う数/持っている数」、払うルーン。足りない数は赤くする。
-        // 覚醒先を選ぶ間と、欠片が飛ぶ間だけ出す。
+        // 覚醒先を選ぶ間だけ出す。
         public GameObject CostCard;
         public RawImage CostShard;
         public TMP_Text ShardCount;
         public TMP_Text RuneCost;
-
-        // チェックを押すと、欠片の札からカードへ飛び込む欠片の絵。
-        public RawImage ShardFlight;
 
         // 幕の上の「もどる」（ヘッダーの「もどる」と同じ所）。覚醒の場面を閉じる。
         public Button SceneBack;
@@ -348,8 +351,6 @@ namespace Baryonyx.Workshop
                 Choice.Close();
             if (Vfx != null && Application.isPlaying)
                 Vfx.Clear();
-            if (ShardFlight != null)
-                ShardFlight.gameObject.SetActive(false);
             if (Scene != null)
                 Scene.SetActive(false);
         }
@@ -374,13 +375,22 @@ namespace Baryonyx.Workshop
         {
             var card = (RectTransform)Origin.transform;
             card.SetParent(Vfx.EvolutionLayer, false);
-            // カードは一覧の行から浮き上がるため、戦闘のようにキャラの足元に魔法陣や光を置かない。
+            // カードは一覧の行から浮き上がるため、戦闘のようにキャラの足元に魔法陣や光を置かず、
+            // 画面の中央で割る。覚醒した段階は、戦闘より長く見せてから行へ戻す。
             Vfx.GroundUnderCaster = false;
+            Vfx.EvolveAtCenter = true;
+            Vfx.RevealSeconds = RevealSeconds;
+            Vfx.RevealScale = RevealScale;
             ShowCost(false);
             ShowCard(Origin, row.Card, row.Character, row.Quality);
             // 枝の2段目へ進むときは、戦闘と同じく深い演出にする。
             bool deep = !row.IsSkillCard && row.Options.All(option => Step(option) == 2);
-            yield return Vfx.EvolutionOmen(card, caster, deep);
+            yield return Vfx.EvolutionOmen(
+                card,
+                caster,
+                deep,
+                ArtColor(row.Card)
+            );
             yield return Vfx.EvolutionPresent();
 
             const int none = -1;
@@ -405,8 +415,7 @@ namespace Baryonyx.Workshop
             choosing = false;
             var option = row.Options[pick];
             var request = EnhancementSession.AwakenAsync(option);
-            // 欠片が札からカードへ飛び込む間に、サーバーの答えを待つ。
-            yield return FlyShard(card);
+            // 払う物の札を下げ、カードが浮いたままサーバーの答えを待つ。
             ShowCost(false);
             while (!request.IsCompleted)
                 yield return null;
@@ -433,13 +442,12 @@ namespace Baryonyx.Workshop
                     .ToList();
             RefreshShards();
             var next = option.Card?.WithMultiplier(row.Multiplier);
-            // 割れて覚醒した段階が現れ、行のキャラへ飛び込む。
+            // 割れて覚醒した段階が大きく現れ、読める間だけ見せてから、行のキャラへ飛び込む。
             yield return Vfx.EvolutionBurst(
-                BattleSkillVfx.ColorOf(next?.Id ?? ""),
+                ArtColor(next),
                 Step(option) == 2,
                 () => ShowCard(Origin, next, row.Character, row.Quality)
             );
-            ShowNotice(AwakenedText(option));
             busy = false;
             running = null;
             StopScene();
@@ -448,35 +456,15 @@ namespace Baryonyx.Workshop
             done.TrySetResult(true);
         }
 
+        // 演出の光の色：カードの挿絵の色（挿絵がなければスキルごとの色）。
+        private Color ArtColor(CardSkill card) =>
+            CardArtColor.Of(
+                card != null && Party != null ? Party.ArtOf(card.Id) : null,
+                BattleSkillVfx.ColorOf(card?.Id ?? "")
+            );
+
         private static int Step(AwakeningOption option) =>
             option.IsSkillCard ? 1 : UniqueSkillTreeShape.Step(option.Stage);
-
-        // 欠片の札から、上に浮かぶカードへ、弧を描いて飛び込む。
-        private IEnumerator FlyShard(RectTransform card)
-        {
-            if (ShardFlight == null || CostShard == null)
-                yield break;
-            var flight = ShardFlight.rectTransform;
-            var parent = (RectTransform)flight.parent;
-            Vector2 Local(RectTransform target) =>
-                parent.InverseTransformPoint(target.TransformPoint(target.rect.center));
-            var from = Local(CostShard.rectTransform);
-            var to = Local(card);
-            flight.gameObject.SetActive(true);
-            const float seconds = 0.55f;
-            for (float t = 0f; t < seconds; t += Time.unscaledDeltaTime)
-            {
-                float k = t / seconds;
-                float ease = k * k * (3f - 2f * k);
-                var at = Vector2.Lerp(from, to, ease) + Vector2.up * Mathf.Sin(k * Mathf.PI) * 220f;
-                flight.anchoredPosition = at;
-                flight.localScale = Vector3.one * Mathf.Lerp(1.2f, 0.4f, ease);
-                flight.localEulerAngles = new Vector3(0f, 0f, k * 360f);
-                ShardFlight.color = new Color(1f, 1f, 1f, k < 0.85f ? 1f : (1f - k) / 0.15f);
-                yield return null;
-            }
-            flight.gameObject.SetActive(false);
-        }
 
         private List<BattleEvolutionChoice.Option> OptionsOf(AwakeningRow row)
         {
@@ -590,9 +578,6 @@ namespace Baryonyx.Workshop
 
         // 足りない数の色（品質強化の「足りません」と同じ赤）。
         private static readonly Color Short = new(1f, 0.54f, 0.48f);
-
-        public static string AwakenedText(AwakeningOption option) =>
-            $"「{option.From?.Name}」が「{option.Card?.Name}」に覚醒した";
 
         private static T At<T>(T[] items, int index)
             where T : class =>

@@ -492,7 +492,12 @@ namespace Baryonyx.Combat.Presentation
             int user = Mathf.Clamp((int)from.User, 0, Party.Length - 1);
             // From a branch's first step, it evolves into the branch's last.
             bool deep = BattleSkillVfx.TierOf(from.Id) == 1;
-            yield return Vfx.EvolutionOmen((RectTransform)card.transform, Party[user], deep);
+            yield return Vfx.EvolutionOmen(
+                (RectTransform)card.transform,
+                Party[user],
+                deep,
+                CardArtColor.Of(At(CardArts, IndexOf(from)), BattleSkillVfx.ColorOf(from.Id))
+            );
             int pick = 0;
             if (Choice != null)
             {
@@ -519,7 +524,7 @@ namespace Baryonyx.Combat.Presentation
             acquired.Add(to.Id);
             done(to);
             yield return Vfx.EvolutionBurst(
-                BattleSkillVfx.UniqueColor(to.Id),
+                CardArtColor.Of(At(CardArts, IndexOf(to)), BattleSkillVfx.UniqueColor(to.Id)),
                 deep,
                 () => ShowCard(card, to)
             );

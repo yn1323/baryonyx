@@ -218,7 +218,6 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(awaken.Choice.ConfirmButton.interactable, Is.True);
             awaken.Choice.ConfirmButton.onClick.Invoke();
             yield return SceneTests.WaitForTask(awaken.Work);
-            Assert.That(view.ToastMessage, Is.EqualTo(WorkshopAwakenView.AwakenedText(option)));
             var progress = UniqueSkillSession.ProgressOf(option.CharacterId, option.Index, null);
             Assert.That(progress.Has(option.Stage), Is.True);
             Assert.That(progress.Set, Is.EqualTo(option.Stage));
