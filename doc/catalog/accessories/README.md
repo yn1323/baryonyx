@@ -5,6 +5,7 @@
 個別内容と決定状態は、下の索引から各定義を参照する。
 画像対象テンプレートを使う。
 IDの接頭辞は `accessory-`、メタデータの `category` は `accessories` とする。
+今のアクセサリーの種類・☆・効果・倍率の上限の仮の値は [EquipmentCatalog](../../../client/Assets/Baryonyx/Features/Equipment/Runtime/EquipmentCatalog.cs) にある（[装備の実装との対応](../../features/equipment.md#実装との対応)）。
 
 ## 個別データの索引
 
@@ -14,13 +15,12 @@ IDの接頭辞は `accessory-`、メタデータの `category` は `accessories`
 
 ## 合成のレシピ
 
-[合成](../../features/synthesis.md#レシピ)で作るときの材料である。材料はすべてそろえて、すべて使う。
-材料のどれか1つでも手に入れたことがあれば、商会の合成の一覧に出る。
-「（特別）」は、アイテムではない材料（決まった装備・カスタムスキル）である。出来上がる品質は特別な材料の品質の平均で、特別な材料のないレシピは品質C（×1.00）になる。
-費用は☆2 200、☆3 400、☆4 800ルーン。
+[合成](../../features/synthesis.md#レシピ)で作るときの材料である。決まりは[レシピ](../../features/synthesis.md#レシピ)・[出来上がる品質](../../features/synthesis.md#出来上がる品質)・[費用](../../features/synthesis.md#費用)に従う。
+「（特別）」は、アイテムではない材料（決まった装備・カスタムスキル）である。
 組み合わせは2026-10-31にこちらで決めた仮の値である（[レシピの決め方](../../features/synthesis.md#レシピの決め方)）。
+この表の材料はサーバーの [recipes.ts](../../../server/src/features/workshop/recipes.ts) とクライアントの [WorkshopRecipes](../../../client/Assets/Baryonyx/Features/Workshop/Runtime/WorkshopRecipes.cs)、名前と☆は [EquipmentCatalog](../../../client/Assets/Baryonyx/Features/Equipment/Runtime/EquipmentCatalog.cs) の写しで、正本はコードである（2026-11-02、ユーザーの判断）。直すときはコードを先に直し、同じ変更で表をそろえる。
 
-| ID | 名前 | ☆1 | 行き先 | 材料 |
+| ID | 名前 | ☆ | 行き先 | 材料 |
 |---|---|---|---|---|
 | acorn-brooch | どんぐりのブローチ | ☆2 | ミストラ遺跡 | どんぐり×3 |
 | dew-pendant | 朝露のペンダント | ☆3 | ミストラ遺跡 | 朝露の小瓶×2・苔の綿×1・薬草×1 |
@@ -44,13 +44,11 @@ IDの接頭辞は `accessory-`、メタデータの `category` は `accessories`
 |---|---|
 | 効果（底上げするステータスと量、ちょっとした効果） | 個別値は未決。パッシブスキルのように、付けたキャラのステータスの底上げや、ちょっとした効果を与える（[アクセサリー](../../features/equipment.md#アクセサリー)） |
 | レア度・倍率の上限 | 個別値は未決。レア度は☆1〜☆5で種類ごとに決め（[レア度](../../features/inventory.md#レア度)）、1つずつ倍率と品質を持つ（[品質](../../features/inventory.md#品質)） |
-| 入手先・合成での用途 | 未決（[合成](../../features/synthesis.md)） |
+| 入手先・合成での用途 | 入手先は[冒険のドロップ](../../features/drops.md#行き先ごとの一覧)、合成の材料は[合成のレシピ](#合成のレシピ)にある |
 | 重ね付け・パッシブスキルとの関係 | 未決 |
 | 形状・材質・配色・装飾・発光 | 未決 |
 | 同系列のアクセサリーと区別する特徴 | 未決 |
 
 ## 追加方法
 
-[画像対象テンプレート](../templates/visual-entity.md)または[定義テンプレート](../templates/definition.md)をこの分類にコピーし、1対象1ファイルで記入する。
-既存名・ID・画像の有無を確認し、未決欄を推測で埋めない。
-追加後は[索引を再生成](../../tools/README.md)する。
+[個別データの作り方](../README.md#個別データの作り方)に従う。

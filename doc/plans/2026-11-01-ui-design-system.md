@@ -2,12 +2,12 @@
 id: plan-ui-design-system-20261101
 type: reference
 status: 候補
-updated: 2026-11-01
+updated: 2026-11-02
 ---
 
 # 画面のデザインシステムとテンプレートで、似た画面を共通化する
 
-状態：進行中（2026-11-01に第0段から第3段までを実装した。commitはまだ。第4段は地図の作業のcommit待ち、第5段は一部）
+状態：進行中（2026-11-01に第0段から第3段までを実装し、同日にcommitした。第4段が待っていた地図の作業も同日にcommitされたが、第4段の実装の記録はまだない。第5段は一部）
 
 [計画索引](README.md) / [UI設計ルールの共通の部品](../rules/ui-design.md#共通の部品) / [画面一覧と共通UI](../features/screens.md) / [ui-tone-manner](../../.agents/skills/ui-tone-manner/SKILL.md)
 

@@ -4,6 +4,8 @@
 
 ここには個別のキャラ・装備・敵などの設定を置く。
 個別データの登録状況と確度は、分類内の生成索引で確認する。
+ゲームに入っている対象（コードで動く敵・スキル・キャラなど）も、数値・見た目・設定はすべて仮決めのため、status は「候補」のままにする（2026-11-02、ユーザーの判断）。
+固有スキル・装備・アイテムなど、コードにあってまだ個別データのない対象は、今は個別データを作らず、コードと機能の文書（[固有スキルの覚醒](../features/skill-evolution.md)・[装備](../features/equipment.md)・[アイテム](../features/items.md)など）を正本にする（2026-11-02、ユーザーの判断）。
 分類を用意したことは、未決のシステムの採用を意味しない。
 
 | 分類 | 内容 | 個別IDの接頭辞 |
@@ -15,7 +17,7 @@
 | [武器](weapons/README.md) | 武器種・装備枠・参照するステータス | `weapon-` |
 | [防具](armor/README.md) | 防具種・装備枠・参照するステータス | `armor-` |
 | [アクセサリー](accessories/README.md) | 効果（ステータスの底上げなど）・レア度 | `accessory-` |
-| [スキル](skills/README.md) | スキル・固有スキルの分類・属性・コスト | `skill-` |
+| [スキル](skills/README.md) | カスタムスキルの分類・属性・コスト | `skill-` |
 | [職業](classes/README.md) | 役割・得意不得意・キャラクターID | `class-` |
 | [属性](attributes/README.md) | 魔法（炎・氷・雷）・物理（斬・打・貫）の分類 | `attribute-` |
 | [状態異常・強化効果](effects/README.md) | 効果種別・対象・発動条件 | `effect-` |
@@ -32,8 +34,8 @@
 
 ## 個別データの作り方
 
-1. 対象分類の記入項目と関連仕様を確認する。
-2. [画像対象](templates/visual-entity.md)または[定義](templates/definition.md)のテンプレートを分類内へコピーする。
+1. 対象分類の記入項目と関連仕様、既存の名前・ID・画像の有無を確認する。
+2. [画像対象](templates/visual-entity.md)または[定義](templates/definition.md)のテンプレートを分類内へコピーし、1対象1ファイルで記入する。未決欄を推測で埋めない。
 3. IDと同じ名前のMDファイルにし、メタデータのID・type・category・name・status・updatedを更新する。
 4. 根拠・確定事項・候補・未決事項を分けて記す。画像化する対象は[比較索引](../art/visual-index.md)と類似対象の詳細を読む。
 5. [索引生成・検査](../tools/README.md)を行う。

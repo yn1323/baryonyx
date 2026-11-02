@@ -2,7 +2,7 @@
 id: passive-purifying-vow
 type: visual-entity
 status: 候補
-updated: 2026-10-21
+updated: 2026-11-02
 name: 浄めの誓い
 category: passives
 silhouette: 毒の泡をはじく白い紋章
@@ -27,7 +27,7 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Passives/PassivePurifyi
 | 定義の根拠・決定日・参照元 | 2026-10-21、ユーザーの依頼「パッシブスキルをまじめに考えてほしい」により作成した仮設定 |
 | 役割・説明 | 味方に付く[状態異常]を、1ターンに1回防ぐ。 |
 | 関連する仕様・個別ID | [パッシブスキル](../../features/passives.md#仮データの9人のパッシブ)・[戦闘システム](../../features/combat.md) |
-| 必要な画像用途 | パッシブのアイコン（24×24ドット。育成の画面では2倍で表示） |
+| 必要な画像用途 | パッシブのアイコン（24×24ドット。育成の画面では3倍で表示） |
 | ゲーム内の実装・アセット | 定義 [CombatPassives](../../../client/Assets/Baryonyx/Features/Combat/Runtime/CombatPassives.cs)（`PurifyingVow`）、戦闘での働き [BattleInspectView.Passives](../../../client/Assets/Baryonyx/Features/Combat/Presentation/BattleInspectView.Passives.cs)、アイコン `PassivePurifyingVow.aseprite` |
 
 ## 確定した設定
@@ -59,9 +59,9 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Passives/PassivePurifyi
 | 所持者・解放するレベル | アンセルム・Lv 10 | [解放するレベル](../../features/passives.md#解放するレベル) | 仮 |
 | 発動条件 | 敵の技で、味方に状態異常が付くとき（付与率の判定に当たったあと） | — | 仮 |
 | 効果 | その状態異常を付けない。1ターン（味方と敵が1回ずつ動く間）に1回 | [戦闘システム](../../features/combat.md) | 仮 |
-| 効果量・対象 | 状態異常1回・味方全員 | 量はステータスの割合で書く（[カードの数値の見せ方](../../features/combat.md#カードの数値の見せ方)） | 仮 |
+| 効果量・対象 | 状態異常1回・味方全員 | 量はステータスの割合で書く（[カードの数値の見せ方](../../features/combat/cards.md#カードの数値の見せ方)） | 仮 |
 | 常時・条件付き・回数制限 | 条件付き。1ターンに1回 | — | 仮 |
-| 重複・相互作用・対象外 | 敵の毒・出血・やけど・防御ダウン・絡みつき（[敵の行動の仮設定](../../features/combat-enemy-behavior.md)）に効く。癒しの風の聖域の枝（状態異常を消す）は付いたあとに消し、こちらは付く前に防ぐ | [パッシブ同士のつながり](../../features/passives.md#パッシブ同士のつながり) | 仮 |
+| 重複・相互作用・対象外 | 敵の毒・出血・やけど・防御ダウン・絡みつき（[敵の行動の仮設定](../../features/combat-enemy-behavior.md)）に効く。癒しの風の聖域の枝（状態異常を消す）は付いたあとに消し、こちらは付く前に防ぐ。今の戦闘では、敵の技が味方に状態異常を付けないため働かない（[パッシブの未決事項](../../features/passives.md#未決事項)） | [パッシブ同士のつながり](../../features/passives.md#パッシブ同士のつながり) | 仮 |
 | 表示文・アイコンの要否 | 説明文は上のとおり。働いたときに持ち主の上に名前を出す。アイコンは `PassivePurifyingVow.aseprite` | [働いたことを見せる](../../features/passives.md#働いたことを見せる) | 仮 |
 
 ## 外見を表現する文章
@@ -105,7 +105,7 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Passives/PassivePurifyi
 | 出力画像のパス・生成日・案のID | `output/icons/passives/passive-icons-b.png`（2026-10-21、Git対象外） |
 | 採用・候補・不採用と理由 | 採用（候補）。検査スクリプトの `ui-icon` の検査を通った |
 | 採用画像と文章の差・反映方法 | なし |
-| Unityアセットのパス・GUID・利用画面 | `Assets/Baryonyx/Features/Combat/UI/Art/Passives/PassivePurifyingVow.aseprite`。育成の画面のパッシブの行、展示室の画像のカテゴリ |
+| Unityアセットのパス・GUID・利用画面 | `Assets/Baryonyx/Features/Combat/UI/Art/Passives/PassivePurifyingVow.aseprite`。育成の画面のパッシブの行、展示室のUIのカテゴリ |
 
 ## 未決事項
 
@@ -120,3 +120,4 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Passives/PassivePurifyi
 |---|---|---|---|
 | 2026-10-21 | 仮設定として作成 | ユーザーの依頼（パッシブスキルをまじめに考える） | [パッシブスキル](../../features/passives.md) |
 | 2026-10-21 | 冒険の戦闘で働くようにし、アイコンを描いた | ユーザーの依頼（画像と、冒険で適用されるようにする） | [実装との対応](../../features/passives.md#実装との対応) |
+| 2026-11-02 | スキルとdocの整理で、今のコードに合わせて、育成の画面でのアイコンの倍率（2倍→3倍）と展示室のカテゴリ（画像→UI）を直した。今の戦闘では働く場面がないことも書き足した | 根拠：TrainingAssets.cs のパッシブの行のアイコン（72×72）、展示室の登録（UIのカテゴリ）。味方に状態を付ける敵の技は EnemyMoves.cs で選ばれない（Unsupported） | [実装との対応](../../features/passives.md#実装との対応) |

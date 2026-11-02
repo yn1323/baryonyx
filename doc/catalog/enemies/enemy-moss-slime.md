@@ -2,14 +2,14 @@
 id: enemy-moss-slime
 type: visual-entity
 status: 候補
-updated: 2026-10-21
+updated: 2026-11-02
 name: 苔スライム
 category: enemies
 silhouette: 横に広い低い山形。背中の右側に苔のかたまりが乗り、若芽が上へ突き出る
 palette: 青緑 | 苔の黄緑 | 淡い黄緑の光
 motifs: 苔 | 若芽 | 朝露
 personality: のんびりしていて、背中の苔を育てることにだけ熱心
-art_status: 戦闘画面のモックで表示中
+art_status: 冒険の戦闘と戦闘画面のモックで表示中
 art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/MossSlime.aseprite
 ---
 
@@ -18,10 +18,10 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/MossSlime.asepr
 [敵の定義](README.md) / [関連仕様](../../features/combat-enemy-behavior.md)
 
 森の遺跡に出る雑魚のうち、最も小さい敵である。
-HPと攻撃の威力の実行上の正本は、戦闘画面のモックの [BattleInspectAssets](../../../client/Assets/Baryonyx/Features/Combat/Editor/BattleInspectAssets.cs)（`MossSlime`）とする。
+冒険の戦闘のステータスの実行上の正本は [CombatEnemyStats](../../../client/Assets/Baryonyx/Features/Combat/Runtime/CombatEnemyStats.cs)、単体で開く戦闘画面のモックのHPと攻撃の威力の正本は [BattleInspectAssets](../../../client/Assets/Baryonyx/Features/Combat/Editor/BattleInspectAssets.cs)（`MossSlime`）とする。
 この文書は、出現する場所とLv、ステータス、使う技と行動パターン、外見と性格の設定を持つ。
 技の効果と演出は[敵の技の定義](../enemy-skills/README.md)に置く。
-2026-10-04の時点で、モックで使える技は「たいあたり」だけであり、ほかの技とステータスは未実装である。
+技と行動パターンは、2026-10-22から [CombatEnemyBehaviors](../../../client/Assets/Baryonyx/Features/Combat/Runtime/CombatEnemyBehaviors.cs) で動く。戦闘にまだない効果の技（胞子ばらまき）は使わない（[敵の行動の仮設定](../../features/combat-enemy-behavior.md)）。
 
 ## 識別情報と根拠
 
@@ -32,7 +32,7 @@ HPと攻撃の威力の実行上の正本は、戦闘画面のモックの [Batt
 | 元となる対象・亜種・衣装差分のID | なし |
 | 参照する仕様・関連する個別ID | [戦闘システム](../../features/combat.md)、[苔むした狼](enemy-moss-wolf.md)、[森の守り手](enemy-forest-guardian.md) |
 | 必要な画像用途 | 戦闘の1枚絵（64×64）。行動順のコマ（24×24）は、1枚絵の左上から(2, 36)の位置を切り出す |
-| ゲーム内の実装・アセット | 画像 `MossSlime.aseprite`、HPと攻撃 `BattleInspectAssets.cs`、冒険の敵の組み合わせ `AdventureCatalog.cs` |
+| ゲーム内の実装・アセット | 画像 `MossSlime.aseprite`、HPと攻撃 `BattleInspectAssets.cs`、冒険の戦闘のステータス `CombatEnemyStats.cs`、技と行動パターン `CombatEnemyBehaviors.cs`、冒険の敵の組み合わせ `AdventureCatalog.cs` |
 
 ## 確定した設定
 
@@ -40,17 +40,10 @@ HPと攻撃の威力の実行上の正本は、戦闘画面のモックの [Batt
 
 ## 出現する場所
 
-| 行き先 | マス | 敵の組み合わせ | Lv |
-|---|---|---|---|
-| 森の遺跡（`forest-ruins`） | 第2層の戦闘のマス（`moss-hall`）、第3層の戦闘のマス（`root-gallery`） | `forest-pack`：苔スライムと苔むした狼 | 10（仮） |
-| 森の遺跡（`forest-ruins`） | 第3層の強敵のマス（`guardian-gate`） | `forest-elite`：同じ2体のHPを1.6倍にした仮の強敵 | 10（仮） |
-| 森の遺跡（`forest-ruins`） | 第4層の最奥の間（`sanctum`） | `forest-boss`：森の守り手の取り巻き。守り手の[仲間を呼ぶ](../enemy-skills/enemy-skill-call-ally.md)でも現れる | 10（仮） |
-
-戦闘の背景は朝霧の森（`MistyWoods`）である。
-マスの構成の正本は[サーバーの冒険先の定義](../../../server/src/features/adventure/catalog.ts)、組み合わせの中身は [AdventureCatalog](../../../client/Assets/Baryonyx/Features/Adventure/Runtime/AdventureCatalog.cs) にある。
+今の出る行き先とLv（仮）は[行き先と敵](../../features/stage-progression/destinations.md#行き先と敵)にある（割り振りの正本は [AdventureCatalog](../../../client/Assets/Baryonyx/Features/Adventure/Runtime/AdventureCatalog.cs) の `Areas`）。
+マスの構成の正本は[サーバーの冒険先の定義](../../../server/src/features/adventure/catalog.ts)である。
 行き先の個別定義（`stage-`）はまだない（[ステージの定義](../stages/README.md)）。
 Lv10は、HPと物攻が戦闘画面のモックの値とほぼ同じになるLvである。
-強敵のマスは、HPを1.6倍にする代わりにLvを上げて表す案もある（Lvが5高いと、8つの項目がすべて約12%上がる）。
 
 ## 分類固有のデータ
 
@@ -70,10 +63,10 @@ Lv10は、HPと物攻が戦闘画面のモックの値とほぼ同じになるLv
 | Lv | HP | 物攻 | 物防 | 属攻 | 属防 | 速度 | 会心 | 幸運 |
 |---|---|---|---|---|---|---|---|---|
 | 100（定義の値） | 3000 | 760 | 330 | 650 | 160 | 790 | 150 | 300 |
-| 10（森の遺跡） | 370 | 94 | 41 | 80 | 20 | 39 | 18 | 37 |
+| 10（森の遺跡） | 370 | 94 | 41 | 80 | 20 | 97 | 18 | 37 |
 
 Lv10の行は、Lv100の値に成長率（12.3%）を掛けて四捨五入した値である（[レベルとステータス](../../features/progression.md#レベルとステータス)）。
-HPと物攻は、2026-10-04に[ダメージの計算](../../features/combat.md#ダメージと防御)へ防御が入ったのに合わせて見直した。
+HPと物攻は、2026-10-04に[ダメージの計算](../../features/combat/rules.md#ダメージと防御)へ防御が入ったのに合わせて見直した。
 HPは、見直す前のモックで倒すまでにかかった回数が変わらないよう、味方のカードが物防・属防で減る分だけ下げた（Lv10で420→370）。
 物攻は、味方4人が物防で受けたあとのダメージの平均が、見直す前のモックの値とほぼ同じになるよう上げた（Lv10で55→94）。
 Lv10のHPと物攻は、モックの値（`MaxHp`・`Power`）と同じである。
@@ -157,25 +150,25 @@ Lv10のHPと物攻は、モックの値（`MaxHp`・`Power`）と同じである
 | 用途・構図・視点・ポーズ・背景 | 戦闘の1枚絵。左向きの横向きで全身を描き、背景は透明 |
 | 解像度・透過・ファイル形式・差分規格 | 64×64、32色＋透明、インデックスカラーの `.aseprite`（[ドット絵の制作規格](../../art/direction.md#ドット絵の制作規格)） |
 | 外見の指示文（この敵の部分） | 「不透明な青緑のスライム。横に広い低い山形で、左を向いた横向き。背中の右半分を苔のかたまりが覆い、双葉の若芽と、細い茎の先に小さな傘を付けた芽が立つ。体の左寄りに縦長の淡い黄緑の目が2つ。体の表面に白っぽい光の点。裾は丸い粒を連ねたように床へ広がる。口・手足はない」 |
-| 英語の短い説明（PixelLab用） | `opaque teal slime, wide low dome, clump of moss with small sprouts on its back, two tall pale green eyes, side view facing left` |
+| 英語の短い説明 | `opaque teal slime, wide low dome, clump of moss with small sprouts on its back, two tall pale green eyes, side view facing left` |
 | 変更しない特徴・今回だけ変える特徴 | 変えない特徴は「小型ドット絵でも残す特徴」とする。作り直したら、行動順のコマの切り出し位置（左上から(2, 36)）に顔が入るかを確かめ、ずれたら `BattleInspectAssets` の `Face` を直す |
 | 実際に使った指示文 | `output/battle-inspect/enemies.request.md`（Git対象外）。3体を1枚に並べた依頼で、この敵の部分は「半透明ではなく不透明な青緑のスライムに苔と小さな芽。目は光る点」だった |
 | 入力にした文書のID・Gitコミット等の版 | なし（この定義を作る前の生成） |
 | 参照画像のパス・出所・利用条件 | なし |
 | 使用ツール・モデル・再現用設定 | Codex CLIの組み込みの画像生成（モデルは既定） |
 | 出力画像のパス・生成日・案のID | 2026-09-27生成の `output/battle-inspect/enemies.png`（Git対象外）の左の1体。背景を抜いて切り出し、64×64へ縮小して32色へ減色した。2026-09-29にインデックスカラーの `.aseprite` へ変換した（[戦闘画面の見た目モック](../../features/screens/battle.md#戦闘画面の見た目モック)） |
-| 採用・候補・不採用と理由 | 戦闘画面のモックで採用中（候補） |
+| 採用・候補・不採用と理由 | 戦闘画面のモックと冒険の戦闘で採用中（候補） |
 | 採用画像と文章の差・反映方法 | 生成時の指示は「目は光る点」だったが、採用画像の目は縦長の楕円である。文章を採用画像に合わせた |
-| Unityアセットのパス・GUID・利用画面 | `client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/MossSlime.aseprite`。戦闘画面のモック、冒険の戦闘、敵の挙動デバッグルーム、展示室 |
+| Unityアセットのパス・GUID・利用画面 | `client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/MossSlime.aseprite`。戦闘画面のモック、冒険の戦闘、スキルのデバッグルーム、敵の挙動デバッグルーム、マスの出来事の窓（戦闘）、ライブラリ、展示室 |
 
 ## 未決事項
 
 | 項目 | 決める内容・先に必要な判断 |
 |---|---|
-| 数値 | ステータス、出現するLv、行動の割合、激化の倍率は仮。[戦闘の未決事項](../../features/combat.md#未決事項)の数値が決まったら見直す |
-| 速度・会心・幸運 | 速度は、味方の合計と比べる方法（[ターン順](../../features/combat.md#ターン順)）が決まったら尺度を合わせ直す。会心と幸運は、使い道（[候補](../../features/party.md#ステータスの項目)）が決まったら見直す |
-| 弱点の数 | 1体に複数の弱点を持たせるか（[弱点の開示](../../features/combat.md#弱点の開示)の未決） |
-| 実装 | 技とステータスは未実装。実装するときは[敵の挙動デバッグルーム](../../features/screens/debug-rooms.md#敵の挙動デバッグルーム)の行動も増やす |
+| 数値 | ステータス、出現するLv、行動の割合、激化の倍率は仮。[戦闘の未決事項](../../features/combat/implementation.md#未決事項)の数値が決まったら見直す |
+| 速度・会心・幸運 | 速度は、味方の合計と比べる方法（[ターン順](../../features/combat/rules.md#ターン順)）が決まったら尺度を合わせ直す。会心と幸運は、使い道（[候補](../../features/party.md#ステータスの項目)）が決まったら見直す |
+| 弱点の数 | 1体に複数の弱点を持たせるか（[戦闘の未決事項](../../features/combat/implementation.md#未決事項)の「弱点の開示」） |
+| 実装 | 戦闘にまだない効果の技（胞子ばらまき）は使わない（[敵の行動の仮設定](../../features/combat-enemy-behavior.md)）。実装するときは[敵の挙動デバッグルーム](../../features/screens/debug-rooms.md#敵の挙動デバッグルーム)の行動も増やす |
 
 ## 変更と判断の記録
 
@@ -183,4 +176,5 @@ Lv10のHPと物攻は、モックの値（`MaxHp`・`Power`）と同じである
 |---|---|---|---|
 | 2026-09-27 | 戦闘画面のモック用に、画像と仮のHP・攻撃を作った | 戦闘画面の見た目を確かめるため | [戦闘画面の見た目モック](../../features/screens/battle.md#戦闘画面の見た目モック) |
 | 2026-10-04 | 定義を作り、出現する場所・ステータス・技3つ・行動パターン・演出・外見・性格を候補として書いた。ステータスは、味方と同じ8つの項目（ユーザー決定）を、Lv100の値で書いた。技は[敵の技の定義](../enemy-skills/README.md)へ移し、たいあたりと胞子ばらまきを共通技にした | ユーザーの依頼 | [敵の行動の仮設定](../../features/combat-enemy-behavior.md)、[ステータスの項目](../../features/party.md#ステータスの項目)、[レベルとステータス](../../features/progression.md#レベルとステータス) |
-| 2026-10-04 | ダメージの計算に防御が入ったのに合わせ、HPと物攻のLv100の値を見直した（HP 3400→3000、物攻 450→760）。技の括弧内の値も直した | 見直す前のモックと、倒すまでの回数と受けるダメージを揃えるため（ユーザーの指示） | [ダメージと防御](../../features/combat.md#ダメージと防御) |
+| 2026-10-04 | ダメージの計算に防御が入ったのに合わせ、HPと物攻のLv100の値を見直した（HP 3400→3000、物攻 450→760）。技の括弧内の値も直した | 見直す前のモックと、倒すまでの回数と受けるダメージを揃えるため（ユーザーの指示） | [ダメージと防御](../../features/combat/rules.md#ダメージと防御) |
+| 2026-11-02 | スキルとdocの整理で、今のコードに合わせて、技・行動パターン・出る行き先を未実装・未配置とした記述を直した。森の遺跡だけを前提にした背景の文と、強敵のマスをHP1.6倍で表す前の案を外し、Lv10の速度を今のLv100の値（790）から出し直した（39→97）。絵を使う画面に、ライブラリなどを足した | 根拠：53体すべてが CombatEnemyStats・CombatEnemyBehaviors で動き、AdventureCatalog の行き先に出る（この敵はしじまの沼にも出る）。強い魔物の気配はLv+5・HP4.6倍（[行き先と敵](../../features/stage-progression/destinations.md#行き先と敵)）。Lv100の速度は2026-10-24に320→790へ変わっていた。絵は LibraryScreenAssets・WorldEventPanelAssets・BattleSkillVfxAssets も使う | [行き先と敵](../../features/stage-progression/destinations.md#行き先と敵)、[敵の行動の仮設定](../../features/combat-enemy-behavior.md) |

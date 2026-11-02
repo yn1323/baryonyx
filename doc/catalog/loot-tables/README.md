@@ -5,6 +5,7 @@
 個別内容と決定状態は、下の索引から各定義を参照する。
 定義テンプレートを使う。
 IDの接頭辞は `loot-`、メタデータの `category` は `loot-tables` とする。
+冒険のドロップの抽選と行き先ごとの一覧は[冒険のドロップの仮設定](../../features/drops.md#仮設定)にあり、値の正本はサーバーの [drops.ts](../../../server/src/features/adventure/drops.ts) である。この分類にはまだ個別データを置いていない。
 
 ## 個別データの索引
 
@@ -24,6 +25,4 @@ IDの接頭辞は `loot-`、メタデータの `category` は `loot-tables` と�
 
 ## 追加方法
 
-[画像対象テンプレート](../templates/visual-entity.md)または[定義テンプレート](../templates/definition.md)をこの分類にコピーし、1対象1ファイルで記入する。
-既存名・ID・画像の有無を確認し、未決欄を推測で埋めない。
-追加後は[索引を再生成](../../tools/README.md)する。
+[個別データの作り方](../README.md#個別データの作り方)に従う。

@@ -2,7 +2,7 @@
 id: enemy-skill-coin-pouch-scamper
 type: definition
 status: 候補
-updated: 2026-10-19
+updated: 2026-11-02
 name: すたこら逃げ
 category: enemy-skills
 ---
@@ -20,7 +20,7 @@ category: enemy-skills
 | 定義の根拠・決定日・参照元 | 2026-10-19、ユーザーの依頼（敵50体を試作し、文書カタログ・クライアント・サーバーにそろえる）で、[金貨袋](../enemies/enemy-coin-pouch.md)の技として作った |
 | 役割・説明 | 自分の逃走。倒す前に逃げられると落とし物を得られない |
 | 関連する仕様・個別ID | 使う敵：[金貨袋](../enemies/enemy-coin-pouch.md)。[敵の行動の仮設定](../../features/combat-enemy-behavior.md) |
-| 実装・ゲームマスタの場所 | 未実装 |
+| 実装・ゲームマスタの場所 | 未実装（[CombatEnemyBehaviors](../../../client/Assets/Baryonyx/Features/Combat/Runtime/CombatEnemyBehaviors.cs) に名前だけあり、戦闘では選ばれない） |
 
 ## 確定した設定
 
@@ -32,8 +32,8 @@ category: enemy-skills
 |---|---|---|---|
 | 区分 | 固有技（[金貨袋](../enemies/enemy-coin-pouch.md)） | [共通技と固有技](README.md#共通技と固有技) | 候補 |
 | 種類・対象 | 逃走・自分 | [記入する項目](README.md#記入する項目)の8種類にない。予告の種類を足すかは未決 | 候補 |
-| 物理・魔法と属性 | ダメージなし | 味方は物理の技を物防で、魔法の技を属防で受ける（[使い道の候補](../../features/party.md#ステータスの項目)） | 候補 |
-| 効果 | 戦闘から去る。逃げた敵からは落とし物を得られない。前のターンに予告を出してから使う | 使う敵のステータスの割合（[威力の決め方](../../features/combat.md#威力の決め方)）。状態は[カードの状態の仮設定](../../features/combat.md#カードの状態の仮設定)の名前 | 仮 |
+| 物理・魔法と属性 | ダメージなし | [記入する項目](README.md#記入する項目) | 候補 |
+| 効果 | 戦闘から去る。逃げた敵からは落とし物を得られない。前のターンに予告を出してから使う | [記入する項目](README.md#記入する項目) | 仮 |
 | 予告 | 逃走（新しい種類の案） | [記入する項目](README.md#記入する項目) | 候補 |
 | 使う敵 | [金貨袋](../enemies/enemy-coin-pouch.md) | 各敵の定義の「技」の表 | 候補 |
 
@@ -57,7 +57,7 @@ category: enemy-skills
 
 | 項目 | 決める内容・先に必要な判断 |
 |---|---|
-| 数値 | 逃げる条件は敵の定義の行動パターンで決める。[戦闘の未決事項](../../features/combat.md#未決事項)の数値が決まったら見直す |
+| 数値 | 逃げる条件は敵の定義の行動パターンで決める。[戦闘の未決事項](../../features/combat/implementation.md#未決事項)の数値が決まったら見直す |
 | 逃走 | 新しい仕組み。敵が戦闘から去る決まり（逃げた敵を倒した数に入れるか、最後の1体が逃げたら勝ちで終えるか）と、予告の種類に「逃走」を足すか（[敵の行動の仮設定](../../features/combat-enemy-behavior.md)） |
 | 実装 | 未実装。実装するときは[敵の挙動デバッグルーム](../../features/screens/debug-rooms.md#敵の挙動デバッグルーム)の行動にも加える |
 
@@ -66,3 +66,4 @@ category: enemy-skills
 | 日付 | 変更・判断 | 理由・根拠 | 影響するID・仕様 |
 |---|---|---|---|
 | 2026-10-19 | 固有技として定義を作った | ユーザーの依頼 | 使う敵：[金貨袋](../enemies/enemy-coin-pouch.md) |
+| 2026-11-02 | スキルとdocの整理で、今のコードに合わせて「実装・ゲームマスタの場所」を直した | 根拠：CombatEnemyBehaviors で `Other`（戦闘にない効果）として名前だけを持つ | [敵の行動の仮設定](../../features/combat-enemy-behavior.md) |

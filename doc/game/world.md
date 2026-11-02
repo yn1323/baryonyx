@@ -26,5 +26,6 @@ updated: 2026-09-13
 | 物語の進め方、章構成、登場人物 | 未決 |
 | 会話の調子、年齢表現、物語上の避ける表現 | 未決 |
 
+試作の地図と冒険で使う地域・町・行き先の仮の名前は、[入れ子の地図](../features/world-atlas/maps.md#確定している方針)と[行き先と敵](../features/stage-progression/destinations.md#行き先と敵)にある。世界設定としては確定していない。
 地域・人物・組織の個別定義は[世界のデータ](../catalog/world/README.md)、プレイアブル人物は[キャラクター](../catalog/characters/README.md)に置く。
 名称だけを先に創作して確定設定として登録しない。

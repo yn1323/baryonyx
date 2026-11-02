@@ -2,7 +2,7 @@
 id: feature-health-data
 type: specification
 status: 運用中
-updated: 2026-10-05
+updated: 2026-11-02
 ---
 
 # 健康データの読み取りと保存
@@ -21,7 +21,7 @@ Google接続は任意の独立した操作とし、健康データの読み取�
 
 2026-09-24に、健康データを表示していた `Main`・`Wireframe` シーン、歩数画面のUI（View・Prefab）、冒険の試作画面を削除した。
 現在の起動経路では、TopとHomeがゲストのセッションで直近7日分の歩数をサーバーへ同期し、Homeに今日の歩数をACTで表示する。
-日別一覧・JSON詳細・Google接続の画面はなく、Google認証は呼ばれていない。
+健康データの日別一覧・JSON詳細・Google接続の画面はなく（日ごとの歩数とACTはライブラリの[日々の歩数](library.md#日々の歩数)に出す）、Google認証は呼ばれていない。
 削除した画面の構成・文言・寸法と検証記録は[削除した歩数画面の記録](../archive/health-data-local-screen.md)に移した。
 その画面が使っていた `HealthRuntime`・`HealthScreenPresenter`・利用条件の確認（`Requirements`）と、Googleのサインイン後に7日分を保存してからルーンを請求する経路は、どの画面からも使われていなかったため2026-10-25に削除した。
 Google認証の契約とUMoth接続（[Account/Runtime](../../client/Assets/Baryonyx/Features/Account/Runtime)）は残している。
@@ -44,10 +44,10 @@ Androidをビルド対象にしたEditorやDevice Simulatorもプレビューに
 | 場所 | 処理 |
 |---|---|
 | [HealthContracts.cs](../../client/Assets/Baryonyx/Features/Health/Runtime/HealthContracts.cs) | Provider、権限・取得結果の共通型 |
-| [HealthServerSync.cs](../../client/Assets/Baryonyx/Features/Health/Runtime/Sync/HealthServerSync.cs) | 歩数の保存とルーン請求の実行順と、ユーザーごとの取得元ID |
+| [HealthServerSync.cs](../../client/Assets/Baryonyx/Features/Health/Runtime/Sync/HealthServerSync.cs) | 起動時の7日分の保存と、HomeのACTパネルの保存とルーンの請求（1回の要求）の実行と、ユーザーごとの取得元ID |
 | [AccountSessionRunner.cs](../../client/Assets/Baryonyx/Features/Account/Runtime/AccountSessionRunner.cs) | ゲストのログイン、期限の5分前の取り直し、401のときの1回だけのやり直し。全機能で1つを共有する |
-| [HealthApiClient.cs](../../client/Assets/Baryonyx/Features/Health/Runtime/Sync/HealthApiClient.cs) | 歩数の保存要求 |
-| [AccountApiClient.cs](../../client/Assets/Baryonyx/Features/Account/Runtime/AccountApiClient.cs)・[ExerciseRewardsApiClient.cs](../../client/Assets/Baryonyx/Features/ExerciseRewards/Runtime/ExerciseRewardsApiClient.cs) | サーバーへのログイン・ログアウト、ルーン請求・残高の要求 |
+| [HealthApiClient.cs](../../client/Assets/Baryonyx/Features/Health/Runtime/Sync/HealthApiClient.cs) | 歩数の保存・取得と、保存とルーンの請求を1回で行う要求（`POST /v1/exercise/rewards/sync`） |
+| [AccountApiClient.cs](../../client/Assets/Baryonyx/Features/Account/Runtime/AccountApiClient.cs)・[ExerciseRewardsApiClient.cs](../../client/Assets/Baryonyx/Features/ExerciseRewards/Runtime/ExerciseRewardsApiClient.cs) | サーバーへのログイン・ログアウト、所持ルーンの要求と請求の応答の型 |
 | [ServerApi.cs](../../client/Assets/Baryonyx/Shared/Networking/ServerApi.cs) | サーバーURLの検証とHTTP送信 |
 | [HealthConnectProvider.cs](../../client/Assets/Baryonyx/Features/Health/Runtime/HealthConnectProvider.cs) | UnityからAndroidへの呼び出し |
 | [Android連携コード](../../client/Assets/Plugins/Android/BaryonyxHealth.androidlib/src/main/kotlin/com/baryonyx/health/HealthBridge.kt) | Health Connectの権限確認と日別集計 |
@@ -72,18 +72,17 @@ Unityの `Initialize` に渡すGoogleクライアントIDと、サーバーの `
 ローカルのサーバーでは `server/.dev.vars` を作成し、`GOOGLE_CLIENT_ID` にGoogle OAuthのWebクライアントIDを設定する。
 D1マイグレーションを適用してから起動する。
 具体的な起動・環境別の公開手順は [バックエンドの開発環境](../rules/backend-design.md) に従う。
-この機能の作業でリモートDBや公開環境は変更していない。
 
 Unityからの接続先はHTTPSを使用する。
 開発時の例外はループバックHTTPのみとし、AndroidのUSB接続でポートを転送する場合もループバックを使う。
 認証トークンを送る接続で証明書検証を無効にしない。
 Androidのパッケージ名は、ローカル・CIともに `com.croissantlab.baryonyx` を使う。
-Google OAuthのAndroidクライアントには、このパッケージ名と実機へインストールするAPKの署名証明書のSHA-1を登録する。
+Google OAuthのAndroidクライアントには、このパッケージ名と実機へインストールするAPKの署名証明書（今のAndroidビルド補助はデバッグ署名）のSHA-1を登録する。
 ローカルとCIで署名証明書が異なる場合は、それぞれの組み合わせを登録する。
 
 ## Google認証の設定
 
-1. 同じGoogle Cloudプロジェクトで、Googleログイン用のWebクライアントと、実際のアプリID・署名証明書に対応するAndroidクライアントを用意する。
+1. 同じGoogle Cloudプロジェクトで、Googleログイン用のWebクライアントと、実際のアプリID・署名証明書に対応するAndroidクライアントを用意する。[Googleの設定手順](https://developer.android.com/identity/sign-in/credential-manager-siwg)
 2. [HealthConnectionSettings](../../client/Assets/Baryonyx/Features/Health/Data/HealthConnectionSettings.asset) の `Google Web Client Id` に、末尾が `.apps.googleusercontent.com` のWebクライアントIDを設定する。クライアントシークレットはアプリに入れない。
 3. 接続先のサーバーは環境の名前で選ぶ（[実行環境と接続先](startup-sync.md#実行環境と接続先)）。
 4. Androidビルドを端末にインストールし、Google認証と、Google未接続でのHealth Connect接続・歩数の読み取りをそれぞれ確認する。
@@ -95,16 +94,13 @@ EditorではネイティブSDKを作らない。
 UMoth 1.0.3はキャンセルと一部の失敗を同じエラーとして返す。
 
 CIの `UNITY_LICENSE` などはUnityの実行用、`GOOGLE_DRIVE_CLIENT_ID` はAPKの配布用であり、今回のログイン設定とは用途が異なる。
-サーバー公開設定の `GOOGLE_CLIENT_ID` は将来IDトークンを検証するときに、このWebクライアントIDと一致させる。
-現在のAndroidビルド補助は `com.croissantlab.baryonyx` とデバッグ署名を使うため、実際にインストールするAPKのアプリID・署名をOAuth登録時に確認する。
-WebクライアントIDやAndroidクライアントの作成は今回行っていない。[Googleの設定手順](https://developer.android.com/identity/sign-in/credential-manager-siwg)
 
 ## サーバー同期の経路
 
 歩数の保存とルーンの請求は [HealthServerSync](../../client/Assets/Baryonyx/Features/Health/Runtime/Sync/HealthServerSync.cs) にまとめている。
-ゲストのセッション（ログイン、期限の5分前の取り直し、401のときの1回だけのやり直し）は [AccountSessionRunner](../../client/Assets/Baryonyx/Features/Account/Runtime/AccountSessionRunner.cs) が受け持ち、歩数・パーティ・装備・冒険の全機能で1つを共有する。
+ゲストのセッション（ログイン、期限の5分前の取り直し、401のときの1回だけのやり直し）は [AccountSessionRunner](../../client/Assets/Baryonyx/Features/Account/Runtime/AccountSessionRunner.cs) が受け持ち、サーバーとつなぐ全機能で1つを共有する。
 [GameServices](../../client/Assets/Baryonyx/App/Runtime/GameServices.cs) が選んだ環境のURLからこれらを作り、Topの起動処理とHomeのACTパネルが [HealthStepLink](../../client/Assets/Baryonyx/Features/Health/Runtime/Link/HealthStepLink.cs) を通して使う。
-ゲストのセッションで7日分を保存し、HomeのACTパネルでは続けてルーンを請求する（[起動時の連携と歩数の同期](startup-sync.md)）。
+Topの起動処理はゲストのセッションで7日分を保存し、HomeのACTパネルは7日分の保存とルーンの請求を1回の要求（`POST /v1/exercise/rewards/sync`）で行う（[起動時の連携と歩数の同期](startup-sync.md#homeのactパネル)）。
 選んだ環境のURLが空なら、歩数を端末のメモリだけに保持する。
 
 以前の `HealthClient` と `HealthSyncService` は起動シーンから使われていなかったため、2026-09-23に削除した。
@@ -139,6 +135,10 @@ Googleログインのセッションは1時間で期限切れになる。
 端末のタイムゾーンにおける日付境界で取得し、サーバーへUTC区間・タイムゾーン・取得日時を送る。
 サーバーはユーザー・Provider・端末側の取得元IDを区別する。
 取得元IDはアプリインストール内でもユーザーごとに分ける。
+
+サーバーの[入力スキーマ](../../server/src/features/health/schema.ts)は、日別データの型・件数・数値範囲に加え、`refine()` で期間の連続性、タイムゾーンと日付境界、欠損と歩数の整合を確認する。
+単日では欠損と歩数、取得時刻の範囲、指定タイムゾーンの日付境界を検証し、週全体では同一タイムゾーン、区間の連続性、日付の重複を検証する。
+区間の連続性はUTC日時を数値へ変換して比較し、日時文字列の小数秒の表記差や夏時間による1日の長さの変化を受け入れる。
 
 同期開始時にサーバーが更新版を発行し、その版に対応する7日分をまとめて保存する。
 同じ日付・タイムゾーンの値は置き換え、加算しない。
@@ -195,4 +195,5 @@ iOSはProvider差し替え用の共通型とテストまでで、HealthKit・iOS
 
 ## 変更と判断の記録
 
+- 2026-11-02：スキルとdocの整理で、今のコードに合わせて、保存とルーンの請求を1回の要求にした作りへ実装の入口とサーバー同期の経路を直し、日ごとの歩数をライブラリに出すことを書き、`GOOGLE_CLIENT_ID` を「将来検証する」とした古い記述と重複を消した（根拠：HealthServerSync.cs、HealthApiClient.cs、ExerciseRewardsApiClient.cs、server/src/features/accounts/routes.ts、server/src/features/library/routes.ts）。
 - 2026-10-05：文書の整理で、2026-09-24に削除した歩数画面の仕様と検証記録を[削除した歩数画面の記録](../archive/health-data-local-screen.md)へ移した。現行の部分（取得・保存・再送、Google認証の設定、プラグイン）は残し、サーバー同期の経路を、TopとHomeがゲストのセッションで同期する現在の作りに合わせて書き直した。

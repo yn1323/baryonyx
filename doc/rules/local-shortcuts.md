@@ -2,22 +2,38 @@
 id: rule-local-shortcuts
 type: reference
 status: 運用中
-updated: 2026-10-05
+updated: 2026-11-02
 ---
 
 # 手動実行用ショートカットの動作
 
-[設計・開発ルールの索引](README.md) / [ショートカットの一覧](../../AGENTS.md#手動実行用ショートカット)
+[設計・開発ルールの索引](README.md)
 
-`shortcuts/` に置いたファイルの動作・前提・ログを定める。
-ファイルの一覧、追加するときの決まり、ビルド後にAPKをGoogle Driveへコピーする配置先は、ルートの[AGENTS.md](../../AGENTS.md#手動実行用ショートカット)を正本とする。
+`shortcuts/` に置いたファイルの一覧・動作・前提・ログと、ビルド後にAPKをGoogle Driveへコピーする配置先を定める。
+どの作業でも守る制約（AIはエミュレーターを起動しない、APKは配置先へコピーするまでをビルド作業とする）は、ルートの[AGENTS.md](../../AGENTS.md#手動実行用ショートカット)にある。
 エミュレーターの構成・初回準備・起動できない場合の確認は[WindowsでのUnityとAndroidエミュレーター](client-android-emulator.md)に従う。
+
+## ファイルの一覧
+
+`shortcuts/` には、1ファイルで処理が完結するWindows用 `.bat` ファイルと、macOS用 `.command` ファイルを置く。
+共通スクリプトへの依存を作らず、実行時の作業ディレクトリに依存しないパスを使う。
+ファイルを追加するときは、同じ変更でこの一覧にファイルへのリンク・用途・実行方法を記載し、必要な引数や前提条件も追記する。
+
+| ファイル | ユーザーの操作と動作 |
+|---|---|
+| [build-apk.bat](../../shortcuts/build-apk.bat) | このプロジェクトをUnityで閉じてからダブルクリックし、`client/Builds/Android/baryonyx.apk` をビルドする。 |
+| [build-apk-dev-to-drive.bat](../../shortcuts/build-apk-dev-to-drive.bat) | このプロジェクトをUnityで閉じ、Google Drive for desktopを起動してからダブルクリックする。Dev環境へ接続するAPKをビルドし、成功後に `G:\マイドライブ\71_プロジェクト\baryonyx\baryonyx-dev.apk` へ上書きコピーする。 |
+| [build-apk-prod-to-drive.bat](../../shortcuts/build-apk-prod-to-drive.bat) | 操作は `build-apk-dev-to-drive.bat` と同じ。Prod環境へ接続するAPKをビルドし、成功後に `G:\マイドライブ\71_プロジェクト\baryonyx\baryonyx-prod.apk` へ上書きコピーする。ProdのURLが未設定の間はビルドを止める。 |
+| [build-apk-dev-to-drive.command](../../shortcuts/build-apk-dev-to-drive.command) | macOS用。このプロジェクトをUnityで閉じ、Google Drive for desktopを起動してからFinderでダブルクリックする。Dev環境へ接続するAPKをビルドし、成功後に `~/Google Drive/マイドライブ/71_プロジェクト/baryonyx/baryonyx-dev.apk` へ上書きコピーする。 |
+| [build-apk-prod-to-drive.command](../../shortcuts/build-apk-prod-to-drive.command) | macOS用。操作は `build-apk-dev-to-drive.command` と同じ。Prod環境へ接続するAPKをビルドし、成功後に `~/Google Drive/マイドライブ/71_プロジェクト/baryonyx/baryonyx-prod.apk` へ上書きコピーする。ProdのURLが未設定の間はビルドを止める。 |
+| [start-pixel-8a.bat](../../shortcuts/start-pixel-8a.bat) | 初回準備後にダブルクリックして `Pixel_8a_API_36` をPCのGPU・Vulkan無効・スナップショット無効で起動する。AIによる実行は禁止する。 |
+| [install-apk-pixel-8a.bat](../../shortcuts/install-apk-pixel-8a.bat) | `Pixel_8a_API_36` の起動完了後にダブルクリックし、`client/Builds/Android/baryonyx.apk` を送信・インストールする。別のAPKは、このファイルへ1つドラッグ＆ドロップするか、第1引数にパスを指定する。 |
 
 ## 共通の作り
 
 - ビルド用の `.bat` はWindows標準のPowerShell、エミュレーター用の `.bat` はコマンドプロンプトで処理する。macOS用の `.command` は、同じ環境の `.bat` と同じ処理をbashで行う。どれも必要なコードを同じファイル内に持つ。
 - 結果を確認できるよう、各ファイルは終了時にキー入力を待つ。
-- ログはファイルごとに `client/Logs/` へ書き、実行ごとに上書きする。
+- ビルド用のファイルは、ログをファイルごとに `client/Logs/` へ書き、実行ごとに上書きする。エミュレーター用の `.bat` はログを書かず、結果を画面に出す。
 
 ## APKのビルド
 
@@ -50,7 +66,18 @@ Prod向けは、ProdのURLが未設定の間はビルドを止める。
 
 ## Google Driveへの配置
 
-Drive配置用のショートカットは、ビルドが成功したら、APKを[配置先](../../AGENTS.md#手動実行用ショートカット)へ環境別のファイル名で上書きコピーする。
+APKビルドが成功したら、実行方法にかかわらず、生成したAPKを必ず次の配置先へ、接続先の環境に対応するファイル名で上書きコピーする。
+Dev向けとProd向けは同じフォルダーに並べて置く。
+
+| OS | 配置先フォルダー | ファイル名 | 一致させる定義 |
+|---|---|---|---|
+| Windows | `G:\マイドライブ\71_プロジェクト\baryonyx` | `baryonyx-dev.apk`・`baryonyx-prod.apk` | [build-apk-dev-to-drive.bat](../../shortcuts/build-apk-dev-to-drive.bat)・[build-apk-prod-to-drive.bat](../../shortcuts/build-apk-prod-to-drive.bat) の `$destinationDirectory`・`$destinationApk` |
+| macOS | `~/Google Drive/マイドライブ/71_プロジェクト/baryonyx` | `baryonyx-dev.apk`・`baryonyx-prod.apk` | [build-apk-dev-to-drive.command](../../shortcuts/build-apk-dev-to-drive.command)・[build-apk-prod-to-drive.command](../../shortcuts/build-apk-prod-to-drive.command) の `destination_directory`・`destination_apk` |
+
+通常はWindowsで `build-apk-dev-to-drive.bat`・`build-apk-prod-to-drive.bat`、macOSで `build-apk-dev-to-drive.command`・`build-apk-prod-to-drive.command` を使う。
+`build-apk.bat` やUnity CLI・Editorでビルドした場合も、成功後に接続先の環境に対応するファイル名で同じフォルダーへコピーする。
+
+Drive配置用のショートカットは、ビルドが成功したら、APKを上の配置先へ環境別のファイル名で上書きコピーする。
 Dev向けとProd向けのファイルは、設定する環境名・配置先のファイル名・ログ名だけが異なる。
 
 - Google Drive for desktopを起動し、配置先フォルダーが存在してアクセスできることを前提とする。

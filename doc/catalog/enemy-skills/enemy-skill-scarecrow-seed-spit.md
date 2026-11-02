@@ -2,7 +2,7 @@
 id: enemy-skill-scarecrow-seed-spit
 type: definition
 status: 候補
-updated: 2026-10-19
+updated: 2026-11-02
 name: 種つぶて
 category: enemy-skills
 ---
@@ -20,7 +20,7 @@ category: enemy-skills
 | 定義の根拠・決定日・参照元 | 2026-10-19、ユーザーの依頼（敵50体を試作し、文書カタログ・クライアント・サーバーにそろえる）で、[かぼちゃ頭の案山子](../enemies/enemy-pumpkin-scarecrow.md)の技として作った |
 | 役割・説明 | 味方全体への物理・貫の攻撃 |
 | 関連する仕様・個別ID | 使う敵：[かぼちゃ頭の案山子](../enemies/enemy-pumpkin-scarecrow.md)。[敵の行動の仮設定](../../features/combat-enemy-behavior.md) |
-| 実装・ゲームマスタの場所 | 未実装 |
+| 実装・ゲームマスタの場所 | [CombatEnemyBehaviors](../../../client/Assets/Baryonyx/Features/Combat/Runtime/CombatEnemyBehaviors.cs) の、使う敵の `Moves`。演出は、名前から選ぶ種類ごとの形（[BattleSkillVfx.Enemies](../../../client/Assets/Baryonyx/Features/Combat/Presentation/BattleSkillVfx.Enemies.cs) の `EnemyBlowOf`） |
 
 ## 確定した設定
 
@@ -32,8 +32,8 @@ category: enemy-skills
 |---|---|---|---|
 | 区分 | 固有技（[かぼちゃ頭の案山子](../enemies/enemy-pumpkin-scarecrow.md)） | [共通技と固有技](README.md#共通技と固有技) | 候補 |
 | 種類・対象 | 攻撃・味方全体 | [記入する項目](README.md#記入する項目) | 候補 |
-| 物理・魔法と属性 | 物理・貫 | 味方は物理の技を物防で、魔法の技を属防で受ける（[使い道の候補](../../features/party.md#ステータスの項目)） | 候補 |
-| 効果 | 物攻の40%のダメージ | 使う敵のステータスの割合（[威力の決め方](../../features/combat.md#威力の決め方)）。状態は[カードの状態の仮設定](../../features/combat.md#カードの状態の仮設定)の名前 | 仮 |
+| 物理・魔法と属性 | 物理・貫 | [記入する項目](README.md#記入する項目) | 候補 |
+| 効果 | 物攻の40%のダメージ | [記入する項目](README.md#記入する項目) | 仮 |
 | 予告 | 全体攻撃 | [記入する項目](README.md#記入する項目) | 候補 |
 | 使う敵 | [かぼちゃ頭の案山子](../enemies/enemy-pumpkin-scarecrow.md) | 各敵の定義の「技」の表 | 候補 |
 
@@ -56,11 +56,12 @@ category: enemy-skills
 
 | 項目 | 決める内容・先に必要な判断 |
 |---|---|
-| 数値 | 割合は仮。[戦闘の未決事項](../../features/combat.md#未決事項)の数値が決まったら見直す |
-| 実装 | 未実装。実装するときは[敵の挙動デバッグルーム](../../features/screens/debug-rooms.md#敵の挙動デバッグルーム)の行動にも加える |
+| 数値 | 割合は仮。[戦闘の未決事項](../../features/combat/implementation.md#未決事項)の数値が決まったら見直す |
+| 実装 | 戦闘で使う。効果のうち戦闘にまだないもの（味方に付く状態など）は写していない（[敵の行動の仮設定](../../features/combat-enemy-behavior.md)）。写すときは[敵の挙動デバッグルーム](../../features/screens/debug-rooms.md#敵の挙動デバッグルーム)の行動にも加える |
 
 ## 変更と判断の記録
 
 | 日付 | 変更・判断 | 理由・根拠 | 影響するID・仕様 |
 |---|---|---|---|
 | 2026-10-19 | 固有技として定義を作った | ユーザーの依頼 | 使う敵：[かぼちゃ頭の案山子](../enemies/enemy-pumpkin-scarecrow.md) |
+| 2026-11-02 | スキルとdocの整理で、今のコードに合わせて「実装・ゲームマスタの場所」を直した | 根拠：CombatEnemyBehaviors の `Moves` にこの技があり、戦闘で使う | [敵の行動の仮設定](../../features/combat-enemy-behavior.md) |

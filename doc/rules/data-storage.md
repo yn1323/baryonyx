@@ -2,7 +2,7 @@
 id: rule-data-storage
 type: reference
 status: 運用中
-updated: 2026-10-25
+updated: 2026-11-02
 ---
 
 # 保存先の決め方
@@ -43,19 +43,19 @@ updated: 2026-10-25
 |---|---|---|
 | 持っているキャラ・Lv・スキル・編成 | 実装済み | [キャラと編成の保存](../features/party.md#キャラと編成の保存) |
 | ルーンの残高と、増えた・使った記録 | 実装済み | [ルーン経済と資源](../features/economy.md) |
-| 進行中の冒険（道を作る乱数の種、今いるマスの階と種類、通ったマス）と、行き先ごとの記録 | 実装済み | [冒険の中断と再開](../features/stage-progression.md#冒険の中断と再開)。分岐ルートの道そのものは保存せず、種から端末が作る（[冒険の道の作り方](../features/stage-progression.md#冒険の道の作り方)） |
+| 進行中の冒険（道を作る乱数の種、今いるマスの階と種類、通ったマス）と、行き先ごとの記録 | 実装済み | [冒険の中断と再開](../features/stage-progression/run.md#冒険の中断と再開)。分岐ルートの道そのものは保存せず、種から端末が作る（[冒険の道の作り方](../features/stage-progression/rooms.md#冒険の道の作り方)） |
 | 歩数 | 実装済み | [起動時の連携と歩数の同期](../features/startup-sync.md) |
-| 街道の世界地図の進み具合（今いるマスと、クリアしたマス） | 実装済み | [世界地図の形と試作](../features/stage-progression.md#世界地図の形と試作2026-10-24)。マスと道の形は保存せず、クライアントの地図の定義が持つ |
-| 入れ子の地図でルーンを払って開けたマスと、払ったルーンの記録 | 実装済み | [マスを開くルーン](../features/world-atlas.md#マスを開くルーン)（2026-10-29）。ルーンの増減を伴うため、サーバーに置く。今いる地図とマスは保存しない |
-| 街道の宝箱を受け取ったか | 実装済み | 別に保存せず、クリアしたマスの行に付けた受け取りの印で、中身を1回だけ足す（[街道の宝箱と街](../features/stage-progression.md#街道の宝箱と街2026-10-25)、2026-10-25） |
+| 街道の世界地図の進み具合（今いるマスと、クリアしたマス） | 実装済み | [世界地図の形と試作](../features/stage-progression-world-map.md#世界地図の形と試作2026-10-24)。マスと道の形は保存せず、クライアントの地図の定義が持つ |
+| 入れ子の地図でルーンを払って開けたマスと、払ったルーンの記録 | 実装済み | [マスを開くルーン](../features/world-atlas/maps.md#マスを開くルーン)（2026-10-29）。ルーンの増減を伴うため、サーバーに置く。今いる地図とマスは保存しない |
+| 街道の宝箱を受け取ったか | 実装済み | 別に保存せず、クリアしたマスの行に付けた受け取りの印で、中身を1回だけ足す（[街道の宝箱と街](../features/stage-progression-world-map.md#街道の宝箱と街2026-10-25)、2026-10-25） |
 | 持っている装備と、キャラごとの武器・防具 | 実装済み | [持っている装備と付け替えの保存](../features/equipment.md#持っている装備と付け替えの保存) |
-| 開示した敵の弱点（敵の種類と属性の組） | 実装済み | [弱点の開示](../features/combat.md#弱点の開示) |
-| 固有スキルの進み具合（取得した段階とセットしている段階） | 実装済み | [覚醒の保存](../features/skill-evolution.md#覚醒の保存) |
-| 獲得したスキル（1枚ずつ、倍率を含む）と、アイテム（道具・素材）の種類ごとの個数 | 案 | [持っているスキル](../features/party.md#持っているスキル)・[アイテム](../features/items.md) |
+| 開示した敵の弱点（敵の種類と属性の組） | 実装済み | [弱点の開示](../features/combat/rules.md#弱点の開示) |
+| 固有スキルの進み具合（取得した段階とセットしている段階） | 実装済み | [覚醒の保存](../features/skill-evolution/rules.md#覚醒の保存) |
+| 獲得したスキル（1枚ずつ、倍率を含む）と、アイテム（道具・素材）の種類ごとの個数 | 実装済み | [持っているスキル](../features/party.md#持っているスキル)・[キャラと編成の保存](../features/party.md#キャラと編成の保存)（`skill_cards`・`item_holdings`）・[アイテム](../features/items.md) |
 | 強化素材（磨き石・覚醒の欠片）の種類ごとの数と、強化の記録 | 実装済み | [商会の強化](../features/enhancement.md#実装との対応) |
 | 召喚の記録、キャラの絆、全キャラ共通のかけら | 実装済み | [召喚の保存](../features/monetization.md#召喚の保存) |
 | アクセサリーと、キャラごとのアクセサリーの枠 | 実装済み | [アクセサリー](../features/equipment.md#アクセサリー)。持っているアクセサリーは武器・防具と同じ `equipment_items`、付けている枠は `equipment_character_slots`（2026-10-25） |
-| 解放したダンジョン | 実装済み | 別に保存せず、街道でクリアした街のマスから決める（[街とダンジョン](../features/stage-progression.md#街とダンジョン仮)、2026-10-25） |
+| 解放したダンジョン | 実装済み | 別に保存せず、街道でクリアした街のマスから決める（[街とダンジョン](../features/stage-progression/destinations.md#街とダンジョン仮)、2026-10-25） |
 | 合成の記録 | 案 | [合成の記録](../features/synthesis.md#合成の記録) |
 | ライブラリの見つけた記録（一度でも手に入れたキャラ・装備・スキル・アイテム、遭遇した敵と倒した数） | 実装済み | [見つけた記録はサーバーに置く](../features/library.md#見つけた記録はサーバーに置く) |
 | 実績 | 案 | [実績とミッション](../features/achievements.md) |
@@ -69,13 +69,13 @@ updated: 2026-10-25
 | ゲストの秘密値 | 実装済み | [GuestCredential](../../client/Assets/Baryonyx/Features/Account/Runtime/GuestCredential.cs)（`Account.GuestSecret`） |
 | Health Connectの許可画面を閉じた回数 | 実装済み | [HealthStepLink](../../client/Assets/Baryonyx/Features/Health/Runtime/Link/HealthStepLink.cs)（`Health.PermissionDenials`） |
 | 歩数の送信元ID（ユーザーごと） | 実装済み | [HealthServerSync](../../client/Assets/Baryonyx/Features/Health/Runtime/Sync/HealthServerSync.cs)（`Health.RewardSourceId.<ユーザーID>`） |
-| 開発用のデバッグルームの表示設定 | 実装済み | [CardSkillLab](../../client/Assets/Baryonyx/Features/Combat/Presentation/CardSkillLab.cs)・[EnemyLab](../../client/Assets/Baryonyx/Features/Combat/Presentation/EnemyLab.cs)・[QualityLab](../../client/Assets/Baryonyx/Features/Inventory/Presentation/QualityLab.cs)（`Baryonyx.<デバッグルーム>.<項目>`） |
+| 開発用のデバッグルームの表示設定 | 実装済み | [CardSkillLab](../../client/Assets/Baryonyx/Features/Combat/Presentation/CardSkillLab.cs)・[EnemyLab](../../client/Assets/Baryonyx/Features/Combat/Presentation/EnemyLab.cs)・[QualityLab](../../client/Assets/Baryonyx/Features/Inventory/Presentation/QualityLab.cs)・[InventoryLab](../../client/Assets/Baryonyx/Features/Inventory/Presentation/InventoryLab.cs)・[BattleMomentLab](../../client/Assets/Baryonyx/Features/Combat/Presentation/BattleMomentLab.cs)・[ExplorationMomentLab](../../client/Assets/Baryonyx/Features/Adventure/Runtime/ExplorationMomentLab.cs)・[TempleSummonLab](../../client/Assets/Baryonyx/Features/Temple/Runtime/TempleSummonLab.cs)（`Baryonyx.<デバッグルーム>.<項目>`） |
 | 音量・画質・振動などの設定 | 案 | [ユーザー設定とアクセシビリティ](../features/player-settings.md)。端末ごとにするかアカウント共通にするかは未決 |
 | ライブラリで新しく載った項目を見た記録 | 実装済み | [LibrarySeen](../../client/Assets/Baryonyx/Features/Library/Runtime/LibrarySeen.cs)（`Library.Seen.<ユーザーID>`） |
-| 冒険中のHPと倒れているか（冒険ごと） | 実装済み | [AdventureVitals](../../client/Assets/Baryonyx/Features/Adventure/Runtime/AdventureVitals.cs)（`Adventure.Vitals`。冒険のIDと、編成の枠ごとの最大HPに対する割合）。[冒険中の状態の保存先](../features/stage-progression.md#冒険中の状態の保存先)。ユーザーの「保存先はClientでいいかな」（2026-10-21）による |
+| 冒険中のHPと倒れているか（冒険ごと） | 実装済み | [AdventureVitals](../../client/Assets/Baryonyx/Features/Adventure/Runtime/AdventureVitals.cs)（`Adventure.Vitals`。冒険のIDと、編成の枠ごとの最大HPに対する割合）。[冒険中の状態の保存先](../features/stage-progression/run.md#冒険中の状態の保存先)。ユーザーの「保存先はClientでいいかな」（2026-10-21）による |
 | 最後に開いたタブなど、表示上の記憶 | 案 | 必要になった機能の仕様 |
 | 入れ子の地図で駒が最後に立っていた地図とマス | 実装済み | [WorldAtlasNavigator](../../client/Assets/Baryonyx/Features/WorldMap/Runtime/WorldAtlasNavigator.cs)（`WorldAtlas.Position`）。駒が止まるたびに書く。消えても、世界地図のはじめのマスから始まるだけで困らない（2026-10-29、ユーザーが「クライアント側で覚えておくで大丈夫」とした） |
-| 入れ子の地図のルーンの消費のオンオフ（開発用のビルドとEditorだけ） | 実装済み | [WorldAtlasSession](../../client/Assets/Baryonyx/Features/WorldMap/Runtime/WorldAtlasSession.cs)（`WorldAtlas.Charging`）。[マスを開くルーン](../features/world-atlas.md#マスを開くルーン)。製品のビルドでは常にONで、キーを読まない |
+| 入れ子の地図のルーンの消費のオンオフ（開発用のビルドとEditorだけ） | 実装済み | [WorldAtlasSession](../../client/Assets/Baryonyx/Features/WorldMap/Runtime/WorldAtlasSession.cs)（`WorldAtlas.Charging`）。[マスを開くルーン](../features/world-atlas/maps.md#マスを開くルーン)。製品のビルドでは常にONで、キーを読まない |
 
 ### 保存しないもの
 
@@ -103,7 +103,7 @@ updated: 2026-10-25
 - 保存に失敗したら、その変更と、同じデータに対してあとから出した変更を取り消して、確かめた状態へ表示を戻し、通知の帯で知らせる。案内人の画面とホームが失敗の知らせを受けて出すため、操作した画面を閉じたあとでも知らせが届く。サーバーが断ったとき（409）は、確かめた状態が古いので読み直してから戻す。
 - ルーンを使う変更（レベルアップ）は、費用を残高から先に引いて見せる（[RuneBalance](../../client/Assets/Baryonyx/Shared/Economy/RuneBalance.cs) の取り置き）。費用はサーバーが計算して確定する。保存を待つ間にほかの画面が残高を読み直しても、取り置いた分は引いたまま見せる。
 - 次の操作がサーバーの結果を必要とするものは、保存を待ってから表示を変える。冒険を始める（道を作る種をサーバーが返す）、宝箱・戦闘の勝利（報酬をサーバーが決める）、復活（戦闘の途中で戻すことになる）、冒険を終える（結果にサーバーの集計を出す）、マスの移動（歩く演出で待ち時間が隠れ、着いたマスで戦闘が始まる）、商会の強化（次の強化がその結果の倍率や段階から始まる）がこれに当たる。冒険を始める前は、待ち行列が空になるのを待つ。
-- 失敗しても表示を戻さず、あとで送り直す保存もある。開示した敵の弱点は減らず、送り直しても増えないため、待ち行列だけを使い、失敗を知らせずに次の機会に送り直す（[弱点の開示](../features/combat.md#弱点の開示)）。
+- 失敗しても表示を戻さず、あとで送り直す保存もある。開示した敵の弱点は減らず、送り直しても増えないため、待ち行列だけを使い、失敗を知らせずに次の機会に送り直す（[弱点の開示](../features/combat/rules.md#弱点の開示)）。
 - 接続先がないとき（展示室など）は仮データで動かし、変更はアプリを動かしている間だけ残す。例：[PartySource](../../client/Assets/Baryonyx/Features/Party/Runtime/PartySource.cs)
 
 ## 端末に置くときの作り方
@@ -129,21 +129,10 @@ APKのマニフェストは `android:allowBackup` を指定しておらず、tar
 | 引き継ぎ・再インストール・機種変更 | 未決（[アカウントとセーブ](../features/accounts-save.md#未決事項)）。Androidの自動バックアップの扱いを含む |
 | ゲストの秘密値の保存方法 | 未決。今は `PlayerPrefs` に暗号化せずに置いている |
 | 戦闘の勝敗をサーバーで検証するか | 未決。今は端末が勝敗を判定し、サーバーはマスを終えた知らせを受けて報酬を確定する（[全体構成](../architecture.md#未決事項)） |
-| 冒険の道のマスの種類を端末から受け取ること | 確認待ち。道は端末が種から作り、マスの階と種類を送る。サーバーは1階ずつ進むことと最奥の階のボスだけを確かめる（[探索の確認待ち](../features/stage-progression.md#確認待ち)） |
+| 冒険の道のマスの種類を端末から受け取ること | 確認待ち。道は端末が種から作り、マスの階と種類を送る。サーバーは1階ずつ進むことと最奥の階のボスだけを確かめる（[探索の確認待ち](../features/stage-progression/status.md#確認待ち)） |
 | 設定を端末ごとにするか、アカウント共通にするか | 未決（[ユーザー設定とアクセシビリティ](../features/player-settings.md)） |
 | ゲームマスタの形式 | 未決（[正本と変更の記録](documentation-policy.md#正本と変更の記録)） |
 
 ## 変更と判断の記録
 
-- 2026-10-29：ユーザーの依頼で、入れ子の地図のマスを開くルーンの支払いを楽観的更新にした（[マスを開くルーン](../features/world-atlas.md#マスを開くルーン)）。手元の配置の値段で払えるかを決めてすぐ跳び、サーバーの答えた残高を確かめた残高にする。受けなかった支払いは、あとから払ったマスとまとめて取り消し、駒を開けているマスへ戻す。
-- 2026-10-29：入れ子の地図でルーンを払って開けたマスをサーバーに、開発用の消費のオンオフを端末に置いた（[マスを開くルーン](../features/world-atlas.md#マスを開くルーン)）。払ったマスはルーンの増減を伴い、消えると払い直しになるため、[判断の基準](#判断の基準)からサーバーにした。複数マスを進むときの確認を省く選択は、ユーザーの指示「clientだけで保持する情報」によりメモリーにだけ持ち、起動し直すと戻る。
-- 2026-10-25：画面を開いたときの待ち時間を減らすため、前に読んだ内容を先に出す画面を、ライブラリ・旅の案内所のお宝・商会の「買う」へ広げ、互いに依存しない読み込みを同時に行うようにした（[サーバーに置くときの作り方](#サーバーに置くときの作り方)）。ライブラリの記録は、見つけた物と日々の歩数を別々に読んでいたものを同時に読む。商会の「売る」「合成」「品質強化」は、選んだ物をサーバーへ送る画面で、前に読んだ内容に売った物や前の倍率が残りうるため、先に出さずに同時に読むだけにした。読み直せなかったときに出している内容を残す扱いは、パネルの共通部品（`GuidePanel`）にまとめた。
-- 2026-10-22：ユーザーの「キャラのスキル表示に1秒ちょっとかかる」を受け、開き直した画面で前に読んだ編成と装備をすぐ出し、裏で読み直すようにした（[サーバーに置くときの作り方](#サーバーに置くときの作り方)）。あわせて、育成・装備の画面は編成と装備を同時に読み、同時に届いた要求のログインを1回にまとめた。Devで測ると、育成の画面の約1.1秒は、DBとの往復と端末からサーバーまでの経路にかかり、画面を描く時間は数msだった（[処理時間の計測](backend-design.md#処理時間の計測server-timing)）。対象は編成の一覧・育成・スキル・育成の人選び・装備の付け替えで、ボーナスとライブラリは今までどおり読むまで「読み込み中…」を出す。参考：[stale-while-revalidate](https://developer.dynatrace.com/develop/guides/code-optimization/stale-while-revalidate/)。
-- 2026-10-18：ユーザーの依頼で、戦闘で開示した敵の弱点をサーバーに保存するようにし、[置き場所の一覧](#置き場所の一覧)の行を「実装済み」にした。3つの問いではどちらにも決め手が弱い（消えても遊べ、書き換えても弱点が見えるだけ）が、仕様が開示を「プレイヤーの記録」としていること、機種変更やデータの削除のあとも残ることから、サーバーを提案し、ユーザーが選んだ。
-- 2026-10-18：ユーザーの依頼で、装備・仲間などの変更を楽観的更新にした（[サーバーに置くときの作り方](#サーバーに置くときの作り方)）。ユーザーは「基本的に、待たないと次が何もできない箇所以外は楽観的更新に」とし、ルーンを使うレベルアップも含めた。編成の枠・スキル・装備・ACTボーナスの付け替えとレベルアップをすぐ表示し、冒険の開始・報酬・復活・終了・マスの移動は保存を待つまま残した。サーバーのAPIは変えていない。
-- 2026-10-18：ライブラリで新しく載った項目を「もう見た」記録は、消えても印がもう一度付くだけで困らないため、ユーザーの判断で端末に置くことにし、[端末に置くもの](#端末に置くもの)に加えた。
-- 2026-10-18：[ライブラリ](../features/library.md)の設計で、一度でも手に入れた物と遭遇した敵の記録をサーバーに置く方針をユーザーが了承したため、[置き場所の一覧](#置き場所の一覧)に加えた。所持の記録は売却や合成で消えるため、別の記録として持つ。
-- 2026-10-06：持ち物にアクセサリー・アイテム（道具・素材）・合成の記録が加わり、スキルを1枚ずつ持つことになったため、「獲得したスキル・素材」の行を分け、どれも「案」として[置き場所の一覧](#置き場所の一覧)に加えた（[持ち物の分類](../features/inventory.md)）。保存先は作るときにユーザーに確かめる。
-- 2026-10-05：ユーザーの指示で、編成で付け替える装備を最初からサーバーに保存することにし、持っている装備とキャラごとの武器・防具を「実装済み」にした。付け替えは装備やルーンを増減させないため、要求IDは付けていない。獲得したスキルと、商会で売り買いする素材は「案」のまま残した。
-- 2026-10-04：探索の分岐ルートを冒険ごとに作る形にし、サーバーには道を作る乱数の種と、今いるマスの階と種類を保存することにした。ユーザーは「途中の進捗はUnity内に保存する形でOK」としたが、進み具合は再開や別の端末で失わないよう、これまでどおりサーバーに置き、道そのものは種から端末が作る形にした。マスの種類を端末から受け取ることは、未決事項に加えた。
-- 2026-10-04：ユーザーの依頼で、保存先を決める基準と、今の置き場所の一覧を定めた。消えたら困るもの・書き換えられたら困るものをサーバーへ、端末ごとに違ってよいもの・消えても作り直せるものを端末へ置く。保存先が未決の項目は「案」として載せ、仕様の決定は変えていない。この基準で作業を進める [data-storage](../../.agents/skills/data-storage/SKILL.md) スキルを作った。
+経緯は[保存先の決め方の変更と判断の記録](data-storage-history.md)に置く。新しい記録はそのファイルに追記する（2026-11-02に移した）。

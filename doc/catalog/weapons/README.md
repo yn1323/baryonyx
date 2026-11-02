@@ -5,6 +5,7 @@
 個別内容と決定状態は、下の索引から各定義を参照する。
 画像対象テンプレートを使う。
 IDの接頭辞は `weapon-`、メタデータの `category` は `weapons` とする。
+今の武器の種類・☆・効果・倍率の上限の仮の値は [EquipmentCatalog](../../../client/Assets/Baryonyx/Features/Equipment/Runtime/EquipmentCatalog.cs) にある（[装備の実装との対応](../../features/equipment.md#実装との対応)）。
 
 ## 個別データの索引
 
@@ -14,13 +15,12 @@ IDの接頭辞は `weapon-`、メタデータの `category` は `weapons` とす
 
 ## 合成のレシピ
 
-[合成](../../features/synthesis.md#レシピ)で作るときの材料である。材料はすべてそろえて、すべて使う。
-材料のどれか1つでも手に入れたことがあれば、商会の合成の一覧に出る。
-「（特別）」は、アイテムではない材料（決まった装備・カスタムスキル）である。出来上がる品質は特別な材料の品質の平均で、特別な材料のないレシピは品質C（×1.00）になる。
-費用は☆2 200、☆3 400、☆4 800ルーン。
+[合成](../../features/synthesis.md#レシピ)で作るときの材料である。決まりは[レシピ](../../features/synthesis.md#レシピ)・[出来上がる品質](../../features/synthesis.md#出来上がる品質)・[費用](../../features/synthesis.md#費用)に従う。
+「（特別）」は、アイテムではない材料（決まった装備・カスタムスキル）である。
 組み合わせは2026-10-31にこちらで決めた仮の値である（[レシピの決め方](../../features/synthesis.md#レシピの決め方)）。
+この表の材料はサーバーの [recipes.ts](../../../server/src/features/workshop/recipes.ts) とクライアントの [WorkshopRecipes](../../../client/Assets/Baryonyx/Features/Workshop/Runtime/WorkshopRecipes.cs)、名前と☆は [EquipmentCatalog](../../../client/Assets/Baryonyx/Features/Equipment/Runtime/EquipmentCatalog.cs) の写しで、正本はコードである（2026-11-02、ユーザーの判断）。直すときはコードを先に直し、同じ変更で表をそろえる。
 
-| ID | 名前 | ☆1 | 行き先 | 材料 |
+| ID | 名前 | ☆ | 行き先 | 材料 |
 |---|---|---|---|---|
 | iron-sword | 鉄の剣 | ☆2 | 港町ポルトリア | 貝殻のつぶて×2・船乗りのロープ×1 |
 | war-hammer | 戦鎚 | ☆2 | 港町ポルトリア | 干し魚×1・貝殻のつぶて×1・船乗りのロープ×1 |
@@ -45,9 +45,9 @@ IDの接頭辞は `weapon-`、メタデータの `category` は `weapons` とす
 | 項目 | 初期の扱い |
 |---|---|
 | 武器種・装備枠 | 未決。基本的にどのキャラでも装備できる（[装備](../../features/equipment.md)） |
-| 参照するステータスと割合 | 固定値は持たない。個別値は未決。[威力の決め方](../../features/combat.md#威力の決め方)に従う |
+| 参照するステータスと割合 | 固定値は持たない。個別値は未決。[装備の効果](../../features/equipment.md#装備の効果)に従う |
 | レア度（☆1〜☆5）・Affix候補・固有効果・数値幅・倍率の上限 | 未決。レア度は種類ごとに決め、1つずつ倍率と品質を持つ（[品質](../../features/inventory.md#品質)） |
-| 強化定義ID・入手テーブルとの関係 | 未決 |
+| 強化定義ID・入手テーブルとの関係 | 強化は[品質強化](../../features/enhancement.md#品質強化)、入手は[冒険のドロップ](../../features/drops.md#行き先ごとの一覧)に従う |
 | 全体の輪郭・刃や先端・柄・長さ・重量感 | 未決 |
 | 素材・加工・配色・紋章・装飾・使用痕 | 未決 |
 | 構え・持つ位置・発光・攻撃時の見え方 | 未決 |
@@ -55,6 +55,4 @@ IDの接頭辞は `weapon-`、メタデータの `category` は `weapons` とす
 
 ## 追加方法
 
-[画像対象テンプレート](../templates/visual-entity.md)または[定義テンプレート](../templates/definition.md)をこの分類にコピーし、1対象1ファイルで記入する。
-既存名・ID・画像の有無を確認し、未決欄を推測で埋めない。
-追加後は[索引を再生成](../../tools/README.md)する。
+[個別データの作り方](../README.md#個別データの作り方)に従う。

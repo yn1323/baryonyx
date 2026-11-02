@@ -9,16 +9,16 @@ silhouette: 舞う火の粉と小さな炎
 palette: 橙 | 赤 | 黄
 motifs: 火の粉
 personality: 対象外
-art_status: 戦闘画面のモックで表示中
+art_status: 冒険の戦闘と戦闘画面のモックで表示中
 art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/CardEmbers.aseprite
 ---
 
 # 火の粉
 
-[技・カードの定義](README.md) / [関連仕様](../../features/combat.md#スキルの仮設定)
+[スキルの定義](README.md) / [関連仕様](../../features/combat/cards.md#スキルの仮設定)
 
 スキル18枚目の仮設定である。
-効果・コスト・説明文は、2026-10-25にエネルギー3固定のルール（[エネルギーとコスト](../../features/combat.md#エネルギーとコスト)）に合わせて作り直した。効果と数値の実行上の正本は [CardSkills](../../../client/Assets/Baryonyx/Features/Combat/Runtime/CardSkills.cs)（ID `Embers`）である（[計画](../../plans/2026-10-25-fixed-energy-cards.md)）。
+効果・コスト・説明文は、2026-10-25にエネルギー3固定のルール（[エネルギーとコスト](../../features/combat/rules.md#エネルギーとコスト)）に合わせて作り直した。効果と数値の実行上の正本は [CardSkills](../../../client/Assets/Baryonyx/Features/Combat/Runtime/CardSkills.cs)（ID `Embers`）である（[計画](../../plans/2026-10-25-fixed-energy-cards.md)）。
 この文書は、企画上の意図、演出、挿絵の記録も持つ。
 
 ## 識別情報と根拠
@@ -28,9 +28,9 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/CardEmbers.aseprite
 | 定義の根拠・決定日・参照元 | 2026-10-03、ユーザーの依頼「バトルで利用するカードスキルとVFX・効果・挿絵を、重複のないよう50個ほど」により作成した仮設定 |
 | 対象の役割・説明 | 攻撃のカード。敵1体に〇ダメージ。60%でやけど2ターン。捨てたとき：ランダムな敵に60%でやけど2ターン。 |
 | 元となる対象・亜種・衣装差分のID | なし |
-| 参照する仕様・関連する個別ID | [戦闘システム](../../features/combat.md)・[スキルの仮設定](../../features/combat.md#スキルの仮設定) |
+| 参照する仕様・関連する個別ID | [戦闘システム](../../features/combat.md)・[スキルの仮設定](../../features/combat/cards.md#スキルの仮設定) |
 | 必要な画像用途 | カードの挿絵（64×58ドット、1ドット3px） |
-| ゲーム内の実装・アセット | 定義 `CardSkills.cs`、効果 `BattleInspectView.Cards.cs`、演出 `BattleSkillVfx` の `Embers`、挿絵 `CardEmbers.aseprite` |
+| ゲーム内の実装・アセット | 定義 `CardSkills.cs`（覚醒版は `CardSkillAwakenings.cs`）、効果 `BattleInspectView.Cards.cs`、演出 `BattleSkillVfx` の `Embers`（覚醒版は `BattleSkillVfx.Awakened`）、挿絵 `CardEmbers.aseprite` |
 
 ## 確定した設定
 
@@ -53,15 +53,15 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/CardEmbers.aseprite
 
 | 項目 | 値 | 単位・条件・参照元 | 確度 |
 |---|---|---|---|
-| カードの種類 | 攻撃 | [カードの種類と流れ](../../features/combat.md#カードの種類と流れ) | 仮 |
-| 対象 | 敵単体 | 単体のカードは置いた相手、全体のカードはスワイプだけで使う | 仮 |
-| 属性 | 炎 | [属性と弱点](../../features/combat.md#属性と弱点) | 仮 |
-| コスト | 0 | [エネルギーとコスト](../../features/combat.md#エネルギーとコスト)。カットインは大技の8枚だけ（[スキルの仮設定](../../features/combat.md#スキルの仮設定)） | 仮 |
+| カードの種類 | 攻撃 | [カードの種類と流れ](../../features/combat/rules.md#カードの種類と流れ) | 仮 |
+| 対象 | 敵単体 | 単体のカードは置いた相手、全体のカードは1体を選ばずに使う（[戦闘画面の見た目モック](../../features/screens/battle.md#戦闘画面の見た目モック)） | 仮 |
+| 属性 | 炎 | [属性と弱点](../../features/combat/rules.md#属性と弱点) | 仮 |
+| コスト | 0 | [エネルギーとコスト](../../features/combat/rules.md#エネルギーとコスト)。カットインは大技の8枚だけ（[スキルの仮設定](../../features/combat/cards.md#スキルの仮設定)） | 仮 |
 | 倍率の上限 | ×2.2 | 1枚ずつの倍率の幅（×1.00〜上限）。[上限の決め方](../../features/inventory.md#上限の決め方) | 仮 |
-| 合成の材料 | 苔の綿×2・薬草×1 | ☆2。費用200ルーン。材料はすべて使う。（特別）は品質を持つ材料で、出来上がる品質はその品質の平均。ないときは品質C。[合成](../../features/synthesis.md#レシピ) | 仮 |
-| 威力・回復量 | 属攻の40% | 使い手のステータスの割合（[威力の決め方](../../features/combat.md#威力の決め方)） | 仮 |
-| 持続ターン | 2ターン | [カードの状態の仮設定](../../features/combat.md#カードの状態の仮設定) | 仮 |
-| ACTによる威力の変化 | なし | [スキルの仮設定](../../features/combat.md#スキルの仮設定) | 仮 |
+| 合成の材料 | 苔の綿×2・薬草×1 | ☆2。費用は[合成の費用](../../features/synthesis.md#費用)、材料の扱いは[スキルの定義](README.md#記入する項目) | 仮 |
+| 威力・回復量 | 属攻の40% | 使い手のステータスの割合（[威力の決め方](../../features/combat/rules.md#威力の決め方)） | 仮 |
+| 持続ターン | 2ターン | [カードの状態の仮設定](../../features/combat/cards.md#カードの状態の仮設定) | 仮 |
+| ACTによる威力の変化 | なし | [スキルの仮設定](../../features/combat/cards.md#スキルの仮設定) | 仮 |
 | 演出（感覚の言葉） | ちりちり | [vfx-authoring](../../../.agents/skills/vfx-authoring/SKILL.md)の3拍（溜め・発生・余韻） | 仮 |
 | 演出の流れ | 杖を振ると火の粉の群れが揺れながら飛ぶ。敵に小さな炎がまとわりついてちらつき、火の粉が昇る（やけど）。時間と層の配分は[演出の時間設計](#演出の時間設計) | 画像を貼らず、形をシェーダーで計算して描く（[エフェクトの描き方](../../art/direction.md#エフェクトの描き方)） | 仮 |
 
@@ -96,7 +96,7 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/CardEmbers.aseprite
 ## 覚醒版
 
 この1枚が[覚醒](../../features/skill-awakening.md)して進む、2つの枝の段階である（2026-10-24、仮）。
-覚醒は1段だけで、進んだ1枚は元に戻らない。倍率・品質・倍率の上限・レア度は元のスキルのものを引き継ぐ。
+覚醒の決まりは[覚醒版](README.md#覚醒版)に従う。
 
 | 項目 | 枝1：火の粉・散 | 枝2：火の粉・灯 |
 |---|---|---|
@@ -138,7 +138,7 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/CardEmbers.aseprite
 
 | 比較対象のIDとリンク | 共通する特徴 | 区別する特徴 | 意図した共通性・判断 |
 |---|---|---|---|
-| [技・カードの定義](README.md)の他の49枚 | 同じ画風・寸法・下端のディザ | モチーフと配色 | 効果の重複がないことは `CardSkillsTests` で検査する |
+| [スキルの定義](README.md)の他の49枚 | 同じ画風・寸法・下端のディザ | モチーフと配色 | 効果の重複がないことは `CardSkillAwakeningsTests` で検査する |
 
 ## 画像化の指示と記録
 
@@ -154,13 +154,13 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/CardEmbers.aseprite
 | 出力画像のパス・生成日・案のID | 2026-10-03、Codex CLIの画像生成で6枚1組のシート（`output/card-skills/sheet-D.png` の1枚目、Git対象外）を作り、最初の6枚の挿絵を画風の見本に添えた。マゼンタの区切りから挿絵を切り出し、64×58へ面積平均で縮小して32色へ減色し、下端16行をディザで透明にした（`output/card-skills/process.py`）。インデックスカラーの `.aseprite` へ変換した |
 | 採用・候補・不採用と理由 | 採用（候補） |
 | 採用画像と文章の差・反映方法 | なし |
-| Unityアセットのパス・GUID・利用画面 | `client/Assets/Baryonyx/Features/Combat/UI/Art/CardEmbers.aseprite`。戦闘画面のモック、展示室の `BattleCardGallery` |
+| Unityアセットのパス・GUID・利用画面 | `client/Assets/Baryonyx/Features/Combat/UI/Art/CardEmbers.aseprite`。戦闘（冒険の戦闘・戦闘画面のモック）・編成・商会・ライブラリ・落ちた物の札、展示室の `BattleCardGallery` |
 
 ## 未決事項
 
 | 項目 | 決める内容・先に必要な判断 |
 |---|---|
-| 数値 | ステータスの項目と割合、コスト、持続ターンは仮。[未決事項](../../features/combat.md#未決事項)の数値の決定後に見直す |
+| 数値 | ステータスの項目と割合、コスト、持続ターンは仮。[未決事項](../../features/combat/implementation.md#未決事項)の数値の決定後に見直す |
 | 使い手 | キャラごとに装備できる属性は未決のため、モックの4人のうちの1人を仮に置いた |
 
 ## 変更と判断の記録
@@ -169,6 +169,6 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/CardEmbers.aseprite
 |---|---|---|---|
 | 2026-10-03 | 仮設定として作成 | ユーザーの依頼（50枚のカードスキル） | [CardSkills](../../../client/Assets/Baryonyx/Features/Combat/Runtime/CardSkills.cs) |
 | 2026-10-04 | ステータスの呼び方を、ちから・まりょく・まもり・すばやさから物攻・属攻・物防・速度に改めた。説明文の数値は、使い手のLv100の値と仮のLvから出したステータスで計算し直した | ユーザーの指示（ステータスの項目を8つにした） | [ステータスの項目](../../features/party.md#ステータスの項目) |
-| 2026-10-20 | 倍率の上限を×2.2にした | ユーザーの指示（コストを0〜9で配り直す。品質の上限の×1.5をなくし、スキルごとの値にする） | [スキルの仮設定](../../features/combat.md#スキルの仮設定)、[上限の決め方](../../features/inventory.md#上限の決め方) |
+| 2026-10-20 | 倍率の上限を×2.2にした | ユーザーの指示（コストを0〜9で配り直す。品質の上限の×1.5をなくし、スキルごとの値にする） | [スキルの仮設定](../../features/combat/cards.md#スキルの仮設定)、[上限の決め方](../../features/inventory.md#上限の決め方) |
 | 2026-10-24 | 覚醒版の2つの枝を仮に作った | ユーザーの依頼（カスタムスキルも覚醒させる。名前と挿絵も段階ごとに作る） | [覚醒版](#覚醒版)、[カスタムスキルの覚醒](../../features/skill-awakening.md) |
-| 2026-10-25 | エネルギー3固定に合わせて、効果と説明文を作り直した。コストは1から0、覚醒版は2から1と1から0にした。作り直す前の説明文は「敵1体に属攻の45%ダメージ。60%でやけど3ターン。」。同じ日に実装した | ユーザーの依頼（毎ターン3エネルギーになるので、コストと効果を全部刷新する） | [エネルギーとコスト](../../features/combat.md#エネルギーとコスト)・[計画](../../plans/2026-10-25-fixed-energy-cards.md) |
+| 2026-10-25 | エネルギー3固定に合わせて、効果と説明文を作り直した。コストは1から0、覚醒版は2から1と1から0にした。作り直す前の説明文は「敵1体に属攻の45%ダメージ。60%でやけど3ターン。」。同じ日に実装した | ユーザーの依頼（毎ターン3エネルギーになるので、コストと効果を全部刷新する） | [エネルギーとコスト](../../features/combat/rules.md#エネルギーとコスト)・[計画](../../plans/2026-10-25-fixed-energy-cards.md) |

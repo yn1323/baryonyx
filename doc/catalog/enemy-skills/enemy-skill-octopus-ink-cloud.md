@@ -2,7 +2,7 @@
 id: enemy-skill-octopus-ink-cloud
 type: definition
 status: 候補
-updated: 2026-10-19
+updated: 2026-11-02
 name: 墨吐き
 category: enemy-skills
 ---
@@ -20,7 +20,7 @@ category: enemy-skills
 | 定義の根拠・決定日・参照元 | 2026-10-19、ユーザーの依頼（敵50体を試作し、文書カタログ・クライアント・サーバーにそろえる）で、[沖の大ダコ](../enemies/enemy-giant-octopus.md)の技として作った |
 | 役割・説明 | 味方全体への弱体と、自分の予告を伏せる妨害。激化の合図も兼ねる |
 | 関連する仕様・個別ID | 使う敵：[沖の大ダコ](../enemies/enemy-giant-octopus.md)。[敵の行動の仮設定](../../features/combat-enemy-behavior.md) |
-| 実装・ゲームマスタの場所 | 未実装 |
+| 実装・ゲームマスタの場所 | 未実装（[CombatEnemyBehaviors](../../../client/Assets/Baryonyx/Features/Combat/Runtime/CombatEnemyBehaviors.cs) に名前だけあり、戦闘では選ばれない） |
 
 ## 確定した設定
 
@@ -32,13 +32,13 @@ category: enemy-skills
 |---|---|---|---|
 | 区分 | 固有技（[沖の大ダコ](../enemies/enemy-giant-octopus.md)） | [共通技と固有技](README.md#共通技と固有技) | 候補 |
 | 種類・対象 | 弱体・味方全体 | [記入する項目](README.md#記入する項目) | 候補 |
-| 物理・魔法と属性 | ダメージなし | 味方は物理の技を物防で、魔法の技を属防で受ける（[使い道の候補](../../features/party.md#ステータスの項目)） | 候補 |
-| 効果 | 味方全体に麻痺1ターン。2ターンの間、この敵の予告を「？」に伏せる。ただし、大技の溜め（大技まであと何ターン）は伏せない | 使う敵のステータスの割合（[威力の決め方](../../features/combat.md#威力の決め方)）。状態は[カードの状態の仮設定](../../features/combat.md#カードの状態の仮設定)の名前 | 仮 |
+| 物理・魔法と属性 | ダメージなし | [記入する項目](README.md#記入する項目) | 候補 |
+| 効果 | 味方全体に麻痺1ターン。2ターンの間、この敵の予告を「？」に伏せる。ただし、大技の溜め（大技まであと何ターン）は伏せない | [記入する項目](README.md#記入する項目) | 仮 |
 | 予告 | 弱体 | [記入する項目](README.md#記入する項目) | 候補 |
 | 使う敵 | [沖の大ダコ](../enemies/enemy-giant-octopus.md) | 各敵の定義の「技」の表 | 候補 |
 
 味方全体に麻痺1を付けるだけなら[金切り声](enemy-skill-screech.md)と同じであり、この技は予告を伏せることで別の技にした。
-大技の溜めを伏せないのは、[戦闘中の情報の優先順位](../../features/combat.md#戦闘中の情報の優先順位)の「予告では、特に激化ターンの大技を見せる」を守るためである。
+大技の溜めを伏せないのは、[戦闘中の情報の優先順位](../../features/combat/rules.md#戦闘中の情報の優先順位)の「予告では、特に激化ターンの大技を見せる」を守るためである。
 
 ## 演出
 
@@ -58,7 +58,7 @@ category: enemy-skills
 
 | 項目 | 決める内容・先に必要な判断 |
 |---|---|
-| 数値 | 持続ターンは仮。[戦闘の未決事項](../../features/combat.md#未決事項)の数値が決まったら見直す |
+| 数値 | 持続ターンは仮。[戦闘の未決事項](../../features/combat/implementation.md#未決事項)の数値が決まったら見直す |
 | 予告の伏せ | 新しい仕組み。伏せた予告の見せ方（「？」の形、伏せたまま使う技の演出で何を出すか）を、予告の表示と合わせて決める |
 | 実装 | 未実装。実装するときは[敵の挙動デバッグルーム](../../features/screens/debug-rooms.md#敵の挙動デバッグルーム)の行動にも加える |
 
@@ -67,3 +67,4 @@ category: enemy-skills
 | 日付 | 変更・判断 | 理由・根拠 | 影響するID・仕様 |
 |---|---|---|---|
 | 2026-10-19 | 固有技として定義を作った | ユーザーの依頼 | 使う敵：[沖の大ダコ](../enemies/enemy-giant-octopus.md) |
+| 2026-11-02 | スキルとdocの整理で、今のコードに合わせて「実装・ゲームマスタの場所」を直した | 根拠：CombatEnemyBehaviors で `Other`（戦闘にない効果）として名前だけを持つ | [敵の行動の仮設定](../../features/combat-enemy-behavior.md) |

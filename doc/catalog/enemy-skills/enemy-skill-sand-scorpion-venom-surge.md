@@ -2,7 +2,7 @@
 id: enemy-skill-sand-scorpion-venom-surge
 type: definition
 status: 候補
-updated: 2026-10-19
+updated: 2026-11-02
 name: 毒まわし
 category: enemy-skills
 ---
@@ -20,7 +20,7 @@ category: enemy-skills
 | 定義の根拠・決定日・参照元 | 2026-10-19、ユーザーの依頼（敵50体を試作し、文書カタログ・クライアント・サーバーにそろえる）で、[砂サソリ](../enemies/enemy-sand-scorpion.md)の技として作った |
 | 役割・説明 | 味方単体に付いた毒を、残りの分まとめてダメージにする |
 | 関連する仕様・個別ID | 使う敵：[砂サソリ](../enemies/enemy-sand-scorpion.md)。[敵の行動の仮設定](../../features/combat-enemy-behavior.md) |
-| 実装・ゲームマスタの場所 | 未実装 |
+| 実装・ゲームマスタの場所 | 未実装（[CombatEnemyBehaviors](../../../client/Assets/Baryonyx/Features/Combat/Runtime/CombatEnemyBehaviors.cs) に名前だけあり、戦闘では選ばれない） |
 
 ## 確定した設定
 
@@ -32,8 +32,8 @@ category: enemy-skills
 |---|---|---|---|
 | 区分 | 固有技（[砂サソリ](../enemies/enemy-sand-scorpion.md)） | [共通技と固有技](README.md#共通技と固有技) | 候補 |
 | 種類・対象 | 攻撃・毒の重なりが最も多い味方単体 | [記入する項目](README.md#記入する項目) | 候補 |
-| 物理・魔法と属性 | 属性なし（毒のダメージとして扱い、物防・属防で減らさない） | 味方は物理の技を物防で、魔法の技を属防で受ける（[使い道の候補](../../features/party.md#ステータスの項目)） | 候補 |
-| 効果 | 標的の毒が尽きるまでに与えるはずのダメージの合計を、一度に与えて毒を消す。毒の量を味方の最大HPの割合で決める案（重なった数×3%）なら、重なりが3のとき最大HPの18%（3+2+1の6重なり分）になる | 使う敵のステータスの割合（[威力の決め方](../../features/combat.md#威力の決め方)）。状態は[カードの状態の仮設定](../../features/combat.md#カードの状態の仮設定)の名前 | 仮 |
+| 物理・魔法と属性 | 属性なし（毒のダメージとして扱い、物防・属防で減らさない） | [記入する項目](README.md#記入する項目) | 候補 |
+| 効果 | 標的の毒が尽きるまでに与えるはずのダメージの合計を、一度に与えて毒を消す。毒の量を味方の最大HPの割合で決める案（重なった数×3%）なら、重なりが3のとき最大HPの18%（3+2+1の6重なり分）になる | [記入する項目](README.md#記入する項目) | 仮 |
 | 予告 | 攻撃（標的と、毒を回らせることを予告のアイコンに添える） | [記入する項目](README.md#記入する項目) | 候補 |
 | 使う敵 | [砂サソリ](../enemies/enemy-sand-scorpion.md) | 各敵の定義の「技」の表 | 候補 |
 
@@ -64,3 +64,4 @@ category: enemy-skills
 | 日付 | 変更・判断 | 理由・根拠 | 影響するID・仕様 |
 |---|---|---|---|
 | 2026-10-19 | 固有技として定義を作った | ユーザーの依頼 | 使う敵：[砂サソリ](../enemies/enemy-sand-scorpion.md) |
+| 2026-11-02 | スキルとdocの整理で、今のコードに合わせて「実装・ゲームマスタの場所」を直した | 根拠：CombatEnemyBehaviors で `Other`（戦闘にない効果）として名前だけを持つ | [敵の行動の仮設定](../../features/combat-enemy-behavior.md) |

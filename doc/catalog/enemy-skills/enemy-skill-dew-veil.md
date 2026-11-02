@@ -2,7 +2,7 @@
 id: enemy-skill-dew-veil
 type: definition
 status: 候補
-updated: 2026-10-19
+updated: 2026-11-02
 name: 露の膜
 category: enemy-skills
 ---
@@ -20,7 +20,7 @@ category: enemy-skills
 | 定義の根拠・決定日・参照元 | 2026-10-19、ユーザーの依頼（敵50体を試作し、文書カタログ・クライアント・サーバーにそろえる）で、[朝露ぷるん](../enemies/enemy-dew-slime.md)の技として作った |
 | 役割・説明 | 自分と仲間全体の守りの強化 |
 | 関連する仕様・個別ID | 使う敵：[朝露ぷるん](../enemies/enemy-dew-slime.md)。[敵の行動の仮設定](../../features/combat-enemy-behavior.md) |
-| 実装・ゲームマスタの場所 | 未実装 |
+| 実装・ゲームマスタの場所 | [CombatEnemyBehaviors](../../../client/Assets/Baryonyx/Features/Combat/Runtime/CombatEnemyBehaviors.cs) の、使う敵の `Moves`。攻撃しない技のため、演出は技の名前と効果の文字・数字だけ（[BattleInspectView.EnemyMoves](../../../client/Assets/Baryonyx/Features/Combat/Presentation/BattleInspectView.EnemyMoves.cs) の `Support`） |
 
 ## 確定した設定
 
@@ -32,13 +32,13 @@ category: enemy-skills
 |---|---|---|---|
 | 区分 | 固有技（[朝露ぷるん](../enemies/enemy-dew-slime.md)） | [共通技と固有技](README.md#共通技と固有技) | 候補 |
 | 種類・対象 | 強化・自分と仲間全体（敵全体） | [記入する項目](README.md#記入する項目) | 候補 |
-| 物理・魔法と属性 | ダメージなし | 味方は物理の技を物防で、魔法の技を属防で受ける（[使い道の候補](../../features/party.md#ステータスの項目)） | 候補 |
-| 効果 | プロテクト2ターン（受けるダメージ-25%） | 使う敵のステータスの割合（[威力の決め方](../../features/combat.md#威力の決め方)）。状態は[カードの状態の仮設定](../../features/combat.md#カードの状態の仮設定)の名前 | 仮 |
+| 物理・魔法と属性 | ダメージなし | [記入する項目](README.md#記入する項目) | 候補 |
+| 効果 | プロテクト2ターン（受けるダメージ-25%） | [記入する項目](README.md#記入する項目) | 仮 |
 | 予告 | 強化 | [記入する項目](README.md#記入する項目) | 候補 |
 | 使う敵 | [朝露ぷるん](../enemies/enemy-dew-slime.md) | 各敵の定義の「技」の表 | 候補 |
 
 ブロック（[身を固める](enemy-skill-brace.md)）は決まった量を先に引くが、この技は受けるダメージの割合を下げ、仲間全体に掛かる。
-既存の共通技・固有技に、敵にプロテクトを付ける技はない。
+敵にプロテクトを付ける技は、ほかに自分だけに付ける[霜の鎧毛](enemy-skill-frost-ape-rime-coat.md)がある。
 
 ## 演出
 
@@ -56,12 +56,13 @@ category: enemy-skills
 
 | 項目 | 決める内容・先に必要な判断 |
 |---|---|
-| 数値 | 持続ターンは仮。[戦闘の未決事項](../../features/combat.md#未決事項)の数値が決まったら見直す |
-| 敵に付くプロテクト | カードのプロテクトと同じ効果を敵にも付ける。持続ターンを敵のターンで数えるか、味方のターンで数えるか |
-| 実装 | 未実装。実装するときは[敵の挙動デバッグルーム](../../features/screens/debug-rooms.md#敵の挙動デバッグルーム)の行動にも加える |
+| 数値 | 持続ターンは仮。[戦闘の未決事項](../../features/combat/implementation.md#未決事項)の数値が決まったら見直す |
+| 敵に付くプロテクト | 今は、カードの状態と同じく味方ターンの開始ごとに持続ターンが減る（[カードの状態の仮設定](../../features/combat/cards.md#カードの状態の仮設定)）。敵のターンで数えるかを決める |
+| 実装 | 戦闘で使う（[敵の行動の仮設定](../../features/combat-enemy-behavior.md)） |
 
 ## 変更と判断の記録
 
 | 日付 | 変更・判断 | 理由・根拠 | 影響するID・仕様 |
 |---|---|---|---|
 | 2026-10-19 | 固有技として定義を作った | ユーザーの依頼 | 使う敵：[朝露ぷるん](../enemies/enemy-dew-slime.md) |
+| 2026-11-02 | スキルとdocの整理で、今のコードに合わせて「実装・ゲームマスタの場所」と「実装」を直した。「敵に付くプロテクト」に今の数え方を書き、敵にプロテクトを付けるほかの技に霜の鎧毛を挙げた | 根拠：CombatEnemyBehaviors の `Moves` にこの技があり、戦闘で使う。攻撃しない技は `EnemyBlowOf` の形を使わない | [敵の行動の仮設定](../../features/combat-enemy-behavior.md) |

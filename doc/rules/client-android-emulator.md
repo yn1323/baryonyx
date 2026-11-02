@@ -90,11 +90,11 @@ SDKの追加ではライセンス確認が表示される場合があるため�
 
 ## 普段の起動とAPKインストール
 
-[手動実行用ショートカット](../../AGENTS.md#手動実行用ショートカット) を使う。
+[手動実行用ショートカット](local-shortcuts.md#ファイルの一覧) を使う。
 各ファイルはダブルクリックでき、実行時の作業ディレクトリに依存しない。
 SDKの探し方、インストール先の選び方、エラーになる条件は[ショートカットの動作](local-shortcuts.md#エミュレーターの起動とapkのインストール)に従う。
 
-1. APKを更新する場合は、このプロジェクトをUnityで閉じてから [build-apk.bat](../../shortcuts/build-apk.bat) を実行する。出力先は `client/Builds/Android/baryonyx.apk`。
+1. APKを更新する場合は、このプロジェクトをUnityで閉じ、Google Drive for desktopを起動してから [build-apk-dev-to-drive.bat](../../shortcuts/build-apk-dev-to-drive.bat) を実行する。Driveの配置先へコピーし、`client/Builds/Android/baryonyx.apk` も残る。
 2. ユーザーが [start-pixel-8a.bat](../../shortcuts/start-pixel-8a.bat) を実行し、Androidのホーム画面が表示されるまで待つ。起動用のウィンドウは開いたままにする。
 3. 別途 [install-apk-pixel-8a.bat](../../shortcuts/install-apk-pixel-8a.bat) を実行する。別のAPKを使う場合は、ファイルを1つドラッグ＆ドロップする。
 4. `Success` とインストール完了の表示を確認し、仮想端末内のアプリアイコンを押す。
@@ -123,7 +123,7 @@ $adb = "$env:LOCALAPPDATA\Android\Sdk\platform-tools\adb.exe"
 ```
 
 adbの接続先指定と `install -r` は [Android公式の手順](https://developer.android.com/tools/adb) を参照する。
-エミュレーターの起動やログ取得・操作は、[ルートの作業ルール](../../AGENTS.md#デバッグ環境) に従ってユーザーが行う。
+エミュレーターの起動はユーザーが行う。起動済みのエミュレーターへのインストールとログの取得はAIが行ってよい（[ルートの作業ルール](../../AGENTS.md#デバッグ環境)）。
 
 ## 起動失敗時の確認
 
@@ -137,7 +137,7 @@ adbの接続先指定と `install -r` は [Android公式の手順](https://devel
 | インストール先が見つからない | AVD名と起動完了を確認する。Pixel 8aでも `Pixel_8a_API_34` はインストール用ショートカットの対象外。 |
 | `INSTALL_FAILED_UPDATE_INCOMPATIBLE` | 既存APKとの署名不一致を確認する。入れ直し時のデータ消去は [Androidビルドと実機確認](client-android-testing.md#手動で残す確認) に従う。 |
 
-ユーザーがログを取得する場合は、対象AVDだけを起動し、次のコマンドでAndroidの版、対応ABI、クラッシュを確認する。
+ログを取得する場合は、対象AVDだけが起動している状態で、次のコマンドでAndroidの版、対応ABI、クラッシュを確認する。
 
 ```powershell
 $adb = "$env:LOCALAPPDATA\Android\Sdk\platform-tools\adb.exe"

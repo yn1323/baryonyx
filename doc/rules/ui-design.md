@@ -4,7 +4,7 @@
 
 アプリは横画面に固定し、表示領域の大きさが変わっても文章を読めて必要な操作へ到達できるようにする。
 ゲーム画面の主役（キャラ、メニュー、リスト、パネル）は中央の16:9 Core Areaへ収め、操作とHUDはSafe Areaの端へ固定する（[画面端の部品と中央の層の部品](#画面端の部品と中央の層の部品)）。
-uGUIで作るゲームの画面（Top・Home・案内人の画面・冒険・戦闘）に適用する。
+uGUIで作るゲームの画面（Top・Home・案内人の画面・世界地図・冒険・戦闘）に適用する。
 削除した「1週間の歩数」と[操作試作](../archive/game-wireframe.md)の構成と寸法は、[削除した歩数画面の記録](../archive/health-data-local-screen.md#スマートフォン向けの画面構成)と試作の記録に残す。
 
 ## 画面方向と拡縮
@@ -54,7 +54,8 @@ Androidの大画面では向きの指定が上書きされる条件とゲーム�
 
 ## 現行のUI構成
 
-Unity `6000.6.0f1` のゲーム内UIは、uGUI、TextMeshPro、Input Systemを使う。
+ゲーム内UIは、uGUI、TextMeshPro、Input Systemを使う。
+Unity LocalizationとAddressablesは、今は入れない（2026-11-02、ユーザーの判断）。
 画面、ボタン、数値などゲーム内のTextMeshProテキストはKiwi Maruで統一する。
 例外として、戦闘中に浮かぶダメージと回復の数字にはDela Gothic Oneを使う（[戦闘の数字のフォント](../../client/Assets/Baryonyx/Features/Combat/UI/Fonts/README.md)）。
 フォント本体、TMPアセット、ライセンスの参照先は[ゲーム画面のフォント](../../client/Assets/Baryonyx/Shared/UI/Fonts/README.md)に揃える。
@@ -112,6 +113,7 @@ uGUIではCanvas、Prefab、Layout、Animator、Presenterの責務を分ける�
 | E 窓 | ダイアログ、一覧の窓、確かめる窓、冒険の結果 | 下の「窓」の表 |
 | 絵のある窓 | 地図の出来事 | 窓の縁・×・ルーンの札・下のボタン。絵の舞台は画面ごとに作る |
 | F 全画面の演出 | 召喚・合成の演出、戦闘後の強化、ターンの帯、山札の一覧 | 作り分けてよい。暗い幕（`VeilDeep`）と、決めるときの丸いチェックはそろえる |
+| 1つを選ぶ画面 | これから作る、何かを1つ選ばせる画面（2026-10-31、宝箱の覚醒の画面の案でユーザーが指定。宝箱の覚醒と覚醒の祭壇は、今は知らせる窓の選択肢のまま） | 窓にせず、画面の上に直に置く。候補を上に小さく横一列に並べ、最初から1つを選んだ状態にして中央に大きく出し、押したものをそのまま選ぶ。決めるのは右下の丸いチェック。キャラを選ぶときは、題・名前・選べる枚数を出さない。商会の[使う物を選ぶ画面](../features/screens/shop.md#使う物を選ぶ画面)は、ユーザーが選んだ4列の札の形にする |
 
 ### 窓
 
@@ -119,6 +121,7 @@ uGUIではCanvas、Prefab、Layout、Animator、Presenterの責務を分ける�
 窓の色を青緑などに変えない。
 窓の幅は、小（1000）・中（1400）・大（1840）の3つから選ぶ（`GuideFrameAssets.WindowSize`）。
 右上の×は、どの窓・重ねでも `GuideFrameAssets.CloseButton`（押せる範囲128の中央に×）にする。
+中身で高さが決まる窓（ダイアログ・連携）は、固定座標ではなく、縁と四隅をアンカーで付ける `GuideFrameAssets.MessageWindow`（`WindowFrame`）で作る。
 
 | 窓 | 使う場面 | 幅 | 見出し | ボタン | 生成処理 |
 |---|---|---|---|---|---|
@@ -168,7 +171,7 @@ uGUIではCanvas、Prefab、Layout、Animator、Presenterの責務を分ける�
 
 ### 読み込み中と取得できない
 
-一覧を読み込む間は、先頭の札を裏返した形（ひし形の模様）で伏せる。
+一覧を読み込む間は、先頭の札を[カードの裏面](../features/screens/guide.md#カードの裏面)で伏せる。
 読めなかったときは「取得できませんでした」を、一覧の欄の上の段の中央に出す（`GuideFrameAssets.ListStatus`）。
 数字が読めないうちは「-」を出す。
 
@@ -264,7 +267,7 @@ dpとUnityの基準単位を区別し、実際の描画サイズと検証端末�
 | 2 | 前に読んだ内容をすぐ出し、裏で読み直す | アプリを動かしている間に一度読んだ画面 | 編成・装備・ライブラリ・商会の「買う」（同上） |
 | 3 | 互いに依存しない読み込みを同時に送る | 1つの画面が複数を読む | 育成・装備・ライブラリ・ホームのACT（同上） |
 | 4 | もともとある演出の間に読む・保存する | 結果が要る操作に、歩く・喜ぶなどの演出が付いている | マスの移動、勝利の演出の間の保存、全滅の帯の間の読み直し（[冒険の画面](../features/screens/adventure.md#冒険の画面)） |
-| 5 | 幕を閉じたまま読み、描き終えてから開く | 初めて開く画面で、読む前の姿や描く途中が見えてしまう | 世界地図（[世界地図を開く画面](../features/stage-progression.md#世界地図を開く画面)）、探索（[冒険の画面](../features/screens/adventure.md#冒険の画面)） |
+| 5 | 幕を閉じたまま読み、描き終えてから開く | 初めて開く画面で、読む前の姿や描く途中が見えてしまう | 世界地図（[世界地図を開く画面](../features/stage-progression-world-map.md#世界地図を開く画面)）、探索（[冒険の画面](../features/screens/adventure.md#冒険の画面)） |
 | 6 | 見える所をカードの裏で埋め、読み終えたらめくる | 一覧を初めて読む間 | 編成・商会・ライブラリの一覧（[カードの裏面](../features/screens/guide.md#カードの裏面)） |
 | 7 | 「読み込み中…」の文字 | 上のどれも使えない、または幕で覆う上限を超えた | 商会の「売る」「合成」、帯の形の一覧 |
 
@@ -330,6 +333,7 @@ GameビューとDevice Simulatorは配置と基本操作の目視確認に使う
 Simulatorは実機の動作すべてを再現しないため、文字の読みやすさ、タップ、システムバー、OS画面からの復帰は [Androidの実機確認](client-android-testing.md#手動で残す確認) で確かめる。[Device Simulatorの用途と制限](https://docs.unity3d.com/6000.6/Documentation/Manual/device-simulator-introduction.html)
 実機確認に使うmoto edge 50 pro（1220×2712、20:9）は、Unity Editorの起動時に [GameViewDeviceSizes](../../client/Assets/Baryonyx/Editor/GameViewDeviceSizes.cs) がGameビューのAndroidグループへ横向きの `moto edge 50 pro (2712x1220)` として登録する。[端末仕様](https://en-us.support.motorola.com/app/answers/detail/a_id/178982/~/specifications---motorola-edge-50-pro)
 この登録は画面サイズだけを再現し、Safe Areaとパンチホールは含まない。
+Device Simulatorでは、パンチホールを含む同じ端末の定義 [Motorola Edge 50 Pro.device](../../client/Assets/Baryonyx/Editor/Devices/Motorola%20Edge%2050%20Pro.device) を選べる。
 
 確認画像は `client/Assets/DevCaptures/`（Git対象外）に保存し、機種・解像度・状態・テストデータの使用有無を記録する。
 個人の健康データや認証情報を画像へ含めない。

@@ -2,7 +2,7 @@
 id: enemy-skill-call-ally
 type: definition
 status: 候補
-updated: 2026-10-19
+updated: 2026-11-02
 name: 仲間を呼ぶ
 category: enemy-skills
 ---
@@ -20,7 +20,7 @@ category: enemy-skills
 | 定義の根拠・決定日・参照元 | 2026-10-04、ユーザーの依頼（敵の技を増やし、共通化できるものも入れる）で、[森の守り手](../enemies/enemy-forest-guardian.md)の技を共通技として作った |
 | 役割・説明 | 戦闘の途中で敵を増やす |
 | 関連する仕様・個別ID | 使う敵：[森の守り手](../enemies/enemy-forest-guardian.md)、[石のガーゴイル](../enemies/enemy-stone-gargoyle.md)、[真鍮の番人](../enemies/enemy-brass-warden.md)、[岩肌トロル](../enemies/enemy-rock-troll.md)、[沼のカエル王](../enemies/enemy-frog-king.md)、[骨背の大ワニ](../enemies/enemy-bone-croc.md)、[砂鮫](../enemies/enemy-sand-shark.md)、[霜の大猿人](../enemies/enemy-frost-ape.md)、[雪原のマンモス](../enemies/enemy-snow-mammoth.md)、[黒曜石の巨像](../enemies/enemy-obsidian-colossus.md)、[骸骨海賊](../enemies/enemy-skeleton-pirate.md)、[沖の大ダコ](../enemies/enemy-giant-octopus.md)、[墓守りの大鴉](../enemies/enemy-grave-raven.md)、[死霊の魔導師](../enemies/enemy-lich.md)。[敵の行動の仮設定](../../features/combat-enemy-behavior.md) |
-| 実装・ゲームマスタの場所 | 未実装 |
+| 実装・ゲームマスタの場所 | 未実装（[CombatEnemyBehaviors](../../../client/Assets/Baryonyx/Features/Combat/Runtime/CombatEnemyBehaviors.cs) に名前だけあり、戦闘では選ばれない） |
 
 ## 確定した設定
 
@@ -32,8 +32,8 @@ category: enemy-skills
 |---|---|---|---|
 | 区分 | 共通技 | [共通技と固有技](README.md#共通技と固有技) | 候補 |
 | 種類・対象 | 呼び出し | [記入する項目](README.md#記入する項目) | 候補 |
-| 物理・魔法と属性 | ダメージなし | 味方は物理の技を物防で、魔法の技を属防で受ける（[使い道の候補](../../features/party.md#ステータスの項目)） | 候補 |
-| 効果 | 空いた立ち位置に、使う敵ごとに決めた敵を1体呼ぶ。呼んだ敵のLvは使った敵と同じにする | 使う敵のステータスの割合（[威力の決め方](../../features/combat.md#威力の決め方)）。状態は[カードの状態の仮設定](../../features/combat.md#カードの状態の仮設定)の名前 | 仮 |
+| 物理・魔法と属性 | ダメージなし | [記入する項目](README.md#記入する項目) | 候補 |
+| 効果 | 空いた立ち位置に、使う敵ごとに決めた敵を1体呼ぶ。呼んだ敵のLvは使った敵と同じにする | [記入する項目](README.md#記入する項目) | 仮 |
 | 予告 | 呼び出し | [記入する項目](README.md#記入する項目) | 候補 |
 | 使う敵 | [森の守り手](../enemies/enemy-forest-guardian.md)、[石のガーゴイル](../enemies/enemy-stone-gargoyle.md)、[真鍮の番人](../enemies/enemy-brass-warden.md)、[岩肌トロル](../enemies/enemy-rock-troll.md)、[沼のカエル王](../enemies/enemy-frog-king.md)、[骨背の大ワニ](../enemies/enemy-bone-croc.md)、[砂鮫](../enemies/enemy-sand-shark.md)、[霜の大猿人](../enemies/enemy-frost-ape.md)、[雪原のマンモス](../enemies/enemy-snow-mammoth.md)、[黒曜石の巨像](../enemies/enemy-obsidian-colossus.md)、[骸骨海賊](../enemies/enemy-skeleton-pirate.md)、[沖の大ダコ](../enemies/enemy-giant-octopus.md)、[墓守りの大鴉](../enemies/enemy-grave-raven.md)、[死霊の魔導師](../enemies/enemy-lich.md) | 各敵の定義の「技」の表 | 候補 |
 | 似合う敵 | 群れの長、巣の主、ボス | 新しい敵へ付けるときの目安 | 候補 |
@@ -73,7 +73,7 @@ category: enemy-skills
 
 | 項目 | 決める内容・先に必要な判断 |
 |---|---|
-| 数値 | 割合と持続ターンは仮。[戦闘の未決事項](../../features/combat.md#未決事項)の数値が決まったら見直す |
+| 数値 | 割合と持続ターンは仮。[戦闘の未決事項](../../features/combat/implementation.md#未決事項)の数値が決まったら見直す |
 | 呼び出しの決まり | 立ち位置、行動順への入れ方、呼んだ敵を倒す必要があるか（[敵の行動の仮設定](../../features/combat-enemy-behavior.md)） |
 | 実装 | 未実装。実装するときは[敵の挙動デバッグルーム](../../features/screens/debug-rooms.md#敵の挙動デバッグルーム)の行動にも加える |
 
@@ -83,3 +83,4 @@ category: enemy-skills
 |---|---|---|---|
 | 2026-10-04 | 共通技として定義を作った | ユーザーの依頼 | 使う敵：[森の守り手](../enemies/enemy-forest-guardian.md) |
 | 2026-10-19 | 使う敵に、新しく作った敵を加えた | ユーザーの依頼（敵を50体に増やし、文書カタログ・クライアント・サーバーにそろえる） | 使う敵：[石のガーゴイル](../enemies/enemy-stone-gargoyle.md)、[真鍮の番人](../enemies/enemy-brass-warden.md)、[岩肌トロル](../enemies/enemy-rock-troll.md)、[沼のカエル王](../enemies/enemy-frog-king.md)、[骨背の大ワニ](../enemies/enemy-bone-croc.md)、[砂鮫](../enemies/enemy-sand-shark.md)、[霜の大猿人](../enemies/enemy-frost-ape.md)、[雪原のマンモス](../enemies/enemy-snow-mammoth.md)、[黒曜石の巨像](../enemies/enemy-obsidian-colossus.md)、[骸骨海賊](../enemies/enemy-skeleton-pirate.md)、[沖の大ダコ](../enemies/enemy-giant-octopus.md)、[墓守りの大鴉](../enemies/enemy-grave-raven.md)、[死霊の魔導師](../enemies/enemy-lich.md) |
+| 2026-11-02 | スキルとdocの整理で、今のコードに合わせて「実装・ゲームマスタの場所」を直した | 根拠：CombatEnemyBehaviors で `Other`（戦闘にない効果）として名前だけを持つ | [敵の行動の仮設定](../../features/combat-enemy-behavior.md) |

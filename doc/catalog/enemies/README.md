@@ -71,10 +71,10 @@ IDの接頭辞は `enemy-`、メタデータの `category` は `enemies` とす�
 | 項目 | 初期の扱い |
 |---|---|
 | 分類・役割・出現ステージID | 未決 |
-| ステータス・状態異常への反応 | 項目は味方と同じ8つ（[ステータスの項目](../../features/party.md#ステータスの項目)）。値と状態異常への反応は個別に決める。速度は[ターン順](../../features/combat.md#ターン順)に使う |
-| 弱点の属性 | 個別設定は未決。[属性と弱点](../../features/combat.md#属性と弱点)に従い、耐性は設けない |
+| ステータス・状態異常への反応 | 項目は味方と同じ8つ（[ステータスの項目](../../features/party.md#ステータスの項目)）。値と状態異常への反応は個別に決める。速度は[ターン順](../../features/combat/rules.md#ターン順)に使う |
+| 弱点の属性 | 個別設定は未決。[属性と弱点](../../features/combat/rules.md#属性と弱点)に従い、耐性は設けない |
 | 攻撃・スキルID・行動条件・行動の予告 | 技は[敵の技の定義](../enemy-skills/README.md)のIDで参照する。個別設定は各定義に書く |
-| 激化するターンと、激化後の行動 | 個別設定は未決。[防御と敵の激化](../../features/combat.md#防御と敵の激化)に従う |
+| 激化するターンと、激化後の行動 | 個別設定は未決。[防御と敵の激化](../../features/combat/rules.md#防御と敵の激化)に従う |
 | 体格・輪郭・部位・移動方法・材質・配色 | 未決 |
 | 性格・知性・習性・生息地・行動原理 | 未決 |
 | 通常・攻撃予告・攻撃・被弾・敗北の姿 | 個別設定は未決 |
@@ -82,25 +82,24 @@ IDの接頭辞は `enemy-`、メタデータの `category` は `enemies` とす�
 | 報酬テーブルID | 未決 |
 
 体格や部位の記述は外見の定義に使う。
-[部位別HPは採用しない](../../features/combat.md#属性と弱点)。
+[部位別HPは採用しない](../../features/combat/rules.md#属性と弱点)。
 
 ## ステータス・技・行動パターンの書き方
 
 個別の定義では、ステータス、使う技、行動パターンを分けて書く。
 技そのもの（効果・予告・演出）は[敵の技の定義](../enemy-skills/README.md)に1技1ファイルで置き、敵の定義からはリンクする。
-冒険の戦闘は、2026-10-22から、この技と行動パターンを [CombatEnemyBehaviors](../../../client/Assets/Baryonyx/Features/Combat/Runtime/CombatEnemyBehaviors.cs) に写して動かす。速度は [CombatEnemyStats](../../../client/Assets/Baryonyx/Features/Combat/Runtime/CombatEnemyStats.cs) に写す。定義の技・行動パターン・速度を変えたら、両方を合わせて直す。
-戦闘にまだない効果（味方に付く状態・呼び出しなど）は写していない。その一覧は[敵の行動の仮設定](../../features/combat-enemy-behavior.md)にある。
+冒険の戦闘は、2026-10-22から、技と行動パターンを [CombatEnemyBehaviors](../../../client/Assets/Baryonyx/Features/Combat/Runtime/CombatEnemyBehaviors.cs)、Lv100のステータス（8つ）を [CombatEnemyStats](../../../client/Assets/Baryonyx/Features/Combat/Runtime/CombatEnemyStats.cs) で動かす。
+正本はこの2つのコードで、個別の定義に書いた技・行動パターン・ステータスはその写しである（2026-11-02、ユーザーの判断）。直すときはコードを先に直し、同じ変更で定義をそろえる。
+戦闘にまだない効果（味方に付く状態・呼び出しなど）の技は、名前だけを `Other` で写し、戦闘では選ばない。使う条件が戦闘から見えない技も選ばない。その一覧は[敵の行動の仮設定](../../features/combat-enemy-behavior.md)にある。
 
 | 項目 | 書き方 |
 |---|---|
 | ステータス | 味方と同じ8つの項目（[ステータスの項目](../../features/party.md#ステータスの項目)）を、Lv100のときの値で書く。各Lvの値は成長率を掛けて出す（[レベルとステータス](../../features/progression.md#レベルとステータス)）。モックにいる敵は、出現するLvでのHP・物攻・物防・属防とLvを、戦闘画面のモックの値（[BattleInspectAssets](../../../client/Assets/Baryonyx/Features/Combat/Editor/BattleInspectAssets.cs)の `MaxHp`・`Power`・`PhysicalDefense`・`MagicDefense`・`Level`）と同じにする |
 | 出現する場所とLv | 行き先・マス・敵の組み合わせと、出現するLvを書く。ステージの難しさは、出現するLvを上げ下げして調整する |
-| 技 | 技の数は、敵の大きさに合わせて小3つ・中5つ・大8つを目安にする（2026-10-04、ユーザーの依頼）。[共通技](../enemy-skills/README.md#共通技と固有技)から合うものを選び、その敵らしさは固有技で出す。技ごとに「この敵が持つ理由」と、出現するLvでの値を書く |
-| 行動パターン | 1ターン目の行動、通常の選び方（順番か割合）、同じ技を続けてよい回数、条件で割り込む技、[激化](../../features/combat.md#防御と敵の激化)するターンと変化を書く。ターンは戦闘の経過ターンで数える。同じ技を続けて使う回数の制限は、Slay the Spireの敵の作り方を参考にした（[スライムの行動](https://slaythespire.wiki.gg/wiki/Slimes)、2026-10-04確認） |
+| 技 | 技の数は、敵の大きさに合わせて小3つ・中5つ・大8つを目安にする（2026-10-04、ユーザーの依頼）。選び方は[共通技と固有技](../enemy-skills/README.md#共通技と固有技)に従う。技ごとに「この敵が持つ理由」と、出現するLvでの値を書く |
+| 行動パターン | 1ターン目の行動、通常の選び方（順番か割合）、同じ技を続けてよい回数、条件で割り込む技、[激化](../../features/combat/rules.md#防御と敵の激化)するターンと変化を書く。ターンは戦闘の経過ターンで数える。同じ技を続けて使う回数の制限は、Slay the Spireの敵の作り方を参考にした（[スライムの行動](https://slaythespire.wiki.gg/wiki/Slimes)、2026-10-04確認） |
 | 外見の指示文 | 敵ごとの外見だけを書き、共通の画風・寸法・色数は書かない。生成するときに[pixel-art-standards](../../../.agents/skills/pixel-art-standards/SKILL.md)で[ドット絵の制作規格](../../art/direction.md#ドット絵の制作規格)を加える。亜種は、定義に書いた「変えない特徴」を残し、「変えてよい特徴」を差し替えて作る |
 
 ## 追加方法
 
-[画像対象テンプレート](../templates/visual-entity.md)または[定義テンプレート](../templates/definition.md)をこの分類にコピーし、1対象1ファイルで記入する。
-既存名・ID・画像の有無を確認し、未決欄を推測で埋めない。
-追加後は[索引を再生成](../../tools/README.md)する。
+[個別データの作り方](../README.md#個別データの作り方)に従う。

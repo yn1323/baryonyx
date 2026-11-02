@@ -9,13 +9,21 @@ updated: 2026-11-02
 
 [機能索引](README.md)
 
+部品の調整と画面ごとの確かめ方は、次のファイルに分けて置く（2026-11-02に分けた。読むときは、必要なファイルだけを開く）。
+
+| 内容 | ファイル | 主な内容 |
+|---|---|---|
+| HD-2Dの部品の調整 | [hd2d-tuning.md](showcase/hd2d-tuning.md) | 光芒・霧・揺らぐ光・火の粉の調整項目、ポストプロセス、疑似ティルトシフト、塵ときらめきの表示 |
+| 横画面と戦闘・デバッグルームの確かめ方 | [battle-checks.md](showcase/battle-checks.md) | 横画面UI、戦闘画面のモック、カード・HPバー・スキルの演出、デバッグルーム、プレビューの縮尺 |
+| 案内人の画面・冒険・地図の確かめ方 | [screen-checks.md](showcase/screen-checks.md) | 編成・商会・神殿、召喚の演出、冒険の画面、街道の世界地図、入れ子の地図 |
+
 ## 目的
 
 クライアント側で作成したアセットを、ゲームを進行させずに一覧から確認する。
 
 展示室はゲームシーンとして実装し、Unity Editorでシーンを開いてPlay Modeで確認できる。実機でも確認できるよう、Build Settingsへ常時追加して通常のビルドにも含める。
 
-Play Modeを使わずに一覧と基本プレビューを確認するため、Unity Editorの `Baryonyx > Showcase > Open Preview Window` も提供する。このウィンドウはカタログを左側の一覧に表示し、画像、Prefab、マテリアルなどのEditorプレビューと、元アセットの場所を確認できる。音声の再生やシーンの実行時表示など、ゲーム内の挙動が必要な確認は展示室シーンで行う。
+Play Modeを使わずに一覧と基本プレビューを確認するため、Unity Editorの `Baryonyx > Showcase > Open Preview Window` も提供する。音声の再生やシーンの実行時表示など、ゲーム内の挙動が必要な確認は展示室シーンで行う。
 
 UnityのGameタブは、シーンに保存されたカメラやUIであれば停止中にも確認できる。ただし展示室の一覧UIは `Start` でカタログから動的生成するため、現在のGameタブにはPlay Mode前の一覧は表示されない。停止中の一覧確認はPreview Window、ゲーム内とビルドの確認は展示室シーンという役割分担にする。
 
@@ -37,9 +45,21 @@ UnityのGameタブは、シーンに保存されたカメラやUIであれば停
 - データ
 - その他
 
-分類はアセットのパスと種類から自動推定する。
-パスに `character` または `/enemies/` を含む画像はキャラクターに入る（敵の分類はないため、敵もキャラクターに含める）。
-`Shared/Art/Stages/` の下（探索する場所の背景と、[3Dの舞台](../art/hd2d-stage.md)のPrefab・テクスチャ・マテリアル）は背景・環境に入る。
+分類はアセットのパスと種類から自動推定する（[カタログ生成](../../client/Assets/Baryonyx/Features/Showcase/Editor/ShowcaseCatalogBuilder.cs) の `InferCategory`）。
+パスを小文字にして、次の表の語を上から順に探し、最初に当たった分類にする。
+当たらなければ種類で決める（Sprite・Texture2Dは画像、Prefabはその他、AudioClipは音声・音楽、AnimationClipはアニメーション、Material・Shaderはマテリアル・シェーダー、ScriptableObjectはデータ）。
+シーンはいつもシーンに入る。
+
+| パスに含む語 | 分類 |
+|---|---|
+| `character`・`/enemies/`・`adventurer`・`player` | キャラクター（敵の分類はないため、敵もここに入る） |
+| `background`・`environment`・`/stages/`・`forest`・`mine` | 背景・環境（`Shared/Art/Stages/` の下の、探索する場所の背景と[3Dの舞台](../art/hd2d-stage.md)のPrefab・テクスチャ・マテリアルなど） |
+| `weapon`・`sword`・`bow` | 武器 |
+| `item`・`potion`・`icon`・`/armor/`・`/accessories/` | アイテム |
+| `/ui/`・`button`・`panel`・`screen` | UI |
+| `vfx`・`effect`・`particle` | VFX・エフェクト |
+
+`/Editor/`・`/Tests/`・`/Showcase/`・`/DevCaptures/` を含むパスは一覧に載せない。
 
 ## 表示と操作
 
@@ -54,188 +74,21 @@ Materialのサンプル形状は球とし、シェーダーの `PreviewType` タ
 
 VFXカテゴリには `Hd2dLightShaft`、`Hd2dFog`、`Hd2dFlickerLight`、`Hd2dEmberEmitter`、`Hd2dLightingVfx`、`Hd2dParticleField`、`Hd2dVfxLightPoint` の各Prefabを登録する。
 これらは画像を使わず、霧のシェーダー `Baryonyx/HD2D/UI Fog`（マテリアル `Hd2dUiFog`）と、光・粒のシェーダー `Baryonyx/HD2D/UI Ambient` で計算して描く。
-光・粒のマテリアルは形ごとに分かれ、`Hd2dUiGlowCore`（芯）・`Hd2dUiGlowHalo`（周りを照らす光）・`Hd2dUiLightPool`（床の光だまり）・`Hd2dUiLightShaft`（光芒）・`Hd2dUiLightRay`（小さな光の筋）・`Hd2dUiDust`（塵）・`Hd2dUiSparkle`（四芒星のきらめき）・`Hd2dUiEmber`（火の粉）・`Hd2dUiPuff`（ルーンのもや）がマテリアル・シェーダーのカテゴリに入る。
+光・粒のマテリアルは形ごとに分かれ、`Hd2dUiGlowCore`（芯）・`Hd2dUiGlowHalo`（周りを照らす光）・`Hd2dUiLightPool`（床の光だまり）・`Hd2dUiLightShaft`（光芒）・`Hd2dUiLightRay`（小さな光の筋）・`Hd2dUiDust`（塵）・`Hd2dUiSparkle`（四芒星のきらめき）・`Hd2dUiEmber`（火の粉）・`Hd2dUiPuff`（ルーンのもや）が、VFX・エフェクトのカテゴリに入る（`Shared/VFX/HD2D/Materials/`）。
 マテリアル単体のプレビューは四角い板で、光芒の塵やゆらぎのように時間で動く部分は止まって見える。形の動きはPrefabのプレビューかPlay Modeで確かめる。
-ポストプロセスの `Hd2dPostProcess` はデータのカテゴリに入る。
+ポストプロセスの `Hd2dPostProcess` はVFX・エフェクトのカテゴリに入る。
 
 [3Dの舞台](../art/hd2d-stage.md)は、背景・環境のカテゴリの `StarlitGateStage`（Topの星空の夜の山の門）・`ForestGladeStage`（Homeの昼の森の野営地）・`DuskHighlandStage`（戦闘の夕暮れの高原の環状列石）のPrefabと、それぞれのテクスチャ（`Starlit〈名前〉`・`Glade〈名前〉`・`Dusk〈名前〉` の `.aseprite`）とマテリアルで確認する。舞台ごとのポストプロセス（`StarlitGateLook`・`ForestGladeLook`・`DuskHighlandLook`）も背景・環境のカテゴリに入る。舞台の小物・草の房・地面の汚し（`GladeCrate`・`StarlitStatue`・`DuskBones` など）のテクスチャとマテリアル、光を受ける面の法線マップ（`〈名前〉Normal.png`）も同じカテゴリに入る。草と葉のシェーダー `Baryonyx/HD2D/Stage Foliage` と、小物の足元の陰のマテリアル `Hd2dPropShade` はVFX・エフェクトのカテゴリに入る。草の揺れはPlay Modeで確認する。今は画面で使っていない `DungeonHallStage`（広間）・`ForestRuinsStage`（森の遺跡）と、そのテクスチャ・Profileも同じカテゴリに残る。空と遠景のシェーダー `Hd2dPaintedDistance` はVFX・エフェクトのカテゴリに入る。舞台のPrefabのプレビューは舞台全体を収めるため、夜空の2枚目の月も見える（画面では1つだけ写る）。光の筋のシェーダーとマテリアル `Hd2dLightBeam`、光だまりのシェーダー `Hd2dLightPool`、煙のシェーダー `Hd2dStageSmoke` とマテリアル `Hd2dSmoke`、木漏れ日と雲の影のマスク（コードから作った生成テクスチャ `Hd2dLeafCookie`・`Hd2dCloudCookie`、`Shared/VFX/HD2D/Generated/`）、舞台のレンズのシェーダー `Hd2dStageFocus` はVFX・エフェクトのカテゴリに入る。戦闘の背景ごとの光だまり（`〈接頭辞〉〈名前〉Pool` など）・火山の噴気（`VolcanoFumes`）のマテリアルは、その舞台のフォルダーにあり背景・環境のカテゴリに入る。煙・光だまりは時間で形が変わるため、流れと明滅はシーンのPlay Modeで確かめる。舞台のレンズ・木漏れ日・光の筋は、HomeやTopのシーンを開くと停止中のGameビューでも確認でき、光の筋の揺らぎと塵の動きはPlay Modeで確認する。
 キャラの板・接地影・炎・火の粉・光の粒のシェーダーとマテリアル（`Hd2dStageSprite`・`Hd2dContactShadow`・`Hd2dFlame`・`Hd2dGlowParticle`・`Hd2dEmberGlow`・`Hd2dMoteGlow`・`Hd2dFireflyGlow`・`Hd2dSnowFlake`）と、Homeの焚き火の炎と煙のマテリアル `CampfireFlame`・`CampfireSmoke` はVFXのカテゴリに入る。
 Homeの焚き火の画像は、3Dの舞台に立てる薪の `CampfireLogs` と、3Dの舞台がないときだけその上に重ねる炎の `CampfireFlame` に分かれ、UIのカテゴリに入る。
 焚き火の炎の揺らぎと火の粉は、シーンのカテゴリから `Home` を開いて確認する。
 Prefabのプレビューは舞台全体を遠くから写すだけで、画面ごとのカメラ・霧・キャラは映らない。
-[戦闘の背景](../art/hd2d-stage.md#戦闘の背景)の10種類（`MeadowRoadStage`・`MistyWoodsStage`・`MineTunnelStage`・`CrystalCavernStage`・`RockyShoreStage`・`MistySwampStage`・`SnowFieldStage`・`VolcanoCraterStage`・`MoonlitGraveyardStage`・`CastleHallStage`）も、Prefab・テクスチャ（`Meadow〈名前〉` など舞台ごとの接頭辞の `.aseprite`）・マテリアル・法線マップ・ポストプロセス（`〈舞台〉Look`）が背景・環境のカテゴリに入る。
+[戦闘の背景](../art/hd2d-stage/battle-backgrounds.md#戦闘の背景)の10種類（`MeadowRoadStage`・`MistyWoodsStage`・`MineTunnelStage`・`CrystalCavernStage`・`RockyShoreStage`・`MistySwampStage`・`SnowFieldStage`・`VolcanoCraterStage`・`MoonlitGraveyardStage`・`CastleHallStage`）も、Prefab・テクスチャ（`Meadow〈名前〉` など舞台ごとの接頭辞の `.aseprite`）・マテリアル・法線マップ・ポストプロセス（`〈舞台〉Look`）が背景・環境のカテゴリに入る。
 キャラが立った見た目、光と影、カメラの動きは、シーンのカテゴリから `Top`・`Home`・`BattleLab` を開いて確認する。
 戦闘の背景をキャラと一緒に見比べるときは、シーンのカテゴリから `Battle` を開く。展示室から開いたシーンには背景を選ぶInspectorがないため、背景の切り替えはUnity Editorで `Battle.unity` を開き、`BattleStages` の `Stage` を変えて確かめる。
 ポストプロセスはカメラの描画に掛かるため、単体のプレビューではなく、シーンカテゴリの `Top` を開いて確認する。
 親Canvasの全面に伸ばすUI Prefabは、展示室では1920×1080の領域を用意してプレビューする。
 行き先ごとの地図の地面（`GroundForestRuins` など8枚、`Shared/Art/Stages/Exploration/`）と、2026-10-22まで地図に立てていた木・下草・遺跡（`MapTrees`・`MapTreesFar`・`MapUndergrowth`・`MapUndergrowthFar`・`MapRuin`。今は使っていない）は背景・環境のカテゴリに入る。探索画面の `ExplorationScreen` を選ぶと、決まった種の見本の地図を入口から見た形で並べる（[冒険の画面](screens/adventure.md#冒険の画面)）。Play Modeで金色の縁のマスの札を押すと、4人がそのマスまで歩いて地図が追いかける様子を、1本指で左右に引くと道の先を、右下の「？」で凡例を確かめられる（見本のマスは出来事を終えた扱いで、着くと次の札が出る）。冒険を進めた地図は、シーンのカテゴリから開いた `Exploration` ではなく、Homeから冒険に出て確かめる。
-
-### 光芒の調整
-
-`Hd2dLightShaft` Prefabを開くと、専用Inspectorで調整できる。
-2026-10-02にTopを屋外の夜にしたため、広間の天井から差していたTopの `TopHd2dLightShaft` は外した。
-「Editorで表示」を有効にすると、停止中も光芒を表示し、変更とUndoを反映する。
-
-| Inspectorの項目 | 効果 |
-| --- | --- |
-| 光の濃さ（0で透明）・光の色 | 濃さと色。濃さを小さくするほど背景が透ける。既定は松明の暖色と対比させる青白い光 |
-| 太さの範囲・長さの範囲 | Xが最小、Yが最大。個々の光芒には「細い方 / 太い方の倍率」も掛かる |
-| 開始位置（X: 左右 / Y: 上下） | Xを小さくすると左へ移る。Yを1より大きくすると画面の上から入る |
-| 開始位置の広がり | 複数本の開始位置を左右に並べる幅。0にすると同じ位置から出る |
-| 角度の範囲（度）・光芒の本数 | 伸びる方向と本数 |
-| 1本ごとの濃さの倍率 | 光芒ごとの濃さの差。差を付けると筋を見分けやすい |
-| 床の光だまり | 光芒が床に届く位置の明るい楕円。中心位置・大きさ・濃さを調整し、濃さ0で非表示 |
-| 光の中の埃 | 光芒に沿って床へ流れ、光の中だけで瞬く塵の粒。1本あたりのおよその数・色・芯の大きさ（px）・速さ・横ゆれを調整し、数0で非表示 |
-| ばらつき・ゆらぎ | 配置パターン、明るさや位置の変化量と速度 |
-
-Editorプレビューは静止表示で、ゆらぎはPlay Modeで確認する。
-保存する調整は再生を停止した状態で行い、シーンを保存する。
-Play Mode中の変更は停止時に戻る。
-生成したプレビュー用の子オブジェクトはシーンやPrefabに保存せず、元の設定から再生成する。
-光芒は画像を使わず、マテリアル `Hd2dUiLightShaft`（`Baryonyx/HD2D/UI Ambient` の光芒の形）で計算して描く。
-根元が明るく、先へ行くほど広がりながら消える柔らかい帯に、隙間を抜けた光の筋と、ゆっくり流れる塵の濃淡を重ねる。
-帯の中では、升目ごとに1つの塵の粒が床へ流れながら瞬き、光芒の外では光らない（塵で見える光の柱）。
-光芒ごとにマテリアルを保存しない複製にして、筋と塵の並びを変える。床の光だまりは `Hd2dUiLightPool` で、縁を床の凹凸のように崩す。
-
-### 霧の調整
-
-`Hd2dFog` を持つ霧（Homeと戦闘画面の描いた背景の上の霧）を選ぶと専用Inspectorで調整できる。
-霧は背景の直上に置き、光芒と塵は霧の手前に描く。
-2026-10-03にTopからは外した。3Dの舞台の距離の霧が遠くをかすませており、画面に平らに貼った霧は奥行きに沿わないためである。
-「霧のレイヤー」の各要素が1つの霧の範囲で、要素を追加・削除すると範囲が増減する。
-
-| Inspectorの項目 | 効果 |
-| --- | --- |
-| 全体の濃さ | 全レイヤーの濃さに掛ける倍率。0で霧を消す |
-| 色（Aが濃さ） | 層ごとの色と濃さ。松明の暖色と対比させる青灰色にする |
-| 範囲の左下・右上 | 親の正規化座標で範囲を決める。0未満や1超えで画面の外まで広げ、縁を画面に見せない |
-| 縁のぼかし（px） | 範囲の縁を内側へぼかす幅。Xが左右、Yが上下。縁は霧の濃淡に沿って崩れ、直線に見えない |
-| 模様の大きさ（px） | 大きな模様1つ分の大きさ。横長にすると流れる霧、縦横を近づけると漂う霞に見える |
-| 流れる速さ（px/秒） | 流れの向きと速さ。奥の層ほど遅く、手前ほど速くすると奥行きが出る |
-| 逆向きの細かい切れ端 | 風に逆らって流れ、少し昇る細かい切れ端の濃さ。0にすると大きな模様が滑るだけに見える |
-| 床に沈む度合い | 上げるほど範囲の下が濃く、上が切れ端に崩れる。床を這う霧にする |
-| 渦を巻く速さ | 霧が渦を巻いて形を変える速さ。0で形を保ったまま流れる |
-| 濃さの増減・増減の速さ | 濃さがゆっくり変わる量と速さ |
-
-霧は画像を使わず、マテリアル `Hd2dUiFog`（`Baryonyx/HD2D/UI Fog`）で計算して描く。
-5段の細かさのノイズを、2回ゆがめた座標で読み、濃い所は霧の色、薄い所は青い影の色にして、切れ端の縁を明るくし、ゆがみの折り目に暗い筋を入れる。
-範囲ごとにマテリアルを保存しない複製にして、模様の位置と流れを変える。
-Prefabの既定は床霧の奥（`FloorMistFar`）と手前（`FloorMistNear`）の2層である。
-Prefabの既定の層を変えると、層を上書きしていない画面の霧にも反映される。
-霧はEditorでは静止表示し、流れと濃さの変化はPlay Modeで確認する。
-プレビュー用の子オブジェクトはシーンやPrefabに保存しない。
-
-### 揺らぐ光の調整
-
-`HomeScreen` Prefabの `BackgroundLights` を選ぶと専用Inspectorで調整できる。
-2026-10-02にTopとHomeを[3Dの舞台](../art/hd2d-stage.md)にしてからは、描いた背景の松明の光で、3Dの舞台がない場所（Prefabの単体表示）でだけ表示する。Topからは外した。
-「光源」の各要素が1つの光源で、光源ごとに芯、周りを照らす広い光、床の照り返しの3枚を加算合成で重ねる。
-3枚とも画像を使わず計算で描く。芯（`Hd2dUiGlowCore`）は中心が白く熱い小さな光、周りの光（`Hd2dUiGlowHalo`）は色の付いた広い光で、空気のゆらぎで少しむらがある。芯と周りの光を別の板にして、芯を鋭く保ったまま光を広げる。照り返し（`Hd2dUiLightPool`）は縁を床の凹凸のように崩す。
-`BackgroundLights` は背景と同じ `ResponsiveBackground` を持ち、背景画像と同じ範囲に広がる。
-このため光源の位置は背景画像上の正規化座標（左下が原点）で指定し、画面比率が変わっても描かれた松明に重なる。
-霧の手前、光芒の奥に描く。
-
-| Inspectorの項目 | 効果 |
-| --- | --- |
-| 全体の明るさ | 全光源の明るさに掛ける倍率。0で光を消す |
-| 光源の位置 | 芯と周りの光の中心 |
-| 色 | 足す光の色。Topの松明は橙色 |
-| 芯の明るさ・大きさ | 光源のすぐ周りの明るい部分 |
-| 周りを照らす明るさ・大きさ | 壁や柱を照らす広い光 |
-| 照り返しの明るさ・位置・大きさ | 床に落ちた光。横長の楕円にする。明るさ0で非表示 |
-| 揺らぎの量・速さ | 明るさの変化量と速さ。炎は2〜3、魔法の光は0.5前後が目安 |
-| 大きさの揺らぎ | 明るさに合わせて光の大きさが変わる割合 |
-
-照り返しは炎より少し遅れて、控えめに揺らす。
-加算合成は背景の色へ光を足すため、濃さを上げすぎると白く飛ぶ。
-背景画像に光が描き込まれている場合は、芯を小さく、周りの光を弱くする。
-光はEditorでは静止表示し、揺らぎはPlay Modeで確認する。
-プレビュー用の子オブジェクトはシーンやPrefabに保存しない。
-
-### 火の粉の調整
-
-`HomeScreen` Prefabの `BackgroundEmbers`（描いた背景の松明）と `CampEmbers`（焚き火）を選ぶと専用Inspectorで調整できる。
-どちらも3Dの舞台がないときだけ表示する。3DのHomeでは、焚き火の計算の炎と一緒に置いた3Dの火の粉（`Campfire/CampfireEmbers`）が昇る。
-3Dの舞台の松明とかがり火の火の粉は、舞台のPrefabのParticle Systemで出す。
-「発生源」の各要素が1か所の発生位置で、そこから指定した向きへ粒子を出す。
-`BackgroundEmbers` は4つの松明の炎の上から火の粉を出し、揺らぐ光の手前、光芒の奥に描く。
-揺らぐ光と同じく背景画像と同じ範囲に広がり、位置は背景画像上の正規化座標で指定する。
-
-| Inspectorの項目 | 効果 |
-| --- | --- |
-| 全体の濃さ | 全粒子の濃さに掛ける倍率。0で粒子を消す |
-| 発生位置・広がり | 粒子が出る中心と、その周りのランダムな範囲 |
-| 同時に出す数 | 表示する粒子の数 |
-| 出し続ける | オンで消えた粒子がすぐ出直す。オフでは `Burst` を呼んだときだけ出る |
-| 寿命の範囲 | 1粒が消えるまでの秒数 |
-| 向き・向きのばらつき | 出る方向（90で上）と広がり。360で全方向 |
-| 初速・上向きの加速 | 出る速さと、浮き上がる（負の値で落ちる）加速 |
-| 横ゆれの幅・速さ | 左右への周期的なゆれ。カールノイズを使う火の粉では0にする |
-| カールノイズの強さ・渦の大きさ・流れが変わる速さ | 渦を巻く空気の流れ（カールノイズ）に乗せて、粒を不規則に曲げながら昇らせる。強さ（px/秒）が0で使わない |
-| 大きさの単位 | 粒の大きさのpx数。点の頭は1〜2単位、長い尾を引く粒の頭は1.5単位で、背景の1ドット（約7px）より細かく描く |
-| きらめく粒の割合・長い尾を引く粒の割合 | 残りは短い尾の点になる。きらめく粒は白い芯から四方へ細い光が伸びる四芒星、長い尾を引く粒は速さを表す |
-| 出たときの色・消える直前の色 | 寿命に沿って色が変わる。消える直前の色のAを0にすると消えていく |
-| ちらつき | 明るさの細かな変化 |
-
-火の粉の動きは、初速と上向きの加速による上昇に、カールノイズの流れを足して作る。
-カールノイズは、ノイズから作った流れ関数の回転（curl）を速度にする方法で、湧き出しや吸い込みのない渦の流れになる（[Bridson et al. 2007](https://www.cs.ubc.ca/~rbridson/docs/bridson-siggraph2007-curlnoise.pdf)）。
-近くの粒が同じ渦に乗って一緒に曲がるため、ばらばらに揺れる動きより空気の流れに見える。
-生まれた直後の約0.35秒は流れの影響を弱め、炎から真上へ出てから渦に乗るようにしている。
-Homeの描いた背景の松明は強さ36・渦の大きさ56px（奥の松明は0.7倍）、Homeの焚き火は強さ42・渦の大きさ64pxで、流れが変わる速さはいずれも0.5である。
-
-報酬や画面遷移の瞬間だけ出す場合は、「出し続ける」をオフにした発生源を用意し、スクリプトから `Burst(発生源の番号, 数)` を呼ぶ。
-発生源の番号は、空の要素を除いたリストの順番である。
-
-火の粉は画像を使わず、マテリアル `Hd2dUiEmber`（`Baryonyx/HD2D/UI Ambient` の火の粉の形）で計算して描く。
-現実の火の粉は、白く熱い頭が見え、目に残った軌跡が短い尾になり、冷えながらちらついて消える。
-そのため、丸く光る頭（芯は白く、周りに色の付いた光）の後ろに、細くなりながら色の付いた尾を引かせる。
-板は毎フレーム進む向きへ回し、尾の長さは直前の約0.1秒（長い尾の粒は約0.25秒）に進んだ道のりにする（頭の長さの1〜12倍）。速い粒ほど尾が長い。
-火の粉の形は、大きさで役割を分ける。
-短い尾の点を多くし、きらめく粒と長い尾を引く粒は少数に絞る。
-きらめく粒（マテリアル `Hd2dUiSparkle`）は光る粒、長い尾を引く粒は昇る速さを表す。
-Homeの描いた背景の松明は、手前をきらめく粒3割・長い尾を引く粒1.5割、奥を2.5割・1割にして、奥の火の粉を控えめにしている。
-きらめく粒のマテリアルを差し替えると、別の形の粒にできる。ルーンの獲得のもや（`RuneHaze`）は、縁がゆらぐ柔らかい光（`Hd2dUiPuff`、128〜192px）にしている。
-Editorでは再生開始時と同じ配置を静止表示し、動きはPlay Modeで確認する。
-プレビュー用の子オブジェクトはシーンやPrefabに保存しない。
-
-### ポストプロセスの調整
-
-Topでは、3Dの舞台とHD-2Dの演出（`TopBackdropCanvas`、Screen Space - Camera）を `TopCamera` で描き、ポストプロセスを通す。
-タイトルと開始操作を持つ `TopScreen` は `TopCanvas`（Screen Space - Overlay）に残し、文字をにじませない。
-Homeは昼の森の舞台のProfile（`ForestGladeLook`）を `HomePostProcessVolume` で使う。HomeのUIはScreen Space - Overlayのため、にじまない。
-`ScreenSpaceOverlay` のUIにはカメラのポストプロセスが掛からないため、この2つのCanvasに分けている。
-2つのCanvasは同じCanvasScalerの設定を持ち、座標の単位を揃える。
-
-`TopPostProcessVolume` は全体に効くVolumeで、星空の門の舞台のポストプロセス `Shared/Art/Stages/StarlitGate/StarlitGateLook.asset` を使う。共通の `Shared/VFX/HD2D/Profiles/Hd2dPostProcess.asset` は、2Dの背景向けのProfileとして残す。
-Profileを選ぶとInspectorで各効果を見られる。
-値は生成処理（`StageSetAssets.BuildLooks`）が作り直すたびに上書きするため、調整はコードで行う（値の正本は[3Dの舞台](../art/hd2d-stage.md#レンズと色ポストプロセス)）。
-
-| 効果 | Topでの役割 |
-| --- | --- |
-| HD-2D Stage Focus | 不透明の舞台だけを奥行きでぼかす。手前の岩と奥の山並みをぼかし、中ほどの道と段をくっきり残してジオラマのように見せる。星空は星が読めるよう、ぼかしを弱くする。タイトルや演出はぼけない |
-| Bloom | 3Dの舞台の炎・点光源（明るさが1を超える）と、加算の光、光芒をにじませる |
-| Vignette | 画面の端を暗くし、中央のタイトルと入口へ視線を集める |
-| Color Adjustments・Split Toning | 明暗と彩度を少し強め、影を青、光を暖色に寄せて、松明の暖色と月明かりの青白さを引き立てる |
-BloomはAndroid端末での負荷が大きい効果である。発熱やフレーム落ちがある場合は、Intensityより先にBloomのDownscaleとMax Iterationsで負荷を下げる。
-
-### 疑似ティルトシフト
-
-`HD-2D Tilt Shift` は、1枚絵の背景に奥行きの情報がないため、画面の高さでぼかしの強さを決める疑似ティルトシフトである。
-中央の帯（Focus Center ± Focus Half Height）はぼかさず、帯の外はFalloffの高さをかけて最大のぼかし半径へ近づく。
-Max Radiusは画面の高さ1080px基準の半径で、ドット絵の1粒より大きくしないと効果が見えない。2Dの背景向けの `Hd2dPostProcess` では8にしている。3Dの舞台は、奥行きでぼかす `HD-2D Stage Focus` を使う。
-描画は `Mobile_Renderer` と `PC_Renderer` に登録した `Hd2dTiltShift` Renderer Featureが行い、Intensityが0の画面ではぼかしの処理そのものを行わない。
-Bloomより前に処理するため、ぼけた光もBloomでにじむ。
-タイトルと開始操作はOverlayのCanvasにあるため、ぼけない。
-ぼかしは横と縦の2回の全画面処理で、Android端末では負荷が増える。発熱やフレーム落ちがある場合は、Intensityを0にして止める。
-
-### 塵ときらめきの表示
-
-`Hd2dLightingVfx` と `Hd2dParticleField` の塵ときらめきも、「Editorプレビュー」の `PreviewInEditor` を有効にすると停止中に表示する。
-塵（`Hd2dUiDust`）は芯が少し明るい柔らかい点、きらめき（`Hd2dUiSparkle`）は白い芯と細い四方の光と淡い斜めの光の四芒星で、どちらも画像を使わず計算で描く。
-Topでは、Hierarchyの `TopBackdropCanvas > TopHd2dLightingVfx` で確認できる。
-停止中は、配置パターン（`RandomSeed`）で決まる再生開始時と同じ配置を静止表示し、Inspectorの変更を反映する。
-粒子の移動、明滅、消えた粒子の再配置はPlay Modeで確認する。
-プレビュー用の粒子はシーンやPrefabに保存しない。
 
 ## カタログ更新
 
@@ -249,6 +102,7 @@ Unity Editor起動時に `Assets/Baryonyx` 以下のアセットを検索し、�
 Importerが作る切り取り済みのSpriteは非表示にしているため、一覧に出ない。
 
 手動で更新する場合は、Unity Editorの Baryonyx > Showcase > Refresh Catalog を実行する。
+Build Settingsへの展示室のシーンの追加も確かめ直すときは `Baryonyx > Showcase > Refresh Catalog and Build Settings` を実行する。展示室のシーンがないときは `Baryonyx > Showcase > Create Scene` で作り、開くときは `Baryonyx > Showcase > Open Scene` を使う。
 
 自動推定だけでは表示方法を定義できないアセットは、ShowcaseEntry を手動作成して Entries 配下へ置き、PreviewPrefab、PreviewAnimation、AnimationStateName を設定する。
 
@@ -267,64 +121,12 @@ Importerが作る切り取り済みのSpriteは非表示にしているため、
 2. Unity EditorのPlayボタンを押す。
 3. 左のカテゴリとアセットを選び、右側のプレビューを確認する。
 
-Playせずに確認する場合は、Unity Editorの `Baryonyx > Showcase > Open Preview Window` を実行する。カテゴリ選択、検索、アセットプレビュー、元アセットの選択、シーンのオープンをこのウィンドウから行える。
+Playせずに確認する場合は、Unity Editorの `Baryonyx > Showcase > Open Preview Window` を実行する。カタログを左側の一覧に出し、カテゴリ選択、検索、画像・Prefab・マテリアルなどのEditorプレビュー、元アセットの選択、シーンのオープンをこのウィンドウから行える。
 
-新しく追加したアセットが表示されない場合は、Play Modeを停止して `Baryonyx > Showcase > Refresh Catalog` を実行してから、もう一度シーンを再生する。
-
-## 横画面UIの確認
-
-横画面のレスポンシブ対応は、UIカテゴリの `HomeScreen` を選び、背景が比率を保って表示されることを確認する。
-タイトル画面はシーンカテゴリの `Top` を開き、`TopCanvas > TopScreen > TopSafeArea` 配下のタイトルと開始操作が画面端から離れていることを確認する。
-展示室のカタログには `HomeScreen` Prefab、Health Connectの連携モーダル `HealthLinkModal` Prefab、`Top` シーンを登録済みである。
-連携モーダルはUIカテゴリで、未許可の状態の文言を表示する。
-戦闘画面のモックは、シーンカテゴリの `BattleLab`、UIカテゴリの `BattleInspectScreen` Prefab、キャラクターカテゴリの味方4人と敵3体の画像で確認する。
-2026-10-19に試作した敵50体の絵（`DewSlime` など、`Features/Combat/UI/Art/Enemies/`）も、戦闘のモックの敵3体と同じキャラクターのカテゴリに入る。名前と弱点は[敵の定義](../catalog/enemies/README.md)にある。
-冒険の戦闘で敵を入れ替えるための、53体の絵・狙える範囲・顔の表（`BattleEnemyLooks`、データのカテゴリ）は、戦闘画面の生成（`Baryonyx > Combat > Create Battle Inspect Assets`）が作る。行き先ごとの敵は[行き先と敵](stage-progression.md#行き先と敵)にある。
-カードの挿絵の手前に重ねる[キラキラ](../art/direction.md#カードのキラキラ)は、マテリアルのカテゴリの `CardFoil`（シェーダーとマテリアル）、枠の光は `CardFrameFoil` で、効果はUIカテゴリの `BattleCardGallery` Prefabで確かめる。ギャラリーは50枚を品質S・A・B・Cの順にくり返して、それぞれの品質の中ほどの倍率で並べ、Sは強く光って枠が虹、Aは少し光って枠の外側の線が金、B・Cは光らない（[品質](inventory.md#品質)）。光り方（模様と色）はカードごとに違う。装備の光り方は、[品質のデバッグルーム](screens/debug-rooms.md#品質のデバッグルーム)で確かめる。実際の画面では、`TavernScreen` の `BonusSettings` を表示すると、仮データの品質Sの「守り」とAの「幸運」のアイコンが光る。装備（`Equipment`・`Training`）の仮データは倍率×1.00（品質C）だけのため、Prefabのままでは光らない。光は時間で動くため、停止中のプレビューではSceneビューの描画が進むときだけ動く。
-カードを上げたときに横に出す[キーワード](combat.md#カードのキーワード)の説明札は、`BattleInspectScreen` Prefabのプレビューで「キーワードの説明札」（敵向けのカードで左に出す）か「キーワードの説明札（味方向け）」（右に出す）を選ぶか、展示室から `BattleLab` シーンを開き、説明文に水色の下線の語があるカード（アイスランスなど）を押して確かめる。
-味方と敵のドット絵のHPバーは、`BattleInspectScreen` Prefabのプレビューで確認する。HPが減るときの残像と、HPバーに重ねるブロックの黄色のバーは、プレイ中にしか出ないため、プレビューには映らない。展示室から `BattleLab` シーンを開き、残像は攻撃のカードで敵を攻撃するかターン終了で敵の攻撃を受けて、味方のブロックはガードかシールドバッシュを使って確かめる。敵のHPバーのブロック（2026-10-22に足した、敵の技の身を固めるなど）は、`EnemyLab` で森の守り手を選んで「技」を押し続けるか、「大技（溜め）」を押して確かめる。
-味方が倒れたときに、その味方の手札のカードが崩れて消える演出（[倒れた味方](combat.md#倒れた味方)）も、プレイ中にしか出ない。展示室から `BattleLab` シーンを開き、ターン終了をくり返して敵の攻撃で味方を倒して確かめる。崩れる絵と粒はコードがその場で作るため、展示室に増えるアセットはない。
-カードの使い手の足元に出す金の輪は、UIカテゴリの `CasterRing` で確認する。輪と名前の札はカードを上げている間だけ出るため、`BattleInspectScreen` Prefabのプレビューには映らない。動きは展示室から `BattleLab` シーンを開き、カードを押して確かめる。
-山札・捨て札・消滅を押して開く[カードの一覧](screens/battle.md#山札と捨て札の一覧)は、`BattleInspectScreen` Prefabのプレビューで「山札の一覧」を選んで確かめる（初めの手札に配られていない11枚をコスト順に並べた1コマ）。カードを押したときの拡大は「山札の一覧（カードを拡大）」で、1枚目を中央に大きくした止まった1コマを見る。覚醒が当たったカードの光は「山札の一覧（覚醒するカード）」で、1枚目を光らせた1コマを見る。山札にそのカードがあるときの山札の札のキラーンは「山札のキラーン（覚醒するカードがある）」で、大きい星が最も大きくなった1コマを見る。捨て札と消滅の一覧、見出しを固定したスクロールと閉じる操作、拡大の動きはプレイ中にしか出ないため、展示室から `BattleLab` シーンを開き、ターン終了で捨て札を作ってから押して確かめる。一覧は戦闘のカードのPrefabを複製して並べるため、展示室に増えるアセットはない。
-ターンの始まりに画面の中央へ出す帯（`TurnBanner`）も `BattleInspectScreen` Prefabに入っているが、ターンが切り替わるときだけ出るため、プレビューには映らない。展示室から `BattleLab` シーンを開き、戦闘の開始時と、ターン終了を押したときに確かめる。ターン終了を2回押すと、連続ターンの「もう一度 味方のターン」も出る。
-ダメージ・弱点・回復の数字は、プレイ中に浮かんで消えるだけで `BattleInspectScreen` には映らないため、戦闘の背景の上に通常・会心・弱点・回復の4つを並べた `BattleDamageNumbers` Prefab（UIカテゴリ）で確認する。会心は通常の数字を1.3倍にし、上に「会心！」を出す。
-カードを使ったときのスキルの演出は、VFXカテゴリの `BattleSkillVfxPreview` Prefabで確認する。戦闘の背景に味方と敵を並べ、[スキルの仮設定](combat.md#スキルの仮設定)の50枚の演出を、それぞれの使い手と対象で順に繰り返し再生する（2周目ごとに弱点の当たりとして大きく出す）。画面の上に、再生中のカードの番号と名前を出す。やけど・毒・出血・リジェネ・爆炎の刻印・雷雲は、続けて働くときの演出も再生する。1枚だけを見るときは、Play中に `BattleSkillVfxDemo` の `Only` にカードのID（`Meteor` など）を入れ、途中から見るときは `First` に番号を入れる。
-好きなスキルを一覧から選んで再生するときは、シーンのカテゴリから `CardSkillLab` を開く（[スキルのデバッグルーム](screens/debug-rooms.md#スキルのデバッグルーム)）。戦闘と同じ3Dの舞台とポストプロセスで再生するため、Bloomも映る。右上を「覚醒：入」にして固有スキルの最初の段階か1段目を選ぶと、カードが魔法陣で浮いてひびが入り、[覚醒先を選ぶ画面](skill-evolution.md#覚醒先を選ぶ画面)で選んだ段階に割れて覚醒する（[覚醒のエフェクト](skill-evolution.md#覚醒のエフェクト)）。覚醒のエフェクトは計算で描く形と、戦闘のカードのPrefabの複製だけで作るため、VFXカテゴリには増えない。選択画面は `CardSkillLabScreen` の中にあり、開いていないときは何も表示しない。選んだ候補の後ろの白金の後光の靄は、シェーダー `BattleCardAura` とマテリアル `VfxCardAura`（`Features/Combat/Vfx/`）で描き、どちらもVFX・エフェクトのカテゴリに入る。靄は時間で形が変わるため、揺らぎはPlay Modeの選択画面で確かめる。決めるボタンのチェックの絵（`ConfirmCheck`、`Features/Combat/UI/Art/`）は画像のカテゴリに入る。同じ選択画面は戦闘画面のPrefab `BattleInspectScreen` にも入っており、冒険の戦闘で固有スキルが覚醒するときに開く。冒険の外の `BattleLab` では抽選しないため開かない。
-引いたときに当たったカードの手札の光（[覚醒の予兆](skill-evolution.md#覚醒の予兆)）は、UIカテゴリの `BattleInspectScreen` Prefabのプレビューで、停止中の表示の切り替えの「覚醒の予兆（光るカード）」を選んで確かめる（初めの手札の1枚を光らせた1コマ）。光はコードがその場で作るため、展示室に増えるアセットはない。息づく光と瞬き・表を向いたときの瞬きは、冒険の戦闘でしか出ない。同じ画面のPrefab `CardSkillLabScreen` はUIカテゴリに入る。スキルの[覚醒版](skill-awakening.md#演出)の100の段階は、一覧の「覚醒版」のタブから選んで再生する（停止中は「一覧を開いた（覚醒版）」で並びを確かめる）。演出は計算で描く形だけで作るため、VFXカテゴリには増えない。ホームの設定の下にある、このシーンを開くボタンのアイコン（`IconSkillLab`）は画像のカテゴリに入る。
-スキル・固有スキル・武器・防具・アクセサリーの倍率を動かして、品質の文字・キラキラ・効果の数字を確かめるときは、シーンのカテゴリから `QualityLab` を開く（[品質のデバッグルーム](screens/debug-rooms.md#品質のデバッグルーム)）。同じ画面のPrefab `QualityLabScreen` はUIカテゴリに入り、停止中の表示の切り替えでスキル・武器・ボーナスを品質ごとに見られる。ホームのこのシーンを開くボタンのアイコン（`IconQualityLab`）は画像のカテゴリに入る。
-聞かれたことを仮に組んで撮影した試作は、シーンのカテゴリから `TempLab` を開いて見る（[TempLab](screens/debug-rooms.md#templab)）。試作がないときは、戦闘と同じ夕暮れの高原の舞台だけが写る。
-敵の攻撃・被弾・撃破・状態が付いたときの行動・技と行動パターン・大技の溜め・敵のターンは、シーンのカテゴリから `EnemyLab` を開き、敵と行動を選んで確かめる（[敵の挙動デバッグルーム](screens/debug-rooms.md#敵の挙動デバッグルーム)）。操作盤のPrefab `EnemyLabPanel` はUIカテゴリに入るが、操作する戦闘画面がないため、単体のプレビューでは押しても敵は動かない。
-魔物の出現・ターンの帯・勝利・ドロップ・全滅・ルーン復活の演出は、シーンのカテゴリから `BattleMomentLab` を開き、ボタンを押して確かめる（[戦闘の演出デバッグルーム](screens/debug-rooms.md#戦闘の演出デバッグルーム)）。操作盤とドロップの札のPrefab `BattleMomentLabPanel` はUIカテゴリに入るが、演出を再生する戦闘画面がないため、単体のプレビューでは押しても何も起きない。ドロップの光の柱や出現の土煙は計算で描くエフェクトで、専用のPrefabやマテリアルを足していないため、VFXカテゴリには増えない。
-探索の魔物の出現・宝箱・マスへ進む演出は、シーンのカテゴリから `ExplorationMomentLab` を開いて確かめる（[探索の演出デバッグルーム](screens/debug-rooms.md#探索の演出デバッグルーム)）。操作盤のPrefab `ExplorationMomentLabPanel` はUIカテゴリに入るが、演出を重ねる探索画面がないため、単体のプレビューでは押しても何も起きない。演出の部品は探索画面のPrefab `ExplorationScreen` の中にあり、演出を再生していないときは何も表示しない。宝箱の光のシェーダーとマテリアル（どちらも `ExplorationLight`）はVFXカテゴリに入るが、形と色は演出のコードが渡すため、プレビューでは光らない。
-撃破で敵の絵をドットごとに削るシェーダー（`BattleDefeat`）とマテリアル（`VfxDefeat`）はVFXカテゴリに入る。マテリアルは敵の絵と削る順番を持たないため、プレビューでは崩れる様子が見えない。崩れる動きは `EnemyLab` の「撃破」で確かめる。
-50枚のカードの見た目（挿絵・枠・属性のアイコン・使い手・名前・種類と対象・説明文・コスト）は、UIカテゴリの `BattleCardGallery` Prefabで、10枚×5段に並べて確認する。戦闘画面のモックの山札に入るのは、このうち16枚だけである。形を計算するシェーダー（`BattleVfxShape`）と、形ごとのマテリアル（`Features/Combat/Vfx/Materials/` の `VfxShape〈形の名前〉`。撃破で舞う粒の `VfxShapeMote` を含む）はVFXカテゴリに入る。演出の内容は[スキルの演出と背景](screens/battle-effects.md#スキルの演出と背景)に記す。
-弱点を開示するときの光（[戦闘画面の見た目モック](screens/battle.md#戦闘画面の見た目モック)）は、初めて弱点を突いたときにしか出ないため、VFXカテゴリの `BattleWeaknessRevealPreview` Prefabで確認する。炎・氷・雷・斬の「？」を拡大して並べ、1つずつ開示してから全部を「？」へ戻す動きを繰り返す。アイコンの上の光のシェーダー（`BattleWeaknessGlint`）とマテリアル（`VfxWeaknessGlint`）も同じカテゴリに入る。
-展示室のプレビューはポストプロセスを掛けないカメラで描くため、戦闘で掛かるBloomは映らない。光のにじみまで確かめるときは、展示室から `BattleLab` シーンを開いてカードを使う。
-カメラの中心がゆっくり円を描く動き（[カメラの中心のゆっくりした円運動](screens/battle-effects.md#カメラの中心のゆっくりした円運動)）はPlay Mode中だけ動くため、Play Modeの展示室で `BattleInspectScreen` Prefabのプレビューを選ぶか、`BattleLab` シーンを開いて確認する。半径12pxを40秒で1周するほど小さな動きのため、Hierarchyで `StageDrift` を選び、`Period` を短くすると見分けやすい。戦場のドット絵を画素の端数の位置でも滑らかに描くマテリアル `StagePixelArt` とシェーダー `UI Pixel Art` は、マテリアル・シェーダーのカテゴリに入る。
-シーンの生成時に `BattleLab` をBuild Settingsへ追加するため、展示室から開ける。`Battle`・`CardSkillLab`・`EnemyLab`・`BattleMomentLab`・`ExplorationMomentLab`・`QualityLab`・`WorldEventLab` も同じく生成時に追加する。
-案内人がいる画面（編成・商会・神殿・旅の案内所）は、UIカテゴリの `TavernScreen`・`WorkshopScreen`・`TempleScreen`・`TravelOfficeScreen` Prefabで確認する。メニュー・リスト・地図の印はPrefabに作り込んであるため、停止中もPrefabを開けば文字を確認でき、Play Modeでは押して操作できる。案内人の画像はUI、背景は背景・環境、定義アセットはデータ、4つのシーンはシーンのカテゴリに入る。
-編成の[冒険者の一覧](screens/adventurers.md#パーティ)は `TavernScreen` のメニューの「冒険者」から開き、人を選んで下の帯の「装備・スキル」で[冒険者のタブ](screens/adventurers.md#冒険者のタブ)（ステータス・装備・スキル・突破）へ進む。停止中も、Prefabの `Adventurers`・`Training`・`Equipment`・`CardLoadout`・`Breakthrough` を表示すれば、仮データの先頭の人で、一覧と4つのタブを確認できる。突破のタブ（`Breakthrough`）は、停止中の表示の切り替えの「限界突破の演出」で、突破した瞬間の演出を確認できる。スキルのタブ（`CardLoadout`）は、停止中の表示の切り替えの「固有スキルを選んだとき」で、先頭の人（トーマ）の1つ目の固有スキルの[覚醒ツリー](skill-evolution.md)を確認できる。Play Modeではサーバーの接続先がなくても、入れ替え・レベルアップ・付け替えを操作でき、タブでは左の人の列か左右のフリックで人を替えられる。すりガラスのカードの画像（`GlassCardFill`・`GlassCardRim`・`GlassCardRose` など、`Shared/UI/GlassCard/Art/`）、枠のひし形（`FrameDiamond`・`FrameDiamondLarge`）と編成の背景をぼかした写し（`TavernBackgroundBlur`）は画像のカテゴリに入る。
-9人の縦長のイラスト（`toma` など、`Shared/Art/Characters/Illustrations/`）はキャラクターのカテゴリに入る。パッシブスキルの18個のアイコン（`PassiveStarChart` など、`Features/Combat/UI/Art/Passives/`）は画像のカテゴリに入り、[ステータスのタブ](screens/adventurers.md#ステータス)では `TavernScreen` の冒険者から開いて確かめる。展示室の画像のプレビューは枠いっぱいに伸ばして描くため、縦横の比はステータスのタブで確かめる。武器・防具のアイコン（`IconWeapon`・`IconArmor`、`Features/Equipment/UI/Art/`）と、編成のメニューの冒険者・装備のアイコン（`IconFormation`・`IconChangeGear`、`Features/Tavern/UI/Art/`）は画像のカテゴリに入る。覚醒ツリーの未取得の段階の封印と鎖（`StageSeal`・`StageSealChain`、`Features/CardLoadout/UI/Art/`）も画像のカテゴリに入る。
-[商会](screens/shop.md#商会)は `WorkshopScreen` のメニューの4つの項目から、案内人を隠した画面いっぱいのパネルを開く。買うは品物のパネル（`WorkshopBuy`）で、停止中もPrefabにライブラリの仮の記録の武器を焼き込んであり、停止中の表示の切り替えの「買う › 品物」「買う › 選んだとき」「買う › 読み込み中」「買う › 取得できない」で確かめられる。[買ったときの演出](screens/shop.md#買ったときの演出)は、「買う › 買ったときの演出・出てくる」「買ったときの演出・弾ける」「買ったときの演出・現れる」「買ったときの演出・戻る」で樫の杖の各拍の1コマを、「買ったときの演出・☆4 現れる」「☆5 現れる」で金と虹の見た目を確かめる。[売ったときの演出](screens/shop.md#売ったときの演出)はPlay Modeで売る物を選んで「売る」を押して確かめる（ルーンは右上の所持ルーンへ飛ぶ。止めたコマはない）。売るは持ち物のパネル（`WorkshopSell`）、合成は合成のパネル（`WorkshopCraft`）で、仮の持ち物で「売る › 持ち物」「売る › 選んだとき」「合成 › 作れる物」「合成 › 選んだとき」「合成 › 使う物を選ぶ」などを確かめられる。合成の「選んだとき」は特別な材料（鉄の剣）を使う炎のダガーを選び、「使う物を選ぶ」はその材料の使う物を選ぶ画面を開く。[合成の演出](synthesis.md#合成の演出)（光の渦）は、停止中の表示の切り替えの「合成 › 合成の演出・材料が飛ぶ」「合成の演出・渦」「合成の演出・詰まる」「合成の演出・弾ける」「合成の演出・現れる」で、鉄の剣を作る各拍の1コマを確かめる。☆4（金）と☆5（虹）の見た目は「合成の演出・☆4 渦」「☆4 溜める」「☆4 弾ける」「☆4 現れる」と、☆5の同じ4つで確かめる（仮の持ち物では☆2の物しか作れないため、鉄の剣のまま見た目だけを替える）。渦の線のシェーダー（`WorkshopCraftSwirl`）と6つのマテリアル（`CraftSwirlHalo`・`CraftSwirlLine` と、その `Gold`・`Rainbow` の版、`Features/Workshop/Vfx/`）はVFXのカテゴリに入る。ほかの光は戦闘の形のマテリアル（`VfxShapeGlow` など）を使う。Play Modeではサーバーの接続先がなくても、仮の残高と仮の持ち物で、買う・売る・合成を試せる（売った物は開き直すと戻る）。ライブラリ（`LibraryScreen`）の武器・防具・アクセサリー・スキルは、見つけた項目を選ぶと説明の下に合成のレシピの札を出す。品質強化は品質強化のパネル（`WorkshopEnhance`）、スキル覚醒は覚醒のパネル（`WorkshopAwaken`）を開き、停止中の表示の切り替えの「スキル覚醒 › 一覧」で仮の編成の1本の一覧を、「スキル覚醒 › 覚醒の場面」で先頭の行の覚醒の場面（先頭の覚醒先を選んだ状態）を、「スキル覚醒 › 欠片が足りない」で覚醒の欠片がないときに行の名前が赤くなるのを確かめる。カードが浮き上がって割れる演出は、Play Modeで行を押して確かめる。停止中もPrefabに仮の編成のスキルを焼き込んであり、停止中の表示の切り替えの「品質強化 › 一覧」「品質強化 › 読み込み中」「品質強化 › 取得できない」で確かめられる。磨き石の札で段階を選んだ形は「品質強化 › 石を選んだとき」で、品質Cの終わり（ゲージの30%）の先頭のスキルで札を3回押し、Cの2段階とBの1段階で石を4個使う「4/20」の札と、使う石とルーンの1行を確かめる。Play Modeではサーバーの接続先がなくても、仮の強化素材で強化と覚醒を試せる。強化素材の絵（`Shared/Art/Materials/` の `PolishWhite` と `AwakeningShard`）と、メニューのアイコン（`IconBuy`・`IconSell`・`IconCraft`・`IconEnhance`・`IconAwaken`）とホームの商会のボタンのアイコン（`IconShop`）は画像のカテゴリに入る。仮データの `PartyMockData` はデータのカテゴリに入る。
-[神殿](screens/temple.md#神殿)は `TempleScreen` のメニューの「召喚」から全画面の召喚の画面を開く。Play Modeで押すと、サーバーの接続先がなくても、仮に引いた結果の窓を確かめられる（展示室には演出がないため、演出は流れない。演出は `Temple` シーンか、[召喚の演出デバッグルーム](screens/debug-rooms.md#召喚の演出デバッグルーム)で確かめる）。左下の「確率」で確率の窓を開く。停止中は、Prefabの `SummonResults`（`TempleSummonResults`）を選び、停止中の表示の切り替えの「1回召喚の結果」「10回召喚の結果」で結果の窓を確かめる。ホームの神殿のボタンのアイコン（`IconSummon`）は画像のカテゴリに入る。
-召喚の演出は、VFXカテゴリの `TempleSummonShow`（1回）・`TempleSummonTenShow`（10回）Prefabで確認する。10回は、Prefabの根を選び、停止中の表示の切り替えの「灯る」「白の窓が砕ける」「虹の窓が砕ける」「並んだ札」で確かめる。1回は、Prefabの根を選び、停止中の表示の切り替えの「予備動作」「溜め」「発生」「余韻」「終わり」で、虹（金からの昇格あり）の各拍の1コマを確かめる。展示室のプレビューはポストプロセスを掛けないため、Bloomのにじみまで確かめるときは、シーンのカテゴリの `TempleSummonLab`（[召喚の演出デバッグルーム](screens/debug-rooms.md#召喚の演出デバッグルーム)）を開く。キャッチイラスト（`SummonKeyArt`）・10回の壁（`SummonWall`）・窓（`SummonWindow`、`Features/Temple/UI/Art/`）は背景・環境、シェーダー（`TempleSummonGlass`）と6つのマテリアル（`SummonGlow` など、`Features/Temple/Vfx/`）はマテリアル・シェーダー、操作盤（`TempleSummonLabPanel`）はUIのカテゴリに入る。
-編成と戦闘画面で使う4人のドット絵（`BattleToma` など、`Shared/Art/Characters/`）はキャラクター、属性のアイコン（`ElementFire` など、`Shared/Art/Attributes/`）は画像のカテゴリに入る。
-[冒険の画面](screens/adventure.md#冒険の画面)は、UIカテゴリの `ExplorationScreen`（探索）と `AdventureOverlay`（戦闘に重ねるメニューとダイアログ）Prefabで確認する。探索の地図と街道の世界地図でパーティを表す木の駒の絵（`MapPawn`、`Shared/UI/Art/`）はUIのカテゴリに入り、地図の上の見え方は `ExplorationScreen` と `WorldMapScreen` で確かめ、マスへ跳ねて移る動き（`MapPawnHop`）はPlay Modeでマスを押して確かめる。[戦闘後の強化](stage-progression.md#戦闘後の強化)の4つの列は、`AdventureOverlay` の停止中の表示の「戦闘後の強化」で、白（銀の枠）・金（金の枠とキラキラ）・虹（虹の枠とキラキラ）・全員・代償つきの見本を4人に2つずつ出し、虹の札を選んだ状態で確かめる。キラキラと枠の流れる動きは時間で動くため、停止中の表示では止まって見える。「戦闘後の強化 › 決めたとき」は、虹の札を決めて光の柱が伸び切った瞬間（決めてから0.3秒）で止めて見せる（同じ窓は `ExplorationScreen` にも入っている）。跳ねる・光る動きと光の柱の流れは、Play Modeで札を押して右下のチェックで決めて確かめる。[冒険の結果](screens/adventure.md#冒険の画面)の窓は、`AdventureOverlay` の停止中の表示の「結果（クリア）」「結果（冒険の終わり）」と、`ExplorationScreen` の「結果（クリア）」「結果（帰還）」で、持ち帰った物の見本（2段を超える数）を、開き終えた形で確かめる。最奥の主のドロップに並ぶクリア回数の報酬の札（右上の「N回目のクリア報酬」）は、`AdventureOverlay` の停止中の表示の「最奥のドロップ（クリア報酬）」で、2回目の報酬（磨き石×10）の札を1枚、開き終えた形で確かめる。旅の案内所のお宝の窓の左の列（クリア回数の報酬）は、`TravelOfficeScreen` の停止中の表示で行き先を選ぶと、2回クリアした見本（2つ受け取り済みで絵と名前、3回目から影と「？？？」、3回目が次）で確かめられる。仲間が跳ねる動き・光の筋の息づき・きらめきは、Play Modeで冒険を終えて確かめる。`ExplorationScreen` は3Dの舞台がない展示室では森の遺跡の描いた背景の上にパーティの木の駒と門を表示する。Play Modeで押すと、サーバーの接続先がなくても、アプリの中だけの冒険で門・宝箱・メニュー・ルートを操作できる。探索と冒険の戦闘は、シーンのカテゴリの `Exploration` と `Battle` から開く（冒険を始めずに開いた `Battle` は戦闘画面のモックのまま）。門と宝箱の絵（`RuinDoor`・`ChestClosed`・`ChestOpen`、`Shared/Art/Stages/Exploration/`）は背景・環境、マスの種類のアイコン（`IconRoomBattle`・`IconRoomElite`・`IconRoomTreasure`・`IconRoomBoss`と、2026-10-22に足した `IconRoomRest`・`IconRoomMerchant`・`IconRoomShadyChest`・`IconRoomTrial`・`IconRoomStepDoor`・`IconRoomAltar`、`Features/Adventure/UI/Art/`）はアイテムのカテゴリに入り、地図の札と右下の凡例では `ExplorationScreen` で確かめる。
-[街道の世界地図](stage-progression.md#世界地図の形と試作2026-10-24)は、UIカテゴリの `WorldMapScreen` Prefabとシーンのカテゴリの `WorldMap` で確認する。
-[入れ子の地図](world-atlas.md)は、シーンのカテゴリの `World`（冒険の世界地図。世界地図とエリアマップの左上の家のボタンでHome、右下のボタンでダンジョン一覧へ移る）と `WorldAtlas`（試作。エリアマップの左上は世界地図へ戻る）で、世界地図と地域のエリアマップを行き来して確かめる。地図ごとの画面はUIカテゴリの `world`・`verde` などのPrefab（`Features/WorldMap/Atlas/Resources/WorldAtlas/`）、背景は画像のカテゴリの `world_00` などの分けた絵（`Features/WorldMap/Atlas/Art/`）、左上の家のアイコン（`IconHome`、`Features/WorldMap/UI/Art/`）は画像のカテゴリに入る。
-マスの台の絵（`WorldNodeBattle`・`WorldNodeTreasure` など、`Features/WorldMap/UI/Art/`）は画像のカテゴリに入る。
-マスの出来事の窓（[マスの出来事の見本](world-atlas.md#マスの出来事の見本)）は、地図ごとのPrefabの中にあり、開いていないときは何も表示しない。出来事ごとの窓の中は、シーンのカテゴリから `WorldEventLab`（[地図エディター](screens/debug-rooms.md#地図エディター)）を開き、マスを選んで「試す」で開いて確かめる。賭けのサイコロ・宝箱・ミミックの絵は既存の部品と絵（`Circle`・`Capsule`・`ChestClosed`・`ChestOpen`・`ChestMimic`）で作るため、展示室に増える絵はない。操作盤のPrefab `WorldEventLabPanel`（`Features/WorldMap/UI/`）はUIカテゴリに入るが、開く地図がないため、単体のプレビューでは押しても何も起きない。マスの設定の欄とマスの一覧は、マスを選ぶか一覧を開いたときだけ出るため、プレビューには映らない。
-Play Modeで押すと、サーバーの接続先がなくても仮の進み具合で歩け、宝箱のマスに初めて着くと中身のダイアログを出す（[街道の宝箱と街](stage-progression.md#街道の宝箱と街2026-10-25)）。
-2026-10-25に歩数の関所をなくし、その台の絵（`WorldNodeStepGate`）と展示室の登録を削除した。
-プレビュー用のCanvasはカメラへ接続するため、ドット絵を整数倍に保つ `PixelPerfectRawImage` は、画面直描き（Screen Space - Overlay）のCanvasでだけ画面のピクセルへ合わせる。
-それ以外のCanvasでは設計上の大きさ（1ドット4単位）で表示する。
-2026-09-27まではプレビューで縮尺を誤り、HomeScreenのトーマや戦闘画面のキャラが画面を覆うほど大きく表示されていた。
-実機のノッチ・非対称Safe AreaはUnity EditorのGameビューだけでは確定できないため、端末確認時に追加で確認する。
+新しく追加したアセットが表示されない場合は、Play Modeを停止して[カタログ更新](#カタログ更新)の手動の更新をしてから、もう一度シーンを再生する。
 
 ## 実装状況
 
 展示室シーン、カテゴリ一覧、アセット自動検出、画像・Prefab・音声・シーンの表示、Play不要のEditorプレビューを実装済み。
-
-実機でもアセットを確認するため、展示室は意図して通常のビルドへ含める。
 
 プレビュー用Prefabの自動生成、UI状態のStory定義、VFXの再生条件、複数AnimationClipの切り替えは今後拡張する。

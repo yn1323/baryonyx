@@ -2,7 +2,7 @@
 id: feature-achievements
 type: specification
 status: 未決
-updated: 2026-09-28
+updated: 2026-10-24
 ---
 
 # 実績とミッション

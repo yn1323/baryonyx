@@ -2,7 +2,7 @@
 id: enemy-skill-tackle
 type: definition
 status: 候補
-updated: 2026-10-19
+updated: 2026-11-02
 name: たいあたり
 category: enemy-skills
 ---
@@ -20,7 +20,7 @@ category: enemy-skills
 | 定義の根拠・決定日・参照元 | 2026-10-04、ユーザーの依頼（敵の技を増やし、共通化できるものも入れる）で、[苔スライム](../enemies/enemy-moss-slime.md)の技を共通技として作った |
 | 役割・説明 | 単体への基本の物理攻撃 |
 | 関連する仕様・個別ID | 使う敵：[苔スライム](../enemies/enemy-moss-slime.md)、[朝露ぷるん](../enemies/enemy-dew-slime.md)、[毒胞子オオダケ](../enemies/enemy-spore-cap.md)、[切り株猪](../enemies/enemy-stump-boar.md)、[鉱石喰いモグラ](../enemies/enemy-ore-mole.md)、[沼のカエル王](../enemies/enemy-frog-king.md)、[泥人形](../enemies/enemy-mud-golem.md)、[雪玉ころん](../enemies/enemy-snowball.md)、[雪原のマンモス](../enemies/enemy-snow-mammoth.md)、[沖の大ダコ](../enemies/enemy-giant-octopus.md)、[かぼちゃ頭の案山子](../enemies/enemy-pumpkin-scarecrow.md)、[迷い道標](../enemies/enemy-lost-signpost.md)、[金貨袋](../enemies/enemy-coin-pouch.md)。[敵の行動の仮設定](../../features/combat-enemy-behavior.md) |
-| 実装・ゲームマスタの場所 | 戦闘画面のモックで、苔スライムの攻撃として名前と単体攻撃だけを使っている（[BattleInspectAssets](../../../client/Assets/Baryonyx/Features/Combat/Editor/BattleInspectAssets.cs)の `Skill`）。ほかの効果と演出は未実装 |
+| 実装・ゲームマスタの場所 | [CombatEnemyBehaviors](../../../client/Assets/Baryonyx/Features/Combat/Runtime/CombatEnemyBehaviors.cs) の、使う敵の `Moves`。演出は、名前から選ぶ種類ごとの形（[BattleSkillVfx.Enemies](../../../client/Assets/Baryonyx/Features/Combat/Presentation/BattleSkillVfx.Enemies.cs) の `EnemyBlowOf`）。単体で開く戦闘画面のモックでは、苔スライムの攻撃の名前と単体攻撃に使う（[BattleInspectAssets](../../../client/Assets/Baryonyx/Features/Combat/Editor/BattleInspectAssets.cs) の `Skill`） |
 
 ## 確定した設定
 
@@ -32,8 +32,8 @@ category: enemy-skills
 |---|---|---|---|
 | 区分 | 共通技 | [共通技と固有技](README.md#共通技と固有技) | 候補 |
 | 種類・対象 | 攻撃・味方単体 | [記入する項目](README.md#記入する項目) | 候補 |
-| 物理・魔法と属性 | 物理・打 | 味方は物理の技を物防で、魔法の技を属防で受ける（[使い道の候補](../../features/party.md#ステータスの項目)） | 候補 |
-| 効果 | 物攻の100%のダメージ | 使う敵のステータスの割合（[威力の決め方](../../features/combat.md#威力の決め方)）。状態は[カードの状態の仮設定](../../features/combat.md#カードの状態の仮設定)の名前 | 仮 |
+| 物理・魔法と属性 | 物理・打 | [記入する項目](README.md#記入する項目) | 候補 |
+| 効果 | 物攻の100%のダメージ | [記入する項目](README.md#記入する項目) | 仮 |
 | 予告 | 攻撃 | [記入する項目](README.md#記入する項目) | 候補 |
 | 使う敵 | [苔スライム](../enemies/enemy-moss-slime.md)、[朝露ぷるん](../enemies/enemy-dew-slime.md)、[毒胞子オオダケ](../enemies/enemy-spore-cap.md)、[切り株猪](../enemies/enemy-stump-boar.md)、[鉱石喰いモグラ](../enemies/enemy-ore-mole.md)、[沼のカエル王](../enemies/enemy-frog-king.md)、[泥人形](../enemies/enemy-mud-golem.md)、[雪玉ころん](../enemies/enemy-snowball.md)、[雪原のマンモス](../enemies/enemy-snow-mammoth.md)、[沖の大ダコ](../enemies/enemy-giant-octopus.md)、[かぼちゃ頭の案山子](../enemies/enemy-pumpkin-scarecrow.md)、[迷い道標](../enemies/enemy-lost-signpost.md)、[金貨袋](../enemies/enemy-coin-pouch.md) | 各敵の定義の「技」の表 | 候補 |
 | 似合う敵 | 手足や武器を持たない敵（スライム、転がる岩、丸い獣） | 新しい敵へ付けるときの目安 | 候補 |
@@ -72,8 +72,8 @@ category: enemy-skills
 
 | 項目 | 決める内容・先に必要な判断 |
 |---|---|
-| 数値 | 割合と持続ターンは仮。[戦闘の未決事項](../../features/combat.md#未決事項)の数値が決まったら見直す |
-| 実装 | 未実装。実装するときは[敵の挙動デバッグルーム](../../features/screens/debug-rooms.md#敵の挙動デバッグルーム)の行動にも加える |
+| 数値 | 割合と持続ターンは仮。[戦闘の未決事項](../../features/combat/implementation.md#未決事項)の数値が決まったら見直す |
+| 実装 | 戦闘で使う。効果のうち戦闘にまだないもの（味方に付く状態など）は写していない（[敵の行動の仮設定](../../features/combat-enemy-behavior.md)）。写すときは[敵の挙動デバッグルーム](../../features/screens/debug-rooms.md#敵の挙動デバッグルーム)の行動にも加える |
 
 ## 変更と判断の記録
 
@@ -81,3 +81,4 @@ category: enemy-skills
 |---|---|---|---|
 | 2026-10-04 | 共通技として定義を作った | ユーザーの依頼 | 使う敵：[苔スライム](../enemies/enemy-moss-slime.md) |
 | 2026-10-19 | 使う敵に、新しく作った敵を加えた | ユーザーの依頼（敵を50体に増やし、文書カタログ・クライアント・サーバーにそろえる） | 使う敵：[朝露ぷるん](../enemies/enemy-dew-slime.md)、[毒胞子オオダケ](../enemies/enemy-spore-cap.md)、[切り株猪](../enemies/enemy-stump-boar.md)、[鉱石喰いモグラ](../enemies/enemy-ore-mole.md)、[沼のカエル王](../enemies/enemy-frog-king.md)、[泥人形](../enemies/enemy-mud-golem.md)、[雪玉ころん](../enemies/enemy-snowball.md)、[雪原のマンモス](../enemies/enemy-snow-mammoth.md)、[沖の大ダコ](../enemies/enemy-giant-octopus.md)、[かぼちゃ頭の案山子](../enemies/enemy-pumpkin-scarecrow.md)、[迷い道標](../enemies/enemy-lost-signpost.md)、[金貨袋](../enemies/enemy-coin-pouch.md) |
+| 2026-11-02 | スキルとdocの整理で、今のコードに合わせて「実装・ゲームマスタの場所」を直した | 根拠：CombatEnemyBehaviors の `Moves` にこの技があり、戦闘で使う | [敵の行動の仮設定](../../features/combat-enemy-behavior.md) |

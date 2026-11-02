@@ -2,7 +2,7 @@
 id: passive-head-start
 type: visual-entity
 status: 候補
-updated: 2026-10-21
+updated: 2026-11-02
 name: 早駆け
 category: passives
 silhouette: 翼の付いた革のブーツ
@@ -27,7 +27,7 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Passives/PassiveHeadSta
 | 定義の根拠・決定日・参照元 | 2026-10-21、ユーザーの依頼「パッシブスキルをまじめに考えてほしい」により作成した仮設定 |
 | 役割・説明 | 戦闘の始めに配る手札+1。 |
 | 関連する仕様・個別ID | [パッシブスキル](../../features/passives.md#仮データの9人のパッシブ)・[戦闘システム](../../features/combat.md) |
-| 必要な画像用途 | パッシブのアイコン（24×24ドット。育成の画面では2倍で表示） |
+| 必要な画像用途 | パッシブのアイコン（24×24ドット。育成の画面では3倍で表示） |
 | ゲーム内の実装・アセット | 定義 [CombatPassives](../../../client/Assets/Baryonyx/Features/Combat/Runtime/CombatPassives.cs)（`HeadStart`）、戦闘での働き [BattleInspectView.Passives](../../../client/Assets/Baryonyx/Features/Combat/Presentation/BattleInspectView.Passives.cs)、アイコン `PassiveHeadStart.aseprite` |
 
 ## 確定した設定
@@ -58,10 +58,10 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Passives/PassiveHeadSta
 |---|---|---|---|
 | 所持者・解放するレベル | ルカ・Lv 1 | [解放するレベル](../../features/passives.md#解放するレベル) | 仮 |
 | 発動条件 | 戦闘の開始時 | — | 仮 |
-| 効果 | 最初に配る手札を6枚から7枚にする | [戦闘システム](../../features/combat.md) | 仮 |
-| 効果量・対象 | カード1枚・パーティ（共有の手札） | 量はステータスの割合で書く（[カードの数値の見せ方](../../features/combat.md#カードの数値の見せ方)） | 仮 |
+| 効果 | 最初に配る手札を1枚増やす | [戦闘システム](../../features/combat.md) | 仮 |
+| 効果量・対象 | カード1枚・パーティ（共有の手札） | 量はステータスの割合で書く（[カードの数値の見せ方](../../features/combat/cards.md#カードの数値の見せ方)） | 仮 |
 | 常時・条件付き・回数制限 | 常時。1戦闘に1回 | — | 仮 |
-| 重複・相互作用・対象外 | 手札の上限は9枚のため、2ターン目に3枚引くと上限に近づく（[手札](../../features/combat.md#手札)）。全滅からのルーン復活の再開では働かない（再開時の手札は未決） | [パッシブ同士のつながり](../../features/passives.md#パッシブ同士のつながり) | 仮 |
+| 重複・相互作用・対象外 | 配る枚数は手札の上限に従う（[手札](../../features/combat/rules.md#手札)）。全滅からのルーン復活の再開で配り直す手札にも働く（[敗北とルーン復活](../../features/combat/rules.md#敗北とルーン復活)） | [パッシブ同士のつながり](../../features/passives.md#パッシブ同士のつながり) | 仮 |
 | 表示文・アイコンの要否 | 説明文は上のとおり。働いたときに持ち主の上に名前を出す。アイコンは `PassiveHeadStart.aseprite` | [働いたことを見せる](../../features/passives.md#働いたことを見せる) | 仮 |
 
 ## 外見を表現する文章
@@ -105,7 +105,7 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Passives/PassiveHeadSta
 | 出力画像のパス・生成日・案のID | `output/icons/passives/passive-icons-a.png`（2026-10-21、Git対象外） |
 | 採用・候補・不採用と理由 | 採用（候補）。検査スクリプトの `ui-icon` の検査を通った |
 | 採用画像と文章の差・反映方法 | なし |
-| Unityアセットのパス・GUID・利用画面 | `Assets/Baryonyx/Features/Combat/UI/Art/Passives/PassiveHeadStart.aseprite`。育成の画面のパッシブの行、展示室の画像のカテゴリ |
+| Unityアセットのパス・GUID・利用画面 | `Assets/Baryonyx/Features/Combat/UI/Art/Passives/PassiveHeadStart.aseprite`。育成の画面のパッシブの行、展示室のUIのカテゴリ |
 
 ## 未決事項
 
@@ -120,3 +120,4 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Passives/PassiveHeadSta
 |---|---|---|---|
 | 2026-10-21 | 仮設定として作成 | ユーザーの依頼（パッシブスキルをまじめに考える） | [パッシブスキル](../../features/passives.md) |
 | 2026-10-21 | 冒険の戦闘で働くようにし、アイコンを描いた | ユーザーの依頼（画像と、冒険で適用されるようにする） | [実装との対応](../../features/passives.md#実装との対応) |
+| 2026-11-02 | スキルとdocの整理で、今のコードに合わせて、育成の画面でのアイコンの倍率（2倍→3倍）と展示室のカテゴリ（画像→UI）を直した。効果と相互作用の、2026-10-25より前の手札の決まり（開始時に6枚、2ターン目から3枚引く）で書いた記述と、ルーン復活の再開では働かないとした記述も直した | 根拠：TrainingAssets.cs のパッシブの行のアイコン（72×72）、展示室の登録（UIのカテゴリ）。手札は BattleInspectView.Passives.cs の OpeningDraw（ルーン復活の RestartDeal でも使う） | [実装との対応](../../features/passives.md#実装との対応) |

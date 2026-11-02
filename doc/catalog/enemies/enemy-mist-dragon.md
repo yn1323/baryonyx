@@ -2,7 +2,7 @@
 id: enemy-mist-dragon
 type: visual-entity
 status: 候補
-updated: 2026-10-21
+updated: 2026-11-02
 name: 霧の竜
 category: enemies
 silhouette: 翼を左右に広げて宙に浮く竜。長い首が左上へ伸びて吠え、長い尾が下で巻く。体の周りを白い霧が渦巻く
@@ -21,10 +21,9 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/MistDragon.asep
 弱点の実行上の正本は [CombatEnemies](../../../client/Assets/Baryonyx/Features/Combat/Runtime/CombatEnemies.cs)、サーバーで記録できる敵のIDは [catalog.ts](../../../server/src/features/combat/catalog.ts) の `ENEMY_IDS` とする。
 この文書は、生息する地域、ステータス、使う技と行動パターン、外見と性格の設定を持つ。
 技の効果と演出は[敵の技の定義](../enemy-skills/README.md)に置く。
-2026-10-19の時点で、画像と弱点だけをクライアントに取り込んでおり、どの行き先にも出ない。HP・技・行動は未実装である。
-2026-10-20から、白嶺ネーヴェ（`neve-peaks`、Lv40）の最奥の主として、冒険の戦闘に出る（[行き先と敵](../../features/stage-progression.md#行き先と敵)）。
-戦闘では、下のLv100のステータスに出るLvの成長率を掛けて使い、技は「迷い路の霧」だけを物攻で物理として（味方の物防で受ける）使う（[CombatEnemyStats](../../../client/Assets/Baryonyx/Features/Combat/Runtime/CombatEnemyStats.cs)）。
-ほかの技と行動パターンは未実装である。
+2026-10-20から、白嶺ネーヴェ（`neve-peaks`、Lv40）の最奥の主として、冒険の戦闘に出る（[行き先と敵](../../features/stage-progression/destinations.md#行き先と敵)）。
+戦闘では、下のLv100のステータスに出るLvの成長率を掛けて使う（[CombatEnemyStats](../../../client/Assets/Baryonyx/Features/Combat/Runtime/CombatEnemyStats.cs)）。
+技と行動パターンは、2026-10-22から [CombatEnemyBehaviors](../../../client/Assets/Baryonyx/Features/Combat/Runtime/CombatEnemyBehaviors.cs) で動く。戦闘にまだない効果の技（金切り声・霧隠れ）は使わない（[敵の行動の仮設定](../../features/combat-enemy-behavior.md)）。
 
 ## 識別情報と根拠
 
@@ -34,8 +33,8 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/MistDragon.asep
 | 対象の役割・説明 | ボス（大）。前半は牙と爪と冷たい息で攻め、霧に隠れて単体攻撃をかわす。後半は迷い路の霧を呼び、行動のたびに味方全体を削りながら、予告つきの白霧の大息吹を放つ |
 | 元となる対象・亜種・衣装差分のID | なし |
 | 参照する仕様・関連する個別ID | [戦闘システム](../../features/combat.md)、[森の守り手](enemy-forest-guardian.md)、[炎尾の鳥](enemy-flame-tail-bird.md)、[沖の大ダコ](enemy-giant-octopus.md) |
-| 必要な画像用途 | 戦闘の1枚絵（128×128）。行動順のコマの切り出し位置は未決 |
-| ゲーム内の実装・アセット | 画像 `MistDragon.aseprite`、敵の種類と弱点 `CombatEnemies.cs`（`client/Assets/Baryonyx/Features/Combat/Runtime/`）、サーバーの敵ID `server/src/features/combat/catalog.ts` の `ENEMY_IDS`。HP・技・行動は未実装 |
+| 必要な画像用途 | 戦闘の1枚絵（128×128）。行動順のコマは、描かれた部分の上端から自動で切り出す（仮。`BattleEnemyLooksAssets.cs`） |
+| ゲーム内の実装・アセット | 画像 `MistDragon.aseprite`、敵の種類と弱点 `CombatEnemies.cs`（`client/Assets/Baryonyx/Features/Combat/Runtime/`）、サーバーの敵ID `server/src/features/combat/catalog.ts` の `ENEMY_IDS`、ステータス `CombatEnemyStats.cs`、技と行動パターン `CombatEnemyBehaviors.Peaks.cs`、出る行き先 `AdventureCatalog.cs` |
 
 ## 確定した設定
 
@@ -43,10 +42,10 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/MistDragon.asep
 
 ## 出現する場所
 
-まだどの行き先にも出ない。
+今の出る行き先とLv（仮）は[行き先と敵](../../features/stage-progression/destinations.md#行き先と敵)にある（割り振りの正本は [AdventureCatalog](../../../client/Assets/Baryonyx/Features/Adventure/Runtime/AdventureCatalog.cs) の `Areas`）。
 生息する地域は空（霧の濃い山の上）である。
 出現する行き先・マス・敵の組み合わせ・Lvは未決とする（[ステージの定義](../stages/README.md)）。
-空の地域に出る敵はほかにいないため、霧の竜は取り巻きを呼ばず、1体で戦う。
+空の地域に出る敵はほかにいないため、霧の竜は取り巻きを呼ばず、1体で戦う案である。今の白嶺ネーヴェの最奥の間では、ほかの最奥の主と同じく、小さな敵・中くらいの敵と並んで出る（[行き先と敵](../../features/stage-progression/destinations.md#行き先と敵)）。
 
 ## 分類固有のデータ
 
@@ -56,7 +55,7 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/MistDragon.asep
 | 役割 | ボス・大。単体と全体の物理、全体の魔法・氷、全体の麻痺、霧隠れ、激化後の継続ダメージと予告つきの大技 | [ステータス・技・行動パターンの書き方](README.md#ステータス技行動パターンの書き方) | 候補 |
 | ステータスの型 | 魔法型と力型（caster・bruiser） | 試作の設計値 | 候補 |
 | 大きさの区分 | 大（128×128） | [ドット絵の制作規格](../../art/direction.md#画面と寸法) | 規格どおり |
-| 弱点 | 雷・貫 | [属性と弱点](../../features/combat.md#属性と弱点) | 仮 |
+| 弱点 | 雷・貫 | [属性と弱点](../../features/combat/rules.md#属性と弱点) | 仮 |
 | 弱点の理由 | 雷：体を包む霧は水の粒で、雷を全身へ通す。貫：薄い翼膜を貫かれると、霧を集めて飛べなくなる | 設定 | 候補 |
 | 状態異常への反応 | 未決 | ボスに効かない状態を設けるかを含めて未決 | 未決 |
 | 激化 | 6ターン目、またはHPが半分以下になったとき | [行動パターン](#行動パターン) | 候補 |
@@ -94,7 +93,7 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/MistDragon.asep
 ## 行動パターン
 
 前半と後半で選び方を変える。
-後半への切り替えが、この敵の[激化](../../features/combat.md#防御と敵の激化)である。
+後半への切り替えが、この敵の[激化](../../features/combat/rules.md#防御と敵の激化)である。
 
 **前半**（迷い路の霧まで）
 
@@ -116,7 +115,7 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/MistDragon.asep
 
 後半は、迷い路の霧の継続ダメージで、戦いを長引かせるほど不利になる。
 溜めのターンの霧隠れで単体攻撃が通りにくくなるため、プレイヤーは、全体攻撃で削るか、次のターンの防御に備えるかを選ぶ。
-予告に大技までのターン数を出す作りは、[戦闘中の情報の優先順位](../../features/combat.md#戦闘中の情報の優先順位)の「予告では、特に激化ターンの大技を見せる」に合わせた。
+予告に大技までのターン数を出す作りは、[戦闘中の情報の優先順位](../../features/combat/rules.md#戦闘中の情報の優先順位)の「予告では、特に激化ターンの大技を見せる」に合わせた。
 
 ### 激化の見せ方
 
@@ -176,32 +175,33 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/MistDragon.asep
 | 用途・構図・視点・ポーズ・背景 | 戦闘の1枚絵。やや斜めの左向きで全身を描き、身構えた待機の姿。背景は透明 |
 | 解像度・透過・ファイル形式・差分規格 | 128×128、32色＋透明、インデックスカラーの `.aseprite`（[ドット絵の制作規格](../../art/direction.md#ドット絵の制作規格)） |
 | 外見の指示文（この敵の部分） | 「霧の濃い山の上を飛ぶ竜。体の端が霧にほどけ、翼を広げて吠える。迷い路の最奥の気配をまとう。配色は灰白色のうろこ、青灰色の翼膜、水色の目、白い霧。必ず残す特徴は、霧にほどける体の端、広げた翼、長い首と角」 |
-| 英語の短い説明（PixelLab用） | `pale gray-white dragon roaring with long neck and branching antler horns, wide blue-gray wing membranes, glowing light-blue eyes, white mist swirling around its body, edges dissolving into fog, facing left` |
+| 英語の短い説明 | `pale gray-white dragon roaring with long neck and branching antler horns, wide blue-gray wing membranes, glowing light-blue eyes, white mist swirling around its body, edges dissolving into fog, facing left` |
 | 変更しない特徴・今回だけ変える特徴 | 変えない特徴は「小型ドット絵でも残す特徴」とする。行動順のコマの切り出し位置を決めたら、頭と角が入るかを確かめる |
 | 実際に使った指示文 | `output/enemies/50-kiri-no-ryuu/request.md`（Git対象外） |
 | 入力にした文書のID・Gitコミット等の版 | `output/enemies/spec.json`（Git対象外）の50番 |
 | 参照画像のパス・出所・利用条件 | 画風見本として、既存の[森の守り手](enemy-forest-guardian.md)の絵を添付した |
 | 使用ツール・モデル・再現用設定 | Codex CLI（gpt-6.1-sol、画像生成のモデルは既定） |
 | 出力画像のパス・生成日・案のID | `output/enemies/50-kiri-no-ryuu/enemy.png`（1254×1254、2026-10-19生成、Git対象外）。背景を抜いて切り出し、128×128に縮小して32色へ減色し、インデックスカラーの `.aseprite` にした |
-| 採用・候補・不採用と理由 | ライブラリと展示室で表示する下書き（候補） |
+| 採用・候補・不採用と理由 | 冒険の戦闘・ライブラリ・展示室で表示する下書き（候補） |
 | 採用画像と文章の差・反映方法 | 指示にない、枯れ木色の枝分かれした角、腹の蛇腹、翼の関節の爪、体の下で巻く長い尾を文章に反映した |
-| Unityアセットのパス・GUID・利用画面 | `client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/MistDragon.aseprite`。ライブラリ、展示室 |
+| Unityアセットのパス・GUID・利用画面 | `client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/MistDragon.aseprite`。冒険の戦闘、ライブラリ、展示室 |
 
 ## 未決事項
 
 | 項目 | 決める内容・先に必要な判断 |
 |---|---|
-| 数値 | ステータス、行動の割合と回数、激化の条件は仮。[戦闘の未決事項](../../features/combat.md#未決事項)の数値が決まったら見直す |
+| 数値 | ステータス、行動の割合と回数、激化の条件は仮。[戦闘の未決事項](../../features/combat/implementation.md#未決事項)の数値が決まったら見直す |
 | 出現する場所 | 出現する行き先・マス・敵の組み合わせ・Lv。空の地域をどの行き先として作るか |
-| 速度・会心・幸運 | 速度は、味方の合計と比べる方法（[ターン順](../../features/combat.md#ターン順)）が決まったら尺度を合わせ直す。会心と幸運は、使い道（[候補](../../features/party.md#ステータスの項目)）が決まったら見直す |
+| 速度・会心・幸運 | 速度は、味方の合計と比べる方法（[ターン順](../../features/combat/rules.md#ターン順)）が決まったら尺度を合わせ直す。会心と幸運は、使い道（[候補](../../features/party.md#ステータスの項目)）が決まったら見直す |
 | 霧隠れ・継続ダメージ・引く枚数の減少 | 新しい仕組みの決まり（[霧隠れ](../enemy-skills/enemy-skill-mist-dragon-fog-veil.md)、[迷い路の霧](../enemy-skills/enemy-skill-mist-dragon-maze-fog.md)、[白霧の大息吹](../enemy-skills/enemy-skill-mist-dragon-whiteout-breath.md)） |
-| 弱点の数 | 1体に複数の弱点を持たせるか（[弱点の開示](../../features/combat.md#弱点の開示)の未決） |
+| 弱点の数 | 1体に複数の弱点を持たせるか（[戦闘の未決事項](../../features/combat/implementation.md#未決事項)の「弱点の開示」） |
 | 行動順のコマ | 1枚絵から切り出す位置 |
-| 実装 | 冒険の戦闘では、ステータスと技1つ（迷い路の霧）だけを使う。ほかの技と行動パターンは未実装。実装するときは[敵の挙動デバッグルーム](../../features/screens/debug-rooms.md#敵の挙動デバッグルーム)の行動も増やす |
+| 実装 | 戦闘にまだない効果の技（金切り声・霧隠れ）は使わない（[敵の行動の仮設定](../../features/combat-enemy-behavior.md)）。実装するときは[敵の挙動デバッグルーム](../../features/screens/debug-rooms.md#敵の挙動デバッグルーム)の行動も増やす |
 
 ## 変更と判断の記録
 
 | 日付 | 変更・判断 | 理由・根拠 | 影響するID・仕様 |
 |---|---|---|---|
-| 2026-10-19 | 定義を作り、生息する地域・ステータス・技8つ・行動パターン・演出・外見・性格を候補として書いた。弱点とLv100のステータスは試作の設計値を使った。同じ地域の敵がいないため、仲間を呼ぶは持たせなかった | ユーザーの依頼（敵50体を試作し、文書カタログ・クライアント・サーバーにそろえる） | [敵の行動の仮設定](../../features/combat-enemy-behavior.md)、[属性と弱点](../../features/combat.md#属性と弱点) |
-| 2026-10-20 | 白嶺ネーヴェの戦闘に出るようにし、Lv100のステータスと技「迷い路の霧」を戦闘で使うようにした | ユーザーの依頼（行き先を増やし、行き先ごとの敵を増やす） | [行き先と敵](../../features/stage-progression.md#行き先と敵) |
+| 2026-10-19 | 定義を作り、生息する地域・ステータス・技8つ・行動パターン・演出・外見・性格を候補として書いた。弱点とLv100のステータスは試作の設計値を使った。同じ地域の敵がいないため、仲間を呼ぶは持たせなかった | ユーザーの依頼（敵50体を試作し、文書カタログ・クライアント・サーバーにそろえる） | [敵の行動の仮設定](../../features/combat-enemy-behavior.md)、[属性と弱点](../../features/combat/rules.md#属性と弱点) |
+| 2026-10-20 | 白嶺ネーヴェの戦闘に出るようにし、Lv100のステータスと技「迷い路の霧」を戦闘で使うようにした | ユーザーの依頼（行き先を増やし、行き先ごとの敵を増やす） | [行き先と敵](../../features/stage-progression/destinations.md#行き先と敵) |
+| 2026-11-02 | スキルとdocの整理で、今のコードに合わせて、技・行動パターン・出る行き先を未実装・未配置とした記述を直した。1体で戦うことを案とし、今の最奥の間では小さな敵・中くらいの敵と並ぶことを書いた。絵を冒険の戦闘で使い、行動順のコマを自動で切り出すことも書いた | 根拠：53体すべてが CombatEnemyStats・CombatEnemyBehaviors で動き、AdventureCatalog の行き先に出る。最奥の間は AdventureCatalog の `Encounter` が小・中・最奥の主の3体で組む。絵と行動順のコマは BattleEnemyLooksAssets が53体分を作る | [行き先と敵](../../features/stage-progression/destinations.md#行き先と敵)、[敵の行動の仮設定](../../features/combat-enemy-behavior.md) |

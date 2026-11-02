@@ -2,7 +2,7 @@
 id: passive-charged-shield
 type: visual-entity
 status: 候補
-updated: 2026-10-21
+updated: 2026-11-02
 name: 帯電の盾
 category: passives
 silhouette: 稲妻が飛び出す四角い盾
@@ -27,7 +27,7 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Passives/PassiveCharged
 | 定義の根拠・決定日・参照元 | 2026-10-21、ユーザーの依頼「パッシブスキルをまじめに考えてほしい」により作成した仮設定 |
 | 役割・説明 | ルッツが[ブロック]を得るたびに、ランダムな敵に属攻の20%の雷属性ダメージ。 |
 | 関連する仕様・個別ID | [パッシブスキル](../../features/passives.md#仮データの9人のパッシブ)・[戦闘システム](../../features/combat.md) |
-| 必要な画像用途 | パッシブのアイコン（24×24ドット。育成の画面では2倍で表示） |
+| 必要な画像用途 | パッシブのアイコン（24×24ドット。育成の画面では3倍で表示） |
 | ゲーム内の実装・アセット | 定義 [CombatPassives](../../../client/Assets/Baryonyx/Features/Combat/Runtime/CombatPassives.cs)（`ChargedShield`）、戦闘での働き [BattleInspectView.Passives](../../../client/Assets/Baryonyx/Features/Combat/Presentation/BattleInspectView.Passives.cs)、アイコン `PassiveChargedShield.aseprite` |
 
 ## 確定した設定
@@ -59,9 +59,9 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Passives/PassiveCharged
 | 所持者・解放するレベル | ルッツ・Lv 1 | [解放するレベル](../../features/passives.md#解放するレベル) | 仮 |
 | 発動条件 | ルッツにブロックが付いたとき（誰のカード・パッシブでもよい） | — | 仮 |
 | 効果 | ランダムな敵1体に、ルッツの属攻の20%の雷属性のダメージを与える。防御の式を通す | [戦闘システム](../../features/combat.md) | 仮 |
-| 効果量・対象 | 属攻の20%・ランダムな敵1体 | 量はステータスの割合で書く（[カードの数値の見せ方](../../features/combat.md#カードの数値の見せ方)） | 仮 |
+| 効果量・対象 | 属攻の20%・ランダムな敵1体 | 量はステータスの割合で書く（[カードの数値の見せ方](../../features/combat/cards.md#カードの数値の見せ方)） | 仮 |
 | 常時・条件付き・回数制限 | 条件付き。ブロックを得るたび | — | 仮 |
-| 重複・相互作用・対象外 | シールドバッシュ・ガード（味方全体にブロック）、盾の構えの陣・城壁の枝、[あふれる祈り](passive-overflowing-prayer.md)、[魔力の盾](passive-mana-shield.md)で働く。弱点の1.5倍を掛けるか、弱点を開示するかは未決 | [パッシブ同士のつながり](../../features/passives.md#パッシブ同士のつながり) | 仮 |
+| 重複・相互作用・対象外 | ガード（味方全体にブロック）、盾の構えの陣・城壁の枝、[あふれる祈り](passive-overflowing-prayer.md)、[魔力の盾](passive-mana-shield.md)で働く。弱点は仮に雷雲・爆炎の刻印と同じく倍率を掛けて開示し、カードで突いたときだけ開示するかは未決（[パッシブの未決事項](../../features/passives.md#未決事項)） | [パッシブ同士のつながり](../../features/passives.md#パッシブ同士のつながり) | 仮 |
 | 表示文・アイコンの要否 | 説明文は上のとおり。働いたときに持ち主の上に名前を出す。アイコンは `PassiveChargedShield.aseprite` | [働いたことを見せる](../../features/passives.md#働いたことを見せる) | 仮 |
 
 ## 外見を表現する文章
@@ -105,7 +105,7 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Passives/PassiveCharged
 | 出力画像のパス・生成日・案のID | `output/icons/passives/passive-icons-c.png`（2026-10-21、Git対象外） |
 | 採用・候補・不採用と理由 | 採用（候補）。検査スクリプトの `ui-icon` の検査を通った |
 | 採用画像と文章の差・反映方法 | なし |
-| Unityアセットのパス・GUID・利用画面 | `Assets/Baryonyx/Features/Combat/UI/Art/Passives/PassiveChargedShield.aseprite`。育成の画面のパッシブの行、展示室の画像のカテゴリ |
+| Unityアセットのパス・GUID・利用画面 | `Assets/Baryonyx/Features/Combat/UI/Art/Passives/PassiveChargedShield.aseprite`。育成の画面のパッシブの行、展示室のUIのカテゴリ |
 
 ## 未決事項
 
@@ -120,3 +120,4 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Passives/PassiveCharged
 |---|---|---|---|
 | 2026-10-21 | 仮設定として作成 | ユーザーの依頼（パッシブスキルをまじめに考える） | [パッシブスキル](../../features/passives.md) |
 | 2026-10-21 | 冒険の戦闘で働くようにし、アイコンを描いた | ユーザーの依頼（画像と、冒険で適用されるようにする） | [実装との対応](../../features/passives.md#実装との対応) |
+| 2026-11-02 | スキルとdocの整理で、今のコードに合わせて、育成の画面でのアイコンの倍率（2倍→3倍）と展示室のカテゴリ（画像→UI）を直した。相互作用の、シールドバッシュでブロックが付くとした記述と、弱点の扱いを未決とした記述も直した | 根拠：TrainingAssets.cs のパッシブの行のアイコン（72×72）、展示室の登録（UIのカテゴリ）。シールドバッシュは CardSkills.cs、弱点は BattleInspectView.cs の Hit | [実装との対応](../../features/passives.md#実装との対応) |

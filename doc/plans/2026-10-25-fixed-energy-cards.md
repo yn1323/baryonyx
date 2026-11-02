@@ -1,15 +1,15 @@
 ---
 id: plan-fixed-energy-cards-20261025
 type: reference
-status: 候補
-updated: 2026-10-25
+status: 記録
+updated: 2026-11-02
 ---
 
 # エネルギー3固定と捨て札のルール、カードの作り直し
 
-状態：完了（2026-10-26に実装し、EditMode・PlayModeのテストで確かめた。強さの測り直しはユーザーの試遊に任せ、自動対戦はしていない。Androidの実機・エミュレーターでは確かめていない。commitはまだ）
+状態：完了（2026-10-26に実装し、EditMode・PlayModeのテストで確かめ、同日にcommitした。自動対戦での強さの測り直しは、同日の[強い魔物と最奥の主の入れ替え](../features/stage-progression/battle-trials.md#強い魔物と最奥の主の入れ替え2026-10-26)で行った。Androidの実機・エミュレーターでは確かめていない）
 
-ルールの正本は[戦闘システム](../features/combat.md)、カードの正本は[技・カードの定義](../catalog/skills/README.md)、固有スキルの正本は[各段階の効果](../features/skill-evolution.md#各段階の効果)である。
+ルールの正本は[戦闘システム](../features/combat.md)、カードの正本は[技・カードの定義](../catalog/skills/README.md)、固有スキルの正本は[各段階の効果](../features/skill-evolution/trees.md#各段階の効果)である。
 この計画は、依頼の経緯、実装の範囲と順番、受入条件を残す。
 
 ## 依頼と決定した事項
@@ -35,20 +35,20 @@ updated: 2026-10-25
 ## 実装の範囲と順番
 
 戦闘の手札・山札・エネルギーの処理は [BattleInspectView](../../client/Assets/Baryonyx/Features/Combat/Presentation/BattleInspectView.cs) にある。
-同じ画面から戦闘の規則を切り出す作業が並行して進んでいたため、ユーザーは、その作業が終わってから実装を始めると決め、2026-10-26に実装した（[実装との対応](../features/combat.md#実装との対応)）。
+同じ画面から戦闘の規則を切り出す作業が並行して進んでいたため、ユーザーは、その作業が終わってから実装を始めると決め、2026-10-26に実装した（[実装との対応](../features/combat/implementation.md#実装との対応)）。
 4の強さの測り直しは、ユーザーが「目安の表で決めたまま、あとで自分で試遊する」とし、行っていない。
 
 1. **土台**：エネルギー3固定、5枚引く、ターンの終わりに流す、捨て札の山、山札の作り直し、倒れたとき・復活・ルーン復活の扱い。画面に捨て札（と消滅）の枚数を出す。
 2. **キーワード**：消滅・保持・霧散・初手・捨てる（捨てたときの効果）・眠り札・歩み・合体・連携を、[CardKeywords](../../client/Assets/Baryonyx/Features/Combat/Runtime/CardKeywords.cs) と効果の処理に入れる。今の「今日のACTが多いほど強い」は歩みにまとめる。
 3. **カード**：[CardSkills](../../client/Assets/Baryonyx/Features/Combat/Runtime/CardSkills.cs)・[CardSkillAwakenings](../../client/Assets/Baryonyx/Features/Combat/Runtime/CardSkillAwakenings.cs)・[UniqueSkillTrees](../../client/Assets/Baryonyx/Features/SkillEvolution/Runtime/UniqueSkillTrees.cs) を文書の値にそろえ、合体カード2枚を足す。説明文はPrefabに焼き込まれるため、戦闘画面のモックと酒場の画面のアセットを生成し直し、[展示室](../features/showcase.md)で文を確かめる。
-4. **測る**：[戦闘の自動対戦](../rules/client-testing.md#戦闘の自動対戦)で勝率とターン数を測り、[戦闘の長さ](../features/combat.md#戦闘の長さ)の目安と比べて、威力か敵のHPで合わせる。覚醒の抽選は引くたびに行うため、引く回数が増えた分の確率も測り直す（[確率の仮設定](../features/skill-evolution.md#確率の仮設定)）。
+4. **測る**：[戦闘の自動対戦](../rules/client-testing.md#戦闘の自動対戦)で勝率とターン数を測り、[戦闘の長さ](../features/combat/rules.md#戦闘の長さ)の目安と比べて、威力か敵のHPで合わせる。覚醒の抽選は引くたびに行うため、引く回数が増えた分の確率も測り直す（[確率の仮設定](../features/skill-evolution/rules.md#確率の仮設定)）。
 
 ## 受入条件
 
-- 戦闘のモックと冒険の戦闘が、新しいルールとキーワードで最後まで遊べる。強さは[コストと威力の目安](../features/combat.md#コストと威力の目安)で決めたまま、ユーザーが試遊して確かめる（2026-10-25、ユーザー）。
+- 戦闘のモックと冒険の戦闘が、新しいルールとキーワードで最後まで遊べる。強さは[コストと威力の目安](../features/combat/cards.md#コストと威力の目安)で決めたまま、ユーザーが試遊して確かめる（2026-10-25、ユーザー）。
 - 手札・山札・捨て札・消滅の動き、保持と霧散、初手、眠り札の段、合体と連携、復活とルーン復活の配り直しを、EditModeのテストで確かめる。
 - `CardSkillsTests` の重複の検査が、作り直した50枚・覚醒版・固有スキルで通る。
-- 自動対戦の勝率とターン数を[戦闘の試し](../features/stage-progression.md#戦闘の試し)に記録する。
+- 自動対戦の勝率とターン数を[戦闘の試し](../features/stage-progression/battle-trials.md#戦闘の試し)に記録する。
 
 ## 実装したときに直した文書
 
@@ -59,7 +59,7 @@ updated: 2026-10-25
 - [戦闘のモックの山札](../features/screens/battle-deck.md)：居合一閃をコスト5として入れた理由
 - [スキルの演出と背景](../features/screens/battle-effects.md)：コスト5以上でカットインを出す決まり
 - [パッシブスキル](../features/passives.md)と[星図の計算](../catalog/passives/passive-star-chart.md)：エネルギーの上限
-- [各段階の効果](../features/skill-evolution.md#各段階の効果)と[用語集](../game/glossary.md)の「未実装」の注記
+- [各段階の効果](../features/skill-evolution/trees.md#各段階の効果)と[用語集](../game/glossary.md)の「未実装」の注記
 
 ## 実装で決めたこと・残したこと
 
@@ -71,6 +71,6 @@ updated: 2026-10-25
 
 ## 未決と確認待ち
 
-- エネルギーが効果で3より多くなってよいか、その上限（[未決事項](../features/combat.md#未決事項)）
-- 「使用条件を付けない」決まりを外すか（[手札](../features/combat.md#手札)）
-- キーワードの呼び名、眠り札の段数と増え方、合体カードの持ち主（[未決事項](../features/combat.md#未決事項)）
+- エネルギーが効果で3より多くなってよいか、その上限（[未決事項](../features/combat/implementation.md#未決事項)）
+- 「使用条件を付けない」決まりを外すか（[手札](../features/combat/rules.md#手札)）
+- キーワードの呼び名、眠り札の段数と増え方、合体カードの持ち主（[未決事項](../features/combat/implementation.md#未決事項)）

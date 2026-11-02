@@ -24,11 +24,12 @@
 | .NET・整形・解析 | [global.json](../../client/global.json)・[ツール設定](../../client/.config/dotnet-tools.json)・[.editorconfig](../../client/.editorconfig) | [コード品質](../rules/client-code-quality.md) |
 | Node.js・pnpm・サーバー依存 | [.node-version](../../server/.node-version)・[package.json](../../server/package.json) | [バックエンド](../rules/backend-design.md) |
 | Local Worker・D1 | [wrangler.json](../../server/wrangler.json) | [環境とDB](../rules/backend-design.md#環境とdbの保持) |
-| DBスキーマ・マイグレーション | [db-schema.ts](../../server/src/features/health/db-schema.ts)・[migrations](../../server/migrations/) | [マイグレーション](../rules/backend-design.md#マイグレーション) |
+| サーバーの変数（`BUILD_SHA`・`DEBUG_TOOLS`・`GOOGLE_CLIENT_ID`） | Localは [wrangler.json](../../server/wrangler.json) の `vars` と `server/.dev.vars`（[.env.example](../../server/.env.example) を写す）、公開先は [deploy.mjs](../../server/scripts/deploy.mjs) | [環境とDBの保持](../rules/backend-design.md#環境とdbの保持)。`DEBUG_TOOLS` はProdだけ `off` |
+| DBスキーマ・マイグレーション | 各機能の `db-schema.ts`（[drizzle.config.ts](../../server/drizzle.config.ts) が読む）・[migrations](../../server/migrations/) | [マイグレーション](../rules/backend-design.md#マイグレーション) |
 | クラウド公開・GOOGLE_CLIENT_ID | [サーバーCI](../../.github/workflows/server-ci.yml)・[公開workflow](../../.github/workflows/server-deploy.yml) | [初回の公開準備](../rules/backend-design.md#初回の公開準備)。実環境の登録値は転記しない |
 | Unity CIのSecrets | [クライアントCI](../../.github/workflows/client-ci.yml) | [Unityライセンス設定](../rules/client-code-quality.md) |
 | APKのCI配布・Drive認証 | [配布workflow](../../.github/workflows/client-distribute.yml) | [配布手順と停止状態](../rules/client-android-testing.md) |
-| ローカルAPKのDrive配置 | Windowsは[Dev](../../shortcuts/build-apk-dev-to-drive.bat)・[Prod](../../shortcuts/build-apk-prod-to-drive.bat)、macOSは[Dev](../../shortcuts/build-apk-dev-to-drive.command)・[Prod](../../shortcuts/build-apk-prod-to-drive.command) | 配置先は[ショートカットの一覧](../../AGENTS.md#手動実行用ショートカット)、動作とログは[ショートカットの動作](../rules/local-shortcuts.md) |
+| ローカルAPKのDrive配置 | Windowsは[Dev](../../shortcuts/build-apk-dev-to-drive.bat)・[Prod](../../shortcuts/build-apk-prod-to-drive.bat)、macOSは[Dev](../../shortcuts/build-apk-dev-to-drive.command)・[Prod](../../shortcuts/build-apk-prod-to-drive.command) | 配置先は[Google Driveへの配置](../rules/local-shortcuts.md#google-driveへの配置)、動作とログは[ショートカットの動作](../rules/local-shortcuts.md) |
 | Android SDK・AVD・起動引数 | [エミュレーター手順](../rules/client-android-emulator.md) | 同文書で確認する。AIはエミュレーターを起動しない |
 | 依存更新 | [renovate.json](../../renovate.json) | [更新ルール](../rules/dependency-updates.md) |
 | 文書の索引・リンク・ID検査 | [文書CI](../../.github/workflows/docs-ci.yml) | [検査手順](../tools/README.md) |

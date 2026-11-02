@@ -2,7 +2,7 @@
 id: enemy-hourglass-sprite
 type: visual-entity
 status: 候補
-updated: 2026-10-21
+updated: 2026-11-02
 name: 砂時計の精
 category: enemies
 silhouette: 縦長の砂時計の体がやや傾いて立ち、金の枠の左右から細い腕が曲がって伸びる。上の枠は冠のようにとがる
@@ -17,11 +17,10 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/HourglassSprite
 
 [敵の定義](README.md) / [関連仕様](../../features/combat-enemy-behavior.md)
 
-砂漠に出る、小さな敵である。
+砂漠（アルマジャ王墓）に出る、小さな敵である。
 雷で味方を打ち、受けた傷を時の巻き戻しでなかったことにする。
 この文書は、ステータス、使う技と行動パターン、外見と性格の設定を持つ。
 技の効果と演出は[敵の技の定義](../enemy-skills/README.md)に置く。
-2026-10-19の時点で、画像と敵の種類・弱点だけを実装しており、HP・技・行動は未実装である。
 
 ## 識別情報と根拠
 
@@ -31,8 +30,8 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/HourglassSprite
 | 対象の役割・説明 | 雑魚（小）。雷の魔法と麻痺で攻め、少しずつ削られた傷を巻き戻す。倒すには一度に大きなダメージを与える必要がある |
 | 元となる対象・亜種・衣装差分のID | なし |
 | 参照する仕様・関連する個別ID | [戦闘システム](../../features/combat.md)、[サボテン戦士](enemy-cactus-warrior.md)、[砂鮫](enemy-sand-shark.md)、[鬼火](enemy-will-o-wisp.md) |
-| 必要な画像用途 | 戦闘の1枚絵（64×64）。行動順のコマの切り出し位置は未決 |
-| ゲーム内の実装・アセット | 画像 `HourglassSprite.aseprite`、敵の種類と弱点 `CombatEnemies.cs`（`client/Assets/Baryonyx/Features/Combat/Runtime/`）、サーバーの敵ID `server/src/features/combat/catalog.ts` の `ENEMY_IDS`。HP・技・行動は未実装 |
+| 必要な画像用途 | 戦闘の1枚絵（64×64）。行動順のコマ（24×24）は、描かれた部分の上端から自動で切り出す（仮。`BattleEnemyLooksAssets.cs`） |
+| ゲーム内の実装・アセット | 画像 `HourglassSprite.aseprite`、敵の種類と弱点 `CombatEnemies.cs`（`client/Assets/Baryonyx/Features/Combat/Runtime/`）、サーバーの敵ID `server/src/features/combat/catalog.ts` の `ENEMY_IDS`、ステータス `CombatEnemyStats.cs`、技と行動パターン `CombatEnemyBehaviors.Tomb.cs`、出る行き先 `AdventureCatalog.cs` |
 
 ## 確定した設定
 
@@ -42,14 +41,14 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/HourglassSprite
 
 | 行き先 | マス | 敵の組み合わせ | Lv |
 |---|---|---|---|
-| 未決（生息する地域は砂漠） | 未決 | 未決 | 未決 |
+| アルマジャ王墓（`almaja-tomb`。砂漠の行き先） | 未決 | 未決 | 未決 |
 
-まだどの行き先にも出ない。
-生息する地域は砂漠とし、出現する行き先・マス・敵の組み合わせ・Lvは未決とする。
+今の出る行き先とLv（仮）は[行き先と敵](../../features/stage-progression/destinations.md#行き先と敵)にある（割り振りの正本は [AdventureCatalog](../../../client/Assets/Baryonyx/Features/Adventure/Runtime/AdventureCatalog.cs) の `Areas`）。
+生息する地域は砂漠で、砂漠の行き先はアルマジャ王墓とみなす（2026-11-02、ユーザーの判断）。そこでのマス・敵の組み合わせ・Lvは未決とする。
 行き先の個別定義（`stage-`）はまだない（[ステージの定義](../stages/README.md)）。
-2026-10-20から、アルマジャ王墓（`almaja-tomb`、Lv26）の小さな敵として、冒険の戦闘に出る（[行き先と敵](../../features/stage-progression.md#行き先と敵)）。
-戦闘では、下のLv100のステータスに出るLvの成長率を掛けて使い、技は「電撃」だけを属攻で魔法として（味方の属防で受ける）使う（[CombatEnemyStats](../../../client/Assets/Baryonyx/Features/Combat/Runtime/CombatEnemyStats.cs)）。
-ほかの技と行動パターンは未実装である。
+2026-10-20から、アルマジャ王墓（`almaja-tomb`、Lv26）の小さな敵として、冒険の戦闘に出る（[行き先と敵](../../features/stage-progression/destinations.md#行き先と敵)）。
+戦闘では、下のLv100のステータスに出るLvの成長率を掛けて使う（[CombatEnemyStats](../../../client/Assets/Baryonyx/Features/Combat/Runtime/CombatEnemyStats.cs)）。
+技と行動パターンは、2026-10-22から [CombatEnemyBehaviors](../../../client/Assets/Baryonyx/Features/Combat/Runtime/CombatEnemyBehaviors.cs) で動く。使う条件が戦闘から見えない技（時の巻き戻し）は使わない（[敵の行動の仮設定](../../features/combat-enemy-behavior.md)）。
 
 ## 分類固有のデータ
 
@@ -154,30 +153,31 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/HourglassSprite
 | 用途・構図・視点・ポーズ・背景 | 戦闘の1枚絵。腕を左へ構えた姿で全身を描き、背景は透明 |
 | 解像度・透過・ファイル形式・差分規格 | 64×64、32色＋透明、インデックスカラーの `.aseprite`（[ドット絵の制作規格](../../art/direction.md#ドット絵の制作規格)） |
 | 外見の指示文（この敵の部分） | 「止まった時間を嫌う砂時計の魔物。砂時計の体から細い腕が伸び、中の砂が逆に流れる。配色：金の枠、透明なガラス、青い砂。必ず残す特徴：砂時計の体。逆に流れる青い砂。細い腕」 |
-| 英語の短い説明（PixelLab用） | `living hourglass with an ornate gold frame set with blue gems, thin clawed gold arms, blue sand flowing upward inside the glass` |
-| 変更しない特徴・今回だけ変える特徴 | 変えない特徴は「小型ドット絵でも残す特徴」とする。行動順のコマの切り出し位置は未決 |
+| 英語の短い説明 | `living hourglass with an ornate gold frame set with blue gems, thin clawed gold arms, blue sand flowing upward inside the glass` |
+| 変更しない特徴・今回だけ変える特徴 | 変えない特徴は「小型ドット絵でも残す特徴」とする |
 | 実際に使った指示文 | `output/enemies/30-sunadokei-sei/request.md`（Git対象外） |
 | 入力にした文書のID・Gitコミット等の版 | なし（この定義を作る前の生成） |
 | 参照画像のパス・出所・利用条件 | 画風見本として、既存の森の守り手の絵を添付した |
 | 使用ツール・モデル・再現用設定 | Codex CLI（gpt-6.1-sol）。画像生成のモデルは既定 |
 | 出力画像のパス・生成日・案のID | `output/enemies/30-sunadokei-sei/enemy.png`（1254×1254、2026-10-19生成、Git対象外）。背景を抜いて切り出し、64×64に縮小して32色へ減色し、インデックスカラーの `.aseprite` にした |
-| 採用・候補・不採用と理由 | ライブラリと展示室で表示する下書き（候補） |
+| 採用・候補・不採用と理由 | 冒険の戦闘・ライブラリ・展示室で表示する下書き（候補） |
 | 採用画像と文章の差・反映方法 | 指示になかった、枠の青い宝石と冠のようなとがった飾り、腕の先の爪が描かれた。逆の流れは、下から上へ昇る砂の筋と、上の丸みに浮く粒で表された。文章を採用画像に合わせた |
-| Unityアセットのパス・GUID・利用画面 | `client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/HourglassSprite.aseprite`。[ライブラリ](../../features/library.md)の敵の記録、[展示室](../../features/showcase.md) |
+| Unityアセットのパス・GUID・利用画面 | `client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/HourglassSprite.aseprite`。冒険の戦闘、[ライブラリ](../../features/library.md)の敵の記録、[展示室](../../features/showcase.md) |
 
 ## 未決事項
 
 | 項目 | 決める内容・先に必要な判断 |
 |---|---|
-| 出現する場所とLv | 砂漠の行き先を作るときに、マス・敵の組み合わせ・Lvを決める |
-| 数値 | ステータス、行動の割合、激化の倍率は仮。[戦闘の未決事項](../../features/combat.md#未決事項)の数値が決まったら見直す |
-| 速度・会心・幸運 | 速度は、味方の合計と比べる方法（[ターン順](../../features/combat.md#ターン順)）が決まったら尺度を合わせ直す。会心と幸運は、使い道（[候補](../../features/party.md#ステータスの項目)）が決まったら見直す |
+| 出現する場所とLv | アルマジャ王墓での、マス・敵の組み合わせ・Lvを決める。今は小さな敵として、仮のLv26で出る |
+| 数値 | ステータス、行動の割合、激化の倍率は仮。[戦闘の未決事項](../../features/combat/implementation.md#未決事項)の数値が決まったら見直す |
+| 速度・会心・幸運 | 速度は、味方の合計と比べる方法（[ターン順](../../features/combat/rules.md#ターン順)）が決まったら尺度を合わせ直す。会心と幸運は、使い道（[候補](../../features/party.md#ステータスの項目)）が決まったら見直す |
 | 巻き戻し | 前に行動した直後のHPを覚える仕組み（[時の巻き戻し](../enemy-skills/enemy-skill-hourglass-sprite-rewind.md)） |
-| 実装 | 冒険の戦闘では、ステータスと技1つ（電撃）だけを使う。ほかの技と行動パターンは未実装。実装するときは[敵の挙動デバッグルーム](../../features/screens/debug-rooms.md#敵の挙動デバッグルーム)の行動も増やす |
 
 ## 変更と判断の記録
 
 | 日付 | 変更・判断 | 理由・根拠 | 影響するID・仕様 |
 |---|---|---|---|
 | 2026-10-19 | 画像を生成して取り込み、定義を作った。ステータス・技3つ・行動パターン・演出・外見・性格を候補として書いた | ユーザーの依頼（敵50体を試作し、文書カタログ・クライアント・サーバーにそろえる） | [敵の行動の仮設定](../../features/combat-enemy-behavior.md)、[ステータスの項目](../../features/party.md#ステータスの項目)、[レベルとステータス](../../features/progression.md#レベルとステータス) |
-| 2026-10-20 | アルマジャ王墓の戦闘に出るようにし、Lv100のステータスと技「電撃」を戦闘で使うようにした | ユーザーの依頼（行き先を増やし、行き先ごとの敵を増やす） | [行き先と敵](../../features/stage-progression.md#行き先と敵) |
+| 2026-10-20 | アルマジャ王墓の戦闘に出るようにし、Lv100のステータスと技「電撃」を戦闘で使うようにした | ユーザーの依頼（行き先を増やし、行き先ごとの敵を増やす） | [行き先と敵](../../features/stage-progression/destinations.md#行き先と敵) |
+| 2026-11-02 | スキルとdocの整理で、今のコードに合わせて、技・行動パターン・出る行き先を未実装・未配置とした記述を直した。戦闘で使われない時の巻き戻しと、絵の利用画面の冒険の戦闘を書き足した。行動順のコマの切り出しを、自動で切り出す今の作り（BattleEnemyLooksAssets.cs）に合わせた | 根拠：53体すべてが CombatEnemyStats・CombatEnemyBehaviors で動き、AdventureCatalog の行き先に出る。絵は BattleEnemyLooks で全種を戦闘に使う。時の巻き戻しは割り込みの条件を写していない | [行き先と敵](../../features/stage-progression/destinations.md#行き先と敵)、[敵の行動の仮設定](../../features/combat-enemy-behavior.md) |
+| 2026-11-02 | ユーザーの判断で、アルマジャ王墓を砂漠の行き先とみなし、出現する場所と未決事項の「砂漠の行き先を作るときに」を、アルマジャ王墓での決め事に書き直した | ユーザーの判断（2026-11-02） | [行き先と敵](../../features/stage-progression/destinations.md#行き先と敵) |

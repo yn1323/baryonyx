@@ -11,7 +11,7 @@
 
 | 項目 | CIの設定 |
 |---|---|
-| Unity | `ProjectVersion.txt` の版。現在は `6000.6.0f1` |
+| Unity | `ProjectVersion.txt` の版 |
 | アプリ表示名 | [ProjectSettings.asset](../../client/ProjectSettings/ProjectSettings.asset) の `productName`。正式名は[ゲーム概要](../game/overview.md)を参照 |
 | 成果物 | `Builds/Android/baryonyx.apk` |
 | Application ID | `com.croissantlab.baryonyx` |
@@ -120,9 +120,13 @@ Repository secretsの登録後にClient CIを実行し、環境名付きAPKの�
 
 ## ローカルビルドと配布処理の検証
 
-手元でビルドしてGoogle Driveへ置くときは、[手動実行用ショートカット](../../AGENTS.md#手動実行用ショートカット)の環境別のファイルを使う。
+手元でビルドしてGoogle Driveへ置くときは、[手動実行用ショートカット](local-shortcuts.md#ファイルの一覧)の環境別のファイルを使う。
 動作・前提・ログは[ショートカットの動作](local-shortcuts.md)に従う。
 Androidエミュレーターの準備とAPKインストールは [WindowsでのUnityとAndroidエミュレーター](client-android-emulator.md) に従う。
+
+APKのビルドは、ユーザーが頼んだときだけ行う。
+ビルドには数分かかり、Driveの配置先のAPKを上書きし、作業ツリーにあるほかの作業の未commitの変更も入るためである。
+確かめるのにAPKが要りそうなときは、先にユーザーに聞く。
 
 ローカルではAndroid Build Support、SDK・NDK・OpenJDKを同じUnity版へ導入する。
 対象Editorを閉じるか検証コピーを用意し、次を実行する。
@@ -133,6 +137,18 @@ unity build <clientの絶対パス> --target Android --execute-method Baryonyx.E
 python -B -m unittest discover -s client/ci -p "test_upload_drive_apk.py"
 node --test client/ci/resolve-drive-distribution.test.cjs
 ```
+
+開いているEditorでは、ショートカットと `unity build` は `Temp/UnityLockfile` で止まって使えない。
+開いているEditorで作るときは、[Editorの札](client-testing.md#複数のチャットで1台のeditorを使うとき)を取り、Topなど変更の出ないシーンを開いてから、Unity CLIの `eval` で `Baryonyx.Editor.CI.AndroidBuild.Build()` を呼ぶ。
+CLIの応答は先に切れるが、ビルドは続く。
+`client/Logs/Editor.log` の `BARYONYX_ANDROID_BUILD_OK` と `BARYONYX_ANDROID_SERVER:` の行で、完了と接続先を確かめる。
+
+ビルドのあとは `git status` を見て、ビルドが書き換えたファイルを戻す。
+ビルド中はcommitしない。
+
+- フォントアセット（`KiwiMaru.asset` など）の文字データの削除、`HealthConnectionSettings.asset` の `BuildServerUrl`、`ProjectSettings.asset` に足された行、ビルド前に保存された開いているシーンは、`git checkout --` でcommit済みの内容へ戻す。
+- ビルドが足した `Assets/Resources/PerformanceTestRun*.json` とそのmetaは消す。
+- フォントを戻したら、Editorでフォントと影付きの材質を読み直す（[フォントのメモリだけの字化け](../../.agents/skills/shared/unity-editor-notes.md#フォントのメモリだけの字化け)）。
 
 ## 手動で残す確認
 

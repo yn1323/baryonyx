@@ -2,7 +2,7 @@
 id: passive-holy-flame-hammer
 type: visual-entity
 status: 候補
-updated: 2026-10-21
+updated: 2026-11-02
 name: 聖火の鉄槌
 category: passives
 silhouette: 聖なる炎に包まれた戦鎚
@@ -25,9 +25,9 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Passives/PassiveHolyFla
 | 項目 | 内容 |
 |---|---|
 | 定義の根拠・決定日・参照元 | 2026-10-21、ユーザーの依頼「パッシブスキルをまじめに考えてほしい」により作成した仮設定 |
-| 役割・説明 | アンセルムの打属性の攻撃は、[やけど]2ターンを付ける。 |
+| 役割・説明 | アンセルムの打属性の攻撃は、60%で[やけど]2ターンを付ける。 |
 | 関連する仕様・個別ID | [パッシブスキル](../../features/passives.md#仮データの9人のパッシブ)・[戦闘システム](../../features/combat.md) |
-| 必要な画像用途 | パッシブのアイコン（24×24ドット。育成の画面では2倍で表示） |
+| 必要な画像用途 | パッシブのアイコン（24×24ドット。育成の画面では3倍で表示） |
 | ゲーム内の実装・アセット | 定義 [CombatPassives](../../../client/Assets/Baryonyx/Features/Combat/Runtime/CombatPassives.cs)（`HolyFlameHammer`）、戦闘での働き [BattleInspectView.Passives](../../../client/Assets/Baryonyx/Features/Combat/Presentation/BattleInspectView.Passives.cs)、アイコン `PassiveHolyFlameHammer.aseprite` |
 
 ## 確定した設定
@@ -40,7 +40,7 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Passives/PassiveHolyFla
 |---|---|
 | 持ち主（仮データ） | アンセルム |
 | 解放するレベル | Lv 1（[解放するレベル](../../features/passives.md#解放するレベル)の仮設定） |
-| 説明文 | アンセルムの打属性の攻撃は、[やけど]2ターンを付ける。 |
+| 説明文 | アンセルムの打属性の攻撃は、60%で[やけど]2ターンを付ける。 |
 | 強い場面 | どの戦闘でも |
 
 ## 設計の意図
@@ -58,8 +58,8 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Passives/PassiveHolyFla
 |---|---|---|---|
 | 所持者・解放するレベル | アンセルム・Lv 1 | [解放するレベル](../../features/passives.md#解放するレベル) | 仮 |
 | 発動条件 | アンセルムの打属性の攻撃が敵に当たったとき | — | 仮 |
-| 効果 | 当たった敵にやけど2ターンを付ける。付くかどうかは付与率で決め、基本確率は攻撃のおまけと同じ60%（[付与率の仮設定](../../features/combat.md#状態異常の付与率の仮設定)）。やけどの量はアンセルムの属攻で決める | [戦闘システム](../../features/combat.md) | 仮 |
-| 効果量・対象 | やけど2ターン（基本確率60%）・攻撃が当たった敵 | 量はステータスの割合で書く（[カードの数値の見せ方](../../features/combat.md#カードの数値の見せ方)） | 仮 |
+| 効果 | 当たった敵にやけど2ターンを付ける。付くかどうかは付与率で決め、基本確率は攻撃のおまけと同じ60%（[付与率の仮設定](../../features/combat/rules.md#状態異常の付与率の仮設定)）。やけどの量はアンセルムの属攻で決める | [戦闘システム](../../features/combat.md) | 仮 |
+| 効果量・対象 | やけど2ターン（基本確率60%）・攻撃が当たった敵 | 量はステータスの割合で書く（[カードの数値の見せ方](../../features/combat/cards.md#カードの数値の見せ方)） | 仮 |
 | 常時・条件付き・回数制限 | 条件付き。当たるたび | — | 仮 |
 | 重複・相互作用・対象外 | 大地割り・シールドバッシュ・ギガントインパクトなど打属性のカードに効く。全体攻撃なら全員に付く。[寒暖の理](passive-thermal-shock.md)、メテオ（やけど中は2倍）、星降りの焔獄の枝（やけど中は1.5倍）とつながる | [パッシブ同士のつながり](../../features/passives.md#パッシブ同士のつながり) | 仮 |
 | 表示文・アイコンの要否 | 説明文は上のとおり。働いたときに持ち主の上に名前を出す。アイコンは `PassiveHolyFlameHammer.aseprite` | [働いたことを見せる](../../features/passives.md#働いたことを見せる) | 仮 |
@@ -105,7 +105,7 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Passives/PassiveHolyFla
 | 出力画像のパス・生成日・案のID | `output/icons/passives/passive-icons-b.png`（2026-10-21、Git対象外） |
 | 採用・候補・不採用と理由 | 採用（候補）。検査スクリプトの `ui-icon` の検査を通った |
 | 採用画像と文章の差・反映方法 | なし |
-| Unityアセットのパス・GUID・利用画面 | `Assets/Baryonyx/Features/Combat/UI/Art/Passives/PassiveHolyFlameHammer.aseprite`。育成の画面のパッシブの行、展示室の画像のカテゴリ |
+| Unityアセットのパス・GUID・利用画面 | `Assets/Baryonyx/Features/Combat/UI/Art/Passives/PassiveHolyFlameHammer.aseprite`。育成の画面のパッシブの行、展示室のUIのカテゴリ |
 
 ## 未決事項
 
@@ -120,3 +120,4 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Passives/PassiveHolyFla
 |---|---|---|---|
 | 2026-10-21 | 仮設定として作成 | ユーザーの依頼（パッシブスキルをまじめに考える） | [パッシブスキル](../../features/passives.md) |
 | 2026-10-21 | 冒険の戦闘で働くようにし、アイコンを描いた | ユーザーの依頼（画像と、冒険で適用されるようにする） | [実装との対応](../../features/passives.md#実装との対応) |
+| 2026-11-02 | スキルとdocの整理で、今のコードに合わせて、育成の画面でのアイコンの倍率（2倍→3倍）と展示室のカテゴリ（画像→UI）を直した | 根拠：TrainingAssets.cs のパッシブの行のアイコン（72×72）、展示室の登録（UIのカテゴリ） | [実装との対応](../../features/passives.md#実装との対応) |

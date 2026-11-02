@@ -11,8 +11,8 @@
 | 2026-09-09 | [serverのHono開発環境とCIの導入](2026-09-09-server-bootstrap.md) | 完了 | [バックエンドの開発環境](../rules/backend-design.md) |
 | 2026-09-10 | [Unityの整形と静的解析の導入](2026-09-10-client-code-quality.md) | 完了 | [整形と静的解析](../rules/client-code-quality.md) |
 | 2026-09-10 | [UnityテストとWebビルドの初期設定](2026-09-10-client-tests-web-preview.md) | 完了（Webビルドは同日に廃止） | 後継：[クライアントCIの再構成](2026-09-10-client-ci-backlog.md)。反映先：[UnityのテストとCI](../rules/client-testing.md) |
-| 2026-09-10 | [クライアントCIの再構成](2026-09-10-client-ci-backlog.md) | 進行中 | [UnityのテストとCI](../rules/client-testing.md)・[Androidビルドと実機確認](../rules/client-android-testing.md) |
-| 2026-09-10 | [Health Connect連携とiOS拡張](2026-09-10-health-connect-integration.md) | 進行中 | [健康データの読み取りと保存](../features/health-data.md) |
+| 2026-09-10 | [クライアントCIの再構成](2026-09-10-client-ci-backlog.md) | 見送り（CIのAndroidビルドを止めているため） | [UnityのテストとCI](../rules/client-testing.md)・[Androidビルドと実機確認](../rules/client-android-testing.md) |
+| 2026-09-10 | [Health Connect連携とiOS拡張](2026-09-10-health-connect-integration.md) | 完了（実機とOAuthは未確認） | 後継：[起動時の連携と歩数の同期](2026-09-24-startup-health-sync.md)。反映先：[健康データの読み取りと保存](../features/health-data.md) |
 | 2026-09-13 | [健康データの一覧・JSON詳細の表示](2026-09-13-health-connect-local-display.md) | 完了（画面は削除済み） | 後継：[起動時の連携と歩数の同期](2026-09-24-startup-health-sync.md)。記録：[削除した歩数画面](../archive/health-data-local-screen.md) |
 | 2026-09-13 | [縦画面と機種差に対応するUI](2026-09-13-portrait-ui.md) | 完了（縦画面は横画面へ改めた） | 後継：[横画面の可変レイアウト](2026-09-22-responsive-landscape-layout.md)。反映先：[UI設計ルール](../rules/ui-design.md) |
 | 2026-09-13 | [Health Connectの利用条件の案内](2026-09-13-health-connect-requirement-notice.md) | 完了（画面は削除済み） | 記録：[削除した歩数画面](../archive/health-data-local-screen.md#起動時と設定画面からの復帰時の案内)。QA：[歩数の利用条件と起動時の案内](../qa/health-connect-requirements.md) |
@@ -25,15 +25,15 @@
 | 2026-10-02 | [Top・Home・戦闘画面の3Dの舞台（HD-2D）](2026-10-02-hd2d-3d-stage.md) | 完了 | [3Dの舞台](../art/hd2d-stage.md) |
 | 2026-10-02 | [Homeの昼の森と、HD-2Dのレンズ・色調・カメラ](2026-10-02-hd2d-glade-look.md) | 完了 | [3Dの舞台](../art/hd2d-stage.md) |
 | 2026-10-02 | [Topと戦闘画面の屋外の舞台](2026-10-02-hd2d-outdoor-stages.md) | 完了 | [3Dの舞台](../art/hd2d-stage.md) |
-| 2026-10-02 | [停止中とSceneタブの見た目をPlay Mode中とそろえる](2026-10-02-hd2d-edit-view.md) | 完了 | [3Dの舞台のSceneタブでの表示](../art/hd2d-stage.md#sceneタブでの表示) |
+| 2026-10-02 | [停止中とSceneタブの見た目をPlay Mode中とそろえる](2026-10-02-hd2d-edit-view.md) | 完了 | [3Dの舞台のSceneタブでの表示](../art/hd2d-stage/stage-view.md#sceneタブでの表示) |
 | 2026-10-04 | [編成・スキル・レベルのサーバー保存（当時の名前は酒場）](2026-10-04-tavern-party-save.md) | 完了 | [キャラと編成の保存](../features/party.md#キャラと編成の保存) |
 | 2026-10-04 | [冒険の1周（出発・探索・戦闘・報酬・復活・結果・中断と再開）](2026-10-04-adventure-loop.md) | 完了（探索の部分は置き換え） | 後継：[探索の地図](2026-10-04-exploration-route-map.md)。反映先：[探索とダンジョンの進行](../features/stage-progression.md)・[冒険の画面](../features/screens/adventure.md#冒険の画面) |
 | 2026-10-04 | [探索を森を見下ろす地図にし、分岐ルートを冒険ごとに作る](2026-10-04-exploration-route-map.md) | 完了 | [探索とダンジョンの進行](../features/stage-progression.md)・[冒険の画面](../features/screens/adventure.md#冒険の画面) |
-| 2026-10-18 | [ライブラリ（手に入れた物・敵・日々の歩数の図鑑）](2026-10-18-library.md) | 進行中 | [ライブラリ](../features/library.md) |
-| 2026-10-22 | [冒険の戦闘のターン順と敵の技](2026-10-22-enemy-skills-turn-order.md) | 完了（人が遊んだ感触は未確認） | [戦闘システム](../features/combat.md)・[探索とダンジョンの進行の戦闘の試し](../features/stage-progression.md#戦闘の試し) |
-| 2026-10-25 | [エネルギー3固定と捨て札のルール、カードの作り直し](2026-10-25-fixed-energy-cards.md) | 完了（commit前。実機と自動対戦は未確認） | [戦闘システム](../features/combat.md)・[技・カードの定義](../catalog/skills/README.md)・[固有スキルの各段階の効果](../features/skill-evolution.md#各段階の効果) |
-| 2026-10-27 | [街道の世界地図をルーンで開き、日・週・月の出来事を起こす](2026-10-27-world-map-rune-squares.md) | 進行中 | [探索とダンジョンの進行の街道](../features/stage-progression.md#街道を開くルーンと日週月の出来事2026-10-27)・[ルーンの用途](../features/economy.md#ルーンの用途) |
-| 2026-11-01 | [画面のデザインシステムとテンプレートで、似た画面を共通化する](2026-11-01-ui-design-system.md) | 進行中（第0段まで） | [UI設計ルールの共通の部品](../rules/ui-design.md#共通の部品)・[ui-tone-manner](../../.agents/skills/ui-tone-manner/SKILL.md) |
+| 2026-10-18 | [ライブラリ（手に入れた物・敵・日々の歩数の図鑑）](2026-10-18-library.md) | 完了（実機は未確認） | [ライブラリ](../features/library.md) |
+| 2026-10-22 | [冒険の戦闘のターン順と敵の技](2026-10-22-enemy-skills-turn-order.md) | 完了（人が遊んだ感触は未確認） | [戦闘システム](../features/combat.md)・[探索とダンジョンの進行の戦闘の試し](../features/stage-progression/battle-trials.md#戦闘の試し) |
+| 2026-10-25 | [エネルギー3固定と捨て札のルール、カードの作り直し](2026-10-25-fixed-energy-cards.md) | 完了（実機は未確認） | [戦闘システム](../features/combat.md)・[スキルの定義](../catalog/skills/README.md)・[固有スキルの各段階の効果](../features/skill-evolution/trees.md#各段階の効果) |
+| 2026-10-27 | [街道の世界地図をルーンで開き、日・週・月の出来事を起こす](2026-10-27-world-map-rune-squares.md) | 進行中 | [探索とダンジョンの進行の街道](../features/stage-progression-world-map.md#街道を開くルーンと日週月の出来事2026-10-27)・[ルーンの用途](../features/economy.md#ルーンの用途)・[入れ子の地図](../features/world-atlas.md) |
+| 2026-11-01 | [画面のデザインシステムとテンプレートで、似た画面を共通化する](2026-11-01-ui-design-system.md) | 進行中（第3段まで） | [UI設計ルールの共通の部品](../rules/ui-design.md#共通の部品)・[ui-tone-manner](../../.agents/skills/ui-tone-manner/SKILL.md) |
 
 Google認証をHealth Connect接続の前提とする古い計画がある。
 今は、Health Connectの連携とGoogle接続を独立して扱う（[健康データの読み取りと保存](../features/health-data.md)）。

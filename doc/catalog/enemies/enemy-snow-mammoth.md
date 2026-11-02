@@ -2,7 +2,7 @@
 id: enemy-snow-mammoth
 type: visual-entity
 status: 候補
-updated: 2026-10-21
+updated: 2026-11-02
 name: 雪原のマンモス
 category: enemies
 silhouette: 背の高い山のような四つ足の巨体。頭を下げ、長く曲がった牙を前へ突き出し、鼻を下へ巻く
@@ -20,10 +20,10 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/SnowMammoth.ase
 雪原に出るボスの候補で、大きい敵である。分厚い守りで耐え、背に積もらせた雪の重みでのしかかり、氷槍のペンギン兵を呼ぶ。
 この文書は、生息する地域、ステータス、使う技と行動パターン、外見と性格の設定を持つ。
 技の効果と演出は[敵の技の定義](../enemy-skills/README.md)に置く。
-2026-10-19の時点で、この敵はどの行き先にも出ない。画像はライブラリと展示室で表示する下書きで、HP・技・行動は未実装である。
-2026-10-20から、白嶺ネーヴェ（`neve-peaks`、Lv40）の最奥の主として、冒険の戦闘に出る（[行き先と敵](../../features/stage-progression.md#行き先と敵)）。
-戦闘では、下のLv100のステータスに出るLvの成長率を掛けて使い、技は「雪山のしかかり」だけを物攻で物理として（味方の物防で受ける）使う（[CombatEnemyStats](../../../client/Assets/Baryonyx/Features/Combat/Runtime/CombatEnemyStats.cs)）。
-ほかの技と行動パターンは未実装である。
+絵は[ライブラリ](../../features/library.md)と[展示室](../../features/showcase.md)でも表示する。
+2026-10-20から、白嶺ネーヴェ（`neve-peaks`、Lv40）の最奥の主として、冒険の戦闘に出る（[行き先と敵](../../features/stage-progression/destinations.md#行き先と敵)）。
+戦闘では、下のLv100のステータスに出るLvの成長率を掛けて使う（[CombatEnemyStats](../../../client/Assets/Baryonyx/Features/Combat/Runtime/CombatEnemyStats.cs)）。
+技と行動パターンは、2026-10-22から [CombatEnemyBehaviors](../../../client/Assets/Baryonyx/Features/Combat/Runtime/CombatEnemyBehaviors.cs) で動く。戦闘にまだない効果の技（仲間を呼ぶ）は使わない（[敵の行動の仮設定](../../features/combat-enemy-behavior.md)）。
 
 ## 識別情報と根拠
 
@@ -33,8 +33,8 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/SnowMammoth.ase
 | 対象の役割・説明 | ボス（大）。前半は身を固めて守りながら、地響きと冷たい息で全体を削り、氷槍のペンギン兵を呼ぶ。激化すると背に雪が降り積もり続けて行動ごとにブロックを得て、残ったブロックが多いほど重い雪山のしかかりで味方全体を押しつぶす |
 | 元となる対象・亜種・衣装差分のID | なし |
 | 参照する仕様・関連する個別ID | [戦闘システム](../../features/combat.md)、[氷槍のペンギン兵](enemy-ice-penguin.md)、[霜の大猿人](enemy-frost-ape.md)、[黒曜石の巨像](enemy-obsidian-colossus.md) |
-| 必要な画像用途 | 戦闘の1枚絵（128×128）。行動順のコマ（24×24）の切り出し位置は未決 |
-| ゲーム内の実装・アセット | 画像 `SnowMammoth.aseprite`、敵の種類と弱点 `CombatEnemies.cs`（`client/Assets/Baryonyx/Features/Combat/Runtime/`）、サーバーの敵ID `server/src/features/combat/catalog.ts` の `ENEMY_IDS`。HP・技・行動は未実装 |
+| 必要な画像用途 | 戦闘の1枚絵（128×128）。行動順のコマ（24×24）は、描かれた部分の上端から自動で切り出す（仮。`BattleEnemyLooksAssets.cs`） |
+| ゲーム内の実装・アセット | 画像 `SnowMammoth.aseprite`、敵の種類と弱点 `CombatEnemies.cs`（`client/Assets/Baryonyx/Features/Combat/Runtime/`）、サーバーの敵ID `server/src/features/combat/catalog.ts` の `ENEMY_IDS`、ステータス `CombatEnemyStats.cs`、技と行動パターン `CombatEnemyBehaviors.Peaks.cs`、出る行き先 `AdventureCatalog.cs` |
 
 ## 確定した設定
 
@@ -46,7 +46,7 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/SnowMammoth.ase
 |---|---|---|---|
 | 未決 | 未決 | 未決 | 未決 |
 
-まだどの行き先にも出ない。
+今の出る行き先とLv（仮）は[行き先と敵](../../features/stage-progression/destinations.md#行き先と敵)にある（割り振りの正本は [AdventureCatalog](../../../client/Assets/Baryonyx/Features/Adventure/Runtime/AdventureCatalog.cs) の `Areas`）。
 生息する地域は雪原とし、出現する行き先・マス・敵の組み合わせ・Lvは未決である（[ステージの定義](../stages/README.md)）。
 
 ## 分類固有のデータ
@@ -73,7 +73,6 @@ HPと物防を大の敵としても高くし、倒すのに時間のかかる壁
 物攻は bruiser の[霜の大猿人](enemy-frost-ape.md)より低い。代わりに、大技の雪山のしかかりは物防と残ったブロックで威力が決まる。
 属攻は冷たい息に使う。厚い毛皮は魔法もいくらか防ぐため、属防も高めにした。
 速度は最も遅い部類にした。長い年月を生きた体として、幸運を高めにした。
-出現するLvが未決のため、Lv100の行だけを書く。各Lvの値は、Lv100の値に成長率を掛けて出す（[レベルとステータス](../../features/progression.md#レベルとステータス)）。
 すべて仮の値である。
 技の括弧内の値は、Lv100で防御で減らす前の威力である。物理の技は受ける味方の物防で、魔法の技は属防で減る。
 
@@ -95,7 +94,7 @@ HPと物防を大の敵としても高くし、倒すのに時間のかかる壁
 ## 行動パターン
 
 前半と後半で選び方を変える。
-後半への切り替えが、この敵の[激化](../../features/combat.md#防御と敵の激化)である。
+後半への切り替えが、この敵の[激化](../../features/combat/rules.md#防御と敵の激化)である。
 
 **前半**（降り積もる雪まで）
 
@@ -172,31 +171,32 @@ HPと物防を大の敵としても高くし、倒すのに時間のかかる壁
 | 用途・構図・視点・ポーズ・背景 | 戦闘の1枚絵。やや斜めの左向きで全身を描き、背景は透明 |
 | 解像度・透過・ファイル形式・差分規格 | 128×128、32色＋透明、インデックスカラーの `.aseprite`（[ドット絵の制作規格](../../art/direction.md#ドット絵の制作規格)） |
 | 外見の指示文（この敵の部分） | 「赤茶の長い毛に覆われたマンモス。やや斜めの左向きで、頭を下げて四つ足で立つ。背は山のように高く、頭・背・脚の毛に白い雪が積もる。長い象牙色の牙が前へ弧を描き、赤い布が巻かれて金の丸い飾りと赤い房が垂れる。鼻は太く、先が下へ巻く。長い前髪の間から黄色い目」 |
-| 英語の短い説明（PixelLab用） | `huge woolly mammoth with long red-brown fur, snow on its head and back, long curved ivory tusks wrapped in red cloth with gold ornaments, trunk curled down, head lowered, three-quarter view facing left` |
-| 変更しない特徴・今回だけ変える特徴 | 変えない特徴は「小型ドット絵でも残す特徴」とする。行動順のコマの切り出し位置は、戦闘で使うときに決める |
+| 英語の短い説明 | `huge woolly mammoth with long red-brown fur, snow on its head and back, long curved ivory tusks wrapped in red cloth with gold ornaments, trunk curled down, head lowered, three-quarter view facing left` |
+| 変更しない特徴・今回だけ変える特徴 | 変えない特徴は「小型ドット絵でも残す特徴」とする |
 | 実際に使った指示文 | `output/enemies/35-setsugen-mammoth/request.md`（Git対象外）。この敵の部分は「雪原を渡る毛深いマンモス。長い牙に赤い布の飾りを巻き、背に雪が積もる。」、配色は「赤茶の長い毛、象牙色の牙、赤い布、白い雪」、必ず残す特徴は「長く曲がった牙と赤い布の飾り。赤茶の長い毛。背の雪。」だった |
 | 入力にした文書のID・Gitコミット等の版 | なし（この定義を作る前の生成。設計値は `output/enemies/spec.json`） |
 | 参照画像のパス・出所・利用条件 | 画風見本として、既存の[森の守り手](enemy-forest-guardian.md)の絵（`output/enemies/style-ref.png`、Git対象外）を添付し、タッチだけを参考にさせた |
 | 使用ツール・モデル・再現用設定 | Codex CLI（gpt-6.1-sol）の組み込みの画像生成（画像生成のモデルは既定） |
 | 出力画像のパス・生成日・案のID | 2026-10-19生成の `output/enemies/35-setsugen-mammoth/enemy.png`（1254×1254、Git対象外）。背景を抜いて切り出し、128×128へ縮小して32色へ減色し、インデックスカラーの `.aseprite` にした |
-| 採用・候補・不採用と理由 | ライブラリと展示室で表示する下書き（候補）。戦闘ではまだ使わない |
+| 採用・候補・不採用と理由 | 冒険の戦闘とライブラリ・展示室で表示する下書き（候補） |
 | 採用画像と文章の差・反映方法 | 指示になかった金の丸い飾りと赤い房が、牙の布に付いている。文章を採用画像に合わせた |
-| Unityアセットのパス・GUID・利用画面 | `client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/SnowMammoth.aseprite`。ライブラリ、展示室 |
+| Unityアセットのパス・GUID・利用画面 | `client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/SnowMammoth.aseprite`。ライブラリ、展示室、冒険の戦闘 |
 
 ## 未決事項
 
 | 項目 | 決める内容・先に必要な判断 |
 |---|---|
 | 出現する場所 | 行き先・マス・敵の組み合わせ・Lv。行き先が決まったら、その行き先のLvの行をステータスの表に足す |
-| 数値 | ステータス、行動の割合と回数、激化の条件と倍率は仮。[戦闘の未決事項](../../features/combat.md#未決事項)の数値が決まったら見直す |
-| 速度・会心・幸運 | 速度は、味方の合計と比べる方法（[ターン順](../../features/combat.md#ターン順)）が決まったら尺度を合わせ直す。会心と幸運は、使い道（[候補](../../features/party.md#ステータスの項目)）が決まったら見直す |
-| 呼び出しと敵のブロック | 新しい仕組みの決まり（[仲間を呼ぶ](../enemy-skills/enemy-skill-call-ally.md)、[降り積もる雪](../enemy-skills/enemy-skill-mammoth-snowdrift.md)、[雪山のしかかり](../enemy-skills/enemy-skill-mammoth-snow-crush.md)）。敵のブロックが消えるタイミングで、大技の重さが大きく変わる |
+| 数値 | ステータス、行動の割合と回数、激化の条件と倍率は仮。[戦闘の未決事項](../../features/combat/implementation.md#未決事項)の数値が決まったら見直す |
+| 速度・会心・幸運 | 速度は、味方の合計と比べる方法（[ターン順](../../features/combat/rules.md#ターン順)）が決まったら尺度を合わせ直す。会心と幸運は、使い道（[候補](../../features/party.md#ステータスの項目)）が決まったら見直す |
+| 呼び出し | 新しい仕組みの決まり（[仲間を呼ぶ](../enemy-skills/enemy-skill-call-ally.md)）。敵のブロックは、その敵の次の行動の前に消える（`EnemyAct`。[降り積もる雪](../enemy-skills/enemy-skill-mammoth-snowdrift.md)・[雪山のしかかり](../enemy-skills/enemy-skill-mammoth-snow-crush.md)） |
 | 行動順のコマ | 戦闘の1枚絵から行動順のコマ（24×24）を切り出す位置 |
-| 実装 | 冒険の戦闘では、ステータスと技1つ（雪山のしかかり）だけを使う。ほかの技と行動パターンは未実装。実装するときは[敵の挙動デバッグルーム](../../features/screens/debug-rooms.md#敵の挙動デバッグルーム)の行動も増やす |
+| 実装 | 戦闘にまだない効果の技（仲間を呼ぶ）は使わない（[敵の行動の仮設定](../../features/combat-enemy-behavior.md)）。実装するときは[敵の挙動デバッグルーム](../../features/screens/debug-rooms.md#敵の挙動デバッグルーム)の行動も増やす |
 
 ## 変更と判断の記録
 
 | 日付 | 変更・判断 | 理由・根拠 | 影響するID・仕様 |
 |---|---|---|---|
 | 2026-10-19 | 定義を作り、生息する地域・ステータス・技8つ・行動パターン・演出・外見・性格を候補として書いた。ステータスと弱点は試作の設計値をそのまま使った | ユーザーの依頼（敵50体を試作し、文書カタログ・クライアント・サーバーにそろえる） | [敵の行動の仮設定](../../features/combat-enemy-behavior.md)、[レベルとステータス](../../features/progression.md#レベルとステータス) |
-| 2026-10-20 | 白嶺ネーヴェの戦闘に出るようにし、Lv100のステータスと技「雪山のしかかり」を戦闘で使うようにした | ユーザーの依頼（行き先を増やし、行き先ごとの敵を増やす） | [行き先と敵](../../features/stage-progression.md#行き先と敵) |
+| 2026-10-20 | 白嶺ネーヴェの戦闘に出るようにし、Lv100のステータスと技「雪山のしかかり」を戦闘で使うようにした | ユーザーの依頼（行き先を増やし、行き先ごとの敵を増やす） | [行き先と敵](../../features/stage-progression/destinations.md#行き先と敵) |
+| 2026-11-02 | スキルとdocの整理で、今のコードに合わせて、技・行動パターン・出る行き先を未実装・未配置とした記述を直した。絵を冒険の戦闘でも使うことを書き足した。行動順のコマの切り出しを、自動で切り出す今の作り（BattleEnemyLooksAssets.cs）に合わせた | 根拠：53体すべてが CombatEnemyStats・CombatEnemyBehaviors で動き、AdventureCatalog の行き先に出る。絵は BattleEnemyLooks に入り、冒険の戦闘に出る | [行き先と敵](../../features/stage-progression/destinations.md#行き先と敵)、[敵の行動の仮設定](../../features/combat-enemy-behavior.md) |

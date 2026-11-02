@@ -9,10 +9,10 @@
 
 | 文書 | 内容 |
 |---|---|
-| [クライアントの構成と依存関係](frontend-design.md) | Unityのディレクトリ構成、シーンと生成メニュー、責務と依存方向、アセンブリ、ゲーム内の画像の置き場所 |
+| [クライアントの構成と依存関係](frontend-design.md) | Unityのディレクトリ構成、シーンと生成メニュー、責務と依存方向、アセンブリ、ゲーム内の画像の置き場所、画像の圧縮、Asepriteのタブレットとの受け渡し |
 | [バックエンドの開発環境](backend-design.md) | serverの構成と配置、ローカル実行、開発用データ（seed）、Workers・D1・Zod・Drizzle、マイグレーション、公開 |
 | [保存先の決め方](data-storage.md) | データを端末とサーバーのDBのどちらに置くかの基準と、今の置き場所の一覧 |
-| [UnityのUI設計ルール](ui-design.md) | 画面方向と拡縮、Safe Area、視覚階層、通知の帯、機種差の確認 |
+| [UnityのUI設計ルール](ui-design.md) | 画面方向と拡縮、Safe Area、共通の部品（基本の値・画面の型・窓・ボタン・分類・持ち物の札）、視覚階層、読み込みの待ち時間を見せない、停止中の表示の切り替え、通知の帯、機種差の確認 |
 | [外部素材のクレジット](credits.md) | 外部の素材の配布元、クレジット画面に載せる表記、配布元ごとに守る条件 |
 | [効果音とBGM](sound.md) | 音の素材の入手先、加工、置き場所と名前、形式と音量、Unityの取り込み設定、鳴らす仕組みの未決事項 |
 
@@ -20,7 +20,7 @@
 
 | 文書 | 内容 |
 |---|---|
-| [UnityのテストとCI](client-testing.md) | EditMode・PlayModeの実行と結果確認、作業中に実行するテスト、Editorの共有、CI |
+| [UnityのテストとCI](client-testing.md) | EditMode・PlayModeの実行と結果確認、作業中に実行するテスト、Editorの共有、CI、戦闘の自動対戦、動画の録画 |
 | [Unityクライアントの整形と静的解析](client-code-quality.md) | CSharpier・Analyzer・Unityライセンス |
 | [serverの検査とテスト](backend-design.md#検査とminiflareテスト) | lint・型検査・Miniflareテスト。並列実行とDBの独立性は[serverのテストの決まり](../../server/tests/scenarios/AGENTS.md)に従う |
 
@@ -38,4 +38,5 @@
 |---|---|
 | [文書管理方針](documentation-policy.md) | 文書の配置と形式、節の区分、正本と変更の記録、仕様追加時の矛盾の扱い、docとスキルの使い分け、保管庫 |
 | [コードと文書の読み方](code-reading.md) | 当たりを絞ってから読む、読み直さない、ログと差分の読み方、待ち方、広い調べものの任せ方 |
+| [commitの分け方とメッセージ](git-commit.md) | commitする変更の選び方・分け方・ステージの仕方、メッセージの形式、使わない操作、並行作業中の控え方 |
 | [Renovateによる依存関係の更新](dependency-updates.md) | 依存関係を更新する条件と対象 |

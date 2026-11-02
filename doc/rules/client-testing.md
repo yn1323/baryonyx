@@ -25,16 +25,9 @@ Bloomのしきい値、ティルトシフトのピント幅、色、透明度、
 ## テストの配置
 
 コードとテストは [クライアントの構成と依存関係](frontend-design.md) に従い、`Assets/Baryonyx/` に配置する。
-4つのアセンブリ定義も同じ配下に置き、App・機能専用のEditor処理とテストは `.asmref` で対応するアセンブリへ所属させる。
-Runtimeはルートの `Baryonyx.Runtime.asmdef` に所属する。
+アセンブリと、App・機能のEditor処理とテストを `.asmref` で所属させる決まりは[アセンブリとテスト](frontend-design.md#アセンブリとテスト)に従う。
+`Baryonyx.EditModeTests` はロジックとその出力を、`Baryonyx.PlayModeTests` はシーンの読み込み、入力、フレームをまたぐ状態遷移を検査する。
 フォルダー名だけでプレイヤーからテストを除外したとは扱わない。
-
-| アセンブリ | 用途 |
-|---|---|
-| `Baryonyx.Runtime` | 製品の実装 |
-| `Baryonyx.Editor` | Editor専用処理、ビルド |
-| `Baryonyx.EditModeTests` | ロジックとその出力の検査 |
-| `Baryonyx.PlayModeTests` | シーン読み込み、入力、フレームをまたぐ状態遷移 |
 
 [BuildSceneTests](../../client/Assets/Baryonyx/Tests/EditMode/BuildSceneTests.cs) はビルド対象シーンの選択を5件で検査する。
 [TopHomeSceneTests](../../client/Assets/Baryonyx/App/Tests/PlayMode/TopHomeSceneTests.cs) はTopの読み込み、LOADINGと再試行、連携モーダル、Homeへの遷移を、[ShowcaseSceneTests](../../client/Assets/Baryonyx/App/Tests/PlayMode/ShowcaseSceneTests.cs) は展示室シーンの読み込みを確認する。
@@ -67,6 +60,7 @@ PlayModeの時間の大半は、シーンの読み込みと遷移演出（Topか
 - ロジックの組み合わせ（計算・状態遷移）はEditModeで検査し、PlayModeでは画面とのつなぎ込みを1回確かめる。
 - 1画面の静的な確認（表示・タップ領域）で、演出の完了を待たない。演出を確かめるテストは、演出を待つ1件にまとめる。
 - デバッグルーム（ラボ）のテストは、読み込み、操作の押しやすさ、1つの操作のつなぎ込みだけを確かめる。そこで動かす規則は、EditModeと本番の画面のテストで確かめる。
+- 非同期の処理は [SceneTests](../../client/Assets/Baryonyx/Tests/PlayMode/Support/SceneTests.cs) の `WaitForTask` を `yield return` して待ち、`GetAwaiter().GetResult()` で同期的に待たない（Editorが固まる）。
 
 実画面のシナリオでは、ボタンのハンドラーを直接呼ぶ前に仮想入力から操作できるか確認する。
 端末機能はEditorで固定応答を返す境界へ差し替える。
@@ -130,8 +124,8 @@ Editorは、再コンパイルとテストを一度に1つずつしか処理で�
 
 札は次の順に使う。
 
-1. `python3 client/ci/editor-lock.py acquire --owner "<作業の名前>"` で札を取り、表示された `token=` の値を控える。
-2. 札を取れずに `busy` で終わったら（終了コード3）、30秒以内に同じコマンドをもう一度実行して待ち続ける。
+1. `python3 client/ci/editor-lock.py acquire --owner "<作業の名前>"` で札を取り、表示された `token=` の値を控える。`acquired token=` と出たことを確かめてからEditorを操作する。
+2. 札を取れずに `busy` で終わったら（終了コード3）、30秒以内に同じコマンドをもう一度実行して待ち続ける。`acquire` と次の操作を `;` で1行につながない。`busy` で終わっても、次の操作が札なしで走る。
 3. 再コンパイルの完了とConsoleの確認、テストの実行と結果確認のように、ひと続きの操作を終えたら `python3 client/ci/editor-lock.py release <token>` で返す。操作が失敗したときも返す。
 
 `acquire` は既定で90秒まで待つ。
@@ -225,11 +219,19 @@ Editorの札の取得・待機・期限切れの引き継ぎ・返却は、同�
 
 実環境ではキャッシュ有無を分けて所要時間を比較し、2回目のイメージ取得と初期インポートが再利用されることを確認する。
 
+### Gameビューの縦横比
+
+接続中のEditorのPlayModeテストには、Gameビューが横向き16:9（1920×1080）であることを前提に、位置と大きさを確かめるものがある（例：HomeSceneTests の焚き火の炎と薪の位置、押せる範囲の重なり）。
+Editorを開き直したときや、ほかの作業や録画がGameビューの解像度を変えたままのときは、コードに誤りがなくても、これらの検査だけが落ちる。
+環境によって位置・大きさの検査だけが落ちたら、`PlayModeWindow.GetRenderingResolution` で今の解像度を確かめ、`PlayModeWindow.SetCustomRenderingResolution(1920, 1080, "Baryonyx Landscape")` で横向きの1920×1080に戻してから実行し直す。
+既にある名前「1920x1080」を渡すと縦長（1080×1920）になるため、新しい名前を付ける。
+確かめ終えたら、元の解像度へ戻す。
+
 ## 戦闘の自動対戦
 
 戦闘の強さは、カードを自動で使わせて同じ戦闘を何回も戦わせ、勝率とターン数で測る。
 自動対戦は本物の戦闘画面（`BattleInspectView`）をそのまま動かすため、カード・装備・ステータス・戦闘の計算の変更は、自動対戦にも同じように効く。
-調べ方の進め方は手動のスキル [battle-balance](../../.agents/skills/battle-balance/SKILL.md) にあり、測った結果は[戦闘の試し](../features/stage-progression.md#戦闘の試し)に記録する。
+調べ方の進め方は手動のスキル [battle-balance](../../.agents/skills/battle-balance/SKILL.md) にあり、測った結果は[戦闘の試し](../features/stage-progression/battle-trials.md#戦闘の試し)に記録する。
 
 ### 回し方
 
@@ -256,10 +258,10 @@ Editorの札は1回15分までのため（[複数のチャットで1台のEditor
 | 項目 | 既定 | 内容 |
 |---|---|---|
 | `mode` | `single` | `single` は1つの部屋の戦闘を繰り返す。`through` は冒険の道を入口から最奥まで歩き、戦闘のマスで戦ってHPを持ち越す |
-| `destination` | `forest-ruins` | 行き先のID（[行き先と敵](../features/stage-progression.md#行き先と敵)） |
+| `destination` | `forest-ruins` | 行き先のID（[行き先と敵](../features/stage-progression/destinations.md#行き先と敵)） |
 | `room` | `elite` | `single` で戦う部屋。`pack`（魔物の気配）・`elite`（強い魔物の気配）・`boss`（最奥の間）・`mimic`（怪しい宝箱のミミック） |
 | `depthPercent` | `100` | 道中の深さの倍率（%）。最奥の間には掛けない |
-| `variants` | 空 | 戦闘の番号。番号を乱数の種にして、編成とそこに立つ敵を選ぶ（[戦闘の編成](../features/stage-progression.md#戦闘の編成2026-11-01)）。空なら番号0から23までの24戦。番号と敵は `result.md` の組の欄に出る |
+| `variants` | 空 | 戦闘の番号。番号を乱数の種にして、編成とそこに立つ敵を選ぶ（[戦闘の編成](../features/stage-progression/destinations.md#戦闘の編成2026-11-01)）。空なら番号0から23までの24戦。番号と敵は `result.md` の組の欄に出る |
 | `repeats` | `3` | `single` で組み合わせごとに戦う回数 |
 | `runs` | `5` | `through` で歩く冒険の数 |
 | `seed` | `1` | 乱数の種。1戦（`through` では1回の冒険）ごとに1ずつ進める。同じ依頼と同じ種なら、同じ戦闘になる |
@@ -284,7 +286,7 @@ Editorの札は1回15分までのため（[複数のチャットで1台のEditor
 - 編成は仮データの編成で、サーバーに保存した編成ではない。Lv・カードの倍率・覚醒・装備は依頼で変える。
 - 装備は、冒険の戦闘がプレイヤーの装備を渡すのと同じ所（`AdventureParty.Of`）へ渡すため、ステータスの上昇と攻撃スキルの2回発動が本物と同じに効く。`result.json` の `partyStats` に、戦闘が始まったときの味方のステータスと2回発動の確率が残る。
 - 本物の初期のパーティは、サーバーの定義（[STARTER_EQUIPPED](../../server/src/features/equipment/catalog.ts)）の武器と防具を×1.00で付けている。初期のパーティを測るときは、この装備を `equipment` に書く。
-- `through` では、休憩のマスで休む（[HPの持ち越し](../features/stage-progression.md#hpの持ち越し)と同じ回復）だけを入れ、戦闘後の強化、休憩の鍛える・研鑽、「？」の中身、宝箱と行商人は入れていない。道の分かれ道は種で決めた乱数で選ぶ。全滅したらその冒険を終える。
+- `through` では、休憩のマスで休む（[HPの持ち越し](../features/stage-progression/run.md#hpの持ち越し)と同じ回復）だけを入れ、戦闘後の強化、休憩の鍛える・研鑽、「？」の中身、宝箱と行商人は入れていない。道の分かれ道は種で決めた乱数で選ぶ。全滅したらその冒険を終える。
 - 1戦ごとの種で、Unityの乱数（敵の行動・山札・狙い・2回発動）と、会心と状態異常の確率（`BattleOdds.Seed`）の両方を決める。テスト全体は確率を固定しているが（会心なし・状態異常は必ず付く）、自動対戦は `odds` が `random` なら種で振り、終わったら本物の戦闘と同じ共有の乱数へ戻す。テストの後片付けで固定へ戻る。
 - 手札は隠しておく。味方が倒れたときに手札が崩れる演出は、実時間で進みながらUnityの乱数を使うため、隠さないと種でそろわない。手札を隠すと、使えるカードがなくなったときの自動のターン終了も止まるため、自動対戦が、使えるカードがないときと手札を使い切ったときにターンを終える。
 
@@ -307,7 +309,7 @@ Editorの画面を動画で確かめるときは、Play中のGameビューを [U
 
 | 項目 | 値 |
 |---|---|
-| Gameビュー | 録画中は、Recorderが書き出しと同じ大きさに変え、終わっても戻さない。録画のあとで1920x1080の横向き（`PlayModeWindow.SetCustomRenderingResolution(1920, 1080, "Baryonyx Landscape")`）へ戻す |
+| Gameビュー | 録画中は、Recorderが書き出しと同じ大きさに変え、終わっても戻さない。録画のあとで1920x1080の横向きへ戻す（[Gameビューの縦横比](#gameビューの縦横比)） |
 | 書き出し | 960x540、H.264のMP4、30fps、音声なし |
 | 保存先 | `client/Temp/Recordings/`（Git対象外）。`Assets/` には置かない（Unityが動画として取り込むため） |
 | 長さ | 見せたい動きの前に0.5秒ほど余白を取り、終わったら止める。前後の切り替わりや止まった部分は ffmpeg で切り落とす |

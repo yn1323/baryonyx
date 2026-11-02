@@ -2,7 +2,7 @@
 id: enemy-grave-raven
 type: visual-entity
 status: 候補
-updated: 2026-10-21
+updated: 2026-11-02
 name: 墓守りの大鴉
 category: enemies
 silhouette: 黒い翼を左右いっぱいに広げた大きな鴉。足に下げたランタンが体の下へ突き出る
@@ -21,10 +21,10 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/GraveRaven.asep
 弱点の実行上の正本は [CombatEnemies](../../../client/Assets/Baryonyx/Features/Combat/Runtime/CombatEnemies.cs)、サーバーで記録できる敵のIDは [catalog.ts](../../../server/src/features/combat/catalog.ts) の `ENEMY_IDS` とする。
 この文書は、生息する地域、ステータス、使う技と行動パターン、外見と性格の設定を持つ。
 技の効果と演出は[敵の技の定義](../enemy-skills/README.md)に置く。
-2026-10-19の時点で、画像と弱点だけをクライアントに取り込んでおり、どの行き先にも出ない。HP・技・行動は未実装である。
-2026-10-20から、月影の墓所（`moonshade-graveyard`、Lv30）の中くらいの敵として、冒険の戦闘に出る（[行き先と敵](../../features/stage-progression.md#行き先と敵)）。
-戦闘では、下のLv100のステータスに出るLvの成長率を掛けて使い、技は「鴉のものまね」だけを属攻で魔法として（味方の属防で受ける）使う（[CombatEnemyStats](../../../client/Assets/Baryonyx/Features/Combat/Runtime/CombatEnemyStats.cs)）。
-ほかの技と行動パターンは未実装である。
+2026-10-20から、月影の墓所（`moonshade-graveyard`、Lv30）の中くらいの敵として、冒険の戦闘に出る（[行き先と敵](../../features/stage-progression/destinations.md#行き先と敵)）。
+2026-11-01からは、白嶺ネーヴェ（`neve-peaks`、Lv40）の中くらいの敵としても出る。
+戦闘では、下のLv100のステータスに出るLvの成長率を掛けて使う（[CombatEnemyStats](../../../client/Assets/Baryonyx/Features/Combat/Runtime/CombatEnemyStats.cs)）。
+技と行動パターンは、2026-10-22から [CombatEnemyBehaviors](../../../client/Assets/Baryonyx/Features/Combat/Runtime/CombatEnemyBehaviors.cs) で動く。戦闘にまだない効果の技（金切り声・仲間を呼ぶ）と、使う条件が戦闘から見えない技（鴉のものまね）は使わない（[敵の行動の仮設定](../../features/combat-enemy-behavior.md)）。
 
 ## 識別情報と根拠
 
@@ -34,8 +34,8 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/GraveRaven.asep
 | 対象の役割・説明 | 雑魚（中）。素早く、ランタンの火の玉とくちばしで攻める。味方が直前に使った攻撃をまねて返し、ランタンで骸骨兵を呼び起こす |
 | 元となる対象・亜種・衣装差分のID | なし |
 | 参照する仕様・関連する個別ID | [戦闘システム](../../features/combat.md)、[骸骨兵](enemy-skeleton-soldier.md)、[死霊の魔導師](enemy-lich.md) |
-| 必要な画像用途 | 戦闘の1枚絵（96×96）。行動順のコマの切り出し位置は未決 |
-| ゲーム内の実装・アセット | 画像 `GraveRaven.aseprite`、敵の種類と弱点 `CombatEnemies.cs`（`client/Assets/Baryonyx/Features/Combat/Runtime/`）、サーバーの敵ID `server/src/features/combat/catalog.ts` の `ENEMY_IDS`。HP・技・行動は未実装 |
+| 必要な画像用途 | 戦闘の1枚絵（96×96）。行動順のコマ（24×24）は、描かれた部分の上端から自動で切り出す（仮。`BattleEnemyLooksAssets.cs`） |
+| ゲーム内の実装・アセット | 画像 `GraveRaven.aseprite`、敵の種類と弱点 `CombatEnemies.cs`（`client/Assets/Baryonyx/Features/Combat/Runtime/`）、サーバーの敵ID `server/src/features/combat/catalog.ts` の `ENEMY_IDS`、ステータス `CombatEnemyStats.cs`、技と行動パターン `CombatEnemyBehaviors.Peaks.cs`、出る行き先 `AdventureCatalog.cs` |
 
 ## 確定した設定
 
@@ -43,7 +43,7 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/GraveRaven.asep
 
 ## 出現する場所
 
-まだどの行き先にも出ない。
+今の出る行き先とLv（仮）は[行き先と敵](../../features/stage-progression/destinations.md#行き先と敵)にある（割り振りの正本は [AdventureCatalog](../../../client/Assets/Baryonyx/Features/Adventure/Runtime/AdventureCatalog.cs) の `Areas`）。
 生息する地域は墓地である。
 出現する行き先・マス・敵の組み合わせ・Lvは未決とする（[ステージの定義](../stages/README.md)）。
 
@@ -55,7 +55,7 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/GraveRaven.asep
 | 役割 | 雑魚・中。魔法の単体攻撃と素早い連続のつつき、全体の弱体、味方の攻撃のまね、骸骨兵の呼び出し | [ステータス・技・行動パターンの書き方](README.md#ステータス技行動パターンの書き方) | 候補 |
 | ステータスの型 | 素早さ型と魔法型（fast・caster） | 試作の設計値 | 候補 |
 | 大きさの区分 | 中（96×96） | [ドット絵の制作規格](../../art/direction.md#画面と寸法) | 規格どおり |
-| 弱点 | 雷 | [属性と弱点](../../features/combat.md#属性と弱点) | 仮 |
+| 弱点 | 雷 | [属性と弱点](../../features/combat/rules.md#属性と弱点) | 仮 |
 | 弱点の理由 | 雷：高い木にとまる黒い鳥は雷を呼びやすく、ランタンの金具が電気を引き寄せる | 設定 | 候補 |
 | 状態異常への反応 | 未決 | 効かない状態を設けるかを含めて未決 | 未決 |
 | 激化 | 5ターン目以降 | [行動パターン](#行動パターン) | 候補 |
@@ -155,32 +155,33 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/GraveRaven.asep
 | 用途・構図・視点・ポーズ・背景 | 戦闘の1枚絵。やや斜めの左向きで全身を描き、身構えた待機の姿。背景は透明 |
 | 解像度・透過・ファイル形式・差分規格 | 96×96、32色＋透明、インデックスカラーの `.aseprite`（[ドット絵の制作規格](../../art/direction.md#ドット絵の制作規格)） |
 | 外見の指示文（この敵の部分） | 「墓地の木にとまる大きな鴉。足で古いランタンを下げ、目が赤く光る。配色は黒と濃紺の羽、赤い目、ランタンの黄色い灯り。必ず残す特徴は、黒い大きな翼、足に下げたランタン、赤い目」 |
-| 英語の短い説明（PixelLab用） | `large black raven with navy-blue sheen, wings spread wide, glowing red eye, gray beak, holding an old brass lantern with yellow light in its talons, facing left` |
+| 英語の短い説明 | `large black raven with navy-blue sheen, wings spread wide, glowing red eye, gray beak, holding an old brass lantern with yellow light in its talons, facing left` |
 | 変更しない特徴・今回だけ変える特徴 | 変えない特徴は「小型ドット絵でも残す特徴」とする。行動順のコマの切り出し位置を決めたら、頭と赤い目が入るかを確かめる |
 | 実際に使った指示文 | `output/enemies/45-hakamori-garasu/request.md`（Git対象外） |
 | 入力にした文書のID・Gitコミット等の版 | `output/enemies/spec.json`（Git対象外）の45番 |
 | 参照画像のパス・出所・利用条件 | 画風見本として、既存の[森の守り手](enemy-forest-guardian.md)の絵を添付した |
 | 使用ツール・モデル・再現用設定 | Codex CLI（gpt-6.1-sol、画像生成のモデルは既定） |
 | 出力画像のパス・生成日・案のID | `output/enemies/45-hakamori-garasu/enemy.png`（1254×1254、2026-10-19生成、Git対象外）。背景を抜いて切り出し、96×96に縮小して32色へ減色し、インデックスカラーの `.aseprite` にした |
-| 採用・候補・不採用と理由 | ライブラリと展示室で表示する下書き（候補） |
+| 採用・候補・不採用と理由 | 冒険の戦闘・ライブラリ・展示室で表示する下書き（候補） |
 | 採用画像と文章の差・反映方法 | 設計値は「木にとまる」だったが、採用画像は木を描かず、翼を広げて浮かぶ姿である。文章を採用画像に合わせた。指示にない灰色のくちばしと、真鍮の格子のランタンも反映した |
-| Unityアセットのパス・GUID・利用画面 | `client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/GraveRaven.aseprite`。ライブラリ、展示室 |
+| Unityアセットのパス・GUID・利用画面 | `client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/GraveRaven.aseprite`。冒険の戦闘、ライブラリ、展示室 |
 
 ## 未決事項
 
 | 項目 | 決める内容・先に必要な判断 |
 |---|---|
-| 数値 | ステータス、行動の割合、激化の倍率は仮。[戦闘の未決事項](../../features/combat.md#未決事項)の数値が決まったら見直す |
+| 数値 | ステータス、行動の割合、激化の倍率は仮。[戦闘の未決事項](../../features/combat/implementation.md#未決事項)の数値が決まったら見直す |
 | 出現する場所 | 出現する行き先・マス・敵の組み合わせ・Lv |
-| 速度・会心・幸運 | 速度は、味方の合計と比べる方法（[ターン順](../../features/combat.md#ターン順)）が決まったら尺度を合わせ直す。会心と幸運は、使い道（[候補](../../features/party.md#ステータスの項目)）が決まったら見直す |
+| 速度・会心・幸運 | 速度は、味方の合計と比べる方法（[ターン順](../../features/combat/rules.md#ターン順)）が決まったら尺度を合わせ直す。会心と幸運は、使い道（[候補](../../features/party.md#ステータスの項目)）が決まったら見直す |
 | 技のまね | 新しい仕組み（[鴉のものまね](../enemy-skills/enemy-skill-raven-mimic-echo.md)）。味方のカードの記録から技の区分と属性を決める。予告の出し方 |
 | 呼び出し | 呼んだ骸骨兵のLvと立ち位置（[仲間を呼ぶ](../enemy-skills/enemy-skill-call-ally.md)） |
 | 行動順のコマ | 1枚絵から切り出す位置 |
-| 実装 | 冒険の戦闘では、ステータスと技1つ（鴉のものまね）だけを使う。ほかの技と行動パターンは未実装。実装するときは[敵の挙動デバッグルーム](../../features/screens/debug-rooms.md#敵の挙動デバッグルーム)の行動も増やす |
+| 実装 | 戦闘にまだない効果の技（金切り声・仲間を呼ぶ）と、使う条件が戦闘から見えない技（鴉のものまね）は使わない（[敵の行動の仮設定](../../features/combat-enemy-behavior.md)）。実装するときは[敵の挙動デバッグルーム](../../features/screens/debug-rooms.md#敵の挙動デバッグルーム)の行動も増やす |
 
 ## 変更と判断の記録
 
 | 日付 | 変更・判断 | 理由・根拠 | 影響するID・仕様 |
 |---|---|---|---|
-| 2026-10-19 | 定義を作り、生息する地域・ステータス・技5つ・行動パターン・演出・外見・性格を候補として書いた。弱点とLv100のステータスは試作の設計値を使った | ユーザーの依頼（敵50体を試作し、文書カタログ・クライアント・サーバーにそろえる） | [敵の行動の仮設定](../../features/combat-enemy-behavior.md)、[属性と弱点](../../features/combat.md#属性と弱点) |
-| 2026-10-20 | 月影の墓所の戦闘に出るようにし、Lv100のステータスと技「鴉のものまね」を戦闘で使うようにした | ユーザーの依頼（行き先を増やし、行き先ごとの敵を増やす） | [行き先と敵](../../features/stage-progression.md#行き先と敵) |
+| 2026-10-19 | 定義を作り、生息する地域・ステータス・技5つ・行動パターン・演出・外見・性格を候補として書いた。弱点とLv100のステータスは試作の設計値を使った | ユーザーの依頼（敵50体を試作し、文書カタログ・クライアント・サーバーにそろえる） | [敵の行動の仮設定](../../features/combat-enemy-behavior.md)、[属性と弱点](../../features/combat/rules.md#属性と弱点) |
+| 2026-10-20 | 月影の墓所の戦闘に出るようにし、Lv100のステータスと技「鴉のものまね」を戦闘で使うようにした | ユーザーの依頼（行き先を増やし、行き先ごとの敵を増やす） | [行き先と敵](../../features/stage-progression/destinations.md#行き先と敵) |
+| 2026-11-02 | スキルとdocの整理で、今のコードに合わせて、技・行動パターン・出る行き先を未実装・未配置とした記述を直した。2026-11-01に足した白嶺ネーヴェ、戦闘で使われない鴉のものまね、絵の利用画面の冒険の戦闘を書き足した。行動順のコマの切り出しを、自動で切り出す今の作り（BattleEnemyLooksAssets.cs）に合わせた | 根拠：53体すべてが CombatEnemyStats・CombatEnemyBehaviors で動き、AdventureCatalog の行き先に出る。絵は BattleEnemyLooks で全種を戦闘に使う。鴉のものまねは割り込みの条件を写していない | [行き先と敵](../../features/stage-progression/destinations.md#行き先と敵)、[敵の行動の仮設定](../../features/combat-enemy-behavior.md) |

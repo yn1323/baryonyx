@@ -2,7 +2,7 @@
 id: enemy-lava-slime
 type: visual-entity
 status: 候補
-updated: 2026-10-21
+updated: 2026-11-02
 name: 溶岩スライム
 category: enemies
 silhouette: 横に広い低い山形の塊。黒い岩の殻の板が積み重なり、その隙間から光る溶岩がのぞく
@@ -20,10 +20,10 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/LavaSlime.asepr
 火山に出る雑魚のうち、小さい敵である。殻を閉じて守り、溜めた熱で殻をはじけさせて味方全体を焼く。
 この文書は、生息する地域、ステータス、使う技と行動パターン、外見と性格の設定を持つ。
 技の効果と演出は[敵の技の定義](../enemy-skills/README.md)に置く。
-2026-10-19の時点で、この敵はどの行き先にも出ない。画像はライブラリと展示室で表示する下書きで、HP・技・行動は未実装である。
-2026-10-20から、ヴォルガン火山（`volgan-volcano`、Lv35）の小さな敵として、冒険の戦闘に出る（[行き先と敵](../../features/stage-progression.md#行き先と敵)）。
-戦闘では、下のLv100のステータスに出るLvの成長率を掛けて使い、技は「殻はじけ」だけを物攻で物理として（味方の物防で受ける）使う（[CombatEnemyStats](../../../client/Assets/Baryonyx/Features/Combat/Runtime/CombatEnemyStats.cs)）。
-ほかの技と行動パターンは未実装である。
+絵は[ライブラリ](../../features/library.md)と[展示室](../../features/showcase.md)でも表示する。
+2026-10-20から、ヴォルガン火山（`volgan-volcano`、Lv35）の小さな敵として、冒険の戦闘に出る（[行き先と敵](../../features/stage-progression/destinations.md#行き先と敵)）。
+戦闘では、下のLv100のステータスに出るLvの成長率を掛けて使う（[CombatEnemyStats](../../../client/Assets/Baryonyx/Features/Combat/Runtime/CombatEnemyStats.cs)）。
+技と行動パターンは、2026-10-22から [CombatEnemyBehaviors](../../../client/Assets/Baryonyx/Features/Combat/Runtime/CombatEnemyBehaviors.cs) で動く。
 
 ## 識別情報と根拠
 
@@ -33,8 +33,8 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/LavaSlime.asepr
 | 対象の役割・説明 | 雑魚（小）。殻を固めて耐え、溶岩の玉でやけどを付ける。殻はじけで全体を焼くと、殻が開いて受けるダメージが増える。黒曜石の巨像に呼ばれても現れる |
 | 元となる対象・亜種・衣装差分のID | なし |
 | 参照する仕様・関連する個別ID | [戦闘システム](../../features/combat.md)、[雪玉ころん](enemy-snowball.md)、[黒曜石の巨像](enemy-obsidian-colossus.md)、[苔スライム](enemy-moss-slime.md) |
-| 必要な画像用途 | 戦闘の1枚絵（64×64）。行動順のコマ（24×24）の切り出し位置は未決 |
-| ゲーム内の実装・アセット | 画像 `LavaSlime.aseprite`、敵の種類と弱点 `CombatEnemies.cs`（`client/Assets/Baryonyx/Features/Combat/Runtime/`）、サーバーの敵ID `server/src/features/combat/catalog.ts` の `ENEMY_IDS`。HP・技・行動は未実装 |
+| 必要な画像用途 | 戦闘の1枚絵（64×64）。行動順のコマ（24×24）は、描かれた部分の上端から自動で切り出す（仮。`BattleEnemyLooksAssets.cs`） |
+| ゲーム内の実装・アセット | 画像 `LavaSlime.aseprite`、敵の種類と弱点 `CombatEnemies.cs`（`client/Assets/Baryonyx/Features/Combat/Runtime/`）、サーバーの敵ID `server/src/features/combat/catalog.ts` の `ENEMY_IDS`、ステータス `CombatEnemyStats.cs`、技と行動パターン `CombatEnemyBehaviors.Peaks.cs`、出る行き先 `AdventureCatalog.cs` |
 
 ## 確定した設定
 
@@ -46,7 +46,7 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/LavaSlime.asepr
 |---|---|---|---|
 | 未決 | 未決 | 未決 | 未決 |
 
-まだどの行き先にも出ない。
+今の出る行き先とLv（仮）は[行き先と敵](../../features/stage-progression/destinations.md#行き先と敵)にある（割り振りの正本は [AdventureCatalog](../../../client/Assets/Baryonyx/Features/Adventure/Runtime/AdventureCatalog.cs) の `Areas`）。
 生息する地域は火山とし、出現する行き先・マス・敵の組み合わせ・Lvは未決である（[ステージの定義](../stages/README.md)）。
 [黒曜石の巨像](enemy-obsidian-colossus.md)の[仲間を呼ぶ](../enemy-skills/enemy-skill-call-ally.md)でも現れる。呼ばれたときのLvは、呼んだ敵と同じにする案である。
 
@@ -153,31 +153,31 @@ HPと物防を小の敵としては高めにし、黒い殻で打撃と刃をよ
 | 用途・構図・視点・ポーズ・背景 | 戦闘の1枚絵。やや斜めの左向きで全身を描き、背景は透明 |
 | 解像度・透過・ファイル形式・差分規格 | 64×64、32色＋透明、インデックスカラーの `.aseprite`（[ドット絵の制作規格](../../art/direction.md#ドット絵の制作規格)） |
 | 外見の指示文（この敵の部分） | 「冷えかけの溶岩でできたスライム。横に広い低い山形で、やや斜めの左向き。表面を黒っぽい岩の殻の板が覆い、板の間のひびから橙と黄色に光る溶岩がのぞく。体の左寄りの殻の隙間に、縦長に光る黄色の目が2つ。裾は溶岩がにじむ。口・手足はない」 |
-| 英語の短い説明（PixelLab用） | `low dome slime of cooling lava, covered in black rock crust plates, glowing orange and yellow lava in the cracks, two glowing slit eyes, three-quarter view facing left` |
-| 変更しない特徴・今回だけ変える特徴 | 変えない特徴は「小型ドット絵でも残す特徴」とする。行動順のコマの切り出し位置は、戦闘で使うときに決める |
+| 英語の短い説明 | `low dome slime of cooling lava, covered in black rock crust plates, glowing orange and yellow lava in the cracks, two glowing slit eyes, three-quarter view facing left` |
+| 変更しない特徴・今回だけ変える特徴 | 変えない特徴は「小型ドット絵でも残す特徴」とする |
 | 実際に使った指示文 | `output/enemies/37-yougan-slime/request.md`（Git対象外）。この敵の部分は「冷えかけの溶岩が澱で固まったスライム。表面の黒い殻のひびから橙色の光が漏れる。」、配色は「黒い殻、橙と黄色に光る溶岩」、必ず残す特徴は「黒い殻のひび。もれる橙色の光。丸い体。」だった |
 | 入力にした文書のID・Gitコミット等の版 | なし（この定義を作る前の生成。設計値は `output/enemies/spec.json`） |
 | 参照画像のパス・出所・利用条件 | 画風見本として、既存の[森の守り手](enemy-forest-guardian.md)の絵（`output/enemies/style-ref.png`、Git対象外）を添付し、タッチだけを参考にさせた |
 | 使用ツール・モデル・再現用設定 | Codex CLI（gpt-6.1-sol）の組み込みの画像生成（画像生成のモデルは既定） |
 | 出力画像のパス・生成日・案のID | 2026-10-19生成の `output/enemies/37-yougan-slime/enemy.png`（1254×1254、Git対象外）。背景を抜いて切り出し、64×64へ縮小して32色へ減色し、インデックスカラーの `.aseprite` にした |
-| 採用・候補・不採用と理由 | ライブラリと展示室で表示する下書き（候補）。戦闘ではまだ使わない |
+| 採用・候補・不採用と理由 | 冒険の戦闘・ライブラリ・展示室で表示する下書き（候補） |
 | 採用画像と文章の差・反映方法 | 指示は「丸い体」だったが、採用画像は横に広い低い山形である。目は指示になかったが、採用画像の殻の隙間の黄色い光2つを目として扱う。文章を採用画像に合わせた |
-| Unityアセットのパス・GUID・利用画面 | `client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/LavaSlime.aseprite`。ライブラリ、展示室 |
+| Unityアセットのパス・GUID・利用画面 | `client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/LavaSlime.aseprite`。冒険の戦闘、ライブラリ、展示室 |
 
 ## 未決事項
 
 | 項目 | 決める内容・先に必要な判断 |
 |---|---|
 | 出現する場所 | 行き先・マス・敵の組み合わせ・Lv。行き先が決まったら、その行き先のLvの行をステータスの表に足す |
-| 数値 | ステータス、行動の割合と回数、激化の条件と倍率は仮。[戦闘の未決事項](../../features/combat.md#未決事項)の数値が決まったら見直す |
-| 速度・会心・幸運 | 速度は、味方の合計と比べる方法（[ターン順](../../features/combat.md#ターン順)）が決まったら尺度を合わせ直す。会心と幸運は、使い道（[候補](../../features/party.md#ステータスの項目)）が決まったら見直す |
+| 数値 | ステータス、行動の割合と回数、激化の条件と倍率は仮。[戦闘の未決事項](../../features/combat/implementation.md#未決事項)の数値が決まったら見直す |
+| 速度・会心・幸運 | 速度は、味方の合計と比べる方法（[ターン順](../../features/combat/rules.md#ターン順)）が決まったら尺度を合わせ直す。会心と幸運は、使い道（[候補](../../features/party.md#ステータスの項目)）が決まったら見直す |
 | 敵に付く防御ダウン | [殻はじけ](../enemy-skills/enemy-skill-lava-slime-crust-burst.md)の未決事項 |
 | 行動順のコマ | 戦闘の1枚絵から行動順のコマ（24×24）を切り出す位置 |
-| 実装 | 冒険の戦闘では、ステータスと技1つ（殻はじけ）だけを使う。ほかの技と行動パターンは未実装。実装するときは[敵の挙動デバッグルーム](../../features/screens/debug-rooms.md#敵の挙動デバッグルーム)の行動も増やす |
 
 ## 変更と判断の記録
 
 | 日付 | 変更・判断 | 理由・根拠 | 影響するID・仕様 |
 |---|---|---|---|
 | 2026-10-19 | 定義を作り、生息する地域・ステータス・技3つ・行動パターン・演出・外見・性格を候補として書いた。ステータスと弱点は試作の設計値をそのまま使った | ユーザーの依頼（敵50体を試作し、文書カタログ・クライアント・サーバーにそろえる） | [敵の行動の仮設定](../../features/combat-enemy-behavior.md)、[レベルとステータス](../../features/progression.md#レベルとステータス) |
-| 2026-10-20 | ヴォルガン火山の戦闘に出るようにし、Lv100のステータスと技「殻はじけ」を戦闘で使うようにした | ユーザーの依頼（行き先を増やし、行き先ごとの敵を増やす） | [行き先と敵](../../features/stage-progression.md#行き先と敵) |
+| 2026-10-20 | ヴォルガン火山の戦闘に出るようにし、Lv100のステータスと技「殻はじけ」を戦闘で使うようにした | ユーザーの依頼（行き先を増やし、行き先ごとの敵を増やす） | [行き先と敵](../../features/stage-progression/destinations.md#行き先と敵) |
+| 2026-11-02 | スキルとdocの整理で、今のコードに合わせて、技・行動パターン・出る行き先を未実装・未配置とした記述を直した。絵を冒険の戦闘で使い、行動順のコマを自動で切り出すことも書いた | 根拠：53体すべてが CombatEnemyStats・CombatEnemyBehaviors で動き、AdventureCatalog の行き先に出る。絵と行動順のコマは BattleEnemyLooksAssets が53体分を作る | [行き先と敵](../../features/stage-progression/destinations.md#行き先と敵)、[敵の行動の仮設定](../../features/combat-enemy-behavior.md) |

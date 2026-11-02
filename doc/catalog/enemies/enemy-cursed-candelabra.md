@@ -2,7 +2,7 @@
 id: enemy-cursed-candelabra
 type: visual-entity
 status: 候補
-updated: 2026-10-21
+updated: 2026-11-02
 name: 呪いの燭台
 category: enemies
 silhouette: 細い柱から三本の腕が広がる燭台。腕の先の蝋燭に青い炎の顔が灯り、台座の曲がった脚で立つ
@@ -18,14 +18,14 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/CursedCandelabr
 [敵の定義](README.md) / [関連仕様](../../features/combat-enemy-behavior.md)
 
 遺跡に棲む雑魚のうち、小さい敵である。
-2026-10-19の時点で、まだどの行き先にも出ない。
 敵の種類のIDと弱点の実行上の正本は [CombatEnemies](../../../client/Assets/Baryonyx/Features/Combat/Runtime/CombatEnemies.cs)（`CursedCandelabra`）とする。
 この文書は、ステータス、使う技と行動パターン、外見と性格の設定を持つ。
 技の効果と演出は[敵の技の定義](../enemy-skills/README.md)に置く。
-ステータス・技・行動は未実装で、絵は[ライブラリ](../../features/library.md)と[展示室](../../features/showcase.md)で表示するだけである。
-2026-10-20から、月影の墓所（`moonshade-graveyard`、Lv30）の小さな敵として、冒険の戦闘に出る（[行き先と敵](../../features/stage-progression.md#行き先と敵)）。
-戦闘では、下のLv100のステータスに出るLvの成長率を掛けて使い、技は「火の玉」だけを属攻で魔法として（味方の属防で受ける）使う（[CombatEnemyStats](../../../client/Assets/Baryonyx/Features/Combat/Runtime/CombatEnemyStats.cs)）。
-ほかの技と行動パターンは未実装である。
+絵は[ライブラリ](../../features/library.md)と[展示室](../../features/showcase.md)でも表示する。
+2026-10-20から、月影の墓所（`moonshade-graveyard`、Lv30）の小さな敵として、冒険の戦闘に出る（[行き先と敵](../../features/stage-progression/destinations.md#行き先と敵)）。
+2026-11-01から、アルマジャ王墓（`almaja-tomb`、Lv26）の小さな敵としても出る。
+戦闘では、下のLv100のステータスに出るLvの成長率を掛けて使う（[CombatEnemyStats](../../../client/Assets/Baryonyx/Features/Combat/Runtime/CombatEnemyStats.cs)）。
+技と行動パターンは、2026-10-22から [CombatEnemyBehaviors](../../../client/Assets/Baryonyx/Features/Combat/Runtime/CombatEnemyBehaviors.cs) で動く。戦闘にまだない効果の技（延焼）は使わない（[敵の行動の仮設定](../../features/combat-enemy-behavior.md)）。
 
 ## 識別情報と根拠
 
@@ -35,8 +35,8 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/CursedCandelabr
 | 対象の役割・説明 | 雑魚（小）。青い炎の魔法でやけどを付け、火の粉でやけどを燃え広がらせて長引かせる |
 | 元となる対象・亜種・衣装差分のID | なし |
 | 参照する仕様・関連する個別ID | [戦闘システム](../../features/combat.md)、[浮遊する魔導書](enemy-floating-grimoire.md)、[鬼火](enemy-will-o-wisp.md)、[割れ壺の番](enemy-cracked-urn.md) |
-| 必要な画像用途 | 戦闘の1枚絵（64×64）。行動順のコマ（24×24）の切り出し位置は未決 |
-| ゲーム内の実装・アセット | 画像 `CursedCandelabra.aseprite`、敵の種類と弱点 `CombatEnemies.cs`（`client/Assets/Baryonyx/Features/Combat/Runtime/`）、サーバーの敵ID [catalog.ts](../../../server/src/features/combat/catalog.ts) の `ENEMY_IDS`。HP・技・行動は未実装 |
+| 必要な画像用途 | 戦闘の1枚絵（64×64）。行動順のコマ（24×24）は、描かれた部分の上端から自動で切り出す（仮。`BattleEnemyLooksAssets.cs`） |
+| ゲーム内の実装・アセット | 画像 `CursedCandelabra.aseprite`、敵の種類と弱点 `CombatEnemies.cs`（`client/Assets/Baryonyx/Features/Combat/Runtime/`）、サーバーの敵ID [catalog.ts](../../../server/src/features/combat/catalog.ts) の `ENEMY_IDS`、ステータス `CombatEnemyStats.cs`、技と行動パターン `CombatEnemyBehaviors.Peaks.cs`、出る行き先 `AdventureCatalog.cs` |
 
 ## 確定した設定
 
@@ -44,7 +44,7 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/CursedCandelabr
 
 ## 出現する場所
 
-まだどの行き先にも出ない。
+今の出る行き先とLv（仮）は[行き先と敵](../../features/stage-progression/destinations.md#行き先と敵)にある（割り振りの正本は [AdventureCatalog](../../../client/Assets/Baryonyx/Features/Adventure/Runtime/AdventureCatalog.cs) の `Areas`）。
 生息する地域は遺跡とする。
 出現する行き先・マス・敵の組み合わせ・Lvは未決である。
 行き先の個別定義（`stage-`）はまだない（[ステージの定義](../stages/README.md)）。
@@ -56,7 +56,7 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/CursedCandelabr
 | 分類 | 動く物（燭台） | 古い燭台の燃え残りの蝋燭に澱が沁み、青い炎に顔が生まれた | 候補 |
 | 役割 | 雑魚・小。やけどを付けて広げ、長引かせる | [ステータス・技・行動パターンの書き方](README.md#ステータス技行動パターンの書き方) | 候補 |
 | 大きさの区分 | 小（64×64） | [ドット絵の制作規格](../../art/direction.md#画面と寸法) | 規格どおり |
-| 弱点 | 氷 | 試作の設計値。`CombatEnemies.cs` と同じ。未開示から始まる（[弱点の開示](../../features/combat.md#弱点の開示)） | 仮 |
+| 弱点 | 氷 | 試作の設計値。`CombatEnemies.cs` と同じ。未開示から始まる（[弱点の開示](../../features/combat/rules.md#弱点の開示)） | 仮 |
 | 弱点の理由 | 氷：冷やされると蝋が固まって炎が細り、三つの顔が消えかける | 設定 | 候補 |
 | 状態異常への反応 | 未決 | 効かない状態を設けるかを含めて未決 | 未決 |
 | 激化 | 5ターン目以降 | [行動パターン](#行動パターン) | 候補 |
@@ -73,7 +73,7 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/CursedCandelabr
 炎の体は魔法の熱を少し受け流すため、属防は物防より高い。
 台座の脚で小さく跳ねて動くため、速度は中くらいにした。
 すべて仮の値である。
-技の括弧内の値は防御で減らす前の威力で、受ける味方の物防（物理の技）または属防（魔法の技）で減る（[ダメージと防御](../../features/combat.md#ダメージと防御)）。
+技の括弧内の値は防御で減らす前の威力で、受ける味方の物防（物理の技）または属防（魔法の技）で減る（[ダメージと防御](../../features/combat/rules.md#ダメージと防御)）。
 
 ## 技
 
@@ -150,31 +150,32 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/CursedCandelabr
 | 用途・構図・視点・ポーズ・背景 | 戦闘の1枚絵。やや斜めの左向きで全身を描き、背景は透明 |
 | 解像度・透過・ファイル形式・差分規格 | 64×64、32色＋透明、インデックスカラーの `.aseprite`（[ドット絵の制作規格](../../art/direction.md#ドット絵の制作規格)） |
 | 外見の指示文（この敵の部分） | 「黒ずんだ銀の燭台の魔物。細い柱から曲がった腕が左右に伸び、三つの受け皿に溶けかけた白い蝋燭が立ち、蝋が垂れる。三本の蝋燭の先に、点の目と小さな口のある青い炎の顔が灯り、表情がそれぞれ違う。腕と柱に渦巻きの飾りと小さなとげ。台座から曲がった脚が開いて伸び、とがった先で立つ」 |
-| 英語の短い説明（PixelLab用） | `haunted tarnished silver candelabra with three melting white candles, each topped by a blue flame with a small face, dripping wax, curled arms with small spikes, crooked legs on the base, three-quarter view facing left` |
-| 変更しない特徴・今回だけ変える特徴 | 変えない特徴は「小型ドット絵でも残す特徴」とする。行動順のコマの切り出し位置は未決で、決めるときに顔が入る位置を選ぶ |
+| 英語の短い説明 | `haunted tarnished silver candelabra with three melting white candles, each topped by a blue flame with a small face, dripping wax, curled arms with small spikes, crooked legs on the base, three-quarter view facing left` |
+| 変更しない特徴・今回だけ変える特徴 | 変えない特徴は「小型ドット絵でも残す特徴」とする。行動順のコマの切り出し位置を決めるときは、顔が入る位置を選ぶ |
 | 実際に使った指示文 | `output/enemies/14-norowareta-shokudai/request.md`（Git対象外）。50体を1体ずつ生成した依頼で、この敵の部分は「古い燭台の三本の蝋燭に、青い炎の顔が灯った。溶けた蝋が垂れ、台座の脚で跳ねる。」、必ず残す特徴は「三本の蝋燭の燭台。青い炎の顔。垂れた蝋。」だった |
 | 入力にした文書のID・Gitコミット等の版 | なし（この定義を作る前の生成） |
 | 参照画像のパス・出所・利用条件 | 画風見本として、既存の森の守り手の絵（`output/enemies/style-ref.png`、Git対象外）を添えた。タッチだけを参考にし、形とポーズは写さないよう指示した |
 | 使用ツール・モデル・再現用設定 | Codex CLI（gpt-6.1-sol）の組み込みの画像生成。画像生成のモデルは既定 |
 | 出力画像のパス・生成日・案のID | 2026-10-19生成の `output/enemies/14-norowareta-shokudai/enemy.png`（1254×1254、Git対象外）。背景を抜いて切り出し、64×64に縮小して32色へ減色し、インデックスカラーの `.aseprite` にした |
-| 採用・候補・不採用と理由 | ライブラリと展示室で表示する下書き（候補） |
+| 採用・候補・不採用と理由 | 冒険の戦闘・ライブラリ・展示室で表示する下書き（候補） |
 | 採用画像と文章の差・反映方法 | 依頼になかった、炎の顔ごとの表情の違い、腕と柱の渦巻きととげ、台座の脚の数と形を、採用画像に合わせて文章に加えた |
-| Unityアセットのパス・GUID・利用画面 | `client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/CursedCandelabra.aseprite`。[ライブラリ](../../features/library.md)、[展示室](../../features/showcase.md) |
+| Unityアセットのパス・GUID・利用画面 | `client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/CursedCandelabra.aseprite`。冒険の戦闘、[ライブラリ](../../features/library.md)、[展示室](../../features/showcase.md) |
 
 ## 未決事項
 
 | 項目 | 決める内容・先に必要な判断 |
 |---|---|
-| 数値 | ステータス、行動の割合と回数制限、激化の条件と倍率は仮。[戦闘の未決事項](../../features/combat.md#未決事項)の数値が決まったら見直す |
+| 数値 | ステータス、行動の割合と回数制限、激化の条件と倍率は仮。[戦闘の未決事項](../../features/combat/implementation.md#未決事項)の数値が決まったら見直す |
 | 出現する場所とLv | 遺跡のどの行き先・マスに、どの敵と組んで、どのLvで出すか（[ステージの定義](../stages/README.md)） |
-| 速度・会心・幸運 | 速度は、味方の合計と比べる方法（[ターン順](../../features/combat.md#ターン順)）が決まったら尺度を合わせ直す。会心と幸運は、使い道（[候補](../../features/party.md#ステータスの項目)）が決まったら見直す |
+| 速度・会心・幸運 | 速度は、味方の合計と比べる方法（[ターン順](../../features/combat/rules.md#ターン順)）が決まったら尺度を合わせ直す。会心と幸運は、使い道（[候補](../../features/party.md#ステータスの項目)）が決まったら見直す |
 | やけどを延ばす | 新しい仕組みの決まり（[延焼](../enemy-skills/enemy-skill-candelabra-spread-fire.md)） |
-| 弱点の数 | 1体に複数の弱点を持たせるか（[弱点の開示](../../features/combat.md#弱点の開示)の未決） |
-| 実装 | 冒険の戦闘では、ステータスと技1つ（火の玉）だけを使う。ほかの技と行動パターンは未実装。実装するときは[敵の挙動デバッグルーム](../../features/screens/debug-rooms.md#敵の挙動デバッグルーム)の行動も増やす |
+| 弱点の数 | 1体に複数の弱点を持たせるか（[戦闘の未決事項](../../features/combat/implementation.md#未決事項)の「弱点の開示」） |
+| 実装 | 戦闘にまだない効果の技（延焼）は使わない（[敵の行動の仮設定](../../features/combat-enemy-behavior.md)）。実装するときは[敵の挙動デバッグルーム](../../features/screens/debug-rooms.md#敵の挙動デバッグルーム)の行動も増やす |
 
 ## 変更と判断の記録
 
 | 日付 | 変更・判断 | 理由・根拠 | 影響するID・仕様 |
 |---|---|---|---|
-| 2026-10-19 | 定義を作り、ステータス・技3つ・行動パターン・演出・外見・性格を候補として書いた。弱点とLv100のステータスは試作の設計値（型：`caster`）をそのまま使い、外見の文章は生成した絵に合わせた。固有技として[延焼](../enemy-skills/enemy-skill-candelabra-spread-fire.md)を作った | ユーザーの依頼（敵50体を試作し、文書カタログ・クライアント・サーバーにそろえる） | [敵の行動の仮設定](../../features/combat-enemy-behavior.md)、[属性と弱点](../../features/combat.md#属性と弱点)、[ステータスの項目](../../features/party.md#ステータスの項目) |
-| 2026-10-20 | 月影の墓所の戦闘に出るようにし、Lv100のステータスと技「火の玉」を戦闘で使うようにした | ユーザーの依頼（行き先を増やし、行き先ごとの敵を増やす） | [行き先と敵](../../features/stage-progression.md#行き先と敵) |
+| 2026-10-19 | 定義を作り、ステータス・技3つ・行動パターン・演出・外見・性格を候補として書いた。弱点とLv100のステータスは試作の設計値（型：`caster`）をそのまま使い、外見の文章は生成した絵に合わせた。固有技として[延焼](../enemy-skills/enemy-skill-candelabra-spread-fire.md)を作った | ユーザーの依頼（敵50体を試作し、文書カタログ・クライアント・サーバーにそろえる） | [敵の行動の仮設定](../../features/combat-enemy-behavior.md)、[属性と弱点](../../features/combat/rules.md#属性と弱点)、[ステータスの項目](../../features/party.md#ステータスの項目) |
+| 2026-10-20 | 月影の墓所の戦闘に出るようにし、Lv100のステータスと技「火の玉」を戦闘で使うようにした | ユーザーの依頼（行き先を増やし、行き先ごとの敵を増やす） | [行き先と敵](../../features/stage-progression/destinations.md#行き先と敵) |
+| 2026-11-02 | スキルとdocの整理で、今のコードに合わせて、技・行動パターン・出る行き先を未実装・未配置とした記述を直した。2026-11-01から出るアルマジャ王墓と、絵の利用画面の冒険の戦闘を足した。行動順のコマの切り出しを、自動で切り出す今の作り（BattleEnemyLooksAssets.cs）に合わせた | 根拠：53体すべてが CombatEnemyStats・CombatEnemyBehaviors で動き、AdventureCatalog の行き先に出る。BattleEnemyLooksAssets が全種の絵を戦闘に使う | [行き先と敵](../../features/stage-progression/destinations.md#行き先と敵)、[敵の行動の仮設定](../../features/combat-enemy-behavior.md) |

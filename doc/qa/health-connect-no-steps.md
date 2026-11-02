@@ -28,13 +28,12 @@ Googleも、自動歩数記録を利用する前にGoogle Playシステムアッ
 ## Health Connectだけで歩数を記録できる？
 
 対応する端末では、Health Connect自身がスマートフォンの歩数センサーを使って記録する。
-自動歩数記録の対応条件はAndroid 14以上と、SDK拡張機能バージョン20以上である。
+自動歩数記録の対応条件は[歩数を使うには何が必要？](health-connect-requirements.md#歩数を使うには何が必要)の表にある。
 対応端末で少なくとも1つのアプリに歩数の読み取り権限（`READ_STEPS`）が付与されると、Health Connectが記録を開始する。
 端末側の歩数記録をオフにしている場合は、オンに戻す必要がある。[Androidの歩数記録仕様](https://developer.android.com/health-and-fitness/health-connect/features/steps?hl=ja)・[端末の歩数記録設定](https://support.google.com/android/answer/16786157?hl=en)
 
 この方式では、ゲーム自身の歩数計処理や、別の歩数記録アプリは必須ではない。
 ゲームはHealth Connectに保存された歩数を読み取る。
-ゲーム内のGoogle接続は独立した認証操作であり、それだけで歩数の記録や他サービスからの転送が始まるわけではない。
 ゲーム側の動作は[起動時の連携と歩数の同期](../features/startup-sync.md)を参照する。
 
 SDK拡張機能は、Google Playシステムアップデートを通じて提供される追加機能である。

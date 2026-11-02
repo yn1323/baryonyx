@@ -2,7 +2,7 @@
 id: enemy-skill-mammoth-snowdrift
 type: definition
 status: 候補
-updated: 2026-10-19
+updated: 2026-11-02
 name: 降り積もる雪
 category: enemy-skills
 ---
@@ -20,7 +20,7 @@ category: enemy-skills
 | 定義の根拠・決定日・参照元 | 2026-10-19、ユーザーの依頼（敵50体を試作し、文書カタログ・クライアント・サーバーにそろえる）で、[雪原のマンモス](../enemies/enemy-snow-mammoth.md)の技として作った |
 | 役割・説明 | 激化の合図。行動ごとのブロックと、行動パターンの切り替え |
 | 関連する仕様・個別ID | 使う敵：[雪原のマンモス](../enemies/enemy-snow-mammoth.md)。[敵の行動の仮設定](../../features/combat-enemy-behavior.md) |
-| 実装・ゲームマスタの場所 | 未実装 |
+| 実装・ゲームマスタの場所 | [CombatEnemyBehaviors](../../../client/Assets/Baryonyx/Features/Combat/Runtime/CombatEnemyBehaviors.cs) の、使う敵の `Moves`。攻撃しない技のため、演出は技の名前と効果の文字・数字だけ（[BattleInspectView.EnemyMoves](../../../client/Assets/Baryonyx/Features/Combat/Presentation/BattleInspectView.EnemyMoves.cs) の `Support`） |
 
 ## 確定した設定
 
@@ -32,8 +32,8 @@ category: enemy-skills
 |---|---|---|---|
 | 区分 | 固有技（[雪原のマンモス](../enemies/enemy-snow-mammoth.md)） | [共通技と固有技](README.md#共通技と固有技) | 候補 |
 | 種類・対象 | 防御・自分 | [記入する項目](README.md#記入する項目) | 候補 |
-| 物理・魔法と属性 | ダメージなし | 味方は物理の技を物防で、魔法の技を属防で受ける（[使い道の候補](../../features/party.md#ステータスの項目)） | 候補 |
-| 効果 | 戦闘の終わりまで、自分の行動の前に物防の40%のブロックを得る。使った敵の行動パターンを後半へ切り替える | 使う敵のステータスの割合（[威力の決め方](../../features/combat.md#威力の決め方)）。状態は[カードの状態の仮設定](../../features/combat.md#カードの状態の仮設定)の名前 | 仮 |
+| 物理・魔法と属性 | ダメージなし | [記入する項目](README.md#記入する項目) | 候補 |
+| 効果 | 戦闘の終わりまで、自分の行動の前に物防の40%のブロックを得る。使った敵の行動パターンを後半へ切り替える | [記入する項目](README.md#記入する項目) | 仮 |
 | 予告 | 防御 | [記入する項目](README.md#記入する項目) | 候補 |
 | 使う敵 | [雪原のマンモス](../enemies/enemy-snow-mammoth.md) | 各敵の定義の「技」の表 | 候補 |
 
@@ -55,12 +55,13 @@ category: enemy-skills
 
 | 項目 | 決める内容・先に必要な判断 |
 |---|---|
-| 数値 | 割合と持続ターンは仮。[戦闘の未決事項](../../features/combat.md#未決事項)の数値が決まったら見直す |
-| 毎回のブロック | 敵のブロックが消えるタイミング（未決）と合わせ、毎回のブロックが重なっていくかを決める |
-| 実装 | 未実装。実装するときは[敵の挙動デバッグルーム](../../features/screens/debug-rooms.md#敵の挙動デバッグルーム)の行動にも加える |
+| 数値 | 割合と持続ターンは仮。[戦闘の未決事項](../../features/combat/implementation.md#未決事項)の数値が決まったら見直す |
+| 毎回のブロック | 今の戦闘では、敵のブロックはその敵の次の行動の前に消える（[敵の行動の仮設定](../../features/combat-enemy-behavior.md)）。毎回のブロックを写すときに、これと同じに消すか、重ねていくかを決める |
+| 実装 | 戦闘で使う。効果のうち戦闘にまだないもの（味方に付く状態など）は写していない（[敵の行動の仮設定](../../features/combat-enemy-behavior.md)）。写すときは[敵の挙動デバッグルーム](../../features/screens/debug-rooms.md#敵の挙動デバッグルーム)の行動にも加える |
 
 ## 変更と判断の記録
 
 | 日付 | 変更・判断 | 理由・根拠 | 影響するID・仕様 |
 |---|---|---|---|
 | 2026-10-19 | 固有技として定義を作った | ユーザーの依頼 | 使う敵：[雪原のマンモス](../enemies/enemy-snow-mammoth.md) |
+| 2026-11-02 | スキルとdocの整理で、今のコードに合わせて「実装・ゲームマスタの場所」と、敵のブロックが消えるタイミングを未決とした記述を直した | 根拠：CombatEnemyBehaviors の `Moves` にこの技があり、戦闘で使う。敵のブロックは BattleInspectView.EnemyMoves の `EnemyAct` で、その敵の行動の始めに消す | [敵の行動の仮設定](../../features/combat-enemy-behavior.md) |

@@ -2,7 +2,7 @@
 id: enemy-skill-skeleton-reassemble
 type: definition
 status: 候補
-updated: 2026-10-19
+updated: 2026-11-02
 name: 組み直し
 category: enemy-skills
 ---
@@ -20,7 +20,7 @@ category: enemy-skills
 | 定義の根拠・決定日・参照元 | 2026-10-19、ユーザーの依頼（敵50体を試作し、文書カタログ・クライアント・サーバーにそろえる）で、[骸骨兵](../enemies/enemy-skeleton-soldier.md)の技として作った |
 | 役割・説明 | 倒れたあとの自分の復活。崩れている間に弱点の打で砕けば止められる |
 | 関連する仕様・個別ID | 使う敵：[骸骨兵](../enemies/enemy-skeleton-soldier.md)。[敵の行動の仮設定](../../features/combat-enemy-behavior.md) |
-| 実装・ゲームマスタの場所 | 未実装 |
+| 実装・ゲームマスタの場所 | 未実装（[CombatEnemyBehaviors](../../../client/Assets/Baryonyx/Features/Combat/Runtime/CombatEnemyBehaviors.cs) に名前だけあり、戦闘では選ばれない） |
 
 ## 確定した設定
 
@@ -32,8 +32,8 @@ category: enemy-skills
 |---|---|---|---|
 | 区分 | 固有技（[骸骨兵](../enemies/enemy-skeleton-soldier.md)） | [共通技と固有技](README.md#共通技と固有技) | 候補 |
 | 種類・対象 | 回復・自分 | [記入する項目](README.md#記入する項目) | 候補 |
-| 物理・魔法と属性 | ダメージなし | 味方は物理の技を物防で、魔法の技を属防で受ける（[使い道の候補](../../features/party.md#ステータスの項目)） | 候補 |
-| 効果 | HPが0になったとき、倒れずにその場で骨の山になる。次の自分の行動で、最大HPの40%で立ち上がる。骨の山のあいだに打の攻撃を受けると、組み直さずに倒れる。1回の戦闘で1回 | 使う敵のステータスの割合（[威力の決め方](../../features/combat.md#威力の決め方)）。状態は[カードの状態の仮設定](../../features/combat.md#カードの状態の仮設定)の名前 | 仮 |
+| 物理・魔法と属性 | ダメージなし | [記入する項目](README.md#記入する項目) | 候補 |
+| 効果 | HPが0になったとき、倒れずにその場で骨の山になる。次の自分の行動で、最大HPの40%で立ち上がる。骨の山のあいだに打の攻撃を受けると、組み直さずに倒れる。1回の戦闘で1回 | [記入する項目](README.md#記入する項目) | 仮 |
 | 予告 | 回復（骨の山のあいだに出す） | [記入する項目](README.md#記入する項目) | 候補 |
 | 使う敵 | [骸骨兵](../enemies/enemy-skeleton-soldier.md) | 各敵の定義の「技」の表 | 候補 |
 
@@ -58,7 +58,7 @@ category: enemy-skills
 
 | 項目 | 決める内容・先に必要な判断 |
 |---|---|
-| 数値 | 立ち上がるHPの割合は仮。[戦闘の未決事項](../../features/combat.md#未決事項)の数値が決まったら見直す |
+| 数値 | 立ち上がるHPの割合は仮。[戦闘の未決事項](../../features/combat/implementation.md#未決事項)の数値が決まったら見直す |
 | 骨の山 | 新しい仕組み。倒れた敵がその場に残り、行動順にも残る。骨の山だけが残ったときに戦闘を終えるか、骨の山に打以外の攻撃を向けられるか（対象に選べるか） |
 | 実装 | 未実装。実装するときは[敵の挙動デバッグルーム](../../features/screens/debug-rooms.md#敵の挙動デバッグルーム)の行動にも加える |
 
@@ -67,3 +67,4 @@ category: enemy-skills
 | 日付 | 変更・判断 | 理由・根拠 | 影響するID・仕様 |
 |---|---|---|---|
 | 2026-10-19 | 固有技として定義を作った | ユーザーの依頼 | 使う敵：[骸骨兵](../enemies/enemy-skeleton-soldier.md) |
+| 2026-11-02 | スキルとdocの整理で、今のコードに合わせて「実装・ゲームマスタの場所」を直した | 根拠：CombatEnemyBehaviors で `Other`（戦闘にない効果）として名前だけを持つ | [敵の行動の仮設定](../../features/combat-enemy-behavior.md) |

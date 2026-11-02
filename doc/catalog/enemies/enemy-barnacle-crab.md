@@ -2,7 +2,7 @@
 id: enemy-barnacle-crab
 type: visual-entity
 status: 候補
-updated: 2026-10-21
+updated: 2026-11-02
 name: フジツボ大ガニ
 category: enemies
 silhouette: 横に広い甲羅と脚。左右の大きなはさみを高く振り上げ、甲羅の上に目が2本突き出る
@@ -20,10 +20,10 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/BarnacleCrab.as
 海辺に出る中くらいの大きさの敵である。甲羅を固めて耐え、はさみを振り上げて力を溜め、味方の守りごと叩き砕く。
 この文書は、生息する地域、ステータス、使う技と行動パターン、外見と性格の設定を持つ。
 技の効果と演出は[敵の技の定義](../enemy-skills/README.md)に置く。
-2026-10-19の時点で、この敵はどの行き先にも出ない。画像はライブラリと展示室で表示する下書きで、HP・技・行動は未実装である。
-2026-10-20から、港町ポルトリア（`port-portoria`、Lv14）の中くらいの敵として、冒険の戦闘に出る（[行き先と敵](../../features/stage-progression.md#行き先と敵)）。
-戦闘では、下のLv100のステータスに出るLvの成長率を掛けて使い、技は「大ばさみ砕き」だけを物攻で物理として（味方の物防で受ける）使う（[CombatEnemyStats](../../../client/Assets/Baryonyx/Features/Combat/Runtime/CombatEnemyStats.cs)）。
-ほかの技と行動パターンは未実装である。
+絵は[ライブラリ](../../features/library.md)と[展示室](../../features/showcase.md)でも表示する。
+2026-10-20から、港町ポルトリア（`port-portoria`、Lv14）の中くらいの敵として、冒険の戦闘に出る（[行き先と敵](../../features/stage-progression/destinations.md#行き先と敵)）。
+戦闘では、下のLv100のステータスに出るLvの成長率を掛けて使う（[CombatEnemyStats](../../../client/Assets/Baryonyx/Features/Combat/Runtime/CombatEnemyStats.cs)）。
+技と行動パターンは、2026-10-22から [CombatEnemyBehaviors](../../../client/Assets/Baryonyx/Features/Combat/Runtime/CombatEnemyBehaviors.cs) で動く。
 
 ## 識別情報と根拠
 
@@ -33,8 +33,8 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/BarnacleCrab.as
 | 対象の役割・説明 | 雑魚（中）。身を固めて耐え、斬りつけとなぎ払いで削る。味方がブロックを張ると、力を溜めて大ばさみ砕きでブロックを大きく削る |
 | 元となる対象・亜種・衣装差分のID | なし |
 | 参照する仕様・関連する個別ID | [戦闘システム](../../features/combat.md)、[水晶ヤドカリ](enemy-crystal-hermit.md)、[砂サソリ](enemy-sand-scorpion.md)、[沖の大ダコ](enemy-giant-octopus.md) |
-| 必要な画像用途 | 戦闘の1枚絵（96×96）。行動順のコマ（24×24）の切り出し位置は未決 |
-| ゲーム内の実装・アセット | 画像 `BarnacleCrab.aseprite`、敵の種類と弱点 `CombatEnemies.cs`（`client/Assets/Baryonyx/Features/Combat/Runtime/`）、サーバーの敵ID `server/src/features/combat/catalog.ts` の `ENEMY_IDS`。HP・技・行動は未実装 |
+| 必要な画像用途 | 戦闘の1枚絵（96×96）。行動順のコマ（24×24）は、描かれた部分の上端から自動で切り出す（仮。`BattleEnemyLooksAssets.cs`） |
+| ゲーム内の実装・アセット | 画像 `BarnacleCrab.aseprite`、敵の種類と弱点 `CombatEnemies.cs`（`client/Assets/Baryonyx/Features/Combat/Runtime/`）、サーバーの敵ID `server/src/features/combat/catalog.ts` の `ENEMY_IDS`、ステータス `CombatEnemyStats.cs`、技と行動パターン `CombatEnemyBehaviors.Coast.cs`、出る行き先 `AdventureCatalog.cs` |
 
 ## 確定した設定
 
@@ -42,11 +42,7 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/BarnacleCrab.as
 
 ## 出現する場所
 
-| 行き先 | マス | 敵の組み合わせ | Lv |
-|---|---|---|---|
-| 未決 | 未決 | 未決 | 未決 |
-
-まだどの行き先にも出ない。
+今の出る行き先とLv（仮）は[行き先と敵](../../features/stage-progression/destinations.md#行き先と敵)にある（割り振りの正本は [AdventureCatalog](../../../client/Assets/Baryonyx/Features/Adventure/Runtime/AdventureCatalog.cs) の `Areas`）。
 生息する地域は海辺とし、出現する行き先・マス・敵の組み合わせ・Lvは未決である（[ステージの定義](../stages/README.md)）。
 
 ## 分類固有のデータ
@@ -73,7 +69,6 @@ HPと物防を中の敵としては高くし、甲羅で長く耐える壁にし
 物攻は、はさみの重さに合わせて中くらいにした。魔法の技を持たないため、属攻は使わない。
 甲羅は魔法もいくらか防ぐが、物理ほどではないため、属防は物防より低くした。
 横歩きで動きは遅いため、速度は低めにした。
-出現するLvが未決のため、Lv100の行だけを書く。各Lvの値は、Lv100の値に成長率を掛けて出す（[レベルとステータス](../../features/progression.md#レベルとステータス)）。
 すべて仮の値である。
 技の括弧内の値は、Lv100で防御で減らす前の威力である。物理の技は受ける味方の物防で、魔法の技は属防で減る。
 
@@ -154,31 +149,31 @@ HPと物防を中の敵としては高くし、甲羅で長く耐える壁にし
 | 用途・構図・視点・ポーズ・背景 | 戦闘の1枚絵。やや斜めの左向きで全身を描き、背景は透明 |
 | 解像度・透過・ファイル形式・差分規格 | 96×96、32色＋透明、インデックスカラーの `.aseprite`（[ドット絵の制作規格](../../art/direction.md#ドット絵の制作規格)） |
 | 外見の指示文（この敵の部分） | 「赤い甲羅の大きなカニ。やや斜めの左向きで、横に広い甲羅を低く構え、左右の大きなはさみを高く振り上げる。はさみの内側の縁はぎざぎざ。細い柄の先に丸い目が2本。甲羅・はさみ・脚に白いフジツボが群がり、緑の海藻が垂れる。腹と脚の先は象牙色」 |
-| 英語の短い説明（PixelLab用） | `big red crab raising two large serrated claws, white barnacles and green seaweed covering its shell and legs, eyes on stalks, three-quarter view facing left` |
-| 変更しない特徴・今回だけ変える特徴 | 変えない特徴は「小型ドット絵でも残す特徴」とする。行動順のコマの切り出し位置は、戦闘で使うときに決める |
+| 英語の短い説明 | `big red crab raising two large serrated claws, white barnacles and green seaweed covering its shell and legs, eyes on stalks, three-quarter view facing left` |
+| 変更しない特徴・今回だけ変える特徴 | 変えない特徴は「小型ドット絵でも残す特徴」とする |
 | 実際に使った指示文 | `output/enemies/40-oogani/request.md`（Git対象外）。この敵の部分は「磯に住む大きなカニ。甲羅にフジツボと海藻がつき、大きなはさみを振り上げる。」、配色は「赤い甲羅、白いフジツボ、緑の海藻」、必ず残す特徴は「大きな赤いはさみ。甲羅のフジツボ。突き出た目。」だった |
 | 入力にした文書のID・Gitコミット等の版 | なし（この定義を作る前の生成。設計値は `output/enemies/spec.json`） |
 | 参照画像のパス・出所・利用条件 | 画風見本として、既存の[森の守り手](enemy-forest-guardian.md)の絵（`output/enemies/style-ref.png`、Git対象外）を添付し、タッチだけを参考にさせた |
 | 使用ツール・モデル・再現用設定 | Codex CLI（gpt-6.1-sol）の組み込みの画像生成（画像生成のモデルは既定） |
 | 出力画像のパス・生成日・案のID | 2026-10-19生成の `output/enemies/40-oogani/enemy.png`（1254×1254、Git対象外）。背景を抜いて切り出し、96×96へ縮小して32色へ減色し、インデックスカラーの `.aseprite` にした |
-| 採用・候補・不採用と理由 | ライブラリと展示室で表示する下書き（候補）。戦闘ではまだ使わない |
+| 採用・候補・不採用と理由 | 冒険の戦闘・ライブラリ・展示室で表示する下書き（候補） |
 | 採用画像と文章の差・反映方法 | 指示は「甲羅にフジツボと海藻」だったが、採用画像では、はさみと脚にもフジツボと海藻が多く付く。文章を採用画像に合わせた |
-| Unityアセットのパス・GUID・利用画面 | `client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/BarnacleCrab.aseprite`。ライブラリ、展示室 |
+| Unityアセットのパス・GUID・利用画面 | `client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/BarnacleCrab.aseprite`。冒険の戦闘、ライブラリ、展示室 |
 
 ## 未決事項
 
 | 項目 | 決める内容・先に必要な判断 |
 |---|---|
 | 出現する場所 | 行き先・マス・敵の組み合わせ・Lv。行き先が決まったら、その行き先のLvの行をステータスの表に足す |
-| 数値 | ステータス、行動の割合と回数、激化の条件と倍率は仮。[戦闘の未決事項](../../features/combat.md#未決事項)の数値が決まったら見直す |
-| 速度・会心・幸運 | 速度は、味方の合計と比べる方法（[ターン順](../../features/combat.md#ターン順)）が決まったら尺度を合わせ直す。会心と幸運は、使い道（[候補](../../features/party.md#ステータスの項目)）が決まったら見直す |
+| 数値 | ステータス、行動の割合と回数、激化の条件と倍率は仮。[戦闘の未決事項](../../features/combat/implementation.md#未決事項)の数値が決まったら見直す |
+| 速度・会心・幸運 | 速度は、味方の合計と比べる方法（[ターン順](../../features/combat/rules.md#ターン順)）が決まったら尺度を合わせ直す。会心と幸運は、使い道（[候補](../../features/party.md#ステータスの項目)）が決まったら見直す |
 | ブロックへの2倍のダメージ | [大ばさみ砕き](../enemy-skills/enemy-skill-barnacle-crab-crusher.md)の未決事項 |
 | 行動順のコマ | 戦闘の1枚絵から行動順のコマ（24×24）を切り出す位置 |
-| 実装 | 冒険の戦闘では、ステータスと技1つ（大ばさみ砕き）だけを使う。ほかの技と行動パターンは未実装。実装するときは[敵の挙動デバッグルーム](../../features/screens/debug-rooms.md#敵の挙動デバッグルーム)の行動も増やす |
 
 ## 変更と判断の記録
 
 | 日付 | 変更・判断 | 理由・根拠 | 影響するID・仕様 |
 |---|---|---|---|
 | 2026-10-19 | 定義を作り、生息する地域・ステータス・技5つ・行動パターン・演出・外見・性格を候補として書いた。ステータスと弱点は試作の設計値をそのまま使った | ユーザーの依頼（敵50体を試作し、文書カタログ・クライアント・サーバーにそろえる） | [敵の行動の仮設定](../../features/combat-enemy-behavior.md)、[レベルとステータス](../../features/progression.md#レベルとステータス) |
-| 2026-10-20 | 港町ポルトリアの戦闘に出るようにし、Lv100のステータスと技「大ばさみ砕き」を戦闘で使うようにした | ユーザーの依頼（行き先を増やし、行き先ごとの敵を増やす） | [行き先と敵](../../features/stage-progression.md#行き先と敵) |
+| 2026-10-20 | 港町ポルトリアの戦闘に出るようにし、Lv100のステータスと技「大ばさみ砕き」を戦闘で使うようにした | ユーザーの依頼（行き先を増やし、行き先ごとの敵を増やす） | [行き先と敵](../../features/stage-progression/destinations.md#行き先と敵) |
+| 2026-11-02 | スキルとdocの整理で、今のコードに合わせて、技・行動パターン・出る行き先を未実装・未配置とした記述を直した。絵を戦闘ではまだ使わないとした記述を直し、未決だけの出現する場所の表と、README と同じ成長率の説明を外した。行動順のコマの切り出しを、自動で切り出す今の作り（BattleEnemyLooksAssets.cs）に合わせた | 根拠：53体すべてが CombatEnemyStats・CombatEnemyBehaviors で動き、AdventureCatalog の行き先に出る。BattleEnemyLooksAssets が全種の絵を戦闘に使う | [行き先と敵](../../features/stage-progression/destinations.md#行き先と敵)、[敵の行動の仮設定](../../features/combat-enemy-behavior.md) |

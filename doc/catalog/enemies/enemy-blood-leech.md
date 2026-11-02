@@ -2,7 +2,7 @@
 id: enemy-blood-leech
 type: visual-entity
 status: 候補
-updated: 2026-10-21
+updated: 2026-11-02
 name: 吸血大ヒル
 category: enemies
 silhouette: S字にくねる太い筒の体。左上に丸く開いた口を向け、右下の尾の先が上へ反る
@@ -21,7 +21,9 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/BloodLeech.asep
 血を吸って自分を治し、噛み傷で味方の回復を減らして、長い戦闘をしぶとく生き延びる。
 この文書は、ステータス、使う技と行動パターン、外見と性格の設定を持つ。
 技の効果と演出は[敵の技の定義](../enemy-skills/README.md)に置く。
-2026-10-19の時点で、画像と敵の種類・弱点だけを実装しており、HP・技・行動は未実装である。
+2026-10-20から、しじまの沼（`hush-mire`、Lv22）の小さな敵として、冒険の戦闘に出る（[行き先と敵](../../features/stage-progression/destinations.md#行き先と敵)）。
+戦闘では、下のLv100のステータスに出るLvの成長率を掛けて使う（[CombatEnemyStats](../../../client/Assets/Baryonyx/Features/Combat/Runtime/CombatEnemyStats.cs)）。
+技と行動パターンは、2026-10-22から [CombatEnemyBehaviors](../../../client/Assets/Baryonyx/Features/Combat/Runtime/CombatEnemyBehaviors.cs) で動く。
 
 ## 識別情報と根拠
 
@@ -31,8 +33,8 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/BloodLeech.asep
 | 対象の役割・説明 | 雑魚（小）。吸い取りで自分を治し、噛み傷で味方の回復を半分にする。沼のカエル王と骨背の大ワニに呼ばれて現れる |
 | 元となる対象・亜種・衣装差分のID | なし |
 | 参照する仕様・関連する個別ID | [戦闘システム](../../features/combat.md)、[沼のカエル王](enemy-frog-king.md)、[骨背の大ワニ](enemy-bone-croc.md) |
-| 必要な画像用途 | 戦闘の1枚絵（64×64）。行動順のコマの切り出し位置は未決 |
-| ゲーム内の実装・アセット | 画像 `BloodLeech.aseprite`、敵の種類と弱点 `CombatEnemies.cs`（`client/Assets/Baryonyx/Features/Combat/Runtime/`）、サーバーの敵ID `server/src/features/combat/catalog.ts` の `ENEMY_IDS`。HP・技・行動は未実装 |
+| 必要な画像用途 | 戦闘の1枚絵（64×64）。行動順のコマ（24×24）は、描かれた部分の上端から自動で切り出す（仮。`BattleEnemyLooksAssets.cs`） |
+| ゲーム内の実装・アセット | 画像 `BloodLeech.aseprite`、敵の種類と弱点 `CombatEnemies.cs`（`client/Assets/Baryonyx/Features/Combat/Runtime/`）、サーバーの敵ID `server/src/features/combat/catalog.ts` の `ENEMY_IDS`、ステータス `CombatEnemyStats.cs`、技と行動パターン `CombatEnemyBehaviors.Depths.cs`、出る行き先 `AdventureCatalog.cs` |
 
 ## 確定した設定
 
@@ -40,17 +42,10 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/BloodLeech.asep
 
 ## 出現する場所
 
-| 行き先 | マス | 敵の組み合わせ | Lv |
-|---|---|---|---|
-| 未決（生息する地域は沼） | 未決 | 未決 | 未決 |
-
-まだどの行き先にも出ない。
+今の出る行き先とLv（仮）は[行き先と敵](../../features/stage-progression/destinations.md#行き先と敵)にある（割り振りの正本は [AdventureCatalog](../../../client/Assets/Baryonyx/Features/Adventure/Runtime/AdventureCatalog.cs) の `Areas`）。
 生息する地域は沼とし、出現する行き先・マス・敵の組み合わせ・Lvは未決とする。
 沼のカエル王と骨背の大ワニの[仲間を呼ぶ](../enemy-skills/enemy-skill-call-ally.md)では、呼んだ敵と同じLvで現れる。
 行き先の個別定義（`stage-`）はまだない（[ステージの定義](../stages/README.md)）。
-2026-10-20から、しじまの沼（`hush-mire`、Lv22）の小さな敵として、冒険の戦闘に出る（[行き先と敵](../../features/stage-progression.md#行き先と敵)）。
-戦闘では、下のLv100のステータスに出るLvの成長率を掛けて使い、技は「ふさがらない噛み傷」だけを物攻で物理として（味方の物防で受ける）使う（[CombatEnemyStats](../../../client/Assets/Baryonyx/Features/Combat/Runtime/CombatEnemyStats.cs)）。
-ほかの技と行動パターンは未実装である。
 
 ## 分類固有のデータ
 
@@ -76,7 +71,6 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/BloodLeech.asep
 ぬめる体は打撃を少し滑らせるので、物防を属防より少し高くした。
 属攻は魔法に使わず、回復の量に関わらない（吸い取りの回復は与えたダメージで決まる）ため、低めにした。
 速度は小さな敵の並みで、鬼火よりずっと遅い。
-出現するLvは未決のため、各Lvの値はLv100の値に成長率を掛けて出す（[レベルとステータス](../../features/progression.md#レベルとステータス)）。
 すべて仮の値である。
 技の括弧内の値はLv100で防御で減らす前の威力で、受ける味方の物防で減る。
 
@@ -157,30 +151,30 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/BloodLeech.asep
 | 用途・構図・視点・ポーズ・背景 | 戦闘の1枚絵。口を左へ向けた姿で全身を描き、背景は透明 |
 | 解像度・透過・ファイル形式・差分規格 | 64×64、32色＋透明、インデックスカラーの `.aseprite`（[ドット絵の制作規格](../../art/direction.md#ドット絵の制作規格)） |
 | 外見の指示文（この敵の部分） | 「沼に潜む大きなヒル。体をくねらせ、丸い口の歯を見せる。配色：赤黒い体、橙色の縞、桃色の口。必ず残す特徴：くねる赤黒い体。丸い口の輪になった歯」 |
-| 英語の短い説明（PixelLab用） | `giant dark red leech with orange stripes, curving S-shaped body, round open mouth ringed with teeth, facing left` |
-| 変更しない特徴・今回だけ変える特徴 | 変えない特徴は「小型ドット絵でも残す特徴」とする。行動順のコマの切り出し位置は未決 |
+| 英語の短い説明 | `giant dark red leech with orange stripes, curving S-shaped body, round open mouth ringed with teeth, facing left` |
+| 変更しない特徴・今回だけ変える特徴 | 変えない特徴は「小型ドット絵でも残す特徴」とする |
 | 実際に使った指示文 | `output/enemies/23-kyuuketsu-hiru/request.md`（Git対象外） |
 | 入力にした文書のID・Gitコミット等の版 | なし（この定義を作る前の生成） |
 | 参照画像のパス・出所・利用条件 | 画風見本として、既存の森の守り手の絵を添付した |
 | 使用ツール・モデル・再現用設定 | Codex CLI（gpt-6.1-sol）。画像生成のモデルは既定 |
 | 出力画像のパス・生成日・案のID | `output/enemies/23-kyuuketsu-hiru/enemy.png`（1254×1254、2026-10-19生成、Git対象外）。背景を抜いて切り出し、64×64に縮小して32色へ減色し、インデックスカラーの `.aseprite` にした |
-| 採用・候補・不採用と理由 | ライブラリと展示室で表示する下書き（候補） |
+| 採用・候補・不採用と理由 | 冒険の戦闘・ライブラリ・展示室で表示する下書き（候補） |
 | 採用画像と文章の差・反映方法 | 指示どおりの絵になった。体の白っぽい照り返しと、口の奥の暗い穴を文章に加えた |
-| Unityアセットのパス・GUID・利用画面 | `client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/BloodLeech.aseprite`。[ライブラリ](../../features/library.md)の敵の記録、[展示室](../../features/showcase.md) |
+| Unityアセットのパス・GUID・利用画面 | `client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/BloodLeech.aseprite`。冒険の戦闘、[ライブラリ](../../features/library.md)の敵の記録、[展示室](../../features/showcase.md) |
 
 ## 未決事項
 
 | 項目 | 決める内容・先に必要な判断 |
 |---|---|
-| 出現する場所とLv | 沼の行き先を作るときに、マス・敵の組み合わせ・Lvを決める |
-| 数値 | ステータス、行動の割合、激化の倍率は仮。[戦闘の未決事項](../../features/combat.md#未決事項)の数値が決まったら見直す |
-| 速度・会心・幸運 | 速度は、味方の合計と比べる方法（[ターン順](../../features/combat.md#ターン順)）が決まったら尺度を合わせ直す。会心と幸運は、使い道（[候補](../../features/party.md#ステータスの項目)）が決まったら見直す |
+| 出現する場所とLv | 出現する行き先・マス・敵の組み合わせ・Lv |
+| 数値 | ステータス、行動の割合、激化の倍率は仮。[戦闘の未決事項](../../features/combat/implementation.md#未決事項)の数値が決まったら見直す |
+| 速度・会心・幸運 | 速度は、味方の合計と比べる方法（[ターン順](../../features/combat/rules.md#ターン順)）が決まったら尺度を合わせ直す。会心と幸運は、使い道（[候補](../../features/party.md#ステータスの項目)）が決まったら見直す |
 | 傷口 | 新しい状態の決まり（[ふさがらない噛み傷](../enemy-skills/enemy-skill-blood-leech-open-wound.md)） |
-| 実装 | 冒険の戦闘では、ステータスと技1つ（ふさがらない噛み傷）だけを使う。ほかの技と行動パターンは未実装。実装するときは[敵の挙動デバッグルーム](../../features/screens/debug-rooms.md#敵の挙動デバッグルーム)の行動も増やす |
 
 ## 変更と判断の記録
 
 | 日付 | 変更・判断 | 理由・根拠 | 影響するID・仕様 |
 |---|---|---|---|
 | 2026-10-19 | 画像を生成して取り込み、定義を作った。ステータス・技3つ・行動パターン・演出・外見・性格を候補として書いた | ユーザーの依頼（敵50体を試作し、文書カタログ・クライアント・サーバーにそろえる） | [敵の行動の仮設定](../../features/combat-enemy-behavior.md)、[ステータスの項目](../../features/party.md#ステータスの項目)、[レベルとステータス](../../features/progression.md#レベルとステータス) |
-| 2026-10-20 | しじまの沼の戦闘に出るようにし、Lv100のステータスと技「ふさがらない噛み傷」を戦闘で使うようにした | ユーザーの依頼（行き先を増やし、行き先ごとの敵を増やす） | [行き先と敵](../../features/stage-progression.md#行き先と敵) |
+| 2026-10-20 | しじまの沼の戦闘に出るようにし、Lv100のステータスと技「ふさがらない噛み傷」を戦闘で使うようにした | ユーザーの依頼（行き先を増やし、行き先ごとの敵を増やす） | [行き先と敵](../../features/stage-progression/destinations.md#行き先と敵) |
+| 2026-11-02 | スキルとdocの整理で、今のコードに合わせて、技・行動パターン・出る行き先を未実装・未配置とした記述を直した。2か所にあった出る行き先の説明を冒頭の1つにし、未決だけの出現する場所の表と、README と同じ成長率の説明を外した。沼の行き先がまだないとした未決を直し、絵の利用画面に冒険の戦闘を足した。行動順のコマの切り出しを、自動で切り出す今の作り（BattleEnemyLooksAssets.cs）に合わせた | 根拠：53体すべてが CombatEnemyStats・CombatEnemyBehaviors で動き、AdventureCatalog の行き先に出る。BattleEnemyLooksAssets が全種の絵を戦闘に使う | [行き先と敵](../../features/stage-progression/destinations.md#行き先と敵)、[敵の行動の仮設定](../../features/combat-enemy-behavior.md) |

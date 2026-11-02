@@ -2,7 +2,7 @@
 id: enemy-skill-bone-croc-blood-scent
 type: definition
 status: 候補
-updated: 2026-10-19
+updated: 2026-11-02
 name: 血の匂い
 category: enemy-skills
 ---
@@ -19,8 +19,8 @@ category: enemy-skills
 |---|---|
 | 定義の根拠・決定日・参照元 | 2026-10-19、ユーザーの依頼（敵50体を試作し、文書カタログ・クライアント・サーバーにそろえる）で、[骨背の大ワニ](../enemies/enemy-bone-croc.md)の技として作った |
 | 役割・説明 | 激化の合図。出血した味方への攻撃を強め、行動パターンを後半へ切り替える |
-| 関連する仕様・個別ID | 使う敵：[骨背の大ワニ](../enemies/enemy-bone-croc.md)。[敵の行動の仮設定](../../features/combat-enemy-behavior.md)、[防御と敵の激化](../../features/combat.md#防御と敵の激化) |
-| 実装・ゲームマスタの場所 | 未実装 |
+| 関連する仕様・個別ID | 使う敵：[骨背の大ワニ](../enemies/enemy-bone-croc.md)。[敵の行動の仮設定](../../features/combat-enemy-behavior.md)、[防御と敵の激化](../../features/combat/rules.md#防御と敵の激化) |
+| 実装・ゲームマスタの場所 | [CombatEnemyBehaviors](../../../client/Assets/Baryonyx/Features/Combat/Runtime/CombatEnemyBehaviors.cs) の、使う敵の `Moves`。攻撃しない技のため、演出は技の名前と「激化！」の文字だけ（[BattleInspectView.EnemyMoves](../../../client/Assets/Baryonyx/Features/Combat/Presentation/BattleInspectView.EnemyMoves.cs) の `Carry`） |
 
 ## 確定した設定
 
@@ -32,8 +32,8 @@ category: enemy-skills
 |---|---|---|---|
 | 区分 | 固有技（[骨背の大ワニ](../enemies/enemy-bone-croc.md)） | [共通技と固有技](README.md#共通技と固有技) | 候補 |
 | 種類・対象 | 強化・自分 | [記入する項目](README.md#記入する項目) | 候補 |
-| 物理・魔法と属性 | ダメージなし | 味方は物理の技を物防で、魔法の技を属防で受ける（[使い道の候補](../../features/party.md#ステータスの項目)） | 候補 |
-| 効果 | 戦闘の終わりまで、単体攻撃は出血している味方を優先して狙い、出血している味方へ与えるダメージを1.5倍にする。使った敵の行動パターンを後半へ切り替える | 使う敵のステータスの割合（[威力の決め方](../../features/combat.md#威力の決め方)）。状態は[カードの状態の仮設定](../../features/combat.md#カードの状態の仮設定)の名前 | 仮 |
+| 物理・魔法と属性 | ダメージなし | [記入する項目](README.md#記入する項目) | 候補 |
+| 効果 | 戦闘の終わりまで、単体攻撃は出血している味方を優先して狙い、出血している味方へ与えるダメージを1.5倍にする。使った敵の行動パターンを後半へ切り替える | [記入する項目](README.md#記入する項目) | 仮 |
 | 予告 | 強化 | [記入する項目](README.md#記入する項目) | 候補 |
 | 使う敵 | [骨背の大ワニ](../enemies/enemy-bone-croc.md) | 各敵の定義の「技」の表 | 候補 |
 
@@ -56,12 +56,13 @@ category: enemy-skills
 
 | 項目 | 決める内容・先に必要な判断 |
 |---|---|
-| 数値 | 倍率は仮。[戦闘の未決事項](../../features/combat.md#未決事項)の数値が決まったら見直す |
+| 数値 | 倍率は仮。[戦闘の未決事項](../../features/combat/implementation.md#未決事項)の数値が決まったら見直す |
 | 狙いの優先 | 出血している味方が複数いるときの選び方（HPの割合が低い順か、ランダムか） |
-| 実装 | 未実装。実装するときは[敵の挙動デバッグルーム](../../features/screens/debug-rooms.md#敵の挙動デバッグルーム)の行動にも加える |
+| 実装 | 後半へ切り替える技として戦闘で使う。出血がないため、出血した味方を狙って強める効果は入れていない（[敵の行動の仮設定](../../features/combat-enemy-behavior.md)）。写すときは[敵の挙動デバッグルーム](../../features/screens/debug-rooms.md#敵の挙動デバッグルーム)の行動にも加える |
 
 ## 変更と判断の記録
 
 | 日付 | 変更・判断 | 理由・根拠 | 影響するID・仕様 |
 |---|---|---|---|
 | 2026-10-19 | 固有技として定義を作った | ユーザーの依頼 | 使う敵：[骨背の大ワニ](../enemies/enemy-bone-croc.md) |
+| 2026-11-02 | スキルとdocの整理で、今のコードに合わせて「実装・ゲームマスタの場所」と「実装」を直した | 根拠：CombatEnemyBehaviors の `Moves` にこの技があり、戦闘で使う。攻撃しない技は `EnemyBlowOf` の形を使わない | [敵の行動の仮設定](../../features/combat-enemy-behavior.md) |

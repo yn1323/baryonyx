@@ -2,7 +2,7 @@
 id: rule-sound
 type: reference
 status: 一部確定
-updated: 2026-10-26
+updated: 2026-11-02
 ---
 
 # 効果音とBGM
@@ -45,6 +45,7 @@ updated: 2026-10-26
 | [UiSounds](../../client/Assets/Baryonyx/Shared/Audio/UI/UiSounds.cs) | ゲームの開始時に1つ置き、シーンをまたいで残す。画面に現れた `Button` と `Toggle` に `UiClickSound` を付けるため、画面ごとの変更は要らない |
 | [GlassCard](../../client/Assets/Baryonyx/Shared/UI/GlassCard/GlassCard.cs) | 長押しのあとを押したことにしないため、自分で鳴らす |
 | [UiSoundBank](../../client/Assets/Baryonyx/Shared/Audio/UI/UiSoundBank.cs) | 音と音量を持つ。ビルドの間だけ Preloaded Assets に入れ（`UiSoundBuildStep`）、ゲームの開始時に読み込まれるようにする。Editorでは置き場所から読む |
+| [UiSoundAssets](../../client/Assets/Baryonyx/Shared/Audio/UI/Editor/UiSoundAssets.cs) | `Baryonyx > Audio > Create UI Sound Assets` で、UIの音の取り込み設定（[Unityの取り込み設定](#unityの取り込み設定)の1秒前後までの効果音）と `UiSoundBank.asset` を作り直す |
 
 `Button` でもすりガラスのカードでもない押す処理（戦闘の手札、戦闘の画面のタップ）は、今は鳴らない。
 画面ごとの音とご褒美の音は、まだ決めていない。

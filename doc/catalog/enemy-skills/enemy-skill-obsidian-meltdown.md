@@ -2,7 +2,7 @@
 id: enemy-skill-obsidian-meltdown
 type: definition
 status: 候補
-updated: 2026-10-19
+updated: 2026-11-02
 name: 溶岩のあふれ
 category: enemy-skills
 ---
@@ -20,7 +20,7 @@ category: enemy-skills
 | 定義の根拠・決定日・参照元 | 2026-10-19、ユーザーの依頼（敵50体を試作し、文書カタログ・クライアント・サーバーにそろえる）で、[黒曜石の巨像](../enemies/enemy-obsidian-colossus.md)の技として作った |
 | 役割・説明 | 激化の合図。自分の防御ダウンと、攻撃へのやけどの付与、行動パターンの切り替え |
 | 関連する仕様・個別ID | 使う敵：[黒曜石の巨像](../enemies/enemy-obsidian-colossus.md)。[敵の行動の仮設定](../../features/combat-enemy-behavior.md) |
-| 実装・ゲームマスタの場所 | 未実装 |
+| 実装・ゲームマスタの場所 | 未実装（[CombatEnemyBehaviors](../../../client/Assets/Baryonyx/Features/Combat/Runtime/CombatEnemyBehaviors.cs) に名前だけあり、戦闘では選ばれない） |
 
 ## 確定した設定
 
@@ -32,8 +32,8 @@ category: enemy-skills
 |---|---|---|---|
 | 区分 | 固有技（[黒曜石の巨像](../enemies/enemy-obsidian-colossus.md)） | [共通技と固有技](README.md#共通技と固有技) | 候補 |
 | 種類・対象 | 強化・自分（自分に弱体を兼ねる） | [記入する項目](README.md#記入する項目) | 候補 |
-| 物理・魔法と属性 | ダメージなし | 味方は物理の技を物防で、魔法の技を属防で受ける（[使い道の候補](../../features/party.md#ステータスの項目)） | 候補 |
-| 効果 | 戦闘の終わりまで、自分に防御ダウン（受けるダメージ+25%）が付き、自分の攻撃の技すべてにやけど1ターンが加わる。使った敵の行動パターンを後半へ切り替える | 使う敵のステータスの割合（[威力の決め方](../../features/combat.md#威力の決め方)）。状態は[カードの状態の仮設定](../../features/combat.md#カードの状態の仮設定)の名前 | 仮 |
+| 物理・魔法と属性 | ダメージなし | [記入する項目](README.md#記入する項目) | 候補 |
+| 効果 | 戦闘の終わりまで、自分に防御ダウン（受けるダメージ+25%）が付き、自分の攻撃の技すべてにやけど1ターンが加わる。使った敵の行動パターンを後半へ切り替える | [記入する項目](README.md#記入する項目) | 仮 |
 | 予告 | 強化・弱体 | [記入する項目](README.md#記入する項目) | 候補 |
 | 使う敵 | [黒曜石の巨像](../enemies/enemy-obsidian-colossus.md) | 各敵の定義の「技」の表 | 候補 |
 
@@ -55,7 +55,7 @@ category: enemy-skills
 
 | 項目 | 決める内容・先に必要な判断 |
 |---|---|
-| 数値 | 割合と持続ターンは仮。[戦闘の未決事項](../../features/combat.md#未決事項)の数値が決まったら見直す |
+| 数値 | 割合と持続ターンは仮。[戦闘の未決事項](../../features/combat/implementation.md#未決事項)の数値が決まったら見直す |
 | 敵に付く防御ダウンと、攻撃に状態を加える強化 | 新しい仕組み。防御ダウンはカードと同じ効果にする案。攻撃の技に状態を加える強化は、カードの炎の加護に近い（[敵の行動の仮設定](../../features/combat-enemy-behavior.md)に加える） |
 | 実装 | 未実装。実装するときは[敵の挙動デバッグルーム](../../features/screens/debug-rooms.md#敵の挙動デバッグルーム)の行動にも加える |
 
@@ -64,3 +64,4 @@ category: enemy-skills
 | 日付 | 変更・判断 | 理由・根拠 | 影響するID・仕様 |
 |---|---|---|---|
 | 2026-10-19 | 固有技として定義を作った | ユーザーの依頼 | 使う敵：[黒曜石の巨像](../enemies/enemy-obsidian-colossus.md) |
+| 2026-11-02 | スキルとdocの整理で、今のコードに合わせて「実装・ゲームマスタの場所」を直した | 根拠：CombatEnemyBehaviors で `Other`（戦闘にない効果）として名前だけを持つ | [敵の行動の仮設定](../../features/combat-enemy-behavior.md) |

@@ -2,7 +2,7 @@
 id: rule-backend-design
 type: reference
 status: 運用中
-updated: 2026-10-25
+updated: 2026-11-02
 ---
 
 # バックエンドの開発環境
@@ -54,12 +54,14 @@ server/
 - HTTPのパスとhandlerは `routes.ts` にまとめ、複雑になった業務処理・DB操作を同じ機能内のファイルへ分ける。全機能共通の `controllers/`・`services/`・`repositories/` へ種類別に分散させない。
 - repositoryが大きくなったら、操作のまとまりごとに同じ機能内のファイルへ分け、`repository.ts` は組み立てだけにする（例：[adventure](../../server/src/features/adventure/repository.ts) の `run.ts`・`rooms.ts`・`purchases.ts`、読み込みは `state.ts`）。
 - `shared/` には複数機能で実際に使う共通の認証・通信などを置く。個別機能の業務判断やテスト専用の補助は含めない。
-- `shared/` にはDBの共通処理（[db.ts](../../server/src/shared/db.ts)）、HTTPの共通処理とエラーのステータス（[http.ts](../../server/src/shared/http.ts)）、品質（[quality.ts](../../server/src/shared/quality.ts)）、重み付きの抽選（[random.ts](../../server/src/shared/random.ts)）を置く。同じ処理を機能ごとに書かない。
+- `shared/` にはDBの共通処理（[db.ts](../../server/src/shared/db.ts)）、HTTPの共通処理とエラーのステータス（[http.ts](../../server/src/shared/http.ts)）、品質（[quality.ts](../../server/src/shared/quality.ts)）、重み付きの抽選（[random.ts](../../server/src/shared/random.ts)）、処理時間の計測（[server-timing.ts](../../server/src/shared/server-timing.ts)）を置く。同じ処理を機能ごとに書かない。
 - 複数機能の表をまたぐ業務処理は、それを扱う機能のフォルダーに置く。持ち物の分類・倍率の上限・付与の文は [inventory/](../../server/src/features/inventory/) に置く。ほかの機能の定数や部品を、その機能の `repository.ts` から読み込まない。
 - 入出力のスキーマは所有する機能に置く。API資料やクライアントコードを生成する場合は生成元を一つにし、生成結果を手編集しない。
-- マイグレーションは `migrations/` に集約する。機能をまたぐ適用順序と履歴を維持するため、機能別には分散させない。適用済みSQLへの変更は新しいマイグレーションで行う。
+- 応答の数値の項目に null を入れない。UnityのJsonUtilityが数値の null を読めないため、倍率を持たない物（アイテム・強化素材）は項目ごと省く（[quality.ts](../../server/src/shared/quality.ts) の `qualityFields`）。
+- マイグレーションは `migrations/` に集約する。機能をまたぐ適用順序と履歴を維持するため、機能別には分散させない。
 - 開発・公開処理は `scripts/`、CIの起動条件と実行順序はルートの `.github/workflows/` で管理する。設定は対応するツールの読み込み位置に置く。
 - `dist/`、`.wrangler/`、依存パッケージ、生成型、テスト結果はソースと分け、生成手順とGit除外設定に従う。
+- 入れ子の地図のマスの値段とつながり（[squares.ts](../../server/src/features/world-atlas/squares.ts)）は、クライアントの地図の配置から [world-atlas-catalog.mjs](../../server/scripts/world-atlas-catalog.mjs) で生成する。手で直さず、配置を変えたら `node scripts/world-atlas-catalog.mjs` で書き直す（`pnpm test:ci` が食い違いを見つける。[マスを開くルーン](../features/world-atlas/maps.md#マスを開くルーン)）。
 
 ### テストの配置
 
@@ -85,8 +87,9 @@ pnpm dev
 
 `pnpm db:migrate:local` の代わりに `pnpm db:reset` を実行すると、開発用のプレイヤーも入る（[開発用データ（seed）](#開発用データseed)）。
 
-CIの指定版はNode.js `24.21.0`、pnpm `12.3.4` である。
+CIも同じ `.node-version` と `packageManager` の版を使う（[Server CI](../../.github/workflows/server-ci.yml) の `node-version-file`・`package_json_file`）。
 インストールにはnpmレジストリへの接続が必要だが、ローカル開発と結合テストにCloudflareのアカウントやSecretsは不要である。
+Googleログインを試すときは、[.env.example](../../server/.env.example) を `server/.dev.vars` へ写して `GOOGLE_CLIENT_ID` を書く（[利用に必要な設定](../features/health-data.md#利用に必要な設定)）。ゲストだけなら要らない。
 [pnpm-workspace.yaml](../../server/pnpm-workspace.yaml) でesbuildとworkerdのインストール処理を許可している。
 lockfileはpnpmで更新し、手で編集しない。
 
@@ -118,8 +121,8 @@ Local以外のDBには接続しない。
 
 | ID | プレイヤー | 入っているデータ |
 |---|---|---|
-| `veteran` | 遊び込んだプレイヤー | 9人全員が高レベル、装備16個（[品質](../features/inventory.md#品質)S〜Cがそろう倍率）、ルーン50,000、ミストラ遺跡の最深到達と踏破の記録、街道はポルタから西のブリーザと北のピーノまでクリアしてピーノにいる、3種の敵の弱点をすべて開示済み、トーマ・ルカ・アリアの固有スキルの段階をいくつも取得済み（トーマの1つ目は品質強化で品質A）、強化素材を5種とも所持 |
-| `adventurer` | 冒険の途中のプレイヤー | 初期と同じ4人、ルーン1,200、ミストラ遺跡の入口から冒険中。街道はポルタの隣のマスを1つクリアしてそこにいる。苔スライムの雷の弱点だけ開示済み、トーマの1つ目の固有スキルが1段目へ覚醒済み、白い磨き石2個 |
+| `veteran` | 遊び込んだプレイヤー | 9人全員が高レベル、装備19個（武器・防具16、アクセサリー3。[品質](../features/inventory.md#品質)S〜Cがそろう倍率）、ルーン50,000、ミストラ遺跡の最深到達と踏破の記録、街道はポルタから西のブリーザと北のピーノまでクリアしてピーノにいる、3種の敵の弱点をすべて開示済み、トーマ・ルカ・アリアの固有スキルの段階をいくつも取得済み（トーマの1つ目は品質強化で品質A）、強化素材（磨き石30個・覚醒の欠片2個）を所持、トーマ（6段）とアリア（2段・突破のしるし2つ）の限界突破、かけら3つ、入れ子の地図で開けたマス3つ |
+| `adventurer` | 冒険の途中のプレイヤー | 初期の編成と同じ4人、ルーン1,200、ミストラ遺跡の入口から冒険中。街道はポルタの隣のマスを1つクリアしてそこにいる。苔スライムの雷の弱点だけ開示済み、トーマの1つ目の固有スキルが1段目へ覚醒済み、磨き石2個 |
 | `newcomer` | 始めたばかりのプレイヤー | Lv1のトーマ1人だけ（パーティの空き枠3つ）、装備2個、ルーン150（Lv2までしか上げられない）、開示した弱点なし、街道はポルタだけ |
 
 プレイヤーの定義は [seed.ts](../../server/scripts/seed.ts)、実行は [db-reset.mjs](../../server/scripts/db-reset.mjs) にある。
@@ -150,6 +153,9 @@ WorkersのバージョンPreview URLを共有する方式ではなく、各PR用
 既存DBを再利用し、未適用のマイグレーションだけを追加する。
 PRを閉じてから再び開いた場合は、新しいDBで開始する。
 
+確かめ用のAPI（`/v1/debug/*`、[debug/routes.ts](../../server/src/features/debug/routes.ts)）は、Workerの変数 `DEBUG_TOOLS` が `on` のときだけ使え、ほかでは404を返す。
+Localは [wrangler.json](../../server/wrangler.json) の `vars` で `on`、公開先は [deploy.mjs](../../server/scripts/deploy.mjs) がProdだけ `off` にする（[デバッグルームの一覧](../features/screens/top-home.md#デバッグルームの一覧)）。
+
 ## Zodによる入力検証
 
 バリデーションライブラリには **Zod** を使用する。
@@ -158,9 +164,7 @@ HTTP要求のスキーマは所有する機能の `schema.ts` に置き、Hono�
 依存バージョンは [package.json](../../server/package.json) に固定する。
 
 健康データAPIの [入力スキーマ](../../server/src/features/health/schema.ts) は同期開始、取得元ID、歩数保存の要求を、アカウントの [入力スキーマ](../../server/src/features/accounts/schema.ts) はログイン要求を検証する。
-日別データの型・件数・数値範囲に加え、`refine()` で期間の連続性、タイムゾーンと日付境界、欠損と歩数の整合を確認する。
-単日では欠損と歩数、取得時刻の範囲、指定タイムゾーンの日付境界を検証し、週全体では同一タイムゾーン、区間の連続性、日付の重複を検証する。
-区間の連続性はUTC日時を数値へ変換して比較し、日時文字列の小数秒の表記差や夏時間による1日の長さの変化を受け入れる。
+機能ごとの検証の中身は、各機能の仕様に書く（例：[健康データの保存と再送](../features/health-data.md#保存と再送)）。
 現在時刻に依存するスキーマはリクエストごとに生成する。
 不正なJSONとスキーマ違反には、既存の `400 {"error":"invalid_request"}` を返す。
 Zodのエラー詳細や入力値はHTTP応答へ含めない。
@@ -236,8 +240,7 @@ APIは次の形で組み立てる。
 - **持ち物を足す**：スキル・装備・アイテム・強化素材を足す文は、[inventory/grants.ts](../../server/src/features/inventory/grants.ts) の `inventoryGrants` を使い、記録の書き込みと同じbatchに入れる。機能ごとに付与のSQLを書かない。
 - **ほかの機能の状態**：ほかの機能のrepositoryを呼んで状態を丸ごと読まない。読む文（`stateReads`・`todayStepsRows` など）を受け取り、自分のbatchに並べる。
 - **文の数**：D1は1つの文に渡せる値を100個までに制限している（[D1の上限](https://developers.cloudflare.com/d1/platform/limits/)）。条件付きで多くの行を入れるときは、[shared/db.ts](../../server/src/shared/db.ts) の `insertRowsWhen` で行を1つのJSONの値として渡し、1つの文にする。batchの文は1つずつ準備されるため、文の数も待ち時間に効く。WindowsのMiniflareでは1文あたり15〜45msかかり、テストの時間にそのまま出る。
-- **初期データ**：編成と装備の初期データはログインしたときに付与する（[認証とAPIの組み立て](#認証とapiの組み立て)）。読み込みのAPIで付与の確認をしない。
-- **セッション**：`requireSession` は機能のパス（`/party/*` など）に1つだけ付ける。確かめたセッションはWorkerのメモリに覚えるため、2回目の要求からはD1へ問い合わせない（[認証とAPIの組み立て](#認証とapiの組み立て)）。
+- **初期データとセッション**：編成と装備の初期データはログインしたときに付与し、読み込みのAPIで付与を確かめない。`requireSession` は機能のパス（`/party/*` など）に1つだけ付け、確かめたセッションはWorkerのメモリに覚えるため、2回目の要求からはD1へ問い合わせない（[認証とAPIの組み立て](#認証とapiの組み立て)）。
 - **確かめ方**：往復の回数は [read-round-trips.test.ts](../../server/tests/scenarios/read-round-trips.test.ts) で決めておく。APIを足す・変えるときは、応答の `Server-Timing` の `d1` の回数をテストで確かめる。
 
 ## マイグレーション
@@ -247,7 +250,7 @@ APIは次の形で組み立てる。
 SQLとスナップショットを一緒にGitへ追加し、生成結果の制約を確認する。
 未リリースの間は、既存データの移行と旧Workerとの互換性を考慮しない（[ルートのAGENTS.md](../../AGENTS.md#作業の基本)）。
 DBとコードが食い違ったら、DBを作り直す（Localは[`pnpm db:reset`](#開発用データseed)）。
-この扱いはリリース前に見直す。
+この扱いはリリース前に見直し、リリース後は旧Workerと互換性を保つSQLを用意する。
 
 未デプロイの段階でDrizzleを導入したため、初期状態は [0000_initial.sql](../../server/migrations/0000_initial.sql) に統合した。
 このSQLがユーザー、セッション、取得元、日別歩数の4テーブルを作成する。
@@ -264,9 +267,9 @@ SQLiteは列の制約を変更できないため表を作り直す。D1はトラ
 [0022_bond_tokens.sql](../../server/migrations/0022_bond_tokens.sql) は、キャラの絆に絆のしるしの数の列（`tokens`、段との合計は6まで）を持たせる（[キャラが被ったとき](../features/monetization.md#キャラが被ったとき)）。表を作り直すため、Drizzle Kitが生成した、元の表にない `tokens` を読む行を0に直し、`PRAGMA` は0002と同じく `defer_foreign_keys` に書き換えた。
 [0023_workshop_sales.sql](../../server/migrations/0023_workshop_sales.sql) は、商会の売却の記録（`workshop_sales`）を作る（[売る](../features/screens/shop.md#売る)）。
 [0024_remove_step_bonus.sql](../../server/migrations/0024_remove_step_bonus.sql) は、ACTボーナスをなくしたため（2026-10-24）、その3テーブルを消し、冒険の報酬から `bonus` の分類と、ボーナスだけが使った結果（`updated`・`discarded`）を外す。表を作り直すため、Drizzle Kitが生成したSQLのうち、外部キーの向きに合わせて枠の表を先に消す順に直し、`bonus` の行を移さず、結果を `added` にして写すよう手で直した。`PRAGMA` は0002と同じく `defer_foreign_keys` に書き換えた。
-[0025_world_map.sql](../../server/migrations/0025_world_map.sql) は、[街道の世界地図](../features/stage-progression.md#世界地図の形と試作2026-10-24)のクリアしたマス（`world_map_squares`）と今いるマス（`world_map_positions`）の2テーブルを作る。
+[0025_world_map.sql](../../server/migrations/0025_world_map.sql) は、[街道の世界地図](../features/stage-progression-world-map.md#世界地図の形と試作2026-10-24)のクリアしたマス（`world_map_squares`）と今いるマス（`world_map_positions`）の2テーブルを作る。
 [0026_skill_awakening.sql](../../server/migrations/0026_skill_awakening.sql) は、持っているスキルの1枚が覚醒した枝（`skill_cards.awakened_branch`、NULLか1・2）を足す（[カスタムスキルの覚醒](../features/skill-awakening.md)）。制約を足すため表を作り直すSQLになり、0022と同じく `PRAGMA` を `defer_foreign_keys` に書き換え、元の表にない列を読む部分を `NULL` に直した。
-[0030_world_atlas.sql](../../server/migrations/0030_world_atlas.sql) は、[入れ子の地図](../features/world-atlas.md#マスを開くルーン)でルーンを払って開けたマス（`world_atlas_squares`）を作る。行は払ったルーンの記録を兼ね、要求IDとマスのそれぞれに一意インデックスを持つ。
+[0030_world_atlas.sql](../../server/migrations/0030_world_atlas.sql) は、[入れ子の地図](../features/world-atlas/maps.md#マスを開くルーン)でルーンを払って開けたマス（`world_atlas_squares`）を作る。行は払ったルーンの記録を兼ね、要求IDとマスのそれぞれに一意インデックスを持つ。
 [0031_enhancement_combine.sql](../../server/migrations/0031_enhancement_combine.sql) は、強化の記録（`enhancement_records`）の種類に磨き石の合成（`combine`）を、分類に `material` を足す。磨き石を1種類にしたとき（2026-11-02）に合成のAPIを外したが、制約は変えずに残している（[商会の強化](../features/enhancement.md#実装との対応)）。制約を変えるため表を作り直すSQLになり、0026と同じく `PRAGMA` を `defer_foreign_keys` に書き換えた。
 
 ```sh
@@ -286,7 +289,6 @@ Drizzleの `meta/` は差分生成に使い、公開artifactにはSQLだけを�
 公開時はマイグレーションが成功してからWorkerを更新し、失敗時は公開を止める。
 DBの変更後にWorkerの公開が失敗した場合、DBの変更は残る。
 コードを古いコミットへ戻しても、DBの適用履歴やデータは巻き戻らない。
-未リリースの間は、旧Workerと互換性を保つSQLを用意せず、DBを作り直して合わせる。リリース後は、旧Workerと互換性を保つSQLを用意する。
 
 参考：[DrizzleとD1の接続](https://orm.drizzle.team/docs/sqlite/connect-cloudflare-d1)、[Drizzle KitのSQL生成](https://orm.drizzle.team/docs/drizzle-kit-generate)、[D1のマイグレーション](https://developers.cloudflare.com/d1/reference/migrations/)。
 
@@ -304,7 +306,7 @@ DBの変更後にWorkerの公開が失敗した場合、DBの変更は残る。
 | `pnpm db:reset` | ローカルD1を作り直し、開発用のプレイヤーを入れる（[開発用データ（seed）](#開発用データseed)） |
 | `pnpm test` | Workerをビルドし、APIテストとMiniflare結合テストを実行する |
 | `pnpm test:watch` | 最初にWorkerをビルドし、Vitestを監視実行する |
-| `pnpm test:ci` | 公開スクリプト、SQLだけのartifact生成、DBスキーマの未生成差分を検査する |
+| `pnpm test:ci` | 公開スクリプト、SQLだけのartifact生成、DBスキーマの未生成差分、ローカルDBの作り直し（db-reset）、入れ子の地図のマスの表と地図の配置の一致を検査する |
 | `pnpm build` | Cloudflareへ接続せずWorkerをバンドルする |
 | `pnpm artifact` | CI公開用のSQLとビルド情報を `dist/` へまとめる |
 
@@ -318,14 +320,11 @@ Drizzle経由の取得・更新と、セッション作成に失敗した場合�
 Miniflareはバンドル済みのWorkerを使うため、ソースだけを変更しても結合テストのWorkerには反映されない。
 ゲストの開始・保存・取得は[ゲストのシナリオ](../../server/tests/scenarios/guest-auth.test.ts)で確認する。
 健康データAPIの業務シナリオは、[認証・入力エラー](../../server/tests/scenarios/health-auth.test.ts)、[歩数の同期](../../server/tests/scenarios/health-sync.test.ts)、[セッションの失効](../../server/tests/scenarios/health-session.test.ts) に分ける。
-各ファイルは専用のMiniflareとD1を作成し、外部の本人確認をテスト用に差し替えてHonoとDBを検証する。
+各ファイルは外部の本人確認をテスト用に差し替えてHonoとDBを検証する（MiniflareとD1の用意は[tests/scenarios/AGENTS.md](../../server/tests/scenarios/AGENTS.md)に従う）。
 入力検証の単体テストは [健康データ](../../server/src/features/health/schema.test.ts) と [アカウント](../../server/src/features/accounts/schema.test.ts) の `schema.test.ts` に置き、実装と同じ機能内で管理する。
-運動報酬APIの認証・入力エラー・所有者確認は、機能内の [routes.test.ts](../../server/src/features/exercise-rewards/routes.test.ts) で確認する。
-パーティAPIの認証・入力エラー・初期付与・編成とカードの変更・レベルアップの再送と拒否・ユーザーごとの分離は、機能内の [routes.test.ts](../../server/src/features/party/routes.test.ts) で確認する。
-冒険APIの認証・入力エラー・マスの保存と進む条件・報酬が1回だけ入ること・復活の費用と再送と残高不足・負けた／やめたときの記録・ボスでの終了・ユーザーごとの分離は、機能内の [routes.test.ts](../../server/src/features/adventure/routes.test.ts) で確認する。
+機能内で完結するAPIの認証・入力エラー・所有者の確認・再送・ユーザーごとの分離は、各機能の `routes.test.ts`（例：[party/routes.test.ts](../../server/src/features/party/routes.test.ts)）で確かめる。
 歩数から請求したルーンでのレベルアップと、同時に届いたレベルアップを1回だけ通すことは、[レベルアップのシナリオ](../../server/tests/scenarios/party-level-up.test.ts)で確認する。
-
-テストの並列数、ファイル内の実行順、DBの独立性とシナリオ追加時のルールは [tests/scenarios/AGENTS.md](../../server/tests/scenarios/AGENTS.md) を正本とする。
+歩数からのルーンの初回付与・再送・再同期・同時の請求と、保存と請求を1回で行う要求は、[運動報酬のシナリオ](../../server/tests/scenarios/exercise-rewards.test.ts)で確認する。
 
 Wrangler `4.130.0` と、その依存に合わせたMiniflare `5.20260908.0-alpha` を固定する。
 Miniflareの設定は同パッケージが提供する `convertV4MiniflareOptions` を通している。
@@ -350,7 +349,7 @@ PRが既に閉じられていれば再公開をスキップし、PR終了イベ�
 公開先では対象コミットの `X-Build-SHA` と `/health`・`/ready` を確認する。
 業務シナリオはMiniflareで検証し、公開先の確認でデータの書き込みやリセットは行わない。
 APIのURLはjob summary、GitHub environment、`preview-url` 出力から取得できる。
-クライアントのPreviewへこのAPI URLを渡す処理は、クライアントの通信機能を実装するときに追加する。
+PreviewのAPKは当面Devへ接続し、このAPI URLを使わない（[実行環境と接続先](../features/startup-sync.md#実行環境と接続先)、2026-09-24のユーザーの決定）。
 
 [Server deploy](../../.github/workflows/server-deploy.yml) は、`develop` へマージされたPRをDevへ、`main` へマージされたPRをProdへ自動公開する。
 未リリースの間は、`feat/` で始まるブランチへのpushでも、`server/` かこのworkflowが変わっていればそのコミットを検査してDevへ公開する。

@@ -2,7 +2,7 @@
 id: enemy-skill-flame-tail-updraft
 type: definition
 status: 候補
-updated: 2026-10-19
+updated: 2026-11-02
 name: 熱風の羽ばたき
 category: enemy-skills
 ---
@@ -20,7 +20,7 @@ category: enemy-skills
 | 定義の根拠・決定日・参照元 | 2026-10-19、ユーザーの依頼（敵50体を試作し、文書カタログ・クライアント・サーバーにそろえる）で、[炎尾の鳥](../enemies/enemy-flame-tail-bird.md)の技として作った |
 | 役割・説明 | 自分と仲間の速度アップ |
 | 関連する仕様・個別ID | 使う敵：[炎尾の鳥](../enemies/enemy-flame-tail-bird.md)。[敵の行動の仮設定](../../features/combat-enemy-behavior.md) |
-| 実装・ゲームマスタの場所 | 未実装 |
+| 実装・ゲームマスタの場所 | 未実装（[CombatEnemyBehaviors](../../../client/Assets/Baryonyx/Features/Combat/Runtime/CombatEnemyBehaviors.cs) に名前だけあり、戦闘では選ばれない） |
 
 ## 確定した設定
 
@@ -32,8 +32,8 @@ category: enemy-skills
 |---|---|---|---|
 | 区分 | 固有技（[炎尾の鳥](../enemies/enemy-flame-tail-bird.md)） | [共通技と固有技](README.md#共通技と固有技) | 候補 |
 | 種類・対象 | 強化・敵全体（自分と仲間） | [記入する項目](README.md#記入する項目) | 候補 |
-| 物理・魔法と属性 | ダメージなし | 味方は物理の技を物防で、魔法の技を属防で受ける（[使い道の候補](../../features/party.md#ステータスの項目)） | 候補 |
-| 効果 | 速度アップ2ターン（速度+30%） | 使う敵のステータスの割合（[威力の決め方](../../features/combat.md#威力の決め方)）。状態は[カードの状態の仮設定](../../features/combat.md#カードの状態の仮設定)の名前 | 仮 |
+| 物理・魔法と属性 | ダメージなし | [記入する項目](README.md#記入する項目) | 候補 |
+| 効果 | 速度アップ2ターン（速度+30%） | [記入する項目](README.md#記入する項目) | 仮 |
 | 予告 | 強化 | [記入する項目](README.md#記入する項目) | 候補 |
 | 使う敵 | [炎尾の鳥](../enemies/enemy-flame-tail-bird.md) | 各敵の定義の「技」の表 | 候補 |
 
@@ -53,8 +53,8 @@ category: enemy-skills
 
 | 項目 | 決める内容・先に必要な判断 |
 |---|---|
-| 数値 | 割合と持続ターンは仮。[戦闘の未決事項](../../features/combat.md#未決事項)の数値が決まったら見直す |
-| 敵に付く速度アップ | 速度を変える状態は、ターン順のしきい値が未決のため、モックでは表示だけになる（[カードの状態の仮設定](../../features/combat.md#カードの状態の仮設定)）。敵に付く強化として[敵の行動の仮設定](../../features/combat-enemy-behavior.md)に加える |
+| 数値 | 割合と持続ターンは仮。[戦闘の未決事項](../../features/combat/implementation.md#未決事項)の数値が決まったら見直す |
+| 敵に付く速度アップ | 付いた速度アップは、冒険の戦闘ではターン順を変える（[ターン順の仮設定](../../features/combat/rules.md#ターン順の仮設定)）。敵に付く強化として[敵の行動の仮設定](../../features/combat-enemy-behavior.md)に加える |
 | 実装 | 未実装。実装するときは[敵の挙動デバッグルーム](../../features/screens/debug-rooms.md#敵の挙動デバッグルーム)の行動にも加える |
 
 ## 変更と判断の記録
@@ -62,3 +62,4 @@ category: enemy-skills
 | 日付 | 変更・判断 | 理由・根拠 | 影響するID・仕様 |
 |---|---|---|---|
 | 2026-10-19 | 固有技として定義を作った | ユーザーの依頼 | 使う敵：[炎尾の鳥](../enemies/enemy-flame-tail-bird.md) |
+| 2026-11-02 | スキルとdocの整理で、今のコードに合わせて「実装・ゲームマスタの場所」を直した。「敵に付く速度アップ」をターン順の仮設定に合わせた | 根拠：CombatEnemyBehaviors で `Other`（戦闘にない効果）として名前だけを持つ | [敵の行動の仮設定](../../features/combat-enemy-behavior.md) |

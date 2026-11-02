@@ -1,9 +1,16 @@
+---
+id: feature-server-health
+type: specification
+status: 運用中
+updated: 2026-11-02
+---
+
 # サーバーの疎通確認
 
 [機能索引](README.md)
 
 HonoがHTTPに応答し、接続先のD1へクエリーを実行できることを確認する。
-Workers対応とMiniflareでのローカル検証は実装済みで、Cloudflareへの実公開は未確認である。
+Workers対応とMiniflareでのローカル検証は実装済みで、Dev環境（`baryonyx-server-dev`）へ公開している（2026-10-22にEditorからDevへつないで[処理時間を計測](../rules/backend-design.md#処理時間の計測server-timing)した）。Prodは未公開である。
 
 ## 動作と制約
 

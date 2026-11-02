@@ -23,7 +23,7 @@ updated: 2026-10-02
 ## 調べたことと取り入れた手法
 
 開発者の発言と再現例から、次の手法を取り入れた。
-資料の一覧と要点は、スキルの[調査資料](../../.agents/skills/hd2d-lighting-vfx/references/research-sources.md#hd-2dのライティングカメラポストプロセス2回目)に記す。
+資料の一覧と要点は、スキルの[調査資料](../../.agents/skills/shared/hd2d-research-sources.md#hd-2dのライティングカメラポストプロセス2回目)に記す。
 
 | 資料で述べられていること | 取り入れた形 |
 |---|---|

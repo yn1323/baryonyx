@@ -2,7 +2,7 @@
 id: feature-skill-awakening
 type: specification
 status: 一部確定
-updated: 2026-10-26
+updated: 2026-11-02
 ---
 
 # カスタムスキルの覚醒
@@ -45,7 +45,7 @@ updated: 2026-10-26
 
 | 場面 | 起き方 |
 |---|---|
-| 戦闘 | 冒険の戦闘で、スキルのカードを手札に引いたときに抽選し、当たったカードを手札で光らせる。光ったカードを使うと覚醒する。固有スキルの[覚醒の予兆](skill-evolution.md#覚醒の予兆)と同じ決まりで、1回の戦闘で1枚1段までも同じである |
+| 戦闘 | 冒険の戦闘で、スキルのカードを手札に引いたときに抽選し、当たったカードを手札で光らせる。光ったカードを使うと覚醒する。固有スキルの[覚醒の予兆](skill-evolution/rules.md#覚醒の予兆)と同じ決まりで、1回の戦闘で1枚1段までも同じである |
 | 商会 | 商会の「スキル覚醒」で、覚醒の欠片とルーンを払って覚醒させる（[商会の強化](enhancement.md#覚醒)） |
 
 宝箱と覚醒の祭壇では、スキルを覚醒させない（2026-10-24、ユーザー決定）。
@@ -53,7 +53,7 @@ updated: 2026-10-26
 
 ### 覚醒先を選ぶ
 
-戦闘中の覚醒は、固有スキルと同じ[覚醒先を選ぶ画面](skill-evolution.md#覚醒先を選ぶ画面)で選ぶ。
+戦闘中の覚醒は、固有スキルと同じ[覚醒先を選ぶ画面](skill-evolution/effects.md#覚醒先を選ぶ画面)で選ぶ。
 候補は、まだ覚醒していない1枚の2つの枝である。
 
 覚醒をやめる操作（「覚醒しない」）は置かない（2026-10-29、ユーザー決定）。
@@ -62,7 +62,7 @@ updated: 2026-10-26
 ### 保存
 
 覚醒した段階は、ユーザーごとにゲームサーバーのDBへ、持っているスキルの1枚ごとに保存する。
-保存の時点と送り方は、固有スキルの[覚醒の保存](skill-evolution.md#覚醒の保存)と同じにする。
+保存の時点と送り方は、固有スキルの[覚醒の保存](skill-evolution/rules.md#覚醒の保存)と同じにする。
 戦闘中の覚醒はそのマスの戦闘を終えたときに残し、サーバーは、その1枚がまだ覚醒していないことと、送られた段階がその種類の枝であることを確かめる。
 覚醒した1枚は、その冒険のこのあとの戦闘から、覚醒版のカードとしてデッキに入る。
 
@@ -71,14 +71,14 @@ updated: 2026-10-26
 ### 枝の作り方
 
 - 2つの枝は、同じスキルを違う方向へ育てる。元のスキルの使い手・属性・役割は保つ。
-- 威力の数字だけを上げる枝は作らない。行う効果の組み合わせ（種類・相手・状態・回数・条件）を変える。[重複を避ける基準](combat.md#スキルの仮設定)を、元の50種類と100の段階のすべてに当てる。
+- 威力の数字だけを上げる枝は作らない。行う効果の組み合わせ（種類・相手・状態・回数・条件）を変える。[重複を避ける基準](combat/cards.md#スキルの仮設定)を、元の50種類と100の段階のすべてに当てる。
 - 枝の方向は、次のどれかにする。
   - 元のスキルの条件を自分で満たす（例：出血中に1.5倍のカードが、自ら出血を付ける）。
   - 対象を変える（1体を全体へ、全体を1体へ集める）。
   - 回数を変える。
   - 手札・エネルギー・守りへの働きを足す。
 - コストは、元のスキルと同じか、1つ上下させる。足した働きの重さに合わせる。どの段階も0〜3に収める（2026-10-25に、エネルギー3固定のルールに合わせて0〜9から改めた。[計画](../plans/2026-10-25-fixed-energy-cards.md)）。
-- キーワード（[カードのキーワード](combat.md#カードのキーワード)）を付け替える枝も作ってよい（例：詠唱短縮・瞬は霧散を保持に替える）。1枚に保持と霧散を両方付けない。
+- キーワード（[カードのキーワード](combat/cards.md#カードのキーワード)）を付け替える枝も作ってよい（例：詠唱短縮・瞬は霧散を保持に替える）。1枚に保持と霧散を両方付けない。
 
 ### 演出
 
@@ -87,7 +87,7 @@ updated: 2026-10-26
 
 1. **溜め**：固有スキルの1段目と同じ、カードの属性と使い手で選ぶ溜めを、段階の色で出す（[溜めの割り当て](skill-windups.md)）。
 2. **先に付ける状態**：打つ前に状態を付ける段階（大地割り・崩の防御ダウンなど）は、先に相手にしるしを付けて状態を届ける。
-3. **元のスキルの演出**：主な当たりから、元のスキルの演出を流す。当たるたびに、固有スキルの1段目と同じ[段階の層](skill-evolution.md#段階の層)（奥の光った空気・床の光だまり・白い星・火花・土ぼこり・遅れて昇る粒）を段階の色で重ねる。
+3. **元のスキルの演出**：主な当たりから、元のスキルの演出を流す。当たるたびに、固有スキルの1段目と同じ[段階の層](skill-evolution/effects.md#段階の層)（奥の光った空気・床の光だまり・白い星・火花・土ぼこり・遅れて昇る粒）を段階の色で重ねる。
 4. **増えた当たり**：元のスキルより当たりの回数が多い段階（ファイア・連の2発目など）は、増えた回の分だけ元の演出を繰り返す。
 5. **足した働き**：当たりのあとに足した働き（ブロック・カードを引く・状態など）は、相手ごとにしるしを付けて届ける。
 
@@ -129,7 +129,7 @@ updated: 2026-10-26
 
 ### 確率
 
-戦闘で引いたときの確率は、固有スキルの[確率の仮設定](skill-evolution.md#確率の仮設定)の半分にする。
+戦闘で引いたときの確率は、固有スキルの[確率の仮設定](skill-evolution/rules.md#確率の仮設定)の半分にする。
 
 | マス | 1回引くごとの基本の確率 |
 |---|---|
@@ -229,8 +229,8 @@ updated: 2026-10-26
 | サーバー | `skill_cards` の `awakened_branch`（[0026_skill_awakening.sql](../../server/migrations/0026_skill_awakening.sql)）。`GET /v1/party` の `skillCards[].awakenedBranch`（1・2、覚醒していなければnull）。戦闘の覚醒は `POST /v1/party/skill-cards/:cardId/awaken`（本文 `branch`。同じ枝の再送は何も変えず、別の枝は409 `already_awakened`、冒険の時間外は409 `not_in_adventure`。時間の判定は固有スキルの覚醒と同じ）。商会は `POST /v1/enhancement/awaken` の本文 `{requestId, cardId, branch}`（覚醒の欠片1個とルーン1,000、覚醒済みは409 `already_awakened`）。[party/routes](../../server/src/features/party/routes.ts)・[enhancement/routes](../../server/src/features/enhancement/routes.ts) |
 | 持ち物（クライアント） | [PartySkillCard](../../client/Assets/Baryonyx/Features/Party/Runtime/PartyCards.cs) の `AwakenedBranch`・`StageId`。覚醒した1枚は覚醒版のカード（`CardSkills.Find` が `Fire.1` も引く）として、倍率をそのまま持つ。戦闘で覚醒した1枚は、マスを終えたときに [PartySkillAwakenings](../../client/Assets/Baryonyx/Features/Party/Runtime/PartySkillAwakenings.cs) が送る |
 | 戦闘 | [BattleInspectView.Evolution](../../client/Assets/Baryonyx/Features/Combat/Presentation/BattleInspectView.Evolution.cs)。デッキのカードに持っているスキルの1枚のID（`OwnedCard`）を持たせ（[AdventureParty](../../client/Assets/Baryonyx/Features/Adventure/Runtime/AdventureParty.cs)）、固有スキルと同じ予兆の抽選に載せる。確率は [AdventureEvolution](../../client/Assets/Baryonyx/Features/Adventure/Runtime/AdventureEvolution.cs) の `AwakenChance`（固有スキルの半分）。選ぶ画面は固有スキルと同じ [BattleEvolutionChoice](../../client/Assets/Baryonyx/Features/Combat/Presentation/BattleEvolutionChoice.cs) |
-| 商会 | 「スキル覚醒」の一覧に、固有スキルの段階のあとへ、覚醒していない1枚ずつの2つの枝を並べる（[EnhancementTargets](../../client/Assets/Baryonyx/Features/Enhancement/Runtime/EnhancementTargets.cs) の `SkillAwakenings`、[WorkshopEnhanceView](../../client/Assets/Baryonyx/Features/Workshop/Runtime/WorkshopEnhanceView.cs)）。2行目は「付けている人｜元の名前から覚醒（元に戻せない）」 |
-| 演出の確認 | [スキルのデバッグルーム](screens/debug-rooms.md#スキルのデバッグルーム)の一覧の「覚醒版」のタブ（[CardSkillLab](../../client/Assets/Baryonyx/Features/Combat/Presentation/CardSkillLab.cs)）。PlayModeテストの `CardSkillLabSceneTests` が、しるしの種類と効果の並びが一通りそろう16の段階を最後まで流す |
+| 商会 | 「スキル覚醒」の1本の一覧（[WorkshopAwakenView](../../client/Assets/Baryonyx/Features/Workshop/Runtime/WorkshopAwakenView.cs)、並びは [AwakeningRows](../../client/Assets/Baryonyx/Features/Enhancement/Runtime/AwakeningRows.cs)）に、覚醒していない1枚ずつを1行で出す。2つの枝は [EnhancementTargets](../../client/Assets/Baryonyx/Features/Enhancement/Runtime/EnhancementTargets.cs) の `SkillAwakenings` が作る。並びと行の形は[商会のスキル覚醒](screens/shop.md#スキル覚醒)に従う |
+| 演出の確認 | [スキルのデバッグルーム](screens/debug-rooms.md#スキルのデバッグルーム)の一覧の「覚醒版」のタブ（[CardSkillLab](../../client/Assets/Baryonyx/Features/Combat/Presentation/CardSkillLab.cs)）。一覧のタブに並ぶことと覚醒で選べる段階は EditModeの `CardSkillLabTests`、読み込みと選んだスキルの再生は PlayModeの `CardSkillLabSceneTests` が確かめる。覚醒版の演出を最後まで流すテストはない |
 
 ### 挿絵の作り方
 
@@ -241,12 +241,13 @@ updated: 2026-10-26
 3. 描いた1枚を黒い帯で左右に分け、64:58に中央を切り出し、64×58へ縮めて32色に減らした。下端16行の透け方は、今の挿絵（`CardFire`）と同じ形を写した。
 4. [png_to_aseprite.lua](../../.agents/skills/pixel-art-standards/scripts/png_to_aseprite.lua) で `.aseprite` にした。
 
-Codexは [codex_image.py](../../.agents/skills/shared/scripts/codex_image.py) の手順で呼び、推論の強さは `high` にした。
-スクリプトが固定しているモデル（`gpt-6.1-sol`）は、今のChatGPTのアカウントでは使えなかった。そのため、スクリプトを手元で複製し、Codexの既定のモデル（`gpt-6-astra`）で描いた。
+2026-10-24には、Codexを [codex_image.py](../../.agents/skills/shared/scripts/codex_image.py) の手順で呼び、推論の強さを `high` にした。
+当時スクリプトが固定していたモデル（`gpt-6.1-sol`）は、そのときのChatGPTのアカウントでは使えなかった。そのため、スクリプトを手元で複製し、Codexの既定のモデル（`gpt-6-astra`）で描いた。
 依頼文と描いた下絵は `output/skill-awakening-art/`（Git対象外）にある。
 
 ## 変更と判断の記録
 
+- 2026-11-02：スキルとdocの整理で、今のコードに合わせて、商会の覚醒の一覧の入口（WorkshopAwakenView・AwakeningRows）、演出を確かめるテスト（2026-10-26に覚醒版を流すPlayModeテストが外れた）、挿絵を描いたときのCodexのモデルと推論の強さが当時の値であることを直した（根拠：AwakeningRows.cs・EnhancementTargets.cs・CardSkillLabSceneTests.cs・CardSkillLabTests.cs・codex_image.py）。
 - 2026-10-29：ユーザーの指示「覚醒しないという選択肢はなくして」を受け、選択画面の「覚醒しない」と、その演出（光が静まって使い手へ戻る）を消した。
 - 2026-10-24：ユーザーの依頼「覚醒版カードを実際の戦闘で使う組み込みもお願いします。覚醒しないも選べるようにしてください。どうやってするのか考えてください。覚醒が起きる場所は戦闘と商会だけ」を受け、戦闘・商会・サーバーへの保存を作った。「覚醒しない」の見せ方（決定の左に置く、割れずに光が静まって使い手へ戻る、その戦闘ではもう光らない）は、こちらで決めた。
 - 2026-10-24：ユーザーの指示「エフェクトも専用で作る。元のスキルと近しい感じでも構わない」を受け、100の段階に専用の演出を作った（[演出](#演出)）。元のスキルの演出を土台にし、段階ごとの色と12種類のしるしの組み合わせ、先に付ける状態・増えた当たり・足した働きの見せ方は、こちらで決めた。

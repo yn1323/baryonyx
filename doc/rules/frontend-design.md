@@ -2,7 +2,7 @@
 id: rule-frontend-design
 type: reference
 status: 運用中
-updated: 2026-10-21
+updated: 2026-11-02
 ---
 
 # クライアントの構成と依存関係
@@ -26,11 +26,12 @@ client/
 │   │   ├── AssemblyInfo.cs
 │   │   ├── App/
 │   │   │   ├── Runtime/                 起動、Providerの選択、前面・背面通知、シーン名（SceneNames）
-│   │   │   ├── Scenes/                   Top.unity、Home.unity、Showcase.unity、Exploration.unity、Battle.unity
-│   │   │   │   ├── Guide/                案内人の画面（Pub・Shop・Temple・TravelOffice）
-│   │   │   │   └── Debug/                デバッグ用のシーン（BattleLab・CardSkillLab・EnemyLab・BattleMomentLab・ExplorationMomentLab・QualityLab・InventoryLab・TempLab）
+│   │   │   ├── Scenes/                   Top.unity、Home.unity、Showcase.unity、World.unity、WorldAtlas.unity、WorldMap.unity、Exploration.unity、Battle.unity
+│   │   │   │   ├── Guide/                案内人の画面（Pub・Shop・Temple・TravelOffice・Library）
+│   │   │   │   └── Debug/                デバッグ用のシーン（BattleLab・CardSkillLab・EnemyLab・BattleMomentLab・ExplorationMomentLab・QualityLab・InventoryLab・TempleSummonLab・AdventureLab・WorldEventLab・TempLab）
 │   │   │   ├── Editor/                  シーンへの機能の配置、HD-2Dの演出と3Dの舞台のシーンへの配置
-│   │   │   └── Tests/                   EditMode（サーバーの接続先）とPlayMode（起動・案内人・展示室のシーン）
+│   │   │   ├── UI/                      冒険のデバッグルームの操作盤のPrefab
+│   │   │   └── Tests/                   EditMode（サーバーの接続先、開発用のプレイヤー、3Dの舞台の配置）とPlayMode（起動、案内人の画面、編成・商会・ライブラリの操作、デバッグルーム、展示室のシーン）
 │   │   ├── Features/Account/
 │   │   │   ├── Runtime/                Google認証の契約とUMoth接続、ゲストの秘密値、全機能で共有するセッション（AccountSessionRunner）とログインAPI
 │   │   │   └── Tests/EditMode/
@@ -68,24 +69,31 @@ client/
 │   │   │   ├── Vfx/                     スキルの演出のシェーダー・マテリアルと、戦闘のポストプロセス
 │   │   │   ├── Editor/                  モックとデバッグルームのPrefabの生成
 │   │   │   └── Tests/                   EditMode（計算・時間・再開）とPlayMode（モックの操作）
-│   │   ├── Features/Tavern/             編成（パーティ・装備・育成・スキル）の画面。商会 Workshop・神殿 Temple・旅の案内所 TravelOffice も同じ構成
+│   │   ├── Features/Tavern/             編成（パーティ・装備・育成・スキル）の画面。商会 Workshop・神殿 Temple・旅の案内所 TravelOffice も同じ構成で、Tests と、演出の Vfx を持つものがある
+│   │   │   ├── Runtime/                冒険者の人選びと一覧のView
 │   │   │   ├── UI/                      画面のPrefab、案内人・背景・メニューのアイコンの画像
 │   │   │   ├── Data/                    画面の中身（案内人・メニュー・仮データ）の定義アセット
 │   │   │   └── Editor/                  仮データと画面の生成
 │   │   ├── Features/Party/              編成のパーティ（入れ替え）と、キャラ・Lv・スキル・編成のサーバーとの読み書き。Runtime・Editor・Data・Tests
-│   │   ├── Features/Training/           編成の育成（1人の詳細と、重ねて開くレベルアップ）のモック。Runtime・Editor・Data・UI・Tests
-│   │   ├── Features/CardLoadout/        編成のスキル（仲間ごとの4枚の付け替え）のモック。Runtime・Editor・Tests
+│   │   ├── Features/Training/           編成の育成（1人の詳細と、重ねて開くレベルアップ）のモック。Runtime・Editor・Data・Art・Tests
+│   │   ├── Features/CardLoadout/        編成のスキル（仲間ごとのカスタムスキル3枠の付け替え）のモック。Runtime・Editor・UI・Tests
 │   │   ├── Features/Equipment/          編成の装備（仲間ごとの武器・防具の付け替えと、サーバーへの保存）。Runtime・Editor・UI・Tests
-│   │   ├── Features/Inventory/          持ち物の品質の決まり（Runtime は Baryonyx.Combat に含める）と、品質・持ち物のデバッグルーム。Runtime・Presentation・Editor・UI・Tests
-│   │   ├── Features/Adventure/          冒険の状態とサーバーとの読み書き、探索の画面と地図、戦闘との受け渡し、旅の案内所の出発。Runtime・Editor・Data・UI・Tests
+│   │   ├── Features/Inventory/          持ち物の品質の決まり（Runtime は Baryonyx.Combat に含める）と、品質・持ち物のデバッグルーム。Runtime・Presentation・Editor・Data・UI・Tests
+│   │   ├── Features/Items/              アイテム（道具・素材）の種類の定義 `ItemCards`（Runtime は Baryonyx.Combat に含める）。Runtime
+│   │   ├── Features/Enhancement/        商会の品質強化とスキル覚醒の状態と、サーバーとの読み書き。Runtime・Tests
+│   │   ├── Features/SkillEvolution/     固有スキルの覚醒の木（仮データ）と状態。Runtime・Tests
+│   │   ├── Features/Adventure/          冒険の状態とサーバーとの読み書き、探索の画面と地図、戦闘との受け渡し、旅の案内所の出発。Runtime・Editor・UI・Vfx・Tests
+│   │   ├── Features/WorldMap/           入れ子の地図（世界地図とエリアマップ）と前の街道の世界地図、地図エディター。Atlas（地図ごとの配置・背景・Prefab）・Runtime・Editor・UI・Tests
 │   │   ├── Features/Library/            ライブラリ（見つけた物・敵・日々の歩数）の画面と、記録のサーバーからの読み込み。Runtime・Editor・Data・UI・Tests
 │   │   ├── Features/Showcase/           クライアントアセット展示室。Runtime・Editor・Data・Entries（自動登録の生成物）
-│   │   ├── Features/TempLab/            TempLabで試す仮の実装。Runtime
+│   │   ├── Features/TempLab/            TempLabで試す仮の実装。Runtime・Shaders
 │   │   ├── Features/Wireframe/          削除した操作試作の画像だけを保管
 │   │   │   └── UI/Art/                  出発地点・坑道の背景とボタン・パネルの枠
 │   │   ├── Shared/
 │   │   │   ├── Audio/UI/                どの画面でもボタンを押したときに鳴らす音と、鳴らす仕組み（UiSounds）
+│   │   │   ├── Economy/                 所持ルーンの残高（RuneBalance）
 │   │   │   ├── Art/                     ゲーム内の対象の画像。カタログの分類ごとに分ける
+│   │   │   │   ├── Accessories/・Armor/・Items/・Materials/・Weapons/  アクセサリー・防具・アイテム・強化素材・武器
 │   │   │   │   ├── Attributes/          属性のアイコン
 │   │   │   │   ├── Characters/          キャラクター
 │   │   │   │   ├── Stages/              探索する場所の背景（森、TopとHomeのダンジョンの広間）、3Dの舞台、探索の地図の素材
@@ -98,7 +106,7 @@ client/
 │   │   │   │   │   ├── Exploration/     探索の地図の木・遺跡・宝箱の絵
 │   │   │   │   │   └── Editor/          3Dの舞台の組み立て（StageSetAssets・BattleStageSets）
 │   │   │   │   └── GameResources/       通貨（ルーンのアイコン）
-│   │   │   ├── Networking/              ゲームサーバーへのHTTP送信
+│   │   │   ├── Networking/              ゲームサーバーへのHTTP送信、保存の待ち行列（SaveQueue）と楽観的更新（OptimisticState）、開発用の通信の遅延・失敗の切り替え（DebugNetwork）
 │   │   │   ├── UI/                      複数画面で使う共通UI（下の表）
 │   │   │   └── VFX/HD2D/                HD-2Dの演出と3Dの舞台の共通部品（カメラ、キャラの板、2Dのときだけの部品、舞台のレンズ、光の筋）。Editor/に共通アセットと舞台の部品の生成とInspector、Tests/EditMode/
 │   │   ├── Editor/
@@ -106,10 +114,14 @@ client/
 │   │   │   ├── AnalyzerProjectSettings.cs
 │   │   │   ├── ScreenScenes.cs         画面のシーンの作り直し（カメラ・入力・Build Settings）
 │   │   │   ├── EditorGuard.cs          Play中は生成メニューを止める
+│   │   │   ├── EditorScenes.cs         名前のあるシーンだけを保存する（SaveNamed）
 │   │   │   ├── AssetFolders.cs         フォルダーの作成と、ScriptableObjectの読み込み・作成（LoadOrCreate）
+│   │   │   ├── GameFontAssets.cs       共有フォントのTMPアセット
+│   │   │   ├── GameViewDeviceSizes.cs  GameビューへのAndroid機種の解像度の登録
+│   │   │   ├── Devices/                Device Simulatorの端末定義（moto edge 50 pro）
 │   │   │   ├── Art/                    .asepriteの読み込みの補正（キャンバスの大きさの画像を追加）、Driveとの受け渡し、画像の読み込みと保存（ArtAssets）
-│   │   │   ├── UI/                     画面のPrefabをコードで組み立てる部品（UiBuild）と、共通の形・影・アイコンの画像の生成（UiArt）
-│   │   │   └── CI/                     コンパイル検査、シーン選択、APKビルド
+│   │   │   ├── UI/                     画面のPrefabをコードで組み立てる部品（UiBuild）と、共通の形・影・アイコンの画像（UiArt）、カードのキラキラ（CardFoilAssets）と地図の駒（MapPawnAssets）の生成
+│   │   │   └── CI/                     コンパイル検査、シーン選択、APKビルドと接続先の決定、接続中のEditorでのテストの開始
 │   │   └── Tests/
 │   │       ├── EditMode/               アセンブリ定義と共通ビルド処理の検査
 │   │       └── PlayMode/
@@ -136,7 +148,7 @@ client/
 
 | フォルダー | 所有するもの |
 |---|---|
-| 直下 | 画面が共有する文字色・青緑・金の定数 `UiPalette` と、文字の設定の補助 `UiText` |
+| 直下 | 色を役割の名前で持つ `UiPalette`、文字の大きさの段階 `UiType`、余白と大きさ `UiSpace`（[基本の値](ui-design.md#基本の値)）と、文字の設定の補助 `UiText` |
 | `Art/` | 円・カプセルの形、画面の端の影、足元の影、文字の下地、設定の歯車のアイコンは、白で描き、使う側で色を付ける。ホームと冒険が使うコンパスのアイコン `IconCompass.aseprite` も置く |
 | `Fonts/` | Kiwi Maruと、影つきの文字のマテリアル `TextShadow.mat` |
 | `Buttons/` | 押すとアイコンと文字も暗くなるボタンと、画面を開いている間だけ押したときの処理をつなぐ `ButtonBindings` |
@@ -145,12 +157,17 @@ client/
 | `Toast/` | 知らせをしばらく表示して消す `FadingMessage` |
 | `TapSparkle/` | 画面のどこを押しても出す金の粉のキラキラ。起動時にすべての画面の手前へ置く層 `TapSparkleLayer`、押す・引っぱる・長押しの決まり `TapSparkleGestures`、描く部品とシェーダー。`Editor/` にシェーダーをビルドに含める設定と展示室の見本の生成（[押した位置のキラキラ](../features/screens/common.md#押した位置のキラキラ)） |
 | `TranslucentTextPanel/` | 半透明の文字パネル。`Editor/` にPrefabの生成 |
-| `Cards/` | スキルの書き方 `CardText`（種類の行と、説明の数字を何をするかで色分けしたリッチテキスト）。戦闘のカードと編成のスキルが使う |
+| `Cards/` | スキルの書き方 `CardText`（種類の行と、説明の数字を何をするかで色分けしたリッチテキスト）。戦闘のカードと編成のスキルが使う。カードと枠の品質のキラキラ `CardFoil`・`CardFrameFoil`（[カードのキラキラ](../art/direction.md#カードのキラキラ)） |
 | `EditModePreview/` | 停止中のEditorで、Play中に切り替わるUIを見るための仕組み。画面の部品に付ける `IEditModePreview` と、`Editor/` に切り替え・自動の戻し・Inspectorの基底クラス（[停止中の表示の切り替え](ui-design.md#停止中の表示の切り替え)） |
-| `GlassCard/` | 押す・選ぶものの共通のカード（すりガラスのカード）。`Editor/` に画像とカードの生成。枠・板の形は、これと `GuideMenu/` の枠つきの表示だけを使う（[UI設計ルール](ui-design.md#背景を主役にした視覚階層)） |
-| `GuideMenu/` | 案内人がいる画面の共通部品。項目のパネルは基底クラス `GuidePanel` を継ぎ、通知の帯への通知と、開くたびの読み込み（`GuidePanelLoad`）・読めなかったときの表示を共有する。`IGuideBackHandler` を付けると、戻る操作を先に受け取れる。1人ずつ見せるパネルの左右のフリックは `GuideSwipe`。`Editor/` に、枠つきの表示（`GuideFrameAssets`：面・2本線・見出し・タブ・錠前の画像）と、設計座標での配置とスクロールする一覧（`GuidePanelLayout`） |
+| `GlassCard/` | 押す・選ぶものの共通のカード（すりガラスのカード）。`Editor/` に画像とカードの生成（[背景を主役にした視覚階層](ui-design.md#背景を主役にした視覚階層)） |
+| `GuideMenu/` | 案内人がいる画面の共通部品。項目のパネルは基底クラス `GuidePanel` を継ぎ、通知の帯への通知と、開くたびの読み込み（`GuidePanelLoad`）・読めなかったときの表示を共有する。`IGuideBackHandler` を付けると、戻る操作を先に受け取れる。1人ずつ見せるパネルの左右のフリックは `GuideSwipe`。`Editor/` に、枠つきの表示（`GuideFrameAssets`：面・2本線・見出し・タブ・錠前の画像）と、設計座標での配置とスクロールする一覧（`GuidePanelLayout`）、画面の型のテンプレート（`GuidePanelTemplate`。[画面の型](ui-design.md#画面の型)） |
 | `StatGrid/` | キャラの8つのステータスの表示 `StatGrid`。`Editor/` に4列・2列の生成。冒険者のステータスと装備のタブが使う |
 | `Dialog/` | 暗幕で背面を止め、題名・絵・本文・最大5つの選択肢を出す確認のダイアログ `GameDialog`。`Editor/` に画面への組み込み。冒険の確認・メニュー・報酬・復活・結果が使う |
+| `ItemTile/` | 持ち物の札の型 `ItemTile`。`Editor/` に品質・数・右上の印・「？」を置く `ItemTileAssets`（[持ち物の札](ui-design.md#持ち物の札)） |
+| `PixelIcon/` | ドット絵をアイコンの枠に整数倍で収める `PixelIcon` |
+| `MapPawn/` | 探索の地図と世界地図（入れ子の地図と前の街道の世界地図）の駒を跳ねさせる `MapPawnHop` |
+| `Reward/` | 見つけた物の板を開いて見せる `RewardReveal`。`Editor/` に生成 |
+| `RuneGain/` | ルーンが所持ルーンへ飛ぶ獲得の演出 `RuneGainEffect`（ホームと商会の売る）。`Editor/` に生成 |
 | `Tests/` | 上記の部品のEditMode・PlayModeテスト（`GuideMenu/` は自分の `Tests/` を持つ） |
 
 `Assets/Scripts/`、`Assets/Editor/`、`Assets/Tests/`、`Assets/Scenes/` にあった自作コード・アセンブリ定義・起動シーンは、上記の配置へ移行した。
@@ -168,9 +185,11 @@ client/
 | `Top.unity` | 起動画面。サーバーへの接続と歩数の同期を行い、全面押下でHomeへ移る | `Baryonyx > App > Create Top and Home Scenes` | [Top](../features/screens/top-home.md#top)・[起動時の連携と歩数の同期](../features/startup-sync.md) |
 | `Home.unity` | ホーム画面 | `Baryonyx > App > Create Home Scene` | [ホーム画面](../features/screens/top-home.md#ホーム画面の見た目モック) |
 | `Showcase.unity` | クライアントアセット展示室 | `Baryonyx > Showcase > Create Scene` | [展示室](../features/showcase.md) |
-| `Exploration.unity` | 冒険の探索。3Dの舞台を使わず、森を見下ろす地図を端末で描く | `Baryonyx > App > Create Exploration Scene` | [冒険の画面](../features/screens/adventure.md#冒険の画面) |
-| `WorldMap.unity` | 街道の世界地図の試作。上下左右に動かせる地図と、すごろくのマス。冒険していないときのHomeの右下のカードが開き、右下のボタンで旅の案内所（ダンジョン一覧）を開く。戦闘と関所のボスのマスに着くと `Battle.unity` を開く | `Baryonyx > App > Create World Map Scene` | [街道の世界地図の試作](../features/stage-progression.md#世界地図の形と試作2026-10-24) |
-| `Battle.unity` | 冒険の戦闘と、街道の世界地図のマスの戦闘。単体で開けば、背景を `BattleStages` の `Stage` で選べる | `Baryonyx > App > Create Battle Scene` | [戦闘の背景を選べる戦闘シーン](../features/screens/battle.md#戦闘の背景を選べる戦闘シーン)・[戦闘の背景](../art/hd2d-stage.md#戦闘の背景) |
+| `Exploration.unity` | 冒険の探索。3Dの舞台を使わず、行き先ごとの地面にマスの台と光の道を描いた2Dの地図で、左から右へ進む | `Baryonyx > App > Create Exploration Scene` | [冒険の画面](../features/screens/adventure.md#冒険の画面) |
+| `World.unity` | 冒険の世界地図（入れ子の地図）。冒険していないときのHomeの右下のカードと、ダンジョン一覧の「もどる」が開く | `Baryonyx > World Map > Create Atlas Assets` のあとで `Baryonyx > App > Create World Scene` | [入れ子の地図](../features/world-atlas/maps.md#unityでの置き場所) |
+| `WorldAtlas.unity` | 入れ子の地図の試作（デバッグルーム）。ナビだけを置く | `Baryonyx > World Map > Create Atlas Assets` | [入れ子の地図](../features/world-atlas/maps.md#unityでの置き場所) |
+| `WorldMap.unity` | 前の街道の世界地図の試作。上下左右に動かせる地図と、すごろくのマス。戦闘と関所のボスのマスに着くと `Battle.unity` を開く。2026-10-29にデバッグルームの一覧から外し、今は開く入口がない | `Baryonyx > App > Create World Map Scene` | [街道の世界地図の試作](../features/stage-progression-world-map.md#世界地図の形と試作2026-10-24) |
+| `Battle.unity` | 冒険の戦闘と、世界地図（入れ子の地図と、前の街道の世界地図）のマスの戦闘。単体で開けば、背景を `BattleStages` の `Stage` で選べる | `Baryonyx > App > Create Battle Scene` | [戦闘の背景を選べる戦闘シーン](../features/screens/battle.md#戦闘の背景を選べる戦闘シーン)・[戦闘の背景](../art/hd2d-stage/battle-backgrounds.md#戦闘の背景) |
 | `Guide/Pub.unity`・`Shop.unity`・`Temple.unity`・`TravelOffice.unity`・`Library.unity` | Homeから開く案内人の画面（編成・商会・神殿・ライブラリ）と、世界地図から開く旅の案内所（ダンジョン一覧。案内人なし）。「もどる」でHome（旅の案内所は世界地図）へ戻る | `Baryonyx > App > Create Guide Scenes` | [案内人がいる画面](../features/screens/guide.md#編成商会神殿旅の案内所の画面)・[ライブラリ](../features/library.md) |
 | `Debug/BattleLab.unity` | 戦闘画面の見た目を確かめるモック。単体で開いて確認する | `Baryonyx > App > Create Battle Lab Scene` | [戦闘画面の見た目モック](../features/screens/battle.md#戦闘画面の見た目モック) |
 | `Debug/CardSkillLab.unity` | Play中に選んだスキルの演出をすぐ再生するデバッグルーム | `Baryonyx > App > Create Card Skill Lab Scene` | [スキルのデバッグルーム](../features/screens/debug-rooms.md#スキルのデバッグルーム) |
@@ -179,11 +198,14 @@ client/
 | `Debug/EnemyLab.unity` | Play中に選んだ敵に、選んだ行動を戦闘画面のモックと同じ処理ですぐさせるデバッグルーム | `Baryonyx > App > Create Enemy Lab Scene` | [敵の挙動デバッグルーム](../features/screens/debug-rooms.md#敵の挙動デバッグルーム) |
 | `Debug/BattleMomentLab.unity` | 魔物の出現・ターンの帯・勝利・ドロップ・全滅・ルーン復活の演出を、戦闘画面のモックと同じ処理でボタン1つで再生するデバッグルーム | `Baryonyx > App > Create Battle Moment Lab Scene` | [戦闘の演出デバッグルーム](../features/screens/debug-rooms.md#戦闘の演出デバッグルーム) |
 | `Debug/ExplorationMomentLab.unity` | 探索の魔物の出現・宝箱・マスへ進む演出を、探索画面の見本の道の上でボタン1つで再生するデバッグルーム | `Baryonyx > App > Create Exploration Moment Lab Scene` | [探索の演出デバッグルーム](../features/screens/debug-rooms.md#探索の演出デバッグルーム) |
+| `Debug/TempleSummonLab.unity` | 召喚の演出を再生するデバッグルーム | `Baryonyx > App > Create Temple Summon Lab Scene` | [召喚の演出デバッグルーム](../features/screens/debug-rooms.md#召喚の演出デバッグルーム) |
+| `Debug/AdventureLab.unity` | 選んだ種類のマスの手前から、本物の画面の流れで冒険を進めるデバッグルーム | `Baryonyx > App > Create Adventure Lab Scene` | [冒険のデバッグルーム](../features/screens/debug-rooms.md#冒険のデバッグルーム) |
+| `Debug/WorldEventLab.unity` | 地図エディター。入れ子の地図の上で、マスの出来事と戦闘の設定を変えて試す | `Baryonyx > App > Create World Event Lab Scene` | [地図エディター](../features/screens/debug-rooms.md#地図エディター) |
 | `Debug/TempLab.unity` | 聞かれたことを仮に組んで撮影するデバッグルーム。夕暮れの高原の3Dの舞台と空のCanvasだけを置く | `Baryonyx > App > Create Temp Lab Scene` | [TempLab](../features/screens/debug-rooms.md#templab) |
 
 Top・Home・BattleLab・Battleは、3Dの地面と背景にドット絵のキャラを立たせるHD-2Dの構成である（[3Dの舞台](../art/hd2d-stage.md)）。
 3Dに立ったキャラと影は、停止中のシーンでもPlay Mode中でも表示する。
-Top・Home・BattleLabを開くと、Sceneタブは舞台のカメラから見る設定になり、手前のUI（Screen Space - Overlay）はSceneタブでだけ隠れる（[Sceneタブでの表示](../art/hd2d-stage.md#sceneタブでの表示)）。
+Top・Home・BattleLabを開くと、Sceneタブは舞台のカメラから見る設定になり、手前のUI（Screen Space - Overlay）はSceneタブでだけ隠れる（[Sceneタブでの表示](../art/hd2d-stage/stage-view.md#sceneタブでの表示)）。
 
 画面のPrefab・データ・画像は、次のメニューで作り直す。
 
@@ -194,13 +216,22 @@ Top・Home・BattleLabを開くと、Sceneタブは舞台のカメラから見�
 | ホーム画面 | `Baryonyx > Home > Create Screen Assets` |
 | 編成の画面と、パーティ・装備・育成・スキルのパネル | `Baryonyx > Tavern > Create Screen Assets` |
 | 商会・神殿・旅の案内所の画面 | `Baryonyx > Workshop > Create Screen Assets`・`Baryonyx > Temple > Create Screen Assets`・`Baryonyx > Travel Office > Create Screen Assets` |
+| ライブラリの画面 | `Baryonyx > Library > Create Screen Assets` |
+| 編成・育成の仮データ | `Baryonyx > Party > Create Mock Data`・`Baryonyx > Training > Create Mock Data` |
+| 召喚の演出（1回・10回）と、召喚の演出デバッグルームの操作盤 | `Baryonyx > Temple > Create Summon Show`・`Create Summon Ten Show`・`Create Summon Lab Assets` |
+| 品質・持ち物のデバッグルームのPrefab、アイテムの絵の表 | `Baryonyx > Inventory > Create Quality Lab Assets`・`Create Inventory Lab Assets`・`Create Item Art` |
+| 入れ子の地図の画面と試作のシーン、地図エディターの操作盤 | `Baryonyx > World Map > Create Atlas Assets`・`Create Event Lab Assets` |
 | 街道の世界地図の画面（背景とマスの取り込み設定、ダンジョン一覧のボタンのアイコンを含む） | `Baryonyx > World Map > Create Screen Assets` |
 | 探索と冒険用の重ね画面のPrefab（行き先ごとの地面の取り込み設定を含む） | `Baryonyx > Adventure > Create Screen Assets` |
 | 休憩の焚き火の夜の野営地の絵（Homeの3Dの野営地を夜の光で描き出す。描いたあとは上の探索のPrefabと、それを置いたシーンを作り直す） | `Baryonyx > Adventure > Render Campfire Scene` |
 | 探索の演出デバッグルームの操作盤と演出の部品のPrefab、光のマテリアル | `Baryonyx > Adventure > Create Exploration Moment Lab Assets` |
 | 戦闘画面のモックとデバッグルームのPrefab | `Baryonyx > Combat > Create Battle Inspect Assets`・`Create Card Skill Lab Assets`・`Create Enemy Lab Assets`・`Create Battle Moment Lab Assets` |
+| 戦闘画面の敵の絵の表、手で変えたカードのPrefabを既定から作り直す | `Baryonyx > Combat > Create Enemy Looks`・`Reset Battle Card Prefab` |
 | 3Dの舞台と戦闘の背景 | `Baryonyx > Stages > Create 3D Stage Assets`・`Create Battle Stage Assets` |
 | 接続設定アセット（`HealthConnectionSettings.asset`）と共有フォント | `Baryonyx > Health > Create Screen Assets`（[実行環境と接続先](../features/startup-sync.md#実行環境と接続先)） |
+| 連携モーダルのPrefab | `Baryonyx > Health > Create Link Modal Prefab` |
+| 押したときの音の取り込み設定と音の表 | `Baryonyx > Audio > Create UI Sound Assets` |
+| 共通のUI部品（押した位置のキラキラ、半透明の文字パネル、カードの裏面の見本、案内人の画面の共通の絵） | `Baryonyx > UI > Create Tap Sparkle Assets`・`Create Translucent Text Panel Prefab`・`Create Glass Card Back Preview`、`Baryonyx > Guide Menu > Create Shared Art` |
 | 展示室の登録 | `Baryonyx > Showcase > Refresh Catalog`（[展示室](../features/showcase.md)） |
 
 ## 起動と機能の責務
@@ -213,7 +244,7 @@ Top・Home・BattleLabを開くと、Sceneタブは舞台のカメラから見�
 | [Health/Runtime/Sync/](../../client/Assets/Baryonyx/Features/Health/Runtime/Sync) | 歩数の保存APIと、歩数の保存・ルーン請求を順に行う `HealthServerSync`。[GameServices](../../client/Assets/Baryonyx/App/Runtime/GameServices.cs)が作り、TopとHomeが使う |
 | [Account/Runtime/](../../client/Assets/Baryonyx/Features/Account/Runtime) | Google認証の契約とUMoth接続、ログイン・ログアウトAPI、ゲストの秘密値、全機能で共有するゲストのセッション（`AccountSessionRunner`。ログイン、期限の5分前の取り直し、401のときの1回だけのやり直し） |
 | [ExerciseRewards/Runtime/](../../client/Assets/Baryonyx/Features/ExerciseRewards/Runtime) | ルーン請求・残高のAPIと応答の型 |
-| [Shared/Networking/](../../client/Assets/Baryonyx/Shared/Networking) | ゲームサーバーのURL検証、HTTP送信、失敗時の例外、開発ビルドでの要求ごとの時間のログ（[処理時間の計測](backend-design.md#処理時間の計測server-timing)）。パスと入出力の型は各機能が持つ |
+| [Shared/Networking/](../../client/Assets/Baryonyx/Shared/Networking) | ゲームサーバーのURL検証、HTTP送信、失敗時の例外、開発ビルドでの要求ごとの時間のログ（[処理時間の計測](backend-design.md#処理時間の計測server-timing)）、保存の待ち行列 `SaveQueue` と楽観的更新 `OptimisticState`（[サーバーに置くときの作り方](data-storage.md#サーバーに置くときの作り方)）、開発用の通信の遅延・失敗の切り替え `DebugNetwork`。パスと入出力の型は各機能が持つ |
 | [Health/Editor/HealthScreenAssets](../../client/Assets/Baryonyx/Features/Health/Editor/HealthScreenAssets.cs) | 接続設定アセットと共有フォントを生成する |
 
 健康データの画面（View・Prefab）は2026-09-24に、その画面が使っていたPresenterとProviderの選択（`HealthRuntime`）は2026-10-25に削除した。
@@ -224,7 +255,6 @@ HomeはHealth・ExerciseRewardsを参照せず、Appの[HomeBootstrap](../../cli
 今日の歩数はHomeが定義する `IHomeStepSource` を通して受け取り、Appの [HomeStepSource](../../client/Assets/Baryonyx/App/Runtime/HomeStepSource.cs) がHealthの `HealthStepLink` へつなぐ。
 キャラクターや素材など、ゲーム内の対象の画像は[ゲーム内の対象の画像](#ゲーム内の対象の画像)に従って `Shared/Art/<分類>/` に置く。
 HealthのEditor処理はAppのオブジェクトを生成しない。
-接続設定アセットの生成メニューは `Baryonyx/Health/Create Screen Assets` である。
 
 EditorとAndroid以外では、GameServicesがプレビュー用Providerを選び、`Preview` を `true` にする。
 健康データのサンプル応答はProviderが返し、自動テストの固定データはテスト側に置く。
@@ -242,7 +272,7 @@ Combatの戦闘計算（`Runtime/`）はApp・Unityの画面へ依存しない�
 
 | アセンブリ | 定義ファイル | 所属するコード |
 |---|---|---|
-| `Baryonyx.Combat` | [Features/Combat/Runtime/Baryonyx.Combat.asmdef](../../client/Assets/Baryonyx/Features/Combat/Runtime/Baryonyx.Combat.asmdef) | Unityに依存しない戦闘計算と、持ち物の品質の決まり（`Features/Inventory/Runtime/` を asmref で含める）。`noEngineReferences` でUnityEngineを参照させない |
+| `Baryonyx.Combat` | [Features/Combat/Runtime/Baryonyx.Combat.asmdef](../../client/Assets/Baryonyx/Features/Combat/Runtime/Baryonyx.Combat.asmdef) | Unityに依存しない戦闘計算と、持ち物の品質の決まり・アイテムの種類（`Features/Inventory/Runtime/`・`Features/Items/Runtime/` を asmref で含める）。`noEngineReferences` でUnityEngineを参照させない |
 | `Baryonyx.Runtime` | [Baryonyx/Baryonyx.Runtime.asmdef](../../client/Assets/Baryonyx/Baryonyx.Runtime.asmdef) | Combat以外のAppと機能の製品コード |
 | `Baryonyx.Editor` | [Baryonyx/Editor/Baryonyx.Editor.asmdef](../../client/Assets/Baryonyx/Editor/Baryonyx.Editor.asmdef) | 共通・App・機能のEditor専用処理 |
 | `Baryonyx.EditModeTests` | [Baryonyx/Tests/EditMode/Baryonyx.EditModeTests.asmdef](../../client/Assets/Baryonyx/Tests/EditMode/Baryonyx.EditModeTests.asmdef) | ロジックとビルド設定の検査 |
@@ -283,6 +313,7 @@ Unityが使わない制作元が必要になった場合だけ `client/ArtSource
 ### ゲーム内の対象の画像
 
 キャラ・敵・アイテム・武器・素材など、[データ索引](../catalog/README.md)に定義がある対象の画像は、使う画面が1つでも `Baryonyx/Shared/Art/<分類>/` に置く。
+ただし、敵・スキル（カードの挿絵）・パッシブのアイコンと、属性が分からないときのアイコンは、まだ移しておらず、戦闘の機能の `Features/Combat/UI/Art/` にある。ライブラリ・編成・地図エディターなどの生成処理とカタログの `art_files` も、今はそこを指す（下の2つめの表）。
 画像の持ち主は表示する画面ではなく対象そのものであり、同じ対象を複数の画面が表示するためである。
 枠・影・ボタンのアイコンなど、画面専用のUI部品は従来どおり機能内の `UI/` に置く。
 
@@ -291,12 +322,24 @@ Unityが使わない制作元が必要になった場合だけ `client/ArtSource
 
 | データ索引の分類 | 画像のフォルダー |
 |---|---|
-| `characters`・`enemies`・`items`・`weapons`・`armor` | `Characters`・`Enemies`・`Items`・`Weapons`・`Armor` |
-| `skills`・`effects`・`stages` | `Skills`・`Effects`・`Stages` |
+| `characters`・`enemies`・`items`・`weapons`・`armor`・`accessories` | `Characters`・`Enemies`・`Items`・`Weapons`・`Armor`・`Accessories` |
+| `skills`・`attributes`・`effects`・`stages` | `Skills`・`Attributes`・`Effects`・`Stages` |
 | `resources` | `GameResources` |
+| 強化素材（データ索引の分類はない） | `Materials` |
 | その他の分類 | 分類名をPascalCaseにする |
 
-- ドット絵の正本は、Unityで使う場所に `.aseprite` のまま置き、Gitで管理する（ルーンのアイコンは `Shared/Art/GameResources/IconRune.aseprite`）。インデックスカラーで保存し、色違いはパレットの差し替えで作る。PNGへは書き出さない。
+まだ移さず、戦闘の機能に置いている画像は次のとおりである。
+
+| データ索引の分類 | 置き場所とファイル名 | 読む処理の例 |
+|---|---|---|
+| `enemies` | `Features/Combat/UI/Art/Enemies/<名前>.aseprite` | [BattleEnemyLooksAssets](../../client/Assets/Baryonyx/Features/Combat/Editor/BattleEnemyLooksAssets.cs)・[LibraryScreenAssets](../../client/Assets/Baryonyx/Features/Library/Editor/LibraryScreenAssets.cs)・[WorldEventPanelAssets](../../client/Assets/Baryonyx/Features/WorldMap/Editor/WorldEventPanelAssets.cs) |
+| `skills` | `Features/Combat/UI/Art/Card<ID>.aseprite`（覚醒版は `Card<ID><枝の番号>`。`CardSkill.Art`） | `BattleInspectAssets`・[CardLoadoutAssets](../../client/Assets/Baryonyx/Features/CardLoadout/Editor/CardLoadoutAssets.cs)・[PartyAssets](../../client/Assets/Baryonyx/Features/Party/Editor/PartyAssets.cs)（`SkillArtFolder`）・`ItemArtAssets` |
+| `passives` | `Features/Combat/UI/Art/Passives/Passive<種類>.aseprite`（`CombatPassive.Icon`） | [TrainingAssets](../../client/Assets/Baryonyx/Features/Training/Editor/TrainingAssets.cs)（`PassiveArtFolder`） |
+| `attributes` のうち、属性が分からないとき | `Features/Combat/UI/Art/Elements/ElementUnknown.aseprite` | `BattleInspectAssets` |
+
+持ち物（アイテム・強化素材・アクセサリー・武器・防具）の絵のファイル名は、対象のIDをPascalCaseにしたものとする（`dew-vial` は `DewVial.aseprite`。`ItemArt.FileName`）。
+
+- ドット絵の正本は、Unityで使う場所に `.aseprite` のまま置き、Gitで管理する（ルーンのアイコンは `Shared/Art/GameResources/IconRune.aseprite`）。インデックスカラーで保存し、色違いはパレットの差し替えで作る。PNGへは書き出さない。PNGのまま置かれた既存のドット絵は、変更するときに `.aseprite` へ置き換え、参照するコード・データ・文書・展示室の登録を同じ変更で直す。
 - `.aseprite` は、Unity公式のAseprite Importer（`com.unity.2d.aseprite`）が読み込む。Asepriteで保存してUnity Editorへ戻ると読み込み直され、Aseprite本体がない環境（CIなど）でも同じ画像になる。
   - Importerは絵の周りの透明な部分を切り取り、余白をつけて1枚のテクスチャへ詰める。そのままでは大きさと位置がキャンバスと変わるため、[AsepriteCanvasImport](../../client/Assets/Baryonyx/Editor/Art/AsepriteCanvasImport.cs) が読み込みの最後に、切り取られた絵をキャンバスの位置へ戻したテクスチャと、フレームごとのSpriteを追加する。Importerが作るSpriteは、一覧に出ないよう非表示にする。
   - 複数フレームのファイルは、フレームを左上から右へ並べた1枚のテクスチャになる。Spriteの名前は、1フレームならファイル名、複数ならファイル名に `_` とフレーム番号（0から）を付けたものになる。
@@ -373,4 +416,4 @@ Androidの [HealthRecordCatalog](../../client/Assets/Plugins/Android/BaryonyxHea
 型を追加するときは、その値・単位・日付境界と権限のテストも追加する。
 
 Unity内のビルド処理は `Baryonyx/Editor/CI/`、Unityの実行・結果検査・公開を補助する処理は `client/ci/` に置く。
-手動実行用のショートカットは `shortcuts/` で管理する（[一覧](../../AGENTS.md#手動実行用ショートカット)・[動作](local-shortcuts.md)）。
+手動実行用のショートカットは `shortcuts/` で管理する（[一覧と動作](local-shortcuts.md)）。

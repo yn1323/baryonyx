@@ -7,7 +7,7 @@ updated: 2026-10-02
 
 # 停止中とSceneタブの見た目をPlay Mode中とそろえる
 
-[計画の索引](README.md) / 仕様の正本：[3Dの舞台](../art/hd2d-stage.md#停止中の表示) / 前の計画：[Topと戦闘画面の屋外の舞台](2026-10-02-hd2d-outdoor-stages.md)
+[計画の索引](README.md) / 仕様の正本：[3Dの舞台](../art/hd2d-stage/stage-view.md#停止中の表示) / 前の計画：[Topと戦闘画面の屋外の舞台](2026-10-02-hd2d-outdoor-stages.md)
 
 状態：完了（Editorでの実装と検証）
 

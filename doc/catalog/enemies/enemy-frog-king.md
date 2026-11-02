@@ -2,7 +2,7 @@
 id: enemy-frog-king
 type: visual-entity
 status: 候補
-updated: 2026-10-21
+updated: 2026-11-02
 name: 沼のカエル王
 category: enemies
 silhouette: 腹の突き出た太いカエルが、左を向いて斜めに座る。頭に小さな王冠、右手に穂の付いた笏、背中に大きな蓮の葉のマントが広がる
@@ -21,7 +21,6 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/FrogKing.asepri
 魔法を得意とし、家来を呼んで数を増やし、その数で雷の合唱を強める。
 この文書は、ステータス、使う技と行動パターン、外見と性格の設定を持つ。
 技の効果と演出は[敵の技の定義](../enemy-skills/README.md)に置く。
-2026-10-19の時点で、画像と敵の種類・弱点だけを実装しており、HP・技・行動は未実装である。
 
 ## 識別情報と根拠
 
@@ -31,8 +30,8 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/FrogKing.asepri
 | 対象の役割・説明 | 雑魚（中）。家来の吸血大ヒルを呼び、立っている敵が多いほど強くなる全体の雷で削る。舌で味方の強化を奪う |
 | 元となる対象・亜種・衣装差分のID | なし |
 | 参照する仕様・関連する個別ID | [戦闘システム](../../features/combat.md)、[吸血大ヒル](enemy-blood-leech.md)、[泥人形](enemy-mud-golem.md)、[骨背の大ワニ](enemy-bone-croc.md) |
-| 必要な画像用途 | 戦闘の1枚絵（96×96）。行動順のコマの切り出し位置は未決 |
-| ゲーム内の実装・アセット | 画像 `FrogKing.aseprite`、敵の種類と弱点 `CombatEnemies.cs`（`client/Assets/Baryonyx/Features/Combat/Runtime/`）、サーバーの敵ID `server/src/features/combat/catalog.ts` の `ENEMY_IDS`。HP・技・行動は未実装 |
+| 必要な画像用途 | 戦闘の1枚絵（96×96）。行動順のコマ（24×24）は、描かれた部分の上端から自動で切り出す（仮。`BattleEnemyLooksAssets.cs`） |
+| ゲーム内の実装・アセット | 画像 `FrogKing.aseprite`、敵の種類と弱点 `CombatEnemies.cs`（`client/Assets/Baryonyx/Features/Combat/Runtime/`）、サーバーの敵ID `server/src/features/combat/catalog.ts` の `ENEMY_IDS`、ステータス `CombatEnemyStats.cs`、技と行動パターン `CombatEnemyBehaviors.Depths.cs`、出る行き先 `AdventureCatalog.cs` |
 
 ## 確定した設定
 
@@ -44,12 +43,12 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/FrogKing.asepri
 |---|---|---|---|
 | 未決（生息する地域は沼） | 未決 | 未決 | 未決 |
 
-まだどの行き先にも出ない。
+今の出る行き先とLv（仮）は[行き先と敵](../../features/stage-progression/destinations.md#行き先と敵)にある（割り振りの正本は [AdventureCatalog](../../../client/Assets/Baryonyx/Features/Adventure/Runtime/AdventureCatalog.cs) の `Areas`）。
 生息する地域は沼とし、出現する行き先・マス・敵の組み合わせ・Lvは未決とする。
 行き先の個別定義（`stage-`）はまだない（[ステージの定義](../stages/README.md)）。
-2026-10-20から、しじまの沼（`hush-mire`、Lv22）の中くらいの敵として、冒険の戦闘に出る（[行き先と敵](../../features/stage-progression.md#行き先と敵)）。
-戦闘では、下のLv100のステータスに出るLvの成長率を掛けて使い、技は「舌のかすめ取り」だけを属攻で魔法として（味方の属防で受ける）使う（[CombatEnemyStats](../../../client/Assets/Baryonyx/Features/Combat/Runtime/CombatEnemyStats.cs)）。
-ほかの技と行動パターンは未実装である。
+2026-10-20から、しじまの沼（`hush-mire`、Lv22）の中くらいの敵として、冒険の戦闘に出る（[行き先と敵](../../features/stage-progression/destinations.md#行き先と敵)）。
+戦闘では、下のLv100のステータスに出るLvの成長率を掛けて使う（[CombatEnemyStats](../../../client/Assets/Baryonyx/Features/Combat/Runtime/CombatEnemyStats.cs)）。
+技と行動パターンは、2026-10-22から [CombatEnemyBehaviors](../../../client/Assets/Baryonyx/Features/Combat/Runtime/CombatEnemyBehaviors.cs) で動く。戦闘にまだない効果の技（にらみつけ・仲間を呼ぶ）は使わない（[敵の行動の仮設定](../../features/combat-enemy-behavior.md)）。
 
 ## 分類固有のデータ
 
@@ -159,31 +158,32 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/FrogKing.asepri
 | 用途・構図・視点・ポーズ・背景 | 戦闘の1枚絵。やや斜めの左向きで全身を描き、背景は透明 |
 | 解像度・透過・ファイル形式・差分規格 | 96×96、32色＋透明、インデックスカラーの `.aseprite`（[ドット絵の制作規格](../../art/direction.md#ドット絵の制作規格)） |
 | 外見の指示文（この敵の部分） | 「沼の主を名乗る太ったカエル。小さな王冠をかぶり、蓮の葉をマントにし、葦の笏を持つ。配色：黄緑と深緑の肌、金の王冠、白い腹。必ず残す特徴：太ったカエル。金の小さな王冠。蓮の葉のマント」 |
-| 英語の短い説明（PixelLab用） | `fat frog king with a small gold crown, lotus leaf cape, cattail scepter, white belly, three-quarter view facing left` |
-| 変更しない特徴・今回だけ変える特徴 | 変えない特徴は「小型ドット絵でも残す特徴」とする。行動順のコマの切り出し位置は未決 |
+| 英語の短い説明 | `fat frog king with a small gold crown, lotus leaf cape, cattail scepter, white belly, three-quarter view facing left` |
+| 変更しない特徴・今回だけ変える特徴 | 変えない特徴は「小型ドット絵でも残す特徴」とする |
 | 実際に使った指示文 | `output/enemies/21-numa-kaeruou/request.md`（Git対象外） |
 | 入力にした文書のID・Gitコミット等の版 | なし（この定義を作る前の生成） |
 | 参照画像のパス・出所・利用条件 | 画風見本として、既存の森の守り手の絵を添付した |
 | 使用ツール・モデル・再現用設定 | Codex CLI（gpt-6.1-sol）。画像生成のモデルは既定 |
 | 出力画像のパス・生成日・案のID | `output/enemies/21-numa-kaeruou/enemy.png`（1254×1254、2026-10-19生成、Git対象外）。背景を抜いて切り出し、96×96に縮小して32色へ減色し、インデックスカラーの `.aseprite` にした |
-| 採用・候補・不採用と理由 | ライブラリと展示室で表示する下書き（候補） |
+| 採用・候補・不採用と理由 | 冒険の戦闘・ライブラリ・展示室で表示する下書き（候補） |
 | 採用画像と文章の差・反映方法 | 指示の「葦の笏」は、葦の束の先にガマの穂を付けた形で描かれた。王冠の赤い宝石と、マントの金の渦巻きの留め具は指示になかった。文章を採用画像に合わせた |
-| Unityアセットのパス・GUID・利用画面 | `client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/FrogKing.aseprite`。[ライブラリ](../../features/library.md)の敵の記録、[展示室](../../features/showcase.md) |
+| Unityアセットのパス・GUID・利用画面 | `client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/FrogKing.aseprite`。冒険の戦闘、[ライブラリ](../../features/library.md)の敵の記録、[展示室](../../features/showcase.md) |
 
 ## 未決事項
 
 | 項目 | 決める内容・先に必要な判断 |
 |---|---|
-| 出現する場所とLv | 沼の行き先を作るときに、マス・敵の組み合わせ・Lvを決める |
-| 数値 | ステータス、行動の割合、激化の倍率は仮。[戦闘の未決事項](../../features/combat.md#未決事項)の数値が決まったら見直す |
-| 速度・会心・幸運 | 速度は、味方の合計と比べる方法（[ターン順](../../features/combat.md#ターン順)）が決まったら尺度を合わせ直す。会心と幸運は、使い道（[候補](../../features/party.md#ステータスの項目)）が決まったら見直す |
+| 出現する場所とLv | 出現する行き先・マス・敵の組み合わせ・Lv |
+| 数値 | ステータス、行動の割合、激化の倍率は仮。[戦闘の未決事項](../../features/combat/implementation.md#未決事項)の数値が決まったら見直す |
+| 速度・会心・幸運 | 速度は、味方の合計と比べる方法（[ターン順](../../features/combat/rules.md#ターン順)）が決まったら尺度を合わせ直す。会心と幸運は、使い道（[候補](../../features/party.md#ステータスの項目)）が決まったら見直す |
 | 強化を奪う仕組みと呼び出し | 新しい仕組みの決まり（[舌のかすめ取り](../enemy-skills/enemy-skill-frog-king-tongue-snatch.md)、[仲間を呼ぶ](../enemy-skills/enemy-skill-call-ally.md)） |
-| 弱点の数 | 1体に複数の弱点を持たせるか（[弱点の開示](../../features/combat.md#弱点の開示)の未決） |
-| 実装 | 冒険の戦闘では、ステータスと技1つ（舌のかすめ取り）だけを使う。ほかの技と行動パターンは未実装。実装するときは[敵の挙動デバッグルーム](../../features/screens/debug-rooms.md#敵の挙動デバッグルーム)の行動も増やす |
+| 弱点の数 | 1体に複数の弱点を持たせるか（[戦闘の未決事項](../../features/combat/implementation.md#未決事項)の「弱点の開示」） |
+| 実装 | 戦闘にまだない効果の技（にらみつけ・仲間を呼ぶ）は使わない（[敵の行動の仮設定](../../features/combat-enemy-behavior.md)）。実装するときは[敵の挙動デバッグルーム](../../features/screens/debug-rooms.md#敵の挙動デバッグルーム)の行動も増やす |
 
 ## 変更と判断の記録
 
 | 日付 | 変更・判断 | 理由・根拠 | 影響するID・仕様 |
 |---|---|---|---|
 | 2026-10-19 | 画像を生成して取り込み、定義を作った。ステータス・技5つ・行動パターン・演出・外見・性格を候補として書いた | ユーザーの依頼（敵50体を試作し、文書カタログ・クライアント・サーバーにそろえる） | [敵の行動の仮設定](../../features/combat-enemy-behavior.md)、[ステータスの項目](../../features/party.md#ステータスの項目)、[レベルとステータス](../../features/progression.md#レベルとステータス) |
-| 2026-10-20 | しじまの沼の戦闘に出るようにし、Lv100のステータスと技「舌のかすめ取り」を戦闘で使うようにした | ユーザーの依頼（行き先を増やし、行き先ごとの敵を増やす） | [行き先と敵](../../features/stage-progression.md#行き先と敵) |
+| 2026-10-20 | しじまの沼の戦闘に出るようにし、Lv100のステータスと技「舌のかすめ取り」を戦闘で使うようにした | ユーザーの依頼（行き先を増やし、行き先ごとの敵を増やす） | [行き先と敵](../../features/stage-progression/destinations.md#行き先と敵) |
+| 2026-11-02 | スキルとdocの整理で、今のコードに合わせて、技・行動パターン・出る行き先を未実装・未配置とした記述を直した。絵の利用画面に冒険の戦闘を足し、沼の行き先を作る前とした未決事項を直した。行動順のコマの切り出しを、自動で切り出す今の作り（BattleEnemyLooksAssets.cs）に合わせた | 根拠：53体すべてが CombatEnemyStats・CombatEnemyBehaviors で動き、AdventureCatalog の行き先に出る。絵は BattleEnemyLooks で全種を戦闘に使う。しじまの沼は2026-10-20からある | [行き先と敵](../../features/stage-progression/destinations.md#行き先と敵)、[敵の行動の仮設定](../../features/combat-enemy-behavior.md) |

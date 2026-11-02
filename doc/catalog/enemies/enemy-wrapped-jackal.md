@@ -2,7 +2,7 @@
 id: enemy-wrapped-jackal
 type: visual-entity
 status: 候補
-updated: 2026-10-21
+updated: 2026-11-02
 name: 包帯の山犬
 category: enemies
 silhouette: 頭を低く下げて忍び寄る、細身の四つ足の犬。とがった長い耳が立ち、ほどけた包帯の端が体じゅうから垂れる
@@ -21,7 +21,6 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/WrappedJackal.a
 とても素早く、かみつきと引き裂きで攻め、倒れた仲間を呼び覚ましてもう一度戦わせる。
 この文書は、ステータス、使う技と行動パターン、外見と性格の設定を持つ。
 技の効果と演出は[敵の技の定義](../enemy-skills/README.md)に置く。
-2026-10-19の時点で、画像と敵の種類・弱点だけを実装しており、HP・技・行動は未実装である。
 
 ## 識別情報と根拠
 
@@ -31,8 +30,8 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/WrappedJackal.a
 | 対象の役割・説明 | 雑魚（中）。味方より先に動きやすく、仲間を遠吠えで強め、倒れた仲間を起き上がらせる。先に倒さないと取り巻きが減らない |
 | 元となる対象・亜種・衣装差分のID | なし |
 | 参照する仕様・関連する個別ID | [戦闘システム](../../features/combat.md)、[苔むした狼](enemy-moss-wolf.md)、[砂サソリ](enemy-sand-scorpion.md)、[砂鮫](enemy-sand-shark.md) |
-| 必要な画像用途 | 戦闘の1枚絵（96×96）。行動順のコマの切り出し位置は未決 |
-| ゲーム内の実装・アセット | 画像 `WrappedJackal.aseprite`、敵の種類と弱点 `CombatEnemies.cs`（`client/Assets/Baryonyx/Features/Combat/Runtime/`）、サーバーの敵ID `server/src/features/combat/catalog.ts` の `ENEMY_IDS`。HP・技・行動は未実装 |
+| 必要な画像用途 | 戦闘の1枚絵（96×96）。行動順のコマ（24×24）は、描かれた部分の上端から自動で切り出す（仮。`BattleEnemyLooksAssets.cs`） |
+| ゲーム内の実装・アセット | 画像 `WrappedJackal.aseprite`、敵の種類と弱点 `CombatEnemies.cs`（`client/Assets/Baryonyx/Features/Combat/Runtime/`）、サーバーの敵ID `server/src/features/combat/catalog.ts` の `ENEMY_IDS`、ステータス `CombatEnemyStats.cs`、技と行動パターン `CombatEnemyBehaviors.Tomb.cs`、出る行き先 `AdventureCatalog.cs` |
 
 ## 確定した設定
 
@@ -44,12 +43,12 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/WrappedJackal.a
 |---|---|---|---|
 | 未決（生息する地域は砂漠） | 未決 | 未決 | 未決 |
 
-まだどの行き先にも出ない。
+今の出る行き先とLv（仮）は[行き先と敵](../../features/stage-progression/destinations.md#行き先と敵)にある（割り振りの正本は [AdventureCatalog](../../../client/Assets/Baryonyx/Features/Adventure/Runtime/AdventureCatalog.cs) の `Areas`）。
 生息する地域は砂漠とし、出現する行き先・マス・敵の組み合わせ・Lvは未決とする。
 行き先の個別定義（`stage-`）はまだない（[ステージの定義](../stages/README.md)）。
-2026-10-20から、アルマジャ王墓（`almaja-tomb`、Lv26）の中くらいの敵として、冒険の戦闘に出る（[行き先と敵](../../features/stage-progression.md#行き先と敵)）。
-戦闘では、下のLv100のステータスに出るLvの成長率を掛けて使い、技は「かみつき」だけを物攻で物理として（味方の物防で受ける）使う（[CombatEnemyStats](../../../client/Assets/Baryonyx/Features/Combat/Runtime/CombatEnemyStats.cs)）。
-ほかの技と行動パターンは未実装である。
+2026-10-20から、アルマジャ王墓（`almaja-tomb`、Lv26）の中くらいの敵として、冒険の戦闘に出る（[行き先と敵](../../features/stage-progression/destinations.md#行き先と敵)）。
+戦闘では、下のLv100のステータスに出るLvの成長率を掛けて使う（[CombatEnemyStats](../../../client/Assets/Baryonyx/Features/Combat/Runtime/CombatEnemyStats.cs)）。
+技と行動パターンは、2026-10-22から [CombatEnemyBehaviors](../../../client/Assets/Baryonyx/Features/Combat/Runtime/CombatEnemyBehaviors.cs) で動く。戦闘にまだない効果の技（にらみつけ・墓守の呼び覚まし）は使わない（[敵の行動の仮設定](../../features/combat-enemy-behavior.md)）。
 
 ## 分類固有のデータ
 
@@ -75,7 +74,6 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/WrappedJackal.a
 素早さと引き換えに、HPは中くらいの敵の中では低めにした。
 包帯の下は乾いた亡骸で、物防・属防ともに低い。
 番犬として喉笛を狙う狩りをするため、会心を高めにした。
-出現するLvは未決のため、各Lvの値はLv100の値に成長率を掛けて出す（[レベルとステータス](../../features/progression.md#レベルとステータス)）。
 すべて仮の値である。
 技の括弧内の値はLv100で防御で減らす前の威力で、受ける味方の物防で減る。
 
@@ -157,30 +155,32 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/WrappedJackal.a
 | 用途・構図・視点・ポーズ・背景 | 戦闘の1枚絵。やや斜めの左向きで全身を描き、背景は透明 |
 | 解像度・透過・ファイル形式・差分規格 | 96×96、32色＋透明、インデックスカラーの `.aseprite`（[ドット絵の制作規格](../../art/direction.md#ドット絵の制作規格)） |
 | 外見の指示文（この敵の部分） | 「砂に埋もれた墓の番犬が、包帯に巻かれたまま起き上がった。金の首飾りをつけ、包帯の隙間から青い目が光る。配色：黄ばんだ包帯、黒い毛、金の首飾り、青い目の光。必ず残す特徴：包帯に巻かれた犬の体。金の首飾り。青く光る目」 |
-| 英語の短い説明（PixelLab用） | `lean mummified jackal wrapped in yellowed bandages, black fur showing through, gold collar necklace, glowing blue eyes, stalking low, three-quarter view facing left` |
-| 変更しない特徴・今回だけ変える特徴 | 変えない特徴は「小型ドット絵でも残す特徴」とする。行動順のコマの切り出し位置は未決 |
+| 英語の短い説明 | `lean mummified jackal wrapped in yellowed bandages, black fur showing through, gold collar necklace, glowing blue eyes, stalking low, three-quarter view facing left` |
+| 変更しない特徴・今回だけ変える特徴 | 変えない特徴は「小型ドット絵でも残す特徴」とする |
 | 実際に使った指示文 | `output/enemies/28-houtai-yamainu/request.md`（Git対象外） |
 | 入力にした文書のID・Gitコミット等の版 | なし（この定義を作る前の生成） |
 | 参照画像のパス・出所・利用条件 | 画風見本として、既存の森の守り手の絵を添付した |
 | 使用ツール・モデル・再現用設定 | Codex CLI（gpt-6.1-sol）。画像生成のモデルは既定 |
 | 出力画像のパス・生成日・案のID | `output/enemies/28-houtai-yamainu/enemy.png`（1254×1254、2026-10-19生成、Git対象外）。背景を抜いて切り出し、96×96に縮小して32色へ減色し、インデックスカラーの `.aseprite` にした |
-| 採用・候補・不採用と理由 | ライブラリと展示室で表示する下書き（候補） |
+| 採用・候補・不採用と理由 | 冒険の戦闘とライブラリ・展示室で表示する下書き（候補） |
 | 採用画像と文章の差・反映方法 | 指示どおりの絵になった。首飾りの丸い飾りと垂れ飾り、首まわりの逆立つ黒い毛を文章に加えた |
-| Unityアセットのパス・GUID・利用画面 | `client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/WrappedJackal.aseprite`。[ライブラリ](../../features/library.md)の敵の記録、[展示室](../../features/showcase.md) |
+| Unityアセットのパス・GUID・利用画面 | `client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/WrappedJackal.aseprite`。[ライブラリ](../../features/library.md)の敵の記録、[展示室](../../features/showcase.md)、冒険の戦闘 |
 
 ## 未決事項
 
 | 項目 | 決める内容・先に必要な判断 |
 |---|---|
-| 出現する場所とLv | 砂漠の行き先を作るときに、マス・敵の組み合わせ・Lvを決める |
-| 数値 | ステータス、行動の割合、激化の倍率は仮。[戦闘の未決事項](../../features/combat.md#未決事項)の数値が決まったら見直す |
-| 速度・会心・幸運 | 速度は、味方の合計と比べる方法（[ターン順](../../features/combat.md#ターン順)）が決まったら尺度を合わせ直す。会心と幸運は、使い道（[候補](../../features/party.md#ステータスの項目)）が決まったら見直す |
+| 出現する場所とLv | 砂漠の行き先はアルマジャ王墓とみなす（2026-11-02、ユーザーの判断）。そこでのマス・敵の組み合わせ・Lvを決める。今の割り振りは仮（[行き先と敵](../../features/stage-progression/destinations.md#行き先と敵)） |
+| 数値 | ステータス、行動の割合、激化の倍率は仮。[戦闘の未決事項](../../features/combat/implementation.md#未決事項)の数値が決まったら見直す |
+| 速度・会心・幸運 | 速度は、味方の合計と比べる方法（[ターン順](../../features/combat/rules.md#ターン順)）が決まったら尺度を合わせ直す。会心と幸運は、使い道（[候補](../../features/party.md#ステータスの項目)）が決まったら見直す |
 | 仲間の復活 | 新しい仕組みの決まり（[墓守の呼び覚まし](../enemy-skills/enemy-skill-wrapped-jackal-tomb-call.md)） |
-| 実装 | 冒険の戦闘では、ステータスと技1つ（かみつき）だけを使う。ほかの技と行動パターンは未実装。実装するときは[敵の挙動デバッグルーム](../../features/screens/debug-rooms.md#敵の挙動デバッグルーム)の行動も増やす |
+| 実装 | 戦闘にまだない効果の技（にらみつけ・墓守の呼び覚まし）は使わない（[敵の行動の仮設定](../../features/combat-enemy-behavior.md)）。実装するときは[敵の挙動デバッグルーム](../../features/screens/debug-rooms.md#敵の挙動デバッグルーム)の行動も増やす |
 
 ## 変更と判断の記録
 
 | 日付 | 変更・判断 | 理由・根拠 | 影響するID・仕様 |
 |---|---|---|---|
 | 2026-10-19 | 画像を生成して取り込み、定義を作った。ステータス・技5つ・行動パターン・演出・外見・性格を候補として書いた | ユーザーの依頼（敵50体を試作し、文書カタログ・クライアント・サーバーにそろえる） | [敵の行動の仮設定](../../features/combat-enemy-behavior.md)、[ステータスの項目](../../features/party.md#ステータスの項目)、[レベルとステータス](../../features/progression.md#レベルとステータス) |
-| 2026-10-20 | アルマジャ王墓の戦闘に出るようにし、Lv100のステータスと技「かみつき」を戦闘で使うようにした | ユーザーの依頼（行き先を増やし、行き先ごとの敵を増やす） | [行き先と敵](../../features/stage-progression.md#行き先と敵) |
+| 2026-10-20 | アルマジャ王墓の戦闘に出るようにし、Lv100のステータスと技「かみつき」を戦闘で使うようにした | ユーザーの依頼（行き先を増やし、行き先ごとの敵を増やす） | [行き先と敵](../../features/stage-progression/destinations.md#行き先と敵) |
+| 2026-11-02 | スキルとdocの整理で、今のコードに合わせて、技・行動パターン・出る行き先を未実装・未配置とした記述を直した。絵を冒険の戦闘でも使うことを書き足した。行動順のコマの切り出しを、自動で切り出す今の作り（BattleEnemyLooksAssets.cs）に合わせた | 根拠：53体すべてが CombatEnemyStats・CombatEnemyBehaviors で動き、AdventureCatalog の行き先に出る。絵は BattleEnemyLooks に入り、冒険の戦闘に出る | [行き先と敵](../../features/stage-progression/destinations.md#行き先と敵)、[敵の行動の仮設定](../../features/combat-enemy-behavior.md) |
+| 2026-11-02 | ユーザーの判断で、砂漠の行き先をアルマジャ王墓とみなし、出現する場所の書き方を合わせた | ユーザーの回答（砂時計の精の「砂漠の行き先」への答え） | [行き先と敵](../../features/stage-progression/destinations.md#行き先と敵) |

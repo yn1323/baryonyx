@@ -2,14 +2,14 @@
 id: resource-rune
 type: visual-entity
 status: 一部確定
-updated: 2026-09-28
+updated: 2026-11-02
 name: ルーン
 category: resources
 silhouette: 横から見たダイヤモンド（平らな上面と下の尖り）
 palette: 藍から水色までの青 | 面ごとに暗くした輪郭
 motifs: ブリリアントカット風の面 | 宝石の光沢
 personality: 対象外
-art_status: 試作をHomeで表示中
+art_status: 試作をHome・案内人の画面・冒険者の画面・冒険・世界地図で表示中
 art_files: client/Assets/Baryonyx/Shared/Art/GameResources/IconRune.aseprite
 ---
 
@@ -23,8 +23,8 @@ art_files: client/Assets/Baryonyx/Shared/Art/GameResources/IconRune.aseprite
 |---|---|
 | 定義の根拠・決定日・参照元 | [初期企画](../../game/brief.md)、[ルーン経済](../../features/economy.md) |
 | 対象の役割・説明 | 現実活動から得る主軸資源 |
-| 必要な画像用途 | 所持数に添えるアイコン、獲得時に飛ぶ粒 |
-| ゲーム内の実装・アセット | [IconRune.aseprite](../../../client/Assets/Baryonyx/Shared/Art/GameResources/IconRune.aseprite)。Homeの所持ルーンと獲得演出の粒で使う |
+| 必要な画像用途 | 所持数・値段・報酬に添えるアイコン、獲得時に飛ぶ粒 |
+| ゲーム内の実装・アセット | [IconRune.aseprite](../../../client/Assets/Baryonyx/Shared/Art/GameResources/IconRune.aseprite)。Homeと案内人の画面の所持ルーンと獲得演出の粒（[RuneGainEffect](../../../client/Assets/Baryonyx/Shared/UI/RuneGain/RuneGainEffect.cs)）、商会・神殿の値段、冒険者の画面のレベルアップの費用、冒険の報酬、世界地図のマスを開く値段と出来事の報酬で使う |
 
 ## 確定した設定
 
@@ -67,7 +67,7 @@ art_files: client/Assets/Baryonyx/Shared/Art/GameResources/IconRune.aseprite
 | 正本 | [IconRune.aseprite](../../../client/Assets/Baryonyx/Shared/Art/GameResources/IconRune.aseprite)。レイヤーは下から Gem（面と輪郭）・Shine（鏡面反射） |
 | 描き方・再現用設定 | AsepriteのLuaスクリプトで下描きし、以後は正本をAsepriteで直す。スクリプトと生成AIへの指示文はリポジトリに残さない |
 | 採用・候補・不採用と理由 | 候補。石の案、刻印ときらめき付きの32×32の宝石の案を経て、刻印なし・きらめきなし・面ごとの輪郭の案を64×64で描き、Homeで大きすぎたため48×48に描き直し、四角い形からダイヤモンドの形へ変え、さらに同じ意匠を24×24に描き直して4倍で試している |
-| Unityアセットのパス・GUID・利用画面 | `Assets/Baryonyx/Shared/Art/GameResources/IconRune.aseprite`、GUID `9e9fbc260f6a6bb44990225dd3f419dd`、Home |
+| Unityアセットのパス・GUID・利用画面 | `Assets/Baryonyx/Shared/Art/GameResources/IconRune.aseprite`、GUID `9e9fbc260f6a6bb44990225dd3f419dd`、Home・案内人の画面・冒険者の画面・冒険・世界地図（[ゲーム内の実装・アセット](#識別情報と根拠)） |
 
 ## 未決事項
 
@@ -77,8 +77,8 @@ art_files: client/Assets/Baryonyx/Shared/Art/GameResources/IconRune.aseprite
 | 他資源への変換 | 未決。販売しないため、有償のルーンはない |
 | 入手量・消費量 | 未決。経済仕様で決める |
 | 外見の採用、材質、作中での由来 | 未決。外見は試作の宝石案を候補とする |
-| アイコンや画像の共通規格 | 未決。[アート方針](../../art/direction.md)で決める |
-| 実行用データ・保存先 | 未実装 |
+| アイコンや画像の共通規格 | 2026-09-27に[ドット絵の制作規格](../../art/direction.md#ドット絵の制作規格)で決めた |
+| 実行用データ・保存先 | 残高と増減の記録はサーバーに置く（[ルーン経済の実装との対応](../../features/economy.md#実装との対応)） |
 
 ## 変更と判断の記録
 
@@ -92,3 +92,4 @@ art_files: client/Assets/Baryonyx/Shared/Art/GameResources/IconRune.aseprite
 | 2026-09-27 | 歩数パネルの「タップでルーン獲得」の左のアイコンを外した | アイコンは不要というユーザーの指示 | Home画面 |
 | 2026-09-27 | 右上の所持ルーンを4倍（96）から2倍（48）にした | 右上のルーンが大きいというユーザーの評価 | Home画面 |
 | 2026-09-27 | ルーンを課金で販売しないことを確定した設定に加えた | ユーザーが提示した企画見直し | [ルーン経済](../../features/economy.md)・[課金](../../features/monetization.md) |
+| 2026-11-02 | スキルとdocの整理で、今のコードに合わせて、アイコンを使う画面（Homeだけとしていた）と、未実装とした保存先、未決とした画像の共通規格を直した | 根拠：IconRune.aseprite を読む HomeScreenArt・GuideMenuAssets・GuideFrameAssets・RuneGainAssets・AdventureAssets・WorldAtlasTollAssets・WorldEventPanelAssets、残高のテーブル `rune_wallets`（server/src/features/exercise-rewards/db-schema.ts） | [ルーン経済](../../features/economy.md)・[比較索引](../../art/visual-index.md) |

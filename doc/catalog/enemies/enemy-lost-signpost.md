@@ -2,7 +2,7 @@
 id: enemy-lost-signpost
 type: visual-entity
 status: 候補
-updated: 2026-10-21
+updated: 2026-11-02
 name: 迷い道標
 category: enemies
 silhouette: 先の割れた一本の柱に、左右へ向いた矢印の板が2枚。柱の下は2本に裂けて脚になる
@@ -21,10 +21,9 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/LostSignpost.as
 弱点の実行上の正本は [CombatEnemies](../../../client/Assets/Baryonyx/Features/Combat/Runtime/CombatEnemies.cs)、サーバーで記録できる敵のIDは [catalog.ts](../../../server/src/features/combat/catalog.ts) の `ENEMY_IDS` とする。
 この文書は、生息する地域、ステータス、使う技と行動パターン、外見と性格の設定を持つ。
 技の効果と演出は[敵の技の定義](../enemy-skills/README.md)に置く。
-2026-10-19の時点で、画像と弱点だけをクライアントに取り込んでおり、どの行き先にも出ない。HP・技・行動は未実装である。
-2026-10-20から、港町ポルトリア（`port-portoria`、Lv14）の小さな敵として、冒険の戦闘に出る（[行き先と敵](../../features/stage-progression.md#行き先と敵)）。
-戦闘では、下のLv100のステータスに出るLvの成長率を掛けて使い、技は「たいあたり」だけを物攻で物理として（味方の物防で受ける）使う（[CombatEnemyStats](../../../client/Assets/Baryonyx/Features/Combat/Runtime/CombatEnemyStats.cs)）。
-ほかの技と行動パターンは未実装である。
+2026-10-20から港町ポルトリア（`port-portoria`、Lv14）の小さな敵として、2026-11-01からはミストラ遺跡（`forest-ruins`、Lv10）・白嶺ネーヴェ（`neve-peaks`、Lv40）の小さな敵としても、冒険の戦闘に出る（[行き先と敵](../../features/stage-progression/destinations.md#行き先と敵)）。
+戦闘では、下のLv100のステータスに出るLvの成長率を掛けて使う（[CombatEnemyStats](../../../client/Assets/Baryonyx/Features/Combat/Runtime/CombatEnemyStats.cs)）。
+技と行動パターンは、2026-10-22から [CombatEnemyBehaviors](../../../client/Assets/Baryonyx/Features/Combat/Runtime/CombatEnemyBehaviors.cs) で動く。戦闘にまだない効果の技（道案内）は使わない（[敵の行動の仮設定](../../features/combat-enemy-behavior.md)）。
 
 ## 識別情報と根拠
 
@@ -34,8 +33,8 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/LostSignpost.as
 | 対象の役割・説明 | 雑魚（小）。仲間の魔物に弱った味方を指し示し、仲間の次の攻撃を強める。仲間と組むと厄介になる |
 | 元となる対象・亜種・衣装差分のID | なし |
 | 参照する仕様・関連する個別ID | [戦闘システム](../../features/combat.md)、[かぼちゃ頭の案山子](enemy-pumpkin-scarecrow.md)、[金貨袋](enemy-coin-pouch.md) |
-| 必要な画像用途 | 戦闘の1枚絵（64×64）。行動順のコマの切り出し位置は未決 |
-| ゲーム内の実装・アセット | 画像 `LostSignpost.aseprite`、敵の種類と弱点 `CombatEnemies.cs`（`client/Assets/Baryonyx/Features/Combat/Runtime/`）、サーバーの敵ID `server/src/features/combat/catalog.ts` の `ENEMY_IDS`。HP・技・行動は未実装 |
+| 必要な画像用途 | 戦闘の1枚絵（64×64）。行動順のコマは、描かれた部分の上端から自動で切り出す（仮。`BattleEnemyLooksAssets.cs`） |
+| ゲーム内の実装・アセット | 画像 `LostSignpost.aseprite`、敵の種類と弱点 `CombatEnemies.cs`（`client/Assets/Baryonyx/Features/Combat/Runtime/`）、サーバーの敵ID `server/src/features/combat/catalog.ts` の `ENEMY_IDS`、ステータス `CombatEnemyStats.cs`、技と行動パターン `CombatEnemyBehaviors.Forest.cs`、出る行き先 `AdventureCatalog.cs` |
 
 ## 確定した設定
 
@@ -43,7 +42,7 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/LostSignpost.as
 
 ## 出現する場所
 
-まだどの行き先にも出ない。
+今の出る行き先とLv（仮）は[行き先と敵](../../features/stage-progression/destinations.md#行き先と敵)にある（割り振りの正本は [AdventureCatalog](../../../client/Assets/Baryonyx/Features/Adventure/Runtime/AdventureCatalog.cs) の `Areas`）。
 生息する地域は街道である。
 出現する行き先・マス・敵の組み合わせ・Lvは未決とする（[ステージの定義](../stages/README.md)）。
 
@@ -55,7 +54,7 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/LostSignpost.as
 | 役割 | 雑魚・小。単体の打撃、身を固める守り、仲間の攻撃の狙いを決めて強める | [ステータス・技・行動パターンの書き方](README.md#ステータス技行動パターンの書き方) | 候補 |
 | ステータスの型 | 釣り合い型（balanced） | 試作の設計値 | 候補 |
 | 大きさの区分 | 小（64×64） | [ドット絵の制作規格](../../art/direction.md#画面と寸法) | 規格どおり |
-| 弱点 | 斬 | [属性と弱点](../../features/combat.md#属性と弱点) | 仮 |
+| 弱点 | 斬 | [属性と弱点](../../features/combat/rules.md#属性と弱点) | 仮 |
 | 弱点の理由 | 斬：乾いて割れた木は、木目に沿って刃を入れるとたやすく裂ける | 設定 | 候補 |
 | 状態異常への反応 | 未決 | 効かない状態を設けるかを含めて未決 | 未決 |
 | 激化 | 5ターン目以降 | [行動パターン](#行動パターン) | 候補 |
@@ -149,31 +148,32 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/LostSignpost.as
 | 用途・構図・視点・ポーズ・背景 | 戦闘の1枚絵。やや斜めの左向きで全身を描き、身構えた待機の姿。背景は透明 |
 | 解像度・透過・ファイル形式・差分規格 | 64×64、32色＋透明、インデックスカラーの `.aseprite`（[ドット絵の制作規格](../../art/direction.md#ドット絵の制作規格)） |
 | 外見の指示文（この敵の部分） | 「使われなくなった道の道標が、霧の中で歩き出した。矢印の板が腕になり、行き先の文字がかすれる。配色は古い木の茶色、白くかすれた文字、苔のない乾いた木。必ず残す特徴は、矢印の板の腕、一本の柱の体、かすれた文字」 |
-| 英語の短い説明（PixelLab用） | `walking old wooden signpost, one cracked post body split into two legs at the bottom, two arrow boards as arms pointing left and right, faded white writing, dry wood, no face` |
+| 英語の短い説明 | `walking old wooden signpost, one cracked post body split into two legs at the bottom, two arrow boards as arms pointing left and right, faded white writing, dry wood, no face` |
 | 変更しない特徴・今回だけ変える特徴 | 変えない特徴は「小型ドット絵でも残す特徴」とする。顔がないため、行動順のコマは矢印の板と柱の上を切り出す案 |
 | 実際に使った指示文 | `output/enemies/48-michishirube/request.md`（Git対象外） |
 | 入力にした文書のID・Gitコミット等の版 | `output/enemies/spec.json`（Git対象外）の48番 |
 | 参照画像のパス・出所・利用条件 | 画風見本として、既存の[森の守り手](enemy-forest-guardian.md)の絵を添付した |
 | 使用ツール・モデル・再現用設定 | Codex CLI（gpt-6.1-sol、画像生成のモデルは既定） |
 | 出力画像のパス・生成日・案のID | `output/enemies/48-michishirube/enemy.png`（1254×1254、2026-10-19生成、Git対象外）。背景を抜いて切り出し、64×64に縮小して32色へ減色し、インデックスカラーの `.aseprite` にした |
-| 採用・候補・不採用と理由 | ライブラリと展示室で表示する下書き（候補） |
+| 採用・候補・不採用と理由 | 冒険の戦闘・ライブラリ・展示室で表示する下書き（候補） |
 | 採用画像と文章の差・反映方法 | 指示にない、柱の上の割れ、2本に裂けた脚、板を留める鉄の釘を文章に反映した。矢印の板は腕というより柱に釘で留めた板の形で描かれている。顔はない |
-| Unityアセットのパス・GUID・利用画面 | `client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/LostSignpost.aseprite`。ライブラリ、展示室 |
+| Unityアセットのパス・GUID・利用画面 | `client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/LostSignpost.aseprite`。冒険の戦闘、ライブラリ、展示室 |
 
 ## 未決事項
 
 | 項目 | 決める内容・先に必要な判断 |
 |---|---|
-| 数値 | ステータス、行動の割合、激化の倍率は仮。[戦闘の未決事項](../../features/combat.md#未決事項)の数値が決まったら見直す |
+| 数値 | ステータス、行動の割合、激化の倍率は仮。[戦闘の未決事項](../../features/combat/implementation.md#未決事項)の数値が決まったら見直す |
 | 出現する場所 | 出現する行き先・マス・敵の組み合わせ・Lv |
-| 速度・会心・幸運 | 速度は、味方の合計と比べる方法（[ターン順](../../features/combat.md#ターン順)）が決まったら尺度を合わせ直す。会心と幸運は、使い道（[候補](../../features/party.md#ステータスの項目)）が決まったら見直す |
+| 速度・会心・幸運 | 速度は、味方の合計と比べる方法（[ターン順](../../features/combat/rules.md#ターン順)）が決まったら尺度を合わせ直す。会心と幸運は、使い道（[候補](../../features/party.md#ステータスの項目)）が決まったら見直す |
 | 道案内 | 新しい状態（[道案内](../enemy-skills/enemy-skill-signpost-wayfinding.md)）。敵が仲間の敵に付ける強化として、[敵の行動の仮設定](../../features/combat-enemy-behavior.md)の仕組みに加えるか |
 | 行動順のコマ | 1枚絵から切り出す位置。顔がないため、どこを切り出すか |
-| 実装 | 冒険の戦闘では、ステータスと技1つ（たいあたり）だけを使う。ほかの技と行動パターンは未実装。実装するときは[敵の挙動デバッグルーム](../../features/screens/debug-rooms.md#敵の挙動デバッグルーム)の行動も増やす |
+| 実装 | 戦闘にまだない効果の技（道案内）は使わない（[敵の行動の仮設定](../../features/combat-enemy-behavior.md)）。実装するときは[敵の挙動デバッグルーム](../../features/screens/debug-rooms.md#敵の挙動デバッグルーム)の行動も増やす |
 
 ## 変更と判断の記録
 
 | 日付 | 変更・判断 | 理由・根拠 | 影響するID・仕様 |
 |---|---|---|---|
-| 2026-10-19 | 定義を作り、生息する地域・ステータス・技3つ・行動パターン・演出・外見・性格を候補として書いた。弱点とLv100のステータスは試作の設計値を使った | ユーザーの依頼（敵50体を試作し、文書カタログ・クライアント・サーバーにそろえる） | [敵の行動の仮設定](../../features/combat-enemy-behavior.md)、[属性と弱点](../../features/combat.md#属性と弱点) |
-| 2026-10-20 | 港町ポルトリアの戦闘に出るようにし、Lv100のステータスと技「たいあたり」を戦闘で使うようにした | ユーザーの依頼（行き先を増やし、行き先ごとの敵を増やす） | [行き先と敵](../../features/stage-progression.md#行き先と敵) |
+| 2026-10-19 | 定義を作り、生息する地域・ステータス・技3つ・行動パターン・演出・外見・性格を候補として書いた。弱点とLv100のステータスは試作の設計値を使った | ユーザーの依頼（敵50体を試作し、文書カタログ・クライアント・サーバーにそろえる） | [敵の行動の仮設定](../../features/combat-enemy-behavior.md)、[属性と弱点](../../features/combat/rules.md#属性と弱点) |
+| 2026-10-20 | 港町ポルトリアの戦闘に出るようにし、Lv100のステータスと技「たいあたり」を戦闘で使うようにした | ユーザーの依頼（行き先を増やし、行き先ごとの敵を増やす） | [行き先と敵](../../features/stage-progression/destinations.md#行き先と敵) |
+| 2026-11-02 | スキルとdocの整理で、今のコードに合わせて、技・行動パターン・出る行き先を未実装・未配置とした記述を直した。2026-11-01に増えた出る行き先（ミストラ遺跡・白嶺ネーヴェ）を足し、絵を冒険の戦闘で使い、行動順のコマを自動で切り出すことも書いた | 根拠：53体すべてが CombatEnemyStats・CombatEnemyBehaviors で動き、AdventureCatalog の行き先に出る。絵と行動順のコマは BattleEnemyLooksAssets が53体分を作る | [行き先と敵](../../features/stage-progression/destinations.md#行き先と敵)、[敵の行動の仮設定](../../features/combat-enemy-behavior.md) |

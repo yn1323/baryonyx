@@ -2,7 +2,7 @@
 id: enemy-skill-lich-requiem-chant
 type: definition
 status: 候補
-updated: 2026-10-19
+updated: 2026-11-02
 name: 葬送の詠唱
 category: enemy-skills
 ---
@@ -20,7 +20,7 @@ category: enemy-skills
 | 定義の根拠・決定日・参照元 | 2026-10-19、ユーザーの依頼（敵50体を試作し、文書カタログ・クライアント・サーバーにそろえる）で、[死霊の魔導師](../enemies/enemy-lich.md)の技として作った |
 | 役割・説明 | 激化のあとの大技。詠唱の間に弱点で崩せる |
 | 関連する仕様・個別ID | 使う敵：[死霊の魔導師](../enemies/enemy-lich.md)。[敵の行動の仮設定](../../features/combat-enemy-behavior.md) |
-| 実装・ゲームマスタの場所 | 未実装 |
+| 実装・ゲームマスタの場所 | [CombatEnemyBehaviors](../../../client/Assets/Baryonyx/Features/Combat/Runtime/CombatEnemyBehaviors.cs) の、使う敵の `Moves`。演出は、名前から選ぶ種類ごとの形（[BattleSkillVfx.Enemies](../../../client/Assets/Baryonyx/Features/Combat/Presentation/BattleSkillVfx.Enemies.cs) の `EnemyBlowOf`） |
 
 ## 確定した設定
 
@@ -32,8 +32,8 @@ category: enemy-skills
 |---|---|---|---|
 | 区分 | 固有技（[死霊の魔導師](../enemies/enemy-lich.md)） | [共通技と固有技](README.md#共通技と固有技) | 候補 |
 | 種類・対象 | 大技・味方全体 | [記入する項目](README.md#記入する項目) | 候補 |
-| 物理・魔法と属性 | 魔法・氷 | 味方は物理の技を物防で、魔法の技を属防で受ける（[使い道の候補](../../features/party.md#ステータスの項目)） | 候補 |
-| 効果 | 属攻の150%のダメージ。使う前の2ターンに詠唱を行い、予告に「大技まであと2ターン」「あと1ターン」を出す。詠唱の2ターンの間に、この敵が炎か打の攻撃で合計して最大HPの10%以上のダメージを受けると、詠唱が崩れて不発になる | 使う敵のステータスの割合（[威力の決め方](../../features/combat.md#威力の決め方)）。状態は[カードの状態の仮設定](../../features/combat.md#カードの状態の仮設定)の名前 | 仮 |
+| 物理・魔法と属性 | 魔法・氷 | [記入する項目](README.md#記入する項目) | 候補 |
+| 効果 | 属攻の150%のダメージ。使う前の2ターンに詠唱を行い、予告に「大技まであと2ターン」「あと1ターン」を出す。詠唱の2ターンの間に、この敵が炎か打の攻撃で合計して最大HPの10%以上のダメージを受けると、詠唱が崩れて不発になる | [記入する項目](README.md#記入する項目) | 仮 |
 | 予告 | 溜め（2ターン）→全体攻撃 | [記入する項目](README.md#記入する項目) | 候補 |
 | 使う敵 | [死霊の魔導師](../enemies/enemy-lich.md) | 各敵の定義の「技」の表 | 候補 |
 
@@ -60,12 +60,13 @@ category: enemy-skills
 
 | 項目 | 決める内容・先に必要な判断 |
 |---|---|
-| 数値 | 割合、詠唱のターン数、崩れるしきい値は仮。[戦闘の未決事項](../../features/combat.md#未決事項)の数値が決まったら見直す |
+| 数値 | 割合、詠唱のターン数、崩れるしきい値は仮。[戦闘の未決事項](../../features/combat/implementation.md#未決事項)の数値が決まったら見直す |
 | 詠唱の中断 | 新しい仕組み。決まった属性のダメージを溜めると大技が止まる。しきい値の見せ方と、弱点を開示していないときにも崩せるか（崩せる属性を予告に出すか） |
-| 実装 | 未実装。実装するときは[敵の挙動デバッグルーム](../../features/screens/debug-rooms.md#敵の挙動デバッグルーム)の行動にも加える |
+| 実装 | 戦闘で使う。効果のうち戦闘にまだないもの（味方に付く状態など）は写していない（[敵の行動の仮設定](../../features/combat-enemy-behavior.md)）。写すときは[敵の挙動デバッグルーム](../../features/screens/debug-rooms.md#敵の挙動デバッグルーム)の行動にも加える |
 
 ## 変更と判断の記録
 
 | 日付 | 変更・判断 | 理由・根拠 | 影響するID・仕様 |
 |---|---|---|---|
 | 2026-10-19 | 固有技として定義を作った | ユーザーの依頼 | 使う敵：[死霊の魔導師](../enemies/enemy-lich.md) |
+| 2026-11-02 | スキルとdocの整理で、今のコードに合わせて「実装・ゲームマスタの場所」を直した | 根拠：CombatEnemyBehaviors の `Moves` にこの技があり、戦闘で使う | [敵の行動の仮設定](../../features/combat-enemy-behavior.md) |

@@ -2,7 +2,7 @@
 id: passive-standing-alone
 type: visual-entity
 status: 候補
-updated: 2026-10-21
+updated: 2026-11-02
 name: 独り立ち
 category: passives
 silhouette: 宝石と稲妻の飾りの杖と星
@@ -27,7 +27,7 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Passives/PassiveStandin
 | 定義の根拠・決定日・参照元 | 2026-10-21、ユーザーの依頼「パッシブスキルをまじめに考えてほしい」により作成した仮設定 |
 | 役割・説明 | 見よう見まねが最大になると、リツの氷・雷属性のカードのコスト-1。 |
 | 関連する仕様・個別ID | [パッシブスキル](../../features/passives.md#仮データの9人のパッシブ)・[戦闘システム](../../features/combat.md) |
-| 必要な画像用途 | パッシブのアイコン（24×24ドット。育成の画面では2倍で表示） |
+| 必要な画像用途 | パッシブのアイコン（24×24ドット。育成の画面では3倍で表示） |
 | ゲーム内の実装・アセット | 定義 [CombatPassives](../../../client/Assets/Baryonyx/Features/Combat/Runtime/CombatPassives.cs)（`StandingAlone`）、戦闘での働き [BattleInspectView.Passives](../../../client/Assets/Baryonyx/Features/Combat/Presentation/BattleInspectView.Passives.cs)、アイコン `PassiveStandingAlone.aseprite` |
 
 ## 確定した設定
@@ -59,7 +59,7 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Passives/PassiveStandin
 | 所持者・解放するレベル | リツ・Lv 10 | [解放するレベル](../../features/passives.md#解放するレベル) | 仮 |
 | 発動条件 | [見よう見まね](passive-copycat.md)の上乗せが+50%に届いたとき | — | 仮 |
 | 効果 | その戦闘の間、リツの氷・雷属性のカードのコストを1下げる。0より下げない | [戦闘システム](../../features/combat.md) | 仮 |
-| 効果量・対象 | コスト-1・リツの氷・雷属性のカード | 量はステータスの割合で書く（[カードの数値の見せ方](../../features/combat.md#カードの数値の見せ方)） | 仮 |
+| 効果量・対象 | コスト-1・リツの氷・雷属性のカード | 量はステータスの割合で書く（[カードの数値の見せ方](../../features/combat/cards.md#カードの数値の見せ方)） | 仮 |
 | 常時・条件付き・回数制限 | 条件付き。届いたあとは戦闘の終わりまで | — | 仮 |
 | 重複・相互作用・対象外 | 品質の倍率で下がったコストから、さらに1下げる。強敵（8〜10ターン）と最奥のボスで届きやすく、3〜4ターンの通常の戦闘では届きにくい | [パッシブ同士のつながり](../../features/passives.md#パッシブ同士のつながり) | 仮 |
 | 表示文・アイコンの要否 | 説明文は上のとおり。働いたときに持ち主の上に名前を出す。アイコンは `PassiveStandingAlone.aseprite` | [働いたことを見せる](../../features/passives.md#働いたことを見せる) | 仮 |
@@ -105,7 +105,7 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Passives/PassiveStandin
 | 出力画像のパス・生成日・案のID | `output/icons/passives/passive-icons-d.png`（2026-10-21、Git対象外） |
 | 採用・候補・不採用と理由 | 採用（候補）。検査スクリプトの `ui-icon` の検査を通った |
 | 採用画像と文章の差・反映方法 | なし |
-| Unityアセットのパス・GUID・利用画面 | `Assets/Baryonyx/Features/Combat/UI/Art/Passives/PassiveStandingAlone.aseprite`。育成の画面のパッシブの行、展示室の画像のカテゴリ |
+| Unityアセットのパス・GUID・利用画面 | `Assets/Baryonyx/Features/Combat/UI/Art/Passives/PassiveStandingAlone.aseprite`。育成の画面のパッシブの行、展示室のUIのカテゴリ |
 
 ## 未決事項
 
@@ -120,3 +120,4 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Passives/PassiveStandin
 |---|---|---|---|
 | 2026-10-21 | 仮設定として作成 | ユーザーの依頼（パッシブスキルをまじめに考える） | [パッシブスキル](../../features/passives.md) |
 | 2026-10-21 | 冒険の戦闘で働くようにし、アイコンを描いた | ユーザーの依頼（画像と、冒険で適用されるようにする） | [実装との対応](../../features/passives.md#実装との対応) |
+| 2026-11-02 | スキルとdocの整理で、今のコードに合わせて、育成の画面でのアイコンの倍率（2倍→3倍）と展示室のカテゴリ（画像→UI）を直した | 根拠：TrainingAssets.cs のパッシブの行のアイコン（72×72）、展示室の登録（UIのカテゴリ） | [実装との対応](../../features/passives.md#実装との対応) |

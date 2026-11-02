@@ -5,6 +5,7 @@
 個別内容と決定状態は、下の索引から各定義を参照する。
 画像化の要否は個別に決め、画像が必要なら画像対象テンプレートを使う。
 IDの接頭辞は `effect-`、メタデータの `category` は `effects` とする。
+今の状態と効果は[カードの状態の仮設定](../../features/combat/cards.md#カードの状態の仮設定)にあり、値の正本は `CardStatus` と [CardRules](../../../client/Assets/Baryonyx/Features/Combat/Runtime/CardRules.cs) である。この分類にはまだ個別データを置いていない。
 
 ## 個別データの索引
 
@@ -25,6 +26,4 @@ IDの接頭辞は `effect-`、メタデータの `category` は `effects` とす
 
 ## 追加方法
 
-[画像対象テンプレート](../templates/visual-entity.md)または[定義テンプレート](../templates/definition.md)をこの分類にコピーし、1対象1ファイルで記入する。
-既存名・ID・画像の有無を確認し、未決欄を推測で埋めない。
-追加後は[索引を再生成](../../tools/README.md)する。
+[個別データの作り方](../README.md#個別データの作り方)に従う。
