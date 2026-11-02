@@ -1,5 +1,6 @@
 using System;
 using Baryonyx.Home;
+using Baryonyx.UI;
 using NUnit.Framework;
 using UnityEngine;
 
@@ -92,15 +93,15 @@ namespace Baryonyx.Tests.EditMode
         [TestCase(10000000L, 40)]
         public void MoreRunesFlyForLargerGains(long granted, int expected)
         {
-            Assert.That(HomeView.ParticleCountFor(granted, 40), Is.EqualTo(expected));
+            Assert.That(RuneGainEffect.ParticleCountFor(granted, 40), Is.EqualTo(expected));
         }
 
         [Test]
         public void LargerGainsBurstFarther()
         {
-            float one = HomeView.BurstDistanceFor(1, 140f, 520f);
-            float thousand = HomeView.BurstDistanceFor(1340, 140f, 520f);
-            float huge = HomeView.BurstDistanceFor(10000000, 140f, 520f);
+            float one = RuneGainEffect.BurstDistanceFor(1, 140f, 520f);
+            float thousand = RuneGainEffect.BurstDistanceFor(1340, 140f, 520f);
+            float huge = RuneGainEffect.BurstDistanceFor(10000000, 140f, 520f);
             Assert.That(one, Is.EqualTo(140f));
             Assert.That(thousand, Is.GreaterThan(one).And.LessThan(huge));
             Assert.That(huge, Is.EqualTo(520f));

@@ -48,7 +48,7 @@ namespace Baryonyx.Tests.PlayMode
             MoveMouse(new Vector2(Screen.width * 0.5f, Screen.height * 0.5f));
 
             yield return Tap(view);
-            Vector3 hint = view.RuneEffectLayer.InverseTransformPoint(
+            Vector3 hint = view.RuneGain.Layer.InverseTransformPoint(
                 view.RuneOrigin.TransformPoint(view.RuneOrigin.rect.center)
             );
             Assert.That(Distance(view.BurstOrigin, hint), Is.LessThan(1f));
@@ -62,7 +62,7 @@ namespace Baryonyx.Tests.PlayMode
             var view = default(HomeView);
             yield return LoadHome(value => view = value);
             Assert.That(view.RunesLabel.text, Is.EqualTo("0"));
-            Vector2 restPivot = view.RuneTarget.pivot;
+            Vector2 restPivot = view.RuneGain.RuneTarget.pivot;
 
             yield return Tap(view);
             long act = services
@@ -72,12 +72,12 @@ namespace Baryonyx.Tests.PlayMode
                 .Where(day => day.hasValue)
                 .Sum(day => day.steps);
             Assert.That(act, Is.GreaterThan(0));
-            Assert.That(view.GainLabel.text, Is.EqualTo("+" + HomeViewState.Runes(act)));
+            Assert.That(view.RuneGain.GainLabel.text, Is.EqualTo("+" + HomeViewState.Runes(act)));
             while (view.RuneGainPlaying)
                 yield return null;
 
-            Assert.That(view.RuneTarget.localScale, Is.EqualTo(Vector3.one));
-            Assert.That(view.RuneTarget.pivot, Is.EqualTo(restPivot));
+            Assert.That(view.RuneGain.RuneTarget.localScale, Is.EqualTo(Vector3.one));
+            Assert.That(view.RuneGain.RuneTarget.pivot, Is.EqualTo(restPivot));
             Assert.That(view.RunesLabel.text, Is.EqualTo(HomeViewState.Runes(act)));
             Assert.That(
                 services.Server.ReadRunesAsync(CancellationToken.None).GetAwaiter().GetResult(),
@@ -118,7 +118,7 @@ namespace Baryonyx.Tests.PlayMode
         {
             Assert.That(
                 RectTransformUtility.ScreenPointToLocalPointInRectangle(
-                    view.RuneEffectLayer,
+                    view.RuneGain.Layer,
                     screen,
                     null,
                     out var local

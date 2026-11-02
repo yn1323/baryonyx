@@ -129,10 +129,10 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(view.RuneGainPlaying, Is.False);
             Assert.That(view.RunesLabel.text, Is.EqualTo(HomeViewState.Runes(balance)));
             // キラキラとモヤは寿命で消えるため、飛ぶルーンと光が片付いたことだけを確かめる。
-            var sparkles = view.RuneSparkles.transform;
-            var haze = view.RuneHaze.transform;
+            var sparkles = view.RuneGain.RuneSparkles.transform;
+            var haze = view.RuneGain.RuneHaze.transform;
             Assert.That(
-                view.RuneEffectLayer.GetComponentsInChildren<Image>()
+                view.RuneGain.Layer.GetComponentsInChildren<Image>()
                     .Where(image =>
                         !image.transform.IsChildOf(sparkles) && !image.transform.IsChildOf(haze)
                     ),

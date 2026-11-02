@@ -50,11 +50,6 @@ namespace Baryonyx.Home.Editor
             (new Vector2(330, -441), new Vector2(164, 26), 0.5f),
         };
 
-        // Light colours taken from the rune palette (highlight and the brightest facets).
-        private static readonly Color RuneSpark = new(0.933f, 0.988f, 1f, 1f);
-        private static readonly Color RuneSparkFade = new(0.32f, 0.706f, 0.933f, 0f);
-        private static readonly Color RuneGlowColor = new(0.588f, 0.878f, 0.98f, 0f);
-
         private static readonly Color Flame = new(1f, 0.58f, 0.24f, 1f);
 
         private const float NavWidth = 128f;
@@ -75,8 +70,6 @@ namespace Baryonyx.Home.Editor
 
         /// <summary>How far below the screen's middle the campfire stands (design px).</summary>
         public const float CampfireFeetBelowCenter = 405f - CampLift;
-
-        private const float RuneIconSize = 24f * 4f;
 
         // The balance icon beside the digits is the same rune at 2x.
         private const float BalanceRuneSize = 24f * 2f;
@@ -163,10 +156,10 @@ namespace Baryonyx.Home.Editor
                 BuildWorld(root, view, PartySession.Members(PartyFormation.From(party)));
                 var safe = SafeArea(root);
                 BuildStepPanel(safe, view);
-                BuildTopRight(safe, view);
+                var runeIcon = BuildTopRight(safe, view);
                 BuildNavigation(safe, view);
                 BuildResume(safe, view);
-                BuildRuneGain(root, safe, view);
+                BuildRuneGain(root, safe, view, runeIcon);
                 BuildToast(root, view);
                 CollectTintGraphics(root);
                 // The list of debugging rooms: "ルーン+10000", the network switch, the rooms and
@@ -558,7 +551,7 @@ namespace Baryonyx.Home.Editor
             view.RuneOrigin = view.ClaimLabel.rectTransform;
         }
 
-        private static void BuildTopRight(RectTransform safe, HomeView view)
+        private static RectTransform BuildTopRight(RectTransform safe, HomeView view)
         {
             var settings = Rect("SettingsButton", safe);
             Corner(settings, Vector2.one, new Vector2(-64, -40), new Vector2(88, 88));
@@ -625,7 +618,7 @@ namespace Baryonyx.Home.Editor
             pill.gameObject.AddComponent<ContentSizeFitter>().horizontalFit = ContentSizeFitter
                 .FitMode
                 .PreferredSize;
-            view.RuneTarget = (RectTransform)
+            var runeIcon = (RectTransform)
                 Icon(
                     pill,
                     "RuneIcon",
@@ -641,6 +634,7 @@ namespace Baryonyx.Home.Editor
                 UiPalette.TextMain,
                 TextAlignmentOptions.Midline
             );
+            return runeIcon;
         }
 
         private static void BuildNavigation(RectTransform safe, HomeView view)
@@ -810,171 +804,24 @@ namespace Baryonyx.Home.Editor
             view.ResumeButton = button;
         }
 
-        // Runes fly from the step panel to the balance; the view clones the hidden particle.
-        private static void BuildRuneGain(RectTransform root, RectTransform safe, HomeView view)
-        {
-            var layer = Rect("RuneEffect", root);
-            Stretch(layer);
-            view.RuneEffectLayer = layer;
-            // The flying runes, sparkles and haze move every frame: on a Canvas of their own, so
-            // the rest of the home is not rebuilt with them (2026-10-29, the gain felt heavy). It
-            // draws in its place among the home's parts and takes no taps.
-            layer.gameObject.AddComponent<Canvas>();
-
-            // A computed light over the balance icon, under the runes and the sparkles: a white
-            // core and a soft halo, added to what is behind.
-            var glow = Rect("RuneGlow", layer);
-            Place(glow, Vector2.zero, new Vector2(BalanceRuneSize, BalanceRuneSize) * 2.2f);
-            view.RuneGlow = AddImage(glow, RuneGlowColor, false);
-            view.RuneGlow.material = AssetDatabase.LoadAssetAtPath<Material>(
-                Hd2dAssets.GlowCoreMaterialPath
-            );
-            glow.gameObject.SetActive(false);
-
-            // A haze of soft light drifts behind the sparkles and the runes: a puff where the
-            // runes burst out, a mist along their paths and a bloom where they land. It uses
-            // the same sources as the sparkles, with a computed puff whose rim drifts as its
-            // only shape (128 or 192 px across).
-            var haze = Vfx<Hd2dEmberEmitter>(
-                Hd2dAssets.EmberEmitterPrefabPath,
-                "RuneHaze",
-                layer,
-                0f
-            );
-            haze.GlintMaterial = AssetDatabase.LoadAssetAtPath<Material>(
-                Hd2dAssets.PuffMaterialPath
-            );
-            haze.GlintDots = 64;
-            haze.GlintSpin = 360f;
-            haze.Sources = new List<Hd2dEmberSource>
-            {
-                RuneHazeSource(
-                    "Arrival",
-                    12,
-                    new Vector2(30f, 30f),
-                    new Vector2(20f, 70f),
-                    new Vector2(0.4f, 0.6f),
-                    200f,
-                    2,
-                    0.45f
-                ),
-                RuneHazeSource(
-                    "Final",
-                    6,
-                    new Vector2(30f, 30f),
-                    new Vector2(40f, 110f),
-                    new Vector2(0.6f, 0.9f),
-                    260f,
-                    3,
-                    0.5f
-                ),
-                RuneHazeSource(
-                    "Burst",
-                    8,
-                    new Vector2(60f, 60f),
-                    new Vector2(60f, 180f),
-                    new Vector2(0.5f, 0.9f),
-                    360f,
-                    3,
-                    0.4f
-                ),
-                RuneHazeSource(
-                    "Trail",
-                    32,
-                    new Vector2(24f, 24f),
-                    new Vector2(0f, 20f),
-                    new Vector2(0.35f, 0.6f),
-                    360f,
-                    2,
-                    0.32f
-                ),
-            };
-            view.RuneHaze = haze;
-
-            // Sparkles pop from the balance icon as each rune lands, with a bigger burst for
-            // the last one; they lean left, away from the balance digits. The runes also burst
-            // out with a spray of sparkles and leave a short sparkling trail as they fly. The
-            // stars are computed four-pointed twinkles 20 px across (5 units of 4 px, the dot of
-            // the 4x rune) and the rest small glowing points. The order matches HomeView's
-            // sources.
-            var sparkles = Vfx<Hd2dEmberEmitter>(
-                Hd2dAssets.EmberEmitterPrefabPath,
-                "RuneSparkles",
-                layer,
-                0f
-            );
-            sparkles.GlintDots = 5;
-            sparkles.Sources = new List<Hd2dEmberSource>
-            {
-                RuneSparkSource(
-                    "Arrival",
-                    48,
-                    new Vector2(40f, 40f),
-                    new Vector2(160f, 280f),
-                    new Vector2(0.25f, 0.45f),
-                    200f,
-                    -80f
-                ),
-                RuneSparkSource(
-                    "Final",
-                    20,
-                    new Vector2(24f, 24f),
-                    new Vector2(220f, 400f),
-                    new Vector2(0.4f, 0.75f),
-                    260f,
-                    -220f
-                ),
-                RuneSparkSource(
-                    "Burst",
-                    24,
-                    new Vector2(40f, 40f),
-                    new Vector2(220f, 460f),
-                    new Vector2(0.3f, 0.6f),
-                    360f,
-                    -120f
-                ),
-                RuneSparkSource(
-                    "Trail",
-                    64,
-                    new Vector2(36f, 36f),
-                    new Vector2(10f, 50f),
-                    new Vector2(0.25f, 0.5f),
-                    360f,
-                    -40f
-                ),
-            };
-            view.RuneSparkles = sparkles;
-
-            var particle = Rect("RuneParticle", layer);
-            Place(particle, Vector2.zero, new Vector2(RuneIconSize, RuneIconSize));
-            view.RuneParticle = SpriteImage(particle, HomeScreenArt.IconRunePath, Color.white);
-            view.RuneParticle.preserveAspect = true;
-            particle.gameObject.SetActive(false);
-
-            // The gained amount appears under the balance while the counter rises.
-            var gain = Rect("RuneGain", safe);
-            gain.gameObject.AddComponent<Canvas>();
-            Corner(
-                gain,
-                Vector2.one,
+        // Runes fly from the step panel to the balance (RuneGainEffect); the gained amount
+        // appears under the balance while the counter rises.
+        private static void BuildRuneGain(
+            RectTransform root,
+            RectTransform safe,
+            HomeView view,
+            RectTransform runeIcon
+        ) =>
+            view.RuneGain = RuneGainAssets.Build(
+                root,
+                runeIcon,
+                view.RunesLabel,
+                BalanceRuneSize,
+                safe,
                 new Vector2(-(64 + 88 + 16 + 28), -(40 + 88 + 4)),
-                new Vector2(320, 64)
+                new Vector2(320, 64),
+                48
             );
-            var group = gain.gameObject.AddComponent<CanvasGroup>();
-            group.alpha = 0;
-            group.interactable = false;
-            group.blocksRaycasts = false;
-            view.GainGroup = group;
-            view.GainLabel = Label(
-                gain,
-                "RuneGainLabel",
-                "",
-                48,
-                UiPalette.Teal,
-                TextAlignmentOptions.MidlineRight
-            );
-            Stretch(view.GainLabel.rectTransform);
-        }
 
         // Both use the shared notice band at the top middle (doc/rules/ui-design.md): the
         // result of a tap that granted nothing, and the mock buttons' "coming soon".
@@ -1010,68 +857,6 @@ namespace Baryonyx.Home.Editor
                 throw new InvalidOperationException($"{prefabPath} has no {typeof(T).Name}.");
             return component;
         }
-
-        private static Hd2dEmberSource RuneSparkSource(
-            string name,
-            int count,
-            Vector2 area,
-            Vector2 speed,
-            Vector2 lifetime,
-            float spread,
-            float buoyancy
-        ) =>
-            new()
-            {
-                Name = name,
-                Anchor = new Vector2(0.5f, 0.5f),
-                SpawnArea = area,
-                Count = count,
-                Loop = false,
-                LifetimeRange = lifetime,
-                Direction = 180f,
-                Spread = spread,
-                SpeedRange = speed,
-                Buoyancy = buoyancy,
-                Curl = 0f,
-                DotSize = 4,
-                CrossShare = 0.6f,
-                StreakShare = 0f,
-                StartColor = RuneSpark,
-                EndColor = RuneSparkFade,
-                Twinkle = 0.75f,
-            };
-
-        private static Hd2dEmberSource RuneHazeSource(
-            string name,
-            int count,
-            Vector2 area,
-            Vector2 speed,
-            Vector2 lifetime,
-            float spread,
-            int scale,
-            float alpha
-        ) =>
-            new()
-            {
-                Name = name,
-                Anchor = new Vector2(0.5f, 0.5f),
-                SpawnArea = area,
-                Count = count,
-                Loop = false,
-                LifetimeRange = lifetime,
-                Direction = 180f,
-                Spread = spread,
-                SpeedRange = speed,
-                Buoyancy = 0f,
-                Curl = 0f,
-                // The 64 px glow is scaled whole, so a puff is 128 or 192 px across.
-                DotSize = scale,
-                CrossShare = 1f,
-                StreakShare = 0f,
-                StartColor = new Color(RuneGlowColor.r, RuneGlowColor.g, RuneGlowColor.b, alpha),
-                EndColor = RuneSparkFade,
-                Twinkle = 0.2f,
-            };
 
         private static Hd2dFlickerLightSource Torch(
             string name,
