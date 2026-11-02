@@ -16,7 +16,8 @@ namespace Baryonyx.Inventory.Editor
     /// The inventory lab's screen (InventoryLabScreen.prefab), a debugging room that adds things
     /// to the saved inventory (<see cref="InventoryLab"/>): over a dark backdrop, the way back to
     /// home at the top left, the quality and how many at the top right, the category tabs, the
-    /// kinds of the category in a grid, and the result of the last addition along the bottom.
+    /// kinds of the category in a grid, and along the bottom the result of the last addition and
+    /// the button that adds ten of every kind of the category.
     /// The weapons' rows are baked so the stopped screen shows the list.
     /// </summary>
     public static class InventoryLabAssets
@@ -34,6 +35,10 @@ namespace Baryonyx.Inventory.Editor
         // Buttons are as tall as a finger needs (doc/rules/ui-design.md).
         private const float ButtonHeight = 128f;
         private const float TabHeight = 72f;
+
+        private const float ListHeight = 696f;
+        private const float BottomTop = 236f + ListHeight + 16f;
+        private const float AllWidth = 340f;
 
         private const int Columns = 4;
         private const float Gap = 16f;
@@ -70,7 +75,8 @@ namespace Baryonyx.Inventory.Editor
                     UiPalette.TextMain,
                     TextAlignmentOptions.MidlineLeft
                 );
-                Layout.At(lab.Status, 20f, 996f, LineWidth, 60f);
+                Layout.At(lab.Status, 20f, BottomTop, LineWidth - AllWidth - Gap, ButtonHeight);
+                BuildGrantAll(safe, lab);
 
                 lab.Art = ItemArtAssets.Load();
                 lab.BuildRows(InventoryLabEntry.Of(InventoryLabTab.Weapons));
@@ -152,10 +158,39 @@ namespace Baryonyx.Inventory.Editor
             );
         }
 
+        // 右下の、表示中の分類の全種類を10個ずつ足すボタン。
+        private static void BuildGrantAll(RectTransform safe, InventoryLab lab)
+        {
+            var box = Layout.Box(
+                safe,
+                "GrantAll",
+                20f + LineWidth - AllWidth,
+                BottomTop,
+                AllWidth,
+                ButtonHeight
+            );
+            var (button, _, card) = GlassCardAssets.Choice(
+                box,
+                pattern: false,
+                fill: GlassCardAssets.SceneFillColor
+            );
+            Stretch(
+                Label(
+                    card,
+                    "Label",
+                    $"全部を{InventoryLab.AllAmount}個ずつ",
+                    32,
+                    UiPalette.TextMain,
+                    TextAlignmentOptions.Center
+                ).rectTransform
+            );
+            lab.GrantAllButton = button;
+        }
+
         // 分類の種類の格子。行は分類に合わせてPlayの開始時に作り直すため、見本を置き、武器の行を焼き込む。
         private static void BuildList(RectTransform safe, InventoryLab lab)
         {
-            var panel = Layout.Box(safe, "List", 20f, 236f, LineWidth, 744f);
+            var panel = Layout.Box(safe, "List", 20f, 236f, LineWidth, ListHeight);
             var viewport = Layout.Viewport(panel);
             var content = Layout.Grid(
                 viewport,

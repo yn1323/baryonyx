@@ -113,6 +113,9 @@ namespace Baryonyx.Inventory
         /// <summary>The qualities in the order of <see cref="QualityTabs"/>, highest first.</summary>
         public static readonly ItemQuality[] Qualities = Inventory.Quality.All.Reverse().ToArray();
 
+        /// <summary>How many of each kind the button for the whole tab adds.</summary>
+        public const int AllAmount = 10;
+
         public const string NoServerMessage = "サーバーにつながっていないため、足せません";
         public const string FailedMessage = "足せませんでした";
 
@@ -138,6 +141,9 @@ namespace Baryonyx.Inventory
 
         [Tooltip("一覧の行の見本（押せる札、絵、名前、★）。行ごとに複製する。")]
         public Button RowTemplate;
+
+        [Tooltip("表示中の分類の全種類を AllAmount 個ずつ足すボタン。")]
+        public Button GrantAllButton;
 
         [Tooltip("足した結果を出す行。")]
         public TMP_Text Status;
@@ -177,6 +183,7 @@ namespace Baryonyx.Inventory
         private void Start()
         {
             Listen(HomeButton, GoHome);
+            Listen(GrantAllButton, GrantAll);
             if (HomeButton != null)
                 HomeButton.gameObject.SetActive(!string.IsNullOrWhiteSpace(HomeSceneName));
             for (int t = 0; t < Tabs.Length; t++)
@@ -246,6 +253,66 @@ namespace Baryonyx.Inventory
             if (index < 0 || index >= entries.Count)
                 return;
             LastGrant = GrantAsync(entries[index], GrantQuality, Amount);
+        }
+
+        /// <summary>
+        /// Adds <see cref="AllAmount"/> of every kind of the tab shown, one kind after another at
+        /// the chosen quality, showing how far it has got. A second tap while adding is ignored.
+        /// </summary>
+        public void GrantAll()
+        {
+            if (!LastGrant.IsCompleted || entries.Count == 0)
+                return;
+            LastGrant = GrantAllAsync(entries, GrantQuality);
+        }
+
+        private async Task GrantAllAsync(IReadOnlyList<InventoryLabEntry> kinds, ItemQuality quality)
+        {
+            var grants = Grants;
+            if (grants == null)
+            {
+                Show(NoServerMessage, false);
+                return;
+            }
+            SetAdding(true);
+            try
+            {
+                for (int i = 0; i < kinds.Count; i++)
+                {
+                    Show($"足しています　{i + 1}/{kinds.Count}", true);
+                    try
+                    {
+                        await grants.GrantAsync(
+                            kinds[i].Category,
+                            kinds[i].Id,
+                            quality,
+                            AllAmount,
+                            lifetime.Token
+                        );
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        return;
+                    }
+                    catch (Exception exception)
+                    {
+                        Debug.LogWarning($"{FailedMessage}（{kinds[i].Id}）。{exception.Message}", this);
+                        Show($"{kinds[i].Name}を{FailedMessage}（{i}/{kinds.Count}種類まで足しました）", false);
+                        return;
+                    }
+                }
+                Show($"{kinds.Count}種類を ×{AllAmount} ずつ足しました", true);
+            }
+            finally
+            {
+                SetAdding(false);
+            }
+        }
+
+        private void SetAdding(bool adding)
+        {
+            if (this != null && GrantAllButton != null)
+                GrantAllButton.interactable = !adding;
         }
 
         private async Task GrantAsync(InventoryLabEntry entry, ItemQuality quality, int amount)

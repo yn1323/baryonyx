@@ -131,6 +131,21 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(fake.Calls[1].Category, Is.EqualTo("item"));
             Assert.That(lab.Status.text, Is.EqualTo($"{lab.Entries[1].Name} ×10 を足しました"));
 
+            // 「全部を10個ずつ」は、表示中の分類の全種類を10個ずつ順に足す。
+            SceneTests.AssertTouchSize(lab.GrantAllButton.transform);
+            fake.Calls.Clear();
+            lab.GrantAllButton.onClick.Invoke();
+            yield return SceneTests.WaitUntil(() => lab.LastGrant.IsCompleted);
+            Assert.That(
+                fake.Calls.Select(call => (call.Category, call.Id, call.Count)),
+                Is.EqualTo(lab.Entries.Select(entry => ("item", entry.Id, InventoryLab.AllAmount)))
+            );
+            Assert.That(
+                lab.Status.text,
+                Is.EqualTo($"{lab.Entries.Count}種類を ×{InventoryLab.AllAmount} ずつ足しました")
+            );
+            Assert.That(lab.GrantAllButton.interactable, Is.True);
+
             // サーバーがなければ足せないと知らせる。
             InventoryLab.Grants = null;
             lab.Rows[0].onClick.Invoke();
