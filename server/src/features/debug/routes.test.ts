@@ -111,15 +111,19 @@ describe("デバッグAPI", () => {
       ),
     ).toBe(12);
     expect(
-      (await grant({ category: "material", id: "polish-gold", count: 4 }))
+      (await grant({ category: "material", id: "polish-white", count: 4 }))
         .status,
     ).toBe(200);
     expect(
       await count(
         "SELECT count AS n FROM enhancement_materials WHERE user_id = ? AND material_id = ?",
-        "polish-gold",
+        "polish-white",
       ),
     ).toBe(4);
+    // 色ごとの磨き石はなくしたため、足せない。
+    expect(
+      (await grant({ category: "material", id: "polish-gold" })).status,
+    ).toBe(404);
 
     // 武器を防具として、知らない種類を足そうとしたとき。
     expect(

@@ -3,6 +3,7 @@ import {
   type ApiScenario,
   createApiScenario,
 } from "../../../tests/support/api-scenario.js";
+import { percentRange, qualityOf } from "../../shared/quality.js";
 import {
   type EquipmentId,
   maxMultiplierPercent as equipmentMaxPercent,
@@ -15,9 +16,7 @@ import {
 } from "../party/catalog.js";
 import {
   AWAKENING_RUNES,
-  COMBINES,
-  POLISHES,
-  polishCeilingPercent,
+  POLISH_RUNES_PER_STONE,
   polishStep,
   SKILL_AWAKENING_RUNES,
 } from "./catalog.js";
@@ -51,17 +50,6 @@ type Polished = {
     before: { multiplier: number; quality: string };
     multiplier: number;
     quality: string;
-    runes: number;
-    balanceAfter: number;
-  };
-  materials?: Materials;
-  error?: string;
-};
-type Combined = {
-  combine?: {
-    materialId: string;
-    from: string;
-    count: number;
     runes: number;
     balanceAfter: number;
   };
@@ -120,8 +108,6 @@ describe("強化API", () => {
     post<Polished>("/enhancement/polish", token, body, expected);
   const awaken = (token: string, body: unknown, expected = 200) =>
     post<Awakened>("/enhancement/awaken", token, body, expected);
-  const combine = (token: string, body: unknown, expected = 200) =>
-    post<Combined>("/enhancement/combine", token, body, expected);
 
   const materialsOf = async (token: string) =>
     (await scenario.read<{ materials: Materials }>("/enhancement", token))
@@ -145,6 +131,27 @@ describe("強化API", () => {
     }
   };
 
+  // 倍率を直接書き換える。品質の境目の前後から強化する例を作るために使う。
+  const setSkillPercent = (cardId: string, percent: number) =>
+    scenario.env.DB.prepare(
+      "UPDATE skill_cards SET multiplier_percent = ? WHERE id = ?",
+    )
+      .bind(percent, cardId)
+      .run();
+
+  // 段階ごとの石の数（C=1・B=2・A=3・S=6）を、仕様のとおりに数え直す。
+  const STONES = { C: 1, B: 2, A: 3, S: 6 } as const;
+  const expectedPlan = (percent: number, steps: number, maxPercent: number) => {
+    const step = polishStep(maxPercent);
+    let after = percent;
+    let stones = 0;
+    for (let index = 0; index < steps; index++) {
+      stones += STONES[qualityOf(after, maxPercent)];
+      after = Math.min(maxPercent, after + step);
+    }
+    return { after, stones };
+  };
+
   it("セッションのない要求を401で、不正な入力を400で拒否する", async () => {
     expect((await scenario.request("/enhancement", "GET")).status).toBe(401);
     expect(
@@ -153,51 +160,38 @@ describe("強化API", () => {
           requestId: requestId(1),
           category: "skill",
           itemId: "x",
-          materialId: "polish-white",
-          count: 1,
+          steps: 1,
         })
       ).status,
     ).toBe(401);
 
     const user = await scenario.login("enhancement-invalid");
     for (const body of [
-      {
-        requestId: "short",
-        category: "skill",
-        itemId: "x",
-        materialId: "polish-white",
-        count: 1,
-      },
+      { requestId: "short", category: "skill", itemId: "x", steps: 1 },
       // 知らない分類は品質強化の対象にしない。
       {
         requestId: requestId(1),
         category: "unknown",
         itemId: "luck",
-        materialId: "polish-white",
-        count: 1,
+        steps: 1,
       },
-      // 覚醒の欠片は品質強化に使えない。
-      {
-        requestId: requestId(1),
-        category: "skill",
-        itemId: "x",
-        materialId: "awakening-shard",
-        count: 1,
-      },
+      { requestId: requestId(1), category: "skill", itemId: "x", steps: 0 },
+      { requestId: requestId(1), category: "skill", itemId: "x", steps: 100 },
+      { requestId: requestId(1), category: "skill", itemId: "x", steps: 1.5 },
+      // 石の種類と数を指す以前の形は受け付けない。
       {
         requestId: requestId(1),
         category: "skill",
         itemId: "x",
         materialId: "polish-white",
-        count: 0,
+        count: 1,
       },
       {
         requestId: requestId(1),
         category: "unique",
         characterId: "toma",
         index: 3,
-        materialId: "polish-white",
-        count: 1,
+        steps: 1,
       },
     ]) {
       await polish(user.token, body, 400);
@@ -209,34 +203,42 @@ describe("強化API", () => {
     ]) {
       await awaken(user.token, body, 400);
     }
+    // 磨き石の合成はなくした。
+    expect(
+      (
+        await scenario.request(
+          "/enhancement/combine",
+          "POST",
+          { requestId: requestId(1), materialId: "polish-blue", count: 1 },
+          user.token,
+        )
+      ).status,
+    ).toBe(404);
   });
 
   it("初めは強化素材をどれも0個持つ", async () => {
     const user = await scenario.login("enhancement-empty");
     expect(await materialsOf(user.token)).toEqual([
       { id: "polish-white", count: 0 },
-      { id: "polish-blue", count: 0 },
-      { id: "polish-purple", count: 0 },
-      { id: "polish-gold", count: 0 },
       { id: "awakening-shard", count: 0 },
     ]);
   });
 
-  it("スキルの倍率を磨き石とルーンで上げ、再送では二重に使わず、足りない・使い回しを拒む", async () => {
+  it("スキルの倍率を段階で上げ、再送では二重に使わず、足りない・使い回しを拒む", async () => {
     const user = await scenario.login("enhancement-skill");
     const card = (await scenario.read<Party>("/party", user.token))
       .skillCards[0];
     const maxPercent = skillMaxPercent(card.skillId as CardSkillId);
-    const step = polishStep("polish-white", maxPercent);
+    const step = polishStep(maxPercent);
     await give(user.userId, { "polish-white": 3 });
     await scenario.setRunes(user.userId, 1000);
 
+    // ×1.00（C）から2段階：どちらの段階もCのうちに始めるため、石は1個ずつ。
     const body = {
       requestId: requestId(1),
       category: "skill",
       itemId: card.id,
-      materialId: "polish-white",
-      count: 2,
+      steps: 2,
     };
     const first = await polish(user.token, body);
     expect(first.enhancement).toEqual({
@@ -248,7 +250,7 @@ describe("強化API", () => {
       before: { multiplier: 1, quality: "C" },
       multiplier: (100 + step * 2) / 100,
       quality: "C",
-      runes: POLISHES["polish-white"].runes * 2,
+      runes: POLISH_RUNES_PER_STONE * 2,
       balanceAfter: 800,
     });
     expect(
@@ -265,8 +267,8 @@ describe("強化API", () => {
     expect(await scenario.runesOf(user.token)).toBe(800);
     expect(await countOf(user.token, "polish-white")).toBe(1);
 
-    // 同じ要求IDで別の内容は拒む。
-    expect((await polish(user.token, { ...body, count: 1 }, 409)).error).toBe(
+    // 同じ要求IDで別の段階の数は拒む。
+    expect((await polish(user.token, { ...body, steps: 1 }, 409)).error).toBe(
       "request_conflict",
     );
     // 持っている数より多くは使えない。
@@ -274,7 +276,7 @@ describe("強化API", () => {
       (
         await polish(
           user.token,
-          { ...body, requestId: requestId(2), count: 2 },
+          { ...body, requestId: requestId(2), steps: 2 },
           409,
         )
       ).error,
@@ -285,7 +287,7 @@ describe("強化API", () => {
       (
         await polish(
           user.token,
-          { ...body, requestId: requestId(3), count: 1 },
+          { ...body, requestId: requestId(3), steps: 1 },
           409,
         )
       ).error,
@@ -303,7 +305,68 @@ describe("強化API", () => {
     ).toBe("target_not_found");
   });
 
-  it("装備は上限で止め、最後の1つが何も上げない数と、上限に届いた物は受け付けない", async () => {
+  it("1段階の石の数は、その段階を始める前の品質で決まり、品質の帯をまたぐと途中で増える", async () => {
+    const user = await scenario.login("enhancement-bands");
+    const card = (await scenario.read<Party>("/party", user.token))
+      .skillCards[0];
+    const maxPercent = skillMaxPercent(card.skillId as CardSkillId);
+    const step = polishStep(maxPercent);
+    await give(user.userId, { "polish-white": 100 });
+    await scenario.setRunes(user.userId, 100_000);
+    const body = { category: "skill", itemId: card.id };
+
+    // Bの入口の1つ手前（C）から2段階：1段目はCで1個、2段目はBに入ってから始めるため2個。
+    const bMin = percentRange("B", maxPercent).min;
+    await setSkillPercent(card.id, bMin - 1);
+    const cToB = await polish(user.token, {
+      ...body,
+      requestId: requestId(1),
+      steps: 2,
+    });
+    expect(cToB.enhancement).toMatchObject({
+      materialId: "polish-white",
+      count: 3,
+      before: { quality: "C" },
+      multiplier: (bMin - 1 + step * 2) / 100,
+      quality: "B",
+      runes: POLISH_RUNES_PER_STONE * 3,
+    });
+    expect(await countOf(user.token, "polish-white")).toBe(97);
+
+    // Aの入口の1つ手前（B）から2段階：2個と3個。
+    const aMin = percentRange("A", maxPercent).min;
+    await setSkillPercent(card.id, aMin - 1);
+    const bToA = await polish(user.token, {
+      ...body,
+      requestId: requestId(2),
+      steps: 2,
+    });
+    expect(bToA.enhancement).toMatchObject({
+      count: 5,
+      before: { quality: "B" },
+      quality: "A",
+      runes: POLISH_RUNES_PER_STONE * 5,
+    });
+
+    // Sの入口（S）から1段階：6個。
+    const sMin = percentRange("S", maxPercent).min;
+    await setSkillPercent(card.id, sMin);
+    const inS = await polish(user.token, {
+      ...body,
+      requestId: requestId(3),
+      steps: 1,
+    });
+    expect(inS.enhancement).toMatchObject({
+      count: 6,
+      before: { quality: "S" },
+      multiplier: Math.min(maxPercent, sMin + step) / 100,
+      quality: "S",
+      runes: POLISH_RUNES_PER_STONE * 6,
+    });
+    expect(await countOf(user.token, "polish-white")).toBe(97 - 5 - 6);
+  });
+
+  it("最後の段階は種類の上限で止め、最後の段階が何も上げない数と、上限に届いた物は受け付けない", async () => {
     const user = await scenario.login("enhancement-equipment");
     const items = (
       await scenario.read<{
@@ -313,38 +376,53 @@ describe("強化API", () => {
     const item = items[0];
     const category = slotOf(item.equipmentId) as string;
     const maxPercent = equipmentMaxPercent(item.equipmentId as EquipmentId);
-    await give(user.userId, { "polish-gold": 4 });
+    const step = polishStep(maxPercent);
+    // ×1.00から上限に届く段階の数。最後の段階は上限で止まるため、端数でも1段階で届く。
+    const toMax = Math.ceil((maxPercent - 100) / step);
+    const full = expectedPlan(100, toMax, maxPercent);
+    expect(full.after).toBe(maxPercent);
+    await give(user.userId, { "polish-white": full.stones + 10 });
     await scenario.setRunes(user.userId, 100_000);
 
-    const body = {
-      category,
-      itemId: item.id,
-      materialId: "polish-gold",
-    };
-    // 金は幅の50%を上げるため、×1.00からは2つで上限に届く。3つ目は何も上げない。
+    const body = { category, itemId: item.id };
+    // 上限に届く数より1つ多いと、最後の段階が何も上げない。石もルーンも使わない。
     expect(
       (
         await polish(
           user.token,
-          { ...body, requestId: requestId(1), count: 3 },
+          { ...body, requestId: requestId(1), steps: toMax + 1 },
           409,
         )
       ).error,
-    ).toBe("too_many_materials");
+    ).toBe("too_many_steps");
+    expect(await countOf(user.token, "polish-white")).toBe(full.stones + 10);
+    expect(await scenario.runesOf(user.token)).toBe(100_000);
+
     const maxed = await polish(user.token, {
       ...body,
       requestId: requestId(2),
-      count: 2,
+      steps: toMax,
     });
     expect(maxed.enhancement).toMatchObject({
+      count: full.stones,
+      before: { multiplier: 1, quality: "C" },
       multiplier: maxPercent / 100,
       quality: "S",
+      runes: POLISH_RUNES_PER_STONE * full.stones,
+      balanceAfter: 100_000 - POLISH_RUNES_PER_STONE * full.stones,
     });
+    // 同じ要求の再送は、上限に届いたあとでも記録した結果を返す。
+    const replay = await polish(user.token, {
+      ...body,
+      requestId: requestId(2),
+      steps: toMax,
+    });
+    expect(replay.enhancement).toEqual(maxed.enhancement);
     expect(
       (
         await polish(
           user.token,
-          { ...body, requestId: requestId(3), count: 1 },
+          { ...body, requestId: requestId(3), steps: 1 },
           409,
         )
       ).error,
@@ -355,180 +433,78 @@ describe("強化API", () => {
       (
         await polish(
           user.token,
-          { ...body, category: other, requestId: requestId(4), count: 1 },
+          { ...body, category: other, requestId: requestId(4), steps: 1 },
           404,
         )
       ).error,
     ).toBe("target_not_found");
-    expect(await countOf(user.token, "polish-gold")).toBe(2);
+    expect(await countOf(user.token, "polish-white")).toBe(10);
   });
 
-  it("色ごとの上限で止め、上限に届いた色と、上限を超えて何も上げない数は受け付けない", async () => {
-    const user = await scenario.login("enhancement-ceiling");
+  it("上限の手前で端数が残るときは、最後の段階を上限で止める", async () => {
+    const user = await scenario.login("enhancement-cap");
     const card = (await scenario.read<Party>("/party", user.token))
       .skillCards[0];
     const maxPercent = skillMaxPercent(card.skillId as CardSkillId);
-    const ceiling = polishCeilingPercent("polish-white", maxPercent);
-    const need = Math.ceil(
-      (ceiling - 100) / polishStep("polish-white", maxPercent),
-    );
-    await give(user.userId, { "polish-white": need + 1, "polish-blue": 1 });
+    await give(user.userId, { "polish-white": 20 });
     await scenario.setRunes(user.userId, 100_000);
-
+    await setSkillPercent(card.id, maxPercent - 1);
     const body = { category: "skill", itemId: card.id };
-    // 白はBの入口で止まるため、入口に届く数より1つ多いと、最後の1つが何も上げない。
+
+    // 上限の1つ手前（S）からは、1段階で上限に届く。2段階は多すぎる。
     expect(
       (
         await polish(
           user.token,
-          {
-            ...body,
-            requestId: requestId(1),
-            materialId: "polish-white",
-            count: need + 1,
-          },
+          { ...body, requestId: requestId(1), steps: 2 },
           409,
         )
       ).error,
-    ).toBe("too_many_materials");
-    const raised = await polish(user.token, {
+    ).toBe("too_many_steps");
+    const capped = await polish(user.token, {
       ...body,
       requestId: requestId(2),
-      materialId: "polish-white",
-      count: need,
+      steps: 1,
     });
-    expect(raised.enhancement).toMatchObject({
-      multiplier: ceiling / 100,
-      quality: "B",
+    expect(capped.enhancement).toMatchObject({
+      count: 6,
+      multiplier: maxPercent / 100,
+      quality: "S",
     });
-    // Bの入口に届いたら、白はもう使えない。
-    expect(
-      (
-        await polish(
-          user.token,
-          {
-            ...body,
-            requestId: requestId(3),
-            materialId: "polish-white",
-            count: 1,
-          },
-          409,
-        )
-      ).error,
-    ).toBe("polish_ceiling");
-    expect(await countOf(user.token, "polish-white")).toBe(1);
-    // 青はAの入口まで上げられる。
-    const blue = await polish(user.token, {
-      ...body,
-      requestId: requestId(4),
-      materialId: "polish-blue",
-      count: 1,
-    });
-    expect(blue.enhancement).toMatchObject({
-      multiplier:
-        Math.min(
-          polishCeilingPercent("polish-blue", maxPercent),
-          ceiling + polishStep("polish-blue", maxPercent),
-        ) / 100,
-      quality: "B",
-    });
-  });
-
-  it("下の色3個とルーンで上の色を作り、再送では二重に作らず、足りない・白を作る要求を拒む", async () => {
-    const user = await scenario.login("enhancement-combine");
-    await give(user.userId, { "polish-white": 7, "polish-purple": 3 });
-    await scenario.setRunes(user.userId, 1000);
-
-    const body = {
-      requestId: requestId(1),
-      materialId: "polish-blue",
-      count: 2,
-    };
-    const first = await combine(user.token, body);
-    expect(first.combine).toEqual({
-      materialId: "polish-blue",
-      from: "polish-white",
-      count: 2,
-      runes: COMBINES["polish-blue"].runes * 2,
-      balanceAfter: 1000 - COMBINES["polish-blue"].runes * 2,
-    });
-    expect(first.materials).toEqual([
-      { id: "polish-white", count: 1 },
-      { id: "polish-blue", count: 2 },
-      { id: "polish-purple", count: 3 },
-      { id: "polish-gold", count: 0 },
-      { id: "awakening-shard", count: 0 },
-    ]);
-
-    // 同じ要求の再送は、記録した結果を返し、もう一度は作らない。
-    const replay = await combine(user.token, body);
-    expect(replay.combine).toEqual(first.combine);
-    expect(await countOf(user.token, "polish-blue")).toBe(2);
-    expect(await countOf(user.token, "polish-white")).toBe(1);
-    expect((await combine(user.token, { ...body, count: 1 }, 409)).error).toBe(
-      "request_conflict",
-    );
-
-    // 白が1個では、青は作れない。
-    expect(
-      (
-        await combine(
-          user.token,
-          { ...body, requestId: requestId(2), count: 1 },
-          409,
-        )
-      ).error,
-    ).toBe("insufficient_materials");
-    // 紫3個はあっても、金に払うルーンが足りない。
-    expect(
-      (
-        await combine(
-          user.token,
-          { requestId: requestId(3), materialId: "polish-gold", count: 1 },
-          409,
-        )
-      ).error,
-    ).toBe("insufficient_runes");
-    expect(await countOf(user.token, "polish-purple")).toBe(3);
-    // 白は作れない。
-    await combine(
-      user.token,
-      { requestId: requestId(4), materialId: "polish-white", count: 1 },
-      400,
-    );
+    expect(await countOf(user.token, "polish-white")).toBe(14);
   });
 
   it("固有スキルの倍率を上げ、編成の応答に倍率と品質を出す。解放前の固有スキルは扱わない", async () => {
     const user = await scenario.login("enhancement-unique");
     await scenario.read("/party", user.token);
-    await give(user.userId, { "polish-purple": 2 });
+    await give(user.userId, { "polish-white": 2 });
     await scenario.setRunes(user.userId, 10_000);
     const maxPercent = uniqueMaxPercent("toma", 0);
-    const step = polishStep("polish-purple", maxPercent);
+    const step = polishStep(maxPercent);
 
     const result = await polish(user.token, {
       requestId: requestId(1),
       category: "unique",
       characterId: "toma",
       index: 0,
-      materialId: "polish-purple",
-      count: 2,
+      steps: 2,
     });
     expect(result.enhancement).toMatchObject({
       category: "unique",
       target: "toma:0",
+      count: 2,
       multiplier: (100 + step * 2) / 100,
-      quality: "B",
+      quality: "C",
     });
     expect(await uniqueOf(user.token, "toma", 0)).toEqual({
       index: 0,
       set: 0,
       acquired: [0],
       multiplier: (100 + step * 2) / 100,
-      quality: "B",
+      quality: "C",
     });
 
-    await give(user.userId, { "polish-purple": 1 });
+    await give(user.userId, { "polish-white": 1 });
     // トーマ（Lv12）の3つ目の固有スキルはLv30で解放する。
     expect(
       (
@@ -539,8 +515,7 @@ describe("強化API", () => {
             category: "unique",
             characterId: "toma",
             index: 2,
-            materialId: "polish-purple",
-            count: 1,
+            steps: 1,
           },
           409,
         )

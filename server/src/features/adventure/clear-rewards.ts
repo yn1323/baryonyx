@@ -5,7 +5,7 @@ import {
   qualityFields,
   rollMultiplierPercent,
 } from "../../shared/quality.js";
-import { AWAKENING_SHARD_ID } from "../enhancement/catalog.js";
+import { AWAKENING_SHARD_ID, POLISH_ID } from "../enhancement/catalog.js";
 import { creditRunes } from "../exercise-rewards/wallet.js";
 import { type HoldingCategory, maxPercentOf } from "../inventory/catalog.js";
 import { type Grant, inventoryGrants } from "../inventory/grants.js";
@@ -14,7 +14,7 @@ import { adventureRecords } from "./db-schema.js";
 // ダンジョンのクリア回数の報酬（doc/features/stage-progression.md のダンジョンのクリア回数の報酬）。
 // 1〜5回目のクリアで、回ごとに決まった物と少しのルーンをもらう。6回目からはない。
 // 型は全ダンジョン共通にし、物はその行き先の一覧から選ぶ（2026-11-01）：
-// 1回目は主の物を除く☆の最も多い装備（品質A）、2回目は磨き石3個（浅い4つは青、奥の4つは紫）、
+// 1回目は主の物を除く☆の最も多い装備（品質A）、2回目は磨き石（浅い4つは10個、奥の4つは20個。2026-11-02）、
 // 3回目は☆の最も多いスキル（品質A）、4回目は覚醒の欠片2個、5回目は主の☆5のアクセサリー（品質S）。
 // ルーンは毎回、どの行き先でも同じ300（2026-11-01、ユーザー）。クライアントの AdventureClearRewards.cs と同じ表にする。
 
@@ -42,14 +42,14 @@ type Table = readonly [
 
 function rewards(
   gear: { category: "weapon" | "armor" | "accessory"; id: string },
-  polish: "polish-blue" | "polish-purple",
+  polishCount: number,
   skill: string,
   bossAccessory: string,
 ): Table {
   const runes = CLEAR_REWARD_RUNES;
   return [
     { ...gear, count: 1, quality: "A", runes },
-    { category: "material", id: polish, count: 3, runes },
+    { category: "material", id: POLISH_ID, count: polishCount, runes },
     { category: "skill", id: skill, count: 1, quality: "A", runes },
     { category: "material", id: AWAKENING_SHARD_ID, count: 2, runes },
     {
@@ -65,49 +65,49 @@ function rewards(
 export const CLEAR_REWARDS: Record<string, Table> = {
   "forest-ruins": rewards(
     { category: "accessory", id: "dew-pendant" },
-    "polish-blue",
+    10,
     "Hone",
     "guardian-circlet",
   ),
   "port-portoria": rewards(
     { category: "weapon", id: "flame-dagger" },
-    "polish-blue",
+    10,
     "ManaPrayer",
     "kraken-pearl",
   ),
   "glaciera-cave": rewards(
     { category: "armor", id: "crystal-shield" },
-    "polish-blue",
+    10,
     "IceMirror",
     "troll-heartstone",
   ),
   "hush-mire": rewards(
     { category: "accessory", id: "frog-crown" },
-    "polish-blue",
+    10,
     "QuickCast",
     "croc-fang",
   ),
   "almaja-tomb": rewards(
     { category: "armor", id: "ancient-plate" },
-    "polish-purple",
+    20,
     "Revelation",
     "golden-mask",
   ),
   "moonshade-graveyard": rewards(
     { category: "weapon", id: "moonshade-staff" },
-    "polish-purple",
+    20,
     "Resurrection",
     "lich-signet",
   ),
   "volgan-volcano": rewards(
     { category: "armor", id: "obsidian-shield" },
-    "polish-purple",
+    20,
     "Meteor",
     "obsidian-crown",
   ),
   "neve-peaks": rewards(
     { category: "weapon", id: "glacier-greatsword" },
-    "polish-purple",
+    20,
     "AbsoluteZero",
     "mistdragon-eye",
   ),

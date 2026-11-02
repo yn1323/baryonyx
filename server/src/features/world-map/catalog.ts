@@ -2,7 +2,7 @@
 // マスと道の形はクライアントの WorldMapCatalog が持ち、サーバーは進み具合と宝箱の中身だけを預かる。
 
 import type { Quality } from "../../shared/quality.js";
-import type { MaterialId } from "../enhancement/catalog.js";
+import { type MaterialId, POLISH_ID } from "../enhancement/catalog.js";
 import type { EquipmentId } from "../equipment/catalog.js";
 import type { CardSkillId } from "../party/catalog.js";
 
@@ -23,6 +23,13 @@ export type ChestEntry =
   | { category: "skill"; id: CardSkillId; quality: Quality }
   | { category: "material"; id: MaterialId };
 
+// 磨き石 count 個を、1つずつの中身として並べる。
+const polishStones = (count: number): ChestEntry[] =>
+  Array.from({ length: count }, () => ({
+    category: "material",
+    id: POLISH_ID,
+  }));
+
 // 街道の宝箱のマスごとの中身（仮。doc/features/stage-progression.md の街道の宝箱）。
 // 抽選せず、マスを初めてクリアしたときに1回だけもらう。その先の区間で役立つ物を置く。
 // 中身はクライアントの WorldMapChests と同じにする。
@@ -30,24 +37,22 @@ export const CHESTS: Record<string, readonly ChestEntry[]> = {
   // ピーノの西の寄り道。北の氷室村フレッダ（推奨Lv18）へ向かう前に。
   "n8-5": [
     { category: "weapon", id: "frost-wand", quality: "A" },
-    { category: "material", id: "polish-blue" },
-    { category: "material", id: "polish-blue" },
+    ...polishStones(6),
   ],
   // 内の輪の東の寄り道。鐘の町カンパネラ（推奨Lv30）へ向かう前に。
   "n17-7": [
     { category: "accessory", id: "crystal-ring", quality: "A" },
-    { category: "material", id: "polish-purple" },
+    ...polishStones(8),
   ],
   // サッビアの北の寄り道。南の砂の町へ向かう前に。
   "n15-15": [
     { category: "armor", id: "clay-armor", quality: "A" },
-    { category: "material", id: "polish-blue" },
-    { category: "material", id: "polish-blue" },
+    ...polishStones(6),
   ],
   // ドゥーナの北の寄り道。
   "n20-14": [
     { category: "weapon", id: "tomb-khopesh", quality: "A" },
-    { category: "material", id: "polish-purple" },
+    ...polishStones(8),
   ],
   // サッビアの南の寄り道。
   "n16-18": [

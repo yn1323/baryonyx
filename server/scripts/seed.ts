@@ -214,10 +214,7 @@ export const SEED_PLAYERS: readonly SeedPlayer[] = [
       { id: "pirate-rum", count: 1 },
     ],
     materials: [
-      { id: "polish-white", count: 12 },
-      { id: "polish-blue", count: 6 },
-      { id: "polish-purple", count: 3 },
-      { id: "polish-gold", count: 1 },
+      { id: "polish-white", count: 30 },
       { id: "awakening-shard", count: 2 },
     ],
     bonds: [

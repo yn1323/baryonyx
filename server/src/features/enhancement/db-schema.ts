@@ -29,10 +29,10 @@ export const enhancementMaterials = sqliteTable(
 );
 
 // 商会での強化1回ごとの記録。使った素材とルーンの記録を兼ね、要求IDで再送を見分ける。
-// kind は polish（品質強化）、awaken（覚醒）、combine（磨き石の合成）。target は強化した物で、スキル・装備は
-// 持ち物の行のID、固有スキルは「キャラID:番号」、磨き石の合成は作った色（category は material）。
-// before・after は、品質強化なら倍率（百分率）、固有スキルの覚醒なら段階、スキル1枚の覚醒なら枝（覚醒する前は0）、
-// 磨き石の合成なら0と作った数。
+// kind は polish（品質強化）、awaken（覚醒）。target は強化した物で、スキル・装備は持ち物の行のID、
+// 固有スキルは「キャラID:番号」。before・after は、品質強化なら倍率（百分率）、固有スキルの覚醒なら段階、
+// スキル1枚の覚醒なら枝（覚醒する前は0）。品質強化の material_count は、すべての段階で使った磨き石の合計。
+// CHECK に残る combine（磨き石の合成）と category の material は、合成をなくした今は使わない。
 // 残高（rune_wallets）と素材の数は、この記録を書けたときだけ減らす。
 export const enhancementRecords = sqliteTable(
   "enhancement_records",

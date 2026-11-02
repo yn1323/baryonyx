@@ -5,6 +5,7 @@ import {
 } from "../../../tests/support/api-scenario.js";
 import { days } from "../health/fixtures.js";
 import { REVIVE_COST_BASE, reviveCost } from "./catalog.js";
+import { CLEAR_REWARDS } from "./clear-rewards.js";
 import { eligibleEntries } from "./drops.js";
 import { createAdventureRepository } from "./repository.js";
 
@@ -409,7 +410,7 @@ describe("冒険API", () => {
     const before = await equipment();
     // 魔物の部屋で、2つ落ちる（0.9）。分類は重みの累積（アイテム43・アクセサリー22・武器13・防具13・スキル9）で、
     // 武器（0.65）と、スキル（0.95）。どちらも一覧の最初の物（0）・品質C（0）・最小の倍率（0）。
-    // 続く強化素材の抽選は乱数が尽きて0になり、磨き石（30%）は白が落ち、覚醒の欠片（魔物では0%）は落ちない。
+    // 続く強化素材の抽選は乱数が尽きて0になり、磨き石（10%）が1個落ち、覚醒の欠片（魔物では0%）は落ちない。
     const repository = createAdventureRepository(
       scenario.env.DB,
       fixed(0.9, 0.65, 0, 0, 0, 0.95, 0, 0, 0),
@@ -458,7 +459,7 @@ describe("冒険API", () => {
     const elite = createAdventureRepository(
       scenario.env.DB,
       // 宝箱（強い魔物と同じ重み）で3つ（0.99）：アイテム（0）の薬草（0）を2つと、アクセサリー（0.5）の苔玉のお守り（0）。
-      // 強化素材は乱数が尽きて0になり、白い磨き石と覚醒の欠片（宝箱では3%）が落ちる。
+      // 強化素材は乱数が尽きて0になり、磨き石（浅い行き先の宝箱では2個）と覚醒の欠片（宝箱では3%）が落ちる。
       fixed(0.99, 0, 0, 0, 0, 0.5, 0, 0, 0),
     );
     const second = await elite.clear(user.userId, "f3-0", now);
@@ -466,6 +467,7 @@ describe("冒険API", () => {
       "herb",
       "herb",
       "moss-charm",
+      "polish-white",
       "polish-white",
       "awakening-shard",
     ]);
@@ -478,10 +480,7 @@ describe("冒険API", () => {
         )
       ).materials,
     ).toEqual([
-      { id: "polish-white", count: 2 },
-      { id: "polish-blue", count: 0 },
-      { id: "polish-purple", count: 0 },
-      { id: "polish-gold", count: 0 },
+      { id: "polish-white", count: 3 },
       { id: "awakening-shard", count: 1 },
     ]);
     const items = await scenario.env.DB.prepare(
@@ -668,6 +667,25 @@ describe("冒険API", () => {
     expect(cleared.runes).toBe(300);
   });
 
+  it("2回目のクリアの磨き石は、浅い4つの行き先で10個、奥の4つで20個", () => {
+    expect(
+      Object.entries(CLEAR_REWARDS).map(([id, table]) => [
+        id,
+        table[1].id,
+        table[1].count,
+      ]),
+    ).toEqual([
+      ["forest-ruins", "polish-white", 10],
+      ["port-portoria", "polish-white", 10],
+      ["glaciera-cave", "polish-white", 10],
+      ["hush-mire", "polish-white", 10],
+      ["almaja-tomb", "polish-white", 20],
+      ["moonshade-graveyard", "polish-white", 20],
+      ["volgan-volcano", "polish-white", 20],
+      ["neve-peaks", "polish-white", 20],
+    ]);
+  });
+
   it("2回目のクリアでは磨き石、6回目からは報酬がない", async () => {
     const user = await scenario.login("adventure-clear-rewards");
     await setClears(user.userId, 1);
@@ -676,20 +694,20 @@ describe("冒険API", () => {
     expect(second.result?.clearReward).toEqual({
       clears: 2,
       category: "material",
-      id: "polish-blue",
-      count: 3,
+      id: "polish-white",
+      count: 10,
       runes: 300,
     });
-    // 道中で落ちた青い磨き石に、報酬の3個が足される。
+    // 道中で落ちた磨き石に、報酬の10個が足される。
     const dropped = (second.result?.drops ?? []).filter(
-      (drop) => drop.id === "polish-blue",
+      (drop) => drop.id === "polish-white",
     ).length;
     const held = await scenario.env.DB.prepare(
-      "SELECT count FROM enhancement_materials WHERE user_id = ? AND material_id = 'polish-blue'",
+      "SELECT count FROM enhancement_materials WHERE user_id = ? AND material_id = 'polish-white'",
     )
       .bind(user.userId)
       .first<{ count: number }>();
-    expect(held?.count).toBe(dropped + 3);
+    expect(held?.count).toBe(dropped + 10);
     expect(second.runes).toBe(300);
 
     await scenario.env.DB.prepare(
@@ -805,7 +823,7 @@ describe("冒険API", () => {
     await walk(user.token, 4);
     await move(user.token, { roomId: "f4-1", floor: 4, kind: "shady-chest" });
     // 本物（0.9）で、宝箱の行の3つ（0.99）に1つ足した4つ。どれもアイテム（0）の薬草（0）。
-    // 続く強化素材は乱数が尽きて0になり、白い磨き石と覚醒の欠片が落ちる。
+    // 続く強化素材は乱数が尽きて0になり、磨き石（浅い行き先の宝箱では2個）と覚醒の欠片が落ちる。
     const opened = await createAdventureRepository(
       scenario.env.DB,
       fixed(0.9, 0.99),
@@ -815,6 +833,7 @@ describe("冒険API", () => {
       "herb",
       "herb",
       "herb",
+      "polish-white",
       "polish-white",
       "awakening-shard",
     ]);

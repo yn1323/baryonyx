@@ -1,4 +1,9 @@
 import { describe, expect, it } from "vitest";
+import {
+  POLISH_DROP_CHANCE,
+  POLISH_DROP_COUNTS,
+  type PolishDepth,
+} from "../enhancement/catalog.js";
 import { EQUIPMENT } from "../equipment/catalog.js";
 import { ITEM_IDS } from "../items/catalog.js";
 import { CARD_SKILL_IDS } from "../party/catalog.js";
@@ -229,19 +234,22 @@ describe("新しいマスの報酬の行", () => {
 
 describe("強化素材の抽選", () => {
   it("磨き石と覚醒の欠片は、ふつうのドロップのあとに、報酬のあるマスでだけ落ちる", () => {
-    // 乱数0なら、磨き石は白、覚醒の欠片は魔物のマスで落ちず、宝箱では落ちる。
+    // 乱数0なら、磨き石はマスと深さで決まる個数だけ落ち、覚醒の欠片は魔物のマスで落ちず、宝箱では落ちる。
     expect(rollMaterials("forest-ruins", "battle", () => 0)).toEqual([
       { category: "material", id: "polish-white", multiplierPercent: null },
     ]);
     expect(
       rollMaterials("forest-ruins", "treasure", () => 0).map((drop) => drop.id),
-    ).toEqual(["polish-white", "awakening-shard"]);
+    ).toEqual(["polish-white", "polish-white", "awakening-shard"]);
+    expect(
+      rollMaterials("neve-peaks", "battle", () => 0).map((drop) => drop.id),
+    ).toEqual(["polish-white", "polish-white"]);
     // 乱数が大きければ何も落ちない。最奥の間では、ほかのマスより磨き石が落ちやすい。
     expect(rollMaterials("forest-ruins", "elite", () => 0.99)).toEqual([]);
     expect(rollMaterials("forest-ruins", "boss", () => 0.99)).toEqual([]);
     expect(
       rollMaterials("forest-ruins", "boss", () => 0.599).map((drop) => drop.id),
-    ).toEqual(["polish-blue"]);
+    ).toEqual(["polish-white", "polish-white", "polish-white"]);
     // 報酬のないマス（休憩・行商人）では、強化素材も落とさない。
     expect(rollRoomDrops("forest-ruins", "rest", () => 0)).toEqual([]);
     const room = rollRoomDrops("forest-ruins", "battle", () => 0);
@@ -284,20 +292,31 @@ describe("強化素材の抽選", () => {
     return (id: string) => (counts.get(id) ?? 0) / runs;
   };
 
-  it("浅い行き先の1周では、磨き石が2つ弱落ち、ほとんどが白で、金はほとんど落ちない", () => {
-    const of = perRun("forest-ruins");
-    expect(of("polish-white")).toBeCloseTo(1.32, 0);
-    expect(of("polish-blue")).toBeCloseTo(0.41, 0);
-    expect(of("polish-purple")).toBeLessThan(0.1);
-    expect(of("polish-gold")).toBeLessThan(0.01);
-    expect(of("awakening-shard")).toBeCloseTo(0.24, 1);
+  // 1周の磨き石の平均の、確率と個数から求めた値。
+  const expectedPolish = (depth: PolishDepth) =>
+    (6 * POLISH_DROP_CHANCE.battle * POLISH_DROP_COUNTS[depth].battle +
+      3 * POLISH_DROP_CHANCE.elite * POLISH_DROP_COUNTS[depth].elite +
+      POLISH_DROP_CHANCE.boss * POLISH_DROP_COUNTS[depth].boss) /
+    1000;
+
+  it("1周の磨き石は、平均で浅い3.6個・中ほど4.2個・奥6.0個落ち、ほかの色は落ちない", () => {
+    expect(expectedPolish("shallow")).toBeCloseTo(3.6, 9);
+    expect(expectedPolish("middle")).toBeCloseTo(4.2, 9);
+    expect(expectedPolish("deep")).toBeCloseTo(6.0, 9);
+    for (const [destinationId, average] of [
+      ["forest-ruins", 3.6],
+      ["glaciera-cave", 4.2],
+      ["neve-peaks", 6.0],
+    ] as const) {
+      const of = perRun(destinationId);
+      expect(Math.abs(of("polish-white") - average)).toBeLessThan(0.2);
+      for (const id of ["polish-blue", "polish-purple", "polish-gold"]) {
+        expect(of(id)).toBe(0);
+      }
+    }
   });
 
-  it("奥の行き先の1周でも、紫は約0.16個、金は約0.02個にとどまる", () => {
-    const of = perRun("neve-peaks");
-    expect(of("polish-white")).toBeCloseTo(0.94, 0);
-    expect(of("polish-blue")).toBeCloseTo(0.68, 0);
-    expect(of("polish-purple")).toBeCloseTo(0.16, 1);
-    expect(of("polish-gold")).toBeLessThan(0.05);
+  it("覚醒の欠片は、浅い行き先の1周で約0.24個落ちる", () => {
+    expect(perRun("forest-ruins")("awakening-shard")).toBeCloseTo(0.24, 1);
   });
 });

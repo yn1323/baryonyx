@@ -7,8 +7,8 @@ import { pickWeighted, type Random } from "../../shared/random.js";
 import {
   AWAKENING_SHARD_ID,
   POLISH_DROP_CHANCE,
-  POLISH_DROP_WEIGHTS,
-  POLISH_IDS,
+  POLISH_DROP_COUNTS,
+  POLISH_ID,
   type PolishDepth,
   SHARD_DROP_CHANCE,
 } from "../enhancement/catalog.js";
@@ -350,7 +350,7 @@ export function eligibleEntries(
   );
 }
 
-// 磨き石の色の重みを分ける、行き先の深さ。近い順の8つの行き先のうち、初めの2つ（敵のLv10・14）を浅い、
+// 落ちる磨き石の数を分ける、行き先の深さ。近い順の8つの行き先のうち、初めの2つ（敵のLv10・14）を浅い、
 // 次の3つ（Lv18〜26）を中ほど、残り（Lv30〜40）を奥とする。一覧にない行き先は浅いとする。
 export function polishDepthOf(destinationId: string): PolishDepth {
   const index = DESTINATIONS.findIndex(
@@ -361,7 +361,7 @@ export function polishDepthOf(destinationId: string): PolishDepth {
 
 // 強化素材（doc/features/enhancement.md の磨き石の落ち方）。ふつうのドロップのあとに、磨き石と覚醒の欠片を
 // それぞれ1回だけ抽選する。ふつうのドロップの分類に混ぜると、ほかの物が出にくくなるためである。
-// 磨き石の色は、行き先の深さとマスで決まる重みで選ぶ。
+// 磨き石が当たったら、行き先の深さとマスで決まる個数を落とす（1個ずつ並べる）。
 export function rollMaterials(
   destinationId: string,
   kind: RewardRow,
@@ -369,12 +369,14 @@ export function rollMaterials(
 ): Drop[] {
   const drops: Drop[] = [];
   if (random() * 1000 < POLISH_DROP_CHANCE[kind]) {
-    const weights = POLISH_DROP_WEIGHTS[polishDepthOf(destinationId)][kind];
-    drops.push({
-      category: "material",
-      id: pickWeighted(POLISH_IDS, (id) => weights[id], random),
-      multiplierPercent: null,
-    });
+    const count = POLISH_DROP_COUNTS[polishDepthOf(destinationId)][kind];
+    for (let index = 0; index < count; index++) {
+      drops.push({
+        category: "material",
+        id: POLISH_ID,
+        multiplierPercent: null,
+      });
+    }
   }
   if (random() * 1000 < SHARD_DROP_CHANCE[kind]) {
     drops.push({

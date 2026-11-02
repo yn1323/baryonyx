@@ -136,7 +136,7 @@ describe("街道の世界地図の進み具合のAPI", () => {
         holyLights: party.skillCards.filter(
           (card) => card.skillId === "HolyLight",
         ),
-        blue: countOf("polish-blue"),
+        polish: countOf("polish-white"),
         shards: countOf("awakening-shard"),
       };
     }
@@ -156,7 +156,8 @@ describe("街道の世界地図の進み具合のAPI", () => {
       const after = await holdings(user.token);
       expect(after.wands.length).toBe(before.wands.length + 1);
       expect(after.wands.at(-1)?.quality).toBe("A");
-      expect(after.blue).toBe(before.blue + 2);
+      // 磨き石は6個入っている。
+      expect(after.polish).toBe(before.polish + 6);
     });
 
     it("送り直しや戻ってきたときは、持ち物に足し直さない", async () => {

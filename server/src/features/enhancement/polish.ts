@@ -17,7 +17,7 @@ import {
   uniqueMaxPercent,
 } from "../party/catalog.js";
 import { partyUniqueSkills, skillCards } from "../party/db-schema.js";
-import { POLISHES, polishCeilingPercent, polishedPercent } from "./catalog.js";
+import { POLISH_ID, POLISH_RUNES_PER_STONE, polishPlan } from "./catalog.js";
 import { type RecordRow, type Records, uniqueTarget } from "./records.js";
 import type { Polish } from "./schema.js";
 
@@ -174,15 +174,20 @@ export function createPolishOperation(db: Database, records: Records) {
       ? uniqueTarget(request.characterId, request.index)
       : request.itemId;
 
-  const samePolish = (request: Polish, row: RecordRow) =>
+  const samePolishTarget = (request: Polish, row: RecordRow) =>
     row.kind === "polish" &&
     row.category === request.category &&
-    row.target === polishTargetOf(request) &&
-    row.materialId === request.materialId &&
-    row.materialCount === request.count;
+    row.target === polishTargetOf(request);
 
-  // 1つの物の倍率を、磨き石とルーンで上げる（doc/features/enhancement.md の品質強化）。色の上限を超える分は上限で止め、
-  // 色の上限に届いた物と、最後の1つが何も上げない数は受け付けない。要求IDで再送を見分け、二重に使わない。
+  // 再送かどうか。記録の前の倍率から steps 段階を計算し直し、使った石の数と強化したあとの倍率が記録と合うかで見分ける。
+  const samePolish = (request: Polish, row: RecordRow, maxPercent: number) => {
+    const plan = polishPlan(row.before, request.steps, maxPercent);
+    return plan.stones === row.materialCount && plan.after === row.after;
+  };
+
+  // 1つの物の倍率を、磨き石とルーンで steps 段階上げる（doc/features/enhancement.md の品質強化）。
+  // 最後の段階は種類の上限で止め、上限に届いた物と、最後の段階が何も上げない段階の数は受け付けない。
+  // 要求IDで再送を見分け、二重に使わない。
   async function polish(userId: string, request: Polish, now: string) {
     const [found, held, ...rows] = await db.batch([
       records.findRecord(userId, request.requestId),
@@ -192,34 +197,24 @@ export function createPolishOperation(db: Database, records: Records) {
     const replay = found[0];
     const target = targetOf(userId, request, rows, now);
     if (replay) {
-      if (!samePolish(request, replay)) {
+      if (!samePolishTarget(request, replay)) {
         return { error: "request_conflict" as const };
       }
       if (target.error !== undefined) return { error: target.error };
+      if (!samePolish(request, replay, target.maxPercent)) {
+        return { error: "request_conflict" as const };
+      }
       return polished(replay, target.maxPercent, records.materialsOf(held));
     }
     if (target.error !== undefined) return { error: target.error };
     const { percent, maxPercent } = target;
     if (percent >= maxPercent) return { error: "already_max" as const };
-    const ceiling = polishCeilingPercent(request.materialId, maxPercent);
-    if (percent >= ceiling) return { error: "polish_ceiling" as const };
-    if (
-      request.count > 1 &&
-      polishedPercent(
-        percent,
-        request.materialId,
-        request.count - 1,
-        maxPercent,
-      ) >= ceiling
-    ) {
-      return { error: "too_many_materials" as const };
-    }
-    const after = polishedPercent(
+    const { after, stones, lastGain } = polishPlan(
       percent,
-      request.materialId,
-      request.count,
+      request.steps,
       maxPercent,
     );
+    if (lastGain <= 0) return { error: "too_many_steps" as const };
     const statements = records.recordStatements(
       userId,
       {
@@ -227,11 +222,11 @@ export function createPolishOperation(db: Database, records: Records) {
         kind: "polish",
         category: request.category,
         target: target.target,
-        materialId: request.materialId,
-        materialCount: request.count,
+        materialId: POLISH_ID,
+        materialCount: stones,
         before: percent,
         after,
-        runes: POLISHES[request.materialId].runes * request.count,
+        runes: POLISH_RUNES_PER_STONE * stones,
       },
       target.current,
       (written) => target.write(after, written),
@@ -250,8 +245,8 @@ export function createPolishOperation(db: Database, records: Records) {
     const again = targetOf(userId, request, rowsAfter, now);
     return records.reason(
       materials,
-      request.materialId,
-      request.count,
+      POLISH_ID,
+      stones,
       again.error === undefined && again.percent === percent,
     );
   }
