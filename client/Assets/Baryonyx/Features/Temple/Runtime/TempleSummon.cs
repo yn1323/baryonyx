@@ -62,9 +62,8 @@ namespace Baryonyx.Temple
         // キャラが出たときの絆。サーバーが決めるため、仮に引いた結果ではnull。
         public SummonBond Bond { get; }
 
-        // キャラ・☆4以上・品質Sは、結果の札に金の縁と光を出す。
-        public bool Highlight =>
-            Entry.Kind == LibraryKind.Character || Entry.Stars >= 4 || Quality == ItemQuality.S;
+        // ☆4以上・品質Sは、結果の札に金の縁と光を出す。キャラの札は光らせない（2026-11-02、ユーザー）。
+        public bool Highlight => Entry.Stars >= 4 || Quality == ItemQuality.S;
     }
 
     /// <summary>

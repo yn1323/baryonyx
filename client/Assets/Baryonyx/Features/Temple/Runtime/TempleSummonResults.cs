@@ -148,7 +148,7 @@ namespace Baryonyx.Temple
                 label.text = text ?? "";
         }
 
-        // 停止中の表示の切り替え：1回と10回の結果。金の縁も確かめられるよう、キャラが出る最初の種で引く。
+        // 停止中の表示の切り替え：1回と10回の結果。金の縁も確かめられるよう、光る札が出る最初の種で引く。
         public IReadOnlyList<string> PreviewStates => new[] { "1回召喚の結果", "10回召喚の結果" };
 
         public void ShowPreviewState(int index)
@@ -159,7 +159,7 @@ namespace Baryonyx.Temple
             for (int seed = 1; seed <= 1000; seed++)
             {
                 results = TempleSummon.Roll(pool, count, new System.Random(seed).NextDouble);
-                if (results.Any(result => result.Entry.Kind == LibraryKind.Character))
+                if (results.Any(result => result.Highlight))
                     break;
             }
             Show(results);

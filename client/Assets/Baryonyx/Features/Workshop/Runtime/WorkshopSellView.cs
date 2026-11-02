@@ -331,6 +331,8 @@ namespace Baryonyx.Workshop
                 row.Mark.SetActive(thing.User != null);
             if (row.Card != null)
             {
+                // 売る物に入れた札は、チェックボックスのように地も金色にする。
+                row.Card.Checkbox = true;
                 row.Card.Selected = false;
                 row.Card.Interactable = thing.User == null;
             }

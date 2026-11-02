@@ -464,7 +464,7 @@
 
 ## [features/screens-history.md](../features/screens-history.md)
 
-43KB・74行
+44KB・75行
 
 - 8: # 画面一覧と操作の変更と判断の記録
 
@@ -634,7 +634,7 @@
 
 ## [features/screens/temple.md](../features/screens/temple.md)
 
-9KB・86行
+10KB・86行
 
 - 8: # 画面一覧：神殿
 - 12: ## 神殿

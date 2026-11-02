@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using Baryonyx.Combat;
+using Baryonyx.Combat.Editor;
 using Baryonyx.Party.Editor;
 using Baryonyx.Training.Editor;
 using Baryonyx.UI;
@@ -448,11 +449,7 @@ namespace Baryonyx.Workshop.Editor
         public static Sprite[] ElementIcons() =>
             Enum.GetValues(typeof(CardElement))
                 .Cast<CardElement>()
-                .Select(element =>
-                    element == CardElement.None
-                        ? null
-                        : Icon($"{PartyAssets.AttributeArtFolder}/Element{element}.aseprite")
-                )
+                .Select(element => Icon(AttributeIconArt.IconPath(element)))
                 .ToArray();
     }
 }

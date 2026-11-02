@@ -49,7 +49,7 @@ updated: 2026-11-02
 | `Top` | `TopScreen`（`TopSceneController`） | 案内の読み込み中・TAP TO START・通信の失敗・歩数の読み取りの失敗・案内なし（連携待ち） |
 | `Top` | `HealthLinkModal`（`HealthLinkModalView`） | 連携の許可・設定を開く・入手が必要・更新が必要・確認中（押せない）。Play中はモーダルの間は案内を隠すため、`TopScreen` の「案内なし」と合わせて見る |
 | `Home` | `HomeScreen`（`HomeView`） | 歩数の連携なし・同期中・歩数の取得前・ゲージ満タン・冒険の途中・獲得ルーンなし・通知 |
-| `Temple` | `SummonResults`（`TempleSummonResults`） | 1回召喚の結果・10回召喚の結果。どちらもキャラが出る最初の種で引き、金の縁と光の札を見せる |
+| `Temple` | `SummonResults`（`TempleSummonResults`） | 1回召喚の結果・10回召喚の結果。どちらも金の縁と光の札（☆4以上・品質S）が出る最初の種で引き、その札を見せる |
 | `Temple` | `TempleSummonShow`・`TempleSummonTenShow`（同名の部品） | 1回召喚の演出の時刻（予備動作0.9秒・溜め1.6秒・発生2.0秒・余韻3.0秒・終わり）、10回召喚の演出（灯る・白の窓が砕ける・虹の窓が砕ける・並んだ札） |
 | `TravelOffice` | `Treasures`（`TravelTreasureView`） | 行き先ごとのお宝の窓（仮の記録でクリア2回） |
 | `Pub`・`Shop`・`Temple`・`Library` | `PubScreen` など（`GuideMenuView`） | メニューの各項目。パネルの中の表示は「項目 › 表示」で並ぶ。編成では、冒険者・育成（人選び）・冒険者のステータス・装備・スキル・突破のタブの「読み込み中」「取得できない」、ステータスのタブの「レベルアップ」、突破のタブの「限界突破の演出」、装備のタブの「防具」「アクセサリー」、スキルのタブの「アイテム」「固有スキルを選んだとき」（仮データの先頭の人と仮の装備で、Play中と同じ切り替えを通す） |

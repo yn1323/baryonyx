@@ -25,7 +25,8 @@ namespace Baryonyx.UI
         public RectTransform Body;
         public RectTransform Shadow;
 
-        // 選んだときの金の縁と光（中身の上）。板の金色の色づけ（中身の下）は GlassCardSelection が一緒に出す。
+        // 選んだときの金の縁と光（中身の上）。チェックボックスの札（Checkbox）だけ、板の金色の色づけ
+        // （中身の下）も GlassCardSelection が一緒に出す。
         public GameObject Selection;
 
         // 押せないとき（保存中など）は薄くする。
@@ -55,6 +56,26 @@ namespace Baryonyx.UI
             {
                 if (Selection != null)
                     Selection.SetActive(value);
+            }
+        }
+
+        /// <summary>
+        /// Whether the card reads as a ticked box when chosen (the shop's 売る): the plate washes
+        /// gold under the rim. Other chosen cards light only the rim and glow.
+        /// </summary>
+        public bool Checkbox
+        {
+            get =>
+                Selection != null
+                && Selection.TryGetComponent(out GlassCardSelection selection)
+                && selection.Wash;
+            set
+            {
+                if (
+                    Selection != null
+                    && Selection.TryGetComponent(out GlassCardSelection selection)
+                )
+                    selection.SetWash(value);
             }
         }
 
