@@ -1,0 +1,26 @@
+# 外見・性格の比較索引（パッシブ）
+
+[外見・性格の比較索引](../visual-index.md)
+
+<!-- visual-index:start -->
+| ID・詳細 | 名称・状態 | 輪郭 | 配色 | モチーフ | 性格・行動 | 画像の状態 | 画像ファイル |
+|---|---|---|---|---|---|---|---|
+| [passive-chained-arrows](../../catalog/passives/passive-chained-arrows.md) | 連ね矢（候補） | 右上を向いて並ぶ3本の矢 | 銀 &#124; 赤 &#124; 茶 | 矢 | 対象外 | 育成の画面で表示中 | [PassiveChainedArrows.aseprite](../../../client/Assets/Baryonyx/Features/Combat/UI/Art/Passives/PassiveChainedArrows.aseprite) |
+| [passive-charged-shield](../../catalog/passives/passive-charged-shield.md) | 帯電の盾（候補） | 稲妻が飛び出す四角い盾 | 銀 &#124; 紺 &#124; 黄 | 盾 &#124; 稲妻 | 対象外 | 育成の画面で表示中 | [PassiveChargedShield.aseprite](../../../client/Assets/Baryonyx/Features/Combat/UI/Art/Passives/PassiveChargedShield.aseprite) |
+| [passive-copycat](../../catalog/passives/passive-copycat.md) | 見よう見まね（候補） | 氷と稲妻が浮かぶ開いた本 | 青 &#124; 白 &#124; 水色 &#124; 黄 | 本 &#124; 氷の結晶 &#124; 稲妻 | 対象外 | 育成の画面で表示中 | [PassiveCopycat.aseprite](../../../client/Assets/Baryonyx/Features/Combat/UI/Art/Passives/PassiveCopycat.aseprite) |
+| [passive-cover](../../catalog/passives/passive-cover.md) | かばう（候補） | 金の縁の青い凧盾 | 青 &#124; 金 &#124; 赤 | 盾 &#124; ハート | 対象外 | 育成の画面で表示中 | [PassiveCover.aseprite](../../../client/Assets/Baryonyx/Features/Combat/UI/Art/Passives/PassiveCover.aseprite) |
+| [passive-head-start](../../catalog/passives/passive-head-start.md) | 早駆け（候補） | 翼の付いた革のブーツ | 茶 &#124; 白 &#124; 黄 | ブーツ &#124; 翼 &#124; 速さの線 | 対象外 | 育成の画面で表示中 | [PassiveHeadStart.aseprite](../../../client/Assets/Baryonyx/Features/Combat/UI/Art/Passives/PassiveHeadStart.aseprite) |
+| [passive-holy-flame-hammer](../../catalog/passives/passive-holy-flame-hammer.md) | 聖火の鉄槌（候補） | 聖なる炎に包まれた戦鎚 | 銀 &#124; 金 &#124; 橙 | 戦鎚 &#124; 炎 | 対象外 | 育成の画面で表示中 | [PassiveHolyFlameHammer.aseprite](../../../client/Assets/Baryonyx/Features/Combat/UI/Art/Passives/PassiveHolyFlameHammer.aseprite) |
+| [passive-iai-form](../../catalog/passives/passive-iai-form.md) | 居合の型（候補） | 鞘の刀と三日月形の斬撃 | 黒 &#124; 金 &#124; 白 | 刀 &#124; 斬撃 | 対象外 | 育成の画面で表示中 | [PassiveIaiForm.aseprite](../../../client/Assets/Baryonyx/Features/Combat/UI/Art/Passives/PassiveIaiForm.aseprite) |
+| [passive-mana-shield](../../catalog/passives/passive-mana-shield.md) | 魔力の盾（候補） | 稲妻の印の水色の六角形の障壁 | 水色 &#124; 黄 | 障壁 &#124; 稲妻 | 対象外 | 育成の画面で表示中 | [PassiveManaShield.aseprite](../../../client/Assets/Baryonyx/Features/Combat/UI/Art/Passives/PassiveManaShield.aseprite) |
+| [passive-mark-the-weak](../../catalog/passives/passive-mark-the-weak.md) | 急所狙い（候補） | 照準の中のひび割れた赤いハート | 赤 &#124; 白 | 照準 &#124; ハート | 対象外 | 育成の画面で表示中 | [PassiveMarkTheWeak.aseprite](../../../client/Assets/Baryonyx/Features/Combat/UI/Art/Passives/PassiveMarkTheWeak.aseprite) |
+| [passive-open-wounds](../../catalog/passives/passive-open-wounds.md) | 傷口を開く（候補） | 3本の赤い斬り傷と血のしずく | 赤 | 傷 &#124; しずく | 対象外 | 育成の画面で表示中 | [PassiveOpenWounds.aseprite](../../../client/Assets/Baryonyx/Features/Combat/UI/Art/Passives/PassiveOpenWounds.aseprite) |
+| [passive-overflowing-prayer](../../catalog/passives/passive-overflowing-prayer.md) | あふれる祈り（候補） | 光の水があふれる金の聖杯 | 金 &#124; 水色 | 聖杯 &#124; 水 &#124; 盾の光 | 対象外 | 育成の画面で表示中 | [PassiveOverflowingPrayer.aseprite](../../../client/Assets/Baryonyx/Features/Combat/UI/Art/Passives/PassiveOverflowingPrayer.aseprite) |
+| [passive-purifying-vow](../../catalog/passives/passive-purifying-vow.md) | 浄めの誓い（候補） | 毒の泡をはじく白い紋章 | 白 &#124; 金 &#124; 紫 | 紋章 &#124; 十字 &#124; 泡 | 対象外 | 育成の画面で表示中 | [PassivePurifyingVow.aseprite](../../../client/Assets/Baryonyx/Features/Combat/UI/Art/Passives/PassivePurifyingVow.aseprite) |
+| [passive-riposte](../../catalog/passives/passive-riposte.md) | 切り返し（候補） | X字に交差する2本の剣と火花 | 銀 &#124; 黄 &#124; 赤 | 剣 &#124; 火花 | 対象外 | 育成の画面で表示中 | [PassiveRiposte.aseprite](../../../client/Assets/Baryonyx/Features/Combat/UI/Art/Passives/PassiveRiposte.aseprite) |
+| [passive-silent-kill](../../catalog/passives/passive-silent-kill.md) | 影の一刺し（候補） | 紫の影をまとう下向きの短剣 | 銀 &#124; 紫 &#124; 水色 | 短剣 &#124; 影 | 対象外 | 育成の画面で表示中 | [PassiveSilentKill.aseprite](../../../client/Assets/Baryonyx/Features/Combat/UI/Art/Passives/PassiveSilentKill.aseprite) |
+| [passive-standing-alone](../../catalog/passives/passive-standing-alone.md) | 独り立ち（候補） | 宝石と稲妻の飾りの杖と星 | 茶 &#124; 水色 &#124; 黄 &#124; 白 | 杖 &#124; 宝石 &#124; 星 | 対象外 | 育成の画面で表示中 | [PassiveStandingAlone.aseprite](../../../client/Assets/Baryonyx/Features/Combat/UI/Art/Passives/PassiveStandingAlone.aseprite) |
+| [passive-star-chart](../../catalog/passives/passive-star-chart.md) | 星図の計算（候補） | 真鍮の縁の丸い星図盤 | 紺 &#124; 金 &#124; 水色 | 星図 &#124; 星座 &#124; 結晶 | 対象外 | 育成の画面で表示中 | [PassiveStarChart.aseprite](../../../client/Assets/Baryonyx/Features/Combat/UI/Art/Passives/PassiveStarChart.aseprite) |
+| [passive-thermal-shock](../../catalog/passives/passive-thermal-shock.md) | 寒暖の理（候補） | 左右に炎と氷が分かれた玉 | 橙 &#124; 水色 &#124; 白 | 炎 &#124; 氷の結晶 | 対象外 | 育成の画面で表示中 | [PassiveThermalShock.aseprite](../../../client/Assets/Baryonyx/Features/Combat/UI/Art/Passives/PassiveThermalShock.aseprite) |
+| [passive-walkers-blessing](../../catalog/passives/passive-walkers-blessing.md) | 歩み手の加護（候補） | 葉と光の輪に囲まれた足あと | 白 &#124; 緑 &#124; 金 | 足あと &#124; 葉 &#124; 光の輪 | 対象外 | 育成の画面で表示中 | [PassiveWalkersBlessing.aseprite](../../../client/Assets/Baryonyx/Features/Combat/UI/Art/Passives/PassiveWalkersBlessing.aseprite) |
+<!-- visual-index:end -->

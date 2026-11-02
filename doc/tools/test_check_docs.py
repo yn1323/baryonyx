@@ -24,10 +24,15 @@ class DocumentationChecks(unittest.TestCase):
         self.headings()
 
     def headings(self):
-        from check_docs import HEADING_INDEX, heading_index
+        from check_docs import HEADING_INDEX, HEADING_INDEX_DIR, heading_index
         docs = self.root / "doc"
-        contents = {p: p.read_text(encoding="utf-8") for p in sorted(docs.rglob("*.md")) if p.name != HEADING_INDEX}
-        self.write(f"doc/{HEADING_INDEX}", heading_index(docs, contents))
+        contents = {
+            p: p.read_text(encoding="utf-8")
+            for p in sorted(docs.rglob("*.md"))
+            if p.name != HEADING_INDEX and HEADING_INDEX_DIR not in p.relative_to(docs).parts
+        }
+        for path, text in heading_index(docs, contents).items():
+            self.write(path.relative_to(self.root).as_posix(), text)
 
     def write(self, relative, text):
         path = self.root / relative
@@ -55,7 +60,7 @@ class DocumentationChecks(unittest.TestCase):
         self.assertTrue(any("生成索引が古い" in e for e in check(self.root)))
         self.assertEqual([], check(self.root, write_index=True))
         catalog = (self.root / "doc/catalog/characters/README.md").read_text(encoding="utf-8")
-        visual = (self.root / "doc/art/visual-index.md").read_text(encoding="utf-8")
+        visual = (self.root / "doc/art/visual-index/characters.md").read_text(encoding="utf-8")
         self.assertIn("説明を保持する。", catalog)
         self.assertIn("末尾も保持する。", catalog)
         self.assertIn("[定義](character-test.md)", catalog)
@@ -66,7 +71,7 @@ class DocumentationChecks(unittest.TestCase):
         path = self.write("doc/catalog/characters/character-test.md", self.entity())
         self.assertEqual([], check(self.root, write_index=True))
         path.write_text(self.entity().replace("personality: 慎重", "personality: 快活"), encoding="utf-8")
-        self.assertTrue(any("visual-index.md: 生成索引が古い" in e for e in check(self.root)))
+        self.assertTrue(any("visual-index/characters.md: 生成索引が古い" in e for e in check(self.root)))
 
     def test_definition_is_excluded_from_visual_index(self):
         self.write("doc/catalog/characters/character-test.md", self.entity(visual=False))
@@ -97,15 +102,22 @@ class DocumentationChecks(unittest.TestCase):
         self.write("doc/catalog/characters/character-test.md",
                    self.entity().replace("art_files: 未作成", f"art_files: {files}"))
         self.assertEqual([], check(self.root, write_index=True))
-        visual = (self.root / "doc/art/visual-index.md").read_text(encoding="utf-8")
-        self.assertIn("[Test.png](../../client/Assets/Art/Characters/Test.png)<br>"
-                      "[Test.aseprite](../../client/ArtSource/Characters/Test.aseprite) |", visual)
+        visual = (self.root / "doc/art/visual-index/characters.md").read_text(encoding="utf-8")
+        self.assertIn("[Test.png](../../../client/Assets/Art/Characters/Test.png)<br>"
+                      "[Test.aseprite](../../../client/ArtSource/Characters/Test.aseprite) |", visual)
 
     def test_visual_index_shows_entities_without_art(self):
         self.write("doc/catalog/characters/character-test.md", self.entity())
         self.assertEqual([], check(self.root, write_index=True))
-        visual = (self.root / "doc/art/visual-index.md").read_text(encoding="utf-8")
+        visual = (self.root / "doc/art/visual-index/characters.md").read_text(encoding="utf-8")
         self.assertIn("| 未着手 | 未作成 |", visual)
+
+    def test_visual_index_lists_categories_and_links_to_their_files(self):
+        self.write("doc/catalog/characters/character-test.md", self.entity())
+        self.assertEqual([], check(self.root, write_index=True))
+        summary = (self.root / "doc/art/visual-index.md").read_text(encoding="utf-8")
+        self.assertIn("| キャラクター | 1 | [characters.md](visual-index/characters.md) |", summary)
+        self.assertIn("[character-test](../../catalog/characters/character-test.md)", (self.root / "doc/art/visual-index/characters.md").read_text(encoding="utf-8"))
 
     def test_missing_art_file_and_field_fail(self):
         self.write("doc/catalog/characters/character-test.md",
@@ -189,8 +201,11 @@ class DocumentationChecks(unittest.TestCase):
                    "[headings](heading-index.md)\n[spec](features/spec.md)\n[old](archive/old.md)\n")
         self.assertTrue(any("見出しの索引が古い" in e for e in check(self.root)))
         self.assertEqual([], check(self.root, write_index=True))
-        index = (self.root / "doc/heading-index.md").read_text(encoding="utf-8")
-        self.assertIn("## [features/spec.md](features/spec.md)", index)
+        summary = (self.root / "doc/heading-index.md").read_text(encoding="utf-8")
+        self.assertIn("| features | 1 | [features.md](heading-index/features.md) |", summary)
+        self.assertNotIn("archive", summary.split("| 分野 |", 1)[1])
+        index = (self.root / "doc/heading-index/features.md").read_text(encoding="utf-8")
+        self.assertIn("## [features/spec.md](../features/spec.md)", index)
         self.assertIn("- 8: # Spec", index)
         self.assertIn("- 14: ## Rules", index)
         self.assertNotIn("not a heading", index)
@@ -218,6 +233,14 @@ class DocumentationChecks(unittest.TestCase):
                    "---\nid: archive-kept\ntype: reference\nstatus: 見送り\nupdated: 2026-10-05\n---\n\n# Kept\n")
         self.headings()
         self.assertEqual([], check(self.root))
+
+    def test_every_feature_document_requires_metadata(self):
+        # 機能文書に例外はない（以前の health-data.md・server-health.md の例外はなくした）。READMEは除く。
+        self.write("doc/features/README.md", "# Features\n\n[server](server-health.md)\n")
+        self.write("doc/features/server-health.md", "# Server\n")
+        errors = check(self.root)
+        self.assertTrue(any("doc/features/server-health.md: 必須メタデータがない" in e for e in errors))
+        self.assertFalse(any("doc/features/README.md: 必須メタデータがない" in e for e in errors))
 
 if __name__ == "__main__":
     unittest.main()

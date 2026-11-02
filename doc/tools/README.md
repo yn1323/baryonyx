@@ -14,6 +14,7 @@ python -B doc/tools/check_docs.py
 ```
 
 [check_docs.py](check_docs.py)は分類内のREADMEの生成領域と、[外見・性格の比較索引](../art/visual-index.md)の生成領域を更新する。
+比較索引は、1つのファイルが大きくなりすぎないよう分類ごとに `art/visual-index/<分類>.md` へ分けて生成し、`visual-index.md` には分類ごとの件数とリンクを生成する。分類のファイルがなければ `--write-index` が作る。
 対象は `doc/catalog/<分類>/<ID>.md` の `definition` と `visual-entity` である。
 テンプレートは登録対象に含めない。
 画像を持たない定義は分類索引にだけ載り、画像対象は両方へ載る。
@@ -21,21 +22,20 @@ python -B doc/tools/check_docs.py
 生成領域の外にある説明・記入欄は維持する。
 元の個別MDと生成された差分を一緒にレビューする。
 
-同じ `--write-index` で、[見出しの索引](../heading-index.md)（`doc/heading-index.md`）も作り直す。
-見出しの索引は、`doc/` の文書ごとに見出しとその行番号を並べた生成ファイルで、個別データ（`catalog/<分類>/<ID>.md`）と保管庫は載せない。
-行番号は本文を書き換えるたびにずれるため、文書を変えたら毎回作り直し、手で編集しない。
+同じ `--write-index` で[見出しの索引](../heading-index.md)（`doc/heading-index.md`）も作り直す（載せる文書と作り直す時機は[文書管理方針](../rules/documentation-policy.md#見出しの索引)）。
 作り直していなければ、検査が「見出しの索引が古い」で失敗する。
+誤りが1つでもあると、`--write-index` も索引を書き換えない。先に誤りを直してから作り直す。
 
 ## 検査すること
 
 - `doc/` 内のMarkdownリンク先の存在と、MD内の見出しへのリンク。
 - `doc/` の外にある `AGENTS.md`（ルート・client・serverなど）と、`.agents/skills/` のMarkdownのリンク先と見出し。これらは索引からの到達とメタデータを検査しない。`node_modules`・`Library` などの生成物のフォルダーは探さない。
 - `doc/README.md`から各MDへリンクをたどって到達できること。
-- 新しい企画仕様・個別データ・保管庫（`doc/archive/`）の必須メタデータと、文書IDの重複。保管庫の文書の状態は「記録」か「見送り」にする。
+- `game/`・`art/`・`catalog/`・`archive/`・`features/` の文書（README・AGENTS・`art/visual-index.md` を除く）と `architecture.md`、ほかにメタデータを書いた文書の、必須項目（id・type・status・updated）と値の形式（1行1項目の文字列、IDの形式、type・statusの値、実在の日付）、文書IDの重複。保管庫（`doc/archive/`）の文書の状態は「記録」か「見送り」にする。
 - 個別データのIDとファイル名、分類と配置の一致。
 - 画像対象の比較用メタデータの存在と、`art_files` に書いた画像ファイルの存在。
 - 個別MDから生成した分類索引・比較索引と、保存された索引の一致。
-- 今の文書から作った見出しの索引と、保存された `doc/heading-index.md` の一致。
+- 今の文書から作った見出しの索引と、保存された `doc/heading-index.md`（分野の一覧）・`doc/heading-index/<分野>.md` の一致。
 
 リンクは通常のMarkdownインライン形式を使う。
 コードブロック内の例はリンク検査から除き、外部URLの到達確認は行わない。

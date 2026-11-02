@@ -17,7 +17,19 @@ ENTITY_TYPES = {"definition", "visual-entity"}
 VISUAL_KEYS = ("silhouette", "palette", "motifs", "personality", "art_status")
 # Repository-relative image paths joined by " | ", or this word before any image exists.
 NO_ART_FILES = "未作成"
-LEGACY_FEATURES = {"health-data.md", "server-health.md"}
+# The comparison index is split by category so that no single file grows past the size guideline.
+VISUAL_CATEGORY_NAMES = {
+    "characters": "キャラクター",
+    "enemies": "敵",
+    "skills": "スキル",
+    "passives": "パッシブ",
+    "resources": "資源",
+}
+VISUAL_PART_TEMPLATE = (
+    "# 外見・性格の比較索引（{name}）\n\n"
+    "[外見・性格の比較索引](../visual-index.md)\n\n"
+    "<!-- visual-index:start -->\n<!-- visual-index:end -->\n"
+)
 ARCHIVE_STATUSES = {"記録", "見送り"}
 # Directories skipped while looking for AGENTS.md outside doc/: generated, external or too large.
 # doc/ itself is skipped at the repository root because its files are checked in full.
@@ -28,6 +40,9 @@ SKIPPED_DIRS = {
 LINK = re.compile(r"!?\[[^\]\n]*\]\((<[^>\n]+>|[^)\n]+)\)")
 # The generated list of every current document's headings with their line numbers.
 HEADING_INDEX = "heading-index.md"
+# The heading index is split by the top folder of doc/ so that no single index file grows too large.
+HEADING_INDEX_DIR = "heading-index"
+HEADING_ROOT_AREA = "root"
 ID = re.compile(r"[a-z][a-z0-9]*(?:-[a-z0-9]+)*")
 
 
@@ -95,9 +110,10 @@ def needs_metadata(path: Path, docs: Path) -> bool:
     relative = path.relative_to(docs)
     if path.name in {"README.md", "AGENTS.md"} or relative.as_posix() == "art/visual-index.md":
         return False
+    if relative.parts[:2] == ("art", "visual-index"):
+        return False
     return (
-        relative.parts[0] in {"game", "art", "catalog", "archive"}
-        or (relative.parts[0] == "features" and path.name not in LEGACY_FEATURES)
+        relative.parts[0] in {"game", "art", "catalog", "archive", "features"}
         or relative.as_posix() == "architecture.md"
     )
 
@@ -182,32 +198,54 @@ def heading_lines(text: str) -> list[tuple[int, str]]:
 
 def in_heading_index(relative: Path) -> bool:
     """Current documents only: no individual catalog entries, no archive, not the index itself."""
-    if relative.as_posix() == HEADING_INDEX or relative.parts[0] == "archive":
+    if relative.as_posix() == HEADING_INDEX or relative.parts[0] in {"archive", HEADING_INDEX_DIR}:
         return False
     return not (relative.parts[0] == "catalog" and relative.name != "README.md")
 
 
-def heading_index(docs: Path, contents: dict[Path, str]) -> str:
+def heading_area(relative: Path) -> str:
+    """The top folder of doc/ a document belongs to; documents directly in doc/ share one area."""
+    return relative.parts[0] if len(relative.parts) > 1 else HEADING_ROOT_AREA
+
+
+def heading_index(docs: Path, contents: dict[Path, str]) -> dict[Path, str]:
+    """The index of the areas, and one file per area listing its documents' headings and line numbers."""
+    areas: dict[str, list[str]] = {}
+    counts: dict[str, int] = {}
+    for path in sorted(contents, key=lambda p: p.relative_to(docs).as_posix()):
+        relative = path.relative_to(docs)
+        if not in_heading_index(relative):
+            continue
+        area = heading_area(relative)
+        text = contents[path]
+        size = max(1, round(len(text.encode("utf-8")) / 1024))
+        name = relative.as_posix()
+        block = areas.setdefault(area, [])
+        block += ["", f"## [{name}](../{name})", "", f"{size}KB・{len(text.splitlines())}行", ""]
+        block += [f"- {number}: {heading}" for number, heading in heading_lines(text)]
+        counts[area] = counts.get(area, 0) + 1
     lines = [
         "# 見出しの索引",
         "",
         "[全体索引](README.md)",
         "",
         "`doc/` の文書ごとに、見出しとその行番号を並べた生成ファイルである。",
+        f"分野（`doc/` の直下のフォルダー）ごとに `{HEADING_INDEX_DIR}/<分野>.md` へ分けてあり、`doc/` の直下の文書は "
+        f"`{HEADING_ROOT_AREA}.md` にある。",
         "読む節を決めてから、その行から必要な範囲だけを読む（読み方は `doc/rules/documentation-policy.md` の「見出しの索引」、"
         "作り方は `doc/tools/README.md`）。",
         "個別データ（`catalog/<分類>/<ID>.md`）と保管庫（`archive/`）は載せない。",
         "手で編集せず、`python -B doc/tools/check_docs.py --write-index` で作り直す。",
+        "",
+        "| 分野 | 文書の数 | 見出しの索引 |",
+        "|---|---|---|",
     ]
-    for path in sorted(contents, key=lambda p: p.relative_to(docs).as_posix()):
-        relative = path.relative_to(docs)
-        if not in_heading_index(relative):
-            continue
-        text = contents[path]
-        size = max(1, round(len(text.encode("utf-8")) / 1024))
-        lines += ["", f"## [{relative.as_posix()}]({relative.as_posix()})", "", f"{size}KB・{len(text.splitlines())}行", ""]
-        lines += [f"- {number}: {heading}" for number, heading in heading_lines(text)]
-    return "\n".join(lines) + "\n"
+    lines += [f"| {area} | {counts[area]} | [{area}.md]({HEADING_INDEX_DIR}/{area}.md) |" for area in sorted(areas)]
+    result = {docs / HEADING_INDEX: "\n".join(lines) + "\n"}
+    for area, block in sorted(areas.items()):
+        header = [f"# 見出しの索引（{area}）", "", f"[見出しの索引](../{HEADING_INDEX})"]
+        result[docs / HEADING_INDEX_DIR / f"{area}.md"] = "\n".join(header + block) + "\n"
+    return result
 
 
 def replace_region(text: str, marker: str, body: str) -> str | None:
@@ -314,21 +352,35 @@ def check(root: Path, write_index: bool = False) -> list[str]:
         visual_entities = [(p, d) for p, d in entities if d["type"] == "visual-entity"]
         body = "登録された画像対象はまだない。"
         if visual_entities:
-            lines = [
-                "| ID・詳細 | 名称・状態 | 輪郭 | 配色 | モチーフ | 性格・行動 | 画像の状態 | 画像ファイル |",
-                "|---|---|---|---|---|---|---|---|",
-            ]
-            for path, data in sorted(visual_entities, key=lambda row: row[1].get("id", "")):
-                link = "../" + path.relative_to(docs).as_posix()
-                values = " | ".join(cell(data.get(key, "")) for key in VISUAL_KEYS)
-                files = art_files(data.get("art_files", NO_ART_FILES))
-                located = "<br>".join(f"[{cell(Path(file).name)}](../../{file})" for file in files)
-                lines.append(
-                    f"| [{data.get('id', '')}]({link}) | "
-                    f"{cell(data.get('name', ''))}（{cell(data.get('status', ''))}） | {values} | "
-                    f"{located or NO_ART_FILES} |"
-                )
-            body = "\n".join(lines)
+            by_category: dict[str, list[tuple[Path, dict[str, str]]]] = {}
+            for path, data in visual_entities:
+                by_category.setdefault(data.get("category", ""), []).append((path, data))
+            summary = ["| 分類 | 件数 | 比較索引 |", "|---|---|---|"]
+            for category, rows in sorted(by_category.items()):
+                name = VISUAL_CATEGORY_NAMES.get(category, category)
+                lines = [
+                    "| ID・詳細 | 名称・状態 | 輪郭 | 配色 | モチーフ | 性格・行動 | 画像の状態 | 画像ファイル |",
+                    "|---|---|---|---|---|---|---|---|",
+                ]
+                for path, data in sorted(rows, key=lambda row: row[1].get("id", "")):
+                    link = "../../" + path.relative_to(docs).as_posix()
+                    values = " | ".join(cell(data.get(key, "")) for key in VISUAL_KEYS)
+                    files = art_files(data.get("art_files", NO_ART_FILES))
+                    located = "<br>".join(f"[{cell(Path(file).name)}](../../../{file})" for file in files)
+                    lines.append(
+                        f"| [{data.get('id', '')}]({link}) | "
+                        f"{cell(data.get('name', ''))}（{cell(data.get('status', ''))}） | {values} | "
+                        f"{located or NO_ART_FILES} |"
+                    )
+                part_path = docs / "art" / "visual-index" / f"{category}.md"
+                base = contents.get(part_path, VISUAL_PART_TEMPLATE.format(name=name))
+                expected_part = replace_region(base, "visual-index", "\n".join(lines))
+                if expected_part is None:
+                    errors.append(f"art/visual-index/{category}.md: visual-index生成領域がない、または重複している")
+                else:
+                    generated[part_path] = expected_part
+                summary.append(f"| {name} | {len(rows)} | [{category}.md](visual-index/{category}.md) |")
+            body = "\n".join(summary)
         expected = replace_region(contents[visual_path], "visual-index", body)
         if expected is None:
             errors.append("art/visual-index.md: visual-index生成領域がない、または重複している")
@@ -340,25 +392,28 @@ def check(root: Path, write_index: bool = False) -> list[str]:
     # Invalid metadata must never rewrite indexes.
     may_write = write_index and not errors
     for path, expected in generated.items():
-        if contents[path] == expected:
+        if contents.get(path) == expected:
             continue
         if may_write:
+            path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text(expected, encoding="utf-8", newline="\n")
             contents[path] = expected
         else:
             errors.append(f"{path.relative_to(root)}: 生成索引が古い。--write-indexを実行する")
 
     # The heading index lists the line numbers after the indexes above are written.
-    index_path = docs / HEADING_INDEX
-    expected = heading_index(docs, contents)
-    if contents.get(index_path) != expected:
+    for index_path, expected in heading_index(docs, contents).items():
+        if contents.get(index_path) == expected:
+            continue
+        label = index_path.relative_to(root).as_posix()
         if may_write:
+            index_path.parent.mkdir(parents=True, exist_ok=True)
             index_path.write_text(expected, encoding="utf-8", newline="\n")
             contents[index_path] = expected
         elif index_path in contents:
-            errors.append(f"doc/{HEADING_INDEX}: 見出しの索引が古い。--write-indexを実行する")
+            errors.append(f"{label}: 見出しの索引が古い。--write-indexを実行する")
         else:
-            errors.append(f"doc/{HEADING_INDEX}: 見出しの索引がない。--write-indexを実行する")
+            errors.append(f"{label}: 見出しの索引がない。--write-indexを実行する")
 
     edges = {path: check_links(path, content, root, contents, errors) for path, content in contents.items()}
     # Outside doc/, check only that links resolve; these files need no metadata and no index entry.
