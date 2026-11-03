@@ -18,6 +18,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using static Baryonyx.Editor.UI.UiBuild;
 using ChangeScreen = Baryonyx.Party.Editor.PartyChangeScreenAssets;
+using ElementIconRowAssets = Baryonyx.UI.Editor.ElementIconRowAssets;
 using Frame = Baryonyx.UI.GuideMenu.Editor.GuideFrameAssets;
 using GlassCardAssets = Baryonyx.UI.Editor.GlassCardAssets;
 using Guide = Baryonyx.UI.GuideMenu.Editor.GuideMenuAssets;
@@ -40,22 +41,54 @@ namespace Baryonyx.CardLoadout.Editor
         private const float ArtDot = CardLoadoutView.ArtDot;
 
         // 枠つきの表示（GuideFramedPanel）で、人の列とタブの間の左の面に6枚の行、金の2本線の右の面に
-        // タブとカードの一覧を置く（PartyChangeScreenAssets）。左の行に効果の文が2行で入るよう、
-        // 装備より左の面を広くする。設計座標、左上から。
+        // タブとカードの一覧を置く（PartyChangeScreenAssets）。左の面は装備より広い（左の行に効果の文を
+        // 2行で出していたため。2026-11-03に効果の文を外したあとも、長い名前と右上の印が並ぶので広いままにした）。
+        // 設計座標、左上から。
         private const float Split = UiSpace.SheetSplitWide;
         private static readonly Rect Left = ChangeScreen.LeftOf(Split);
         private static readonly Rect Right = ChangeScreen.RightOf(Split);
 
-        // 左の6行：見出し「固有スキル」と3行、見出し「カスタムスキル」と3行。
-        private const float DeckRowHeight = 128f;
+        // 左の6行：見出し「固有スキル」と3行、見出し「カスタムスキル」と3行。行は効果の文まで読めるよう
+        // 右の一覧の1.5倍の高さにし、6行が面に収まらない分は縦にスクロールする（2026-11-03、ユーザーの指示）。
+        private const float DeckRowHeight = 192f;
         private const float DeckRowGap = 8f;
         private const float DeckHeadingHeight = 48f;
-        private const float CustomTop = 464f;
+        private const float DeckGroupGap = 16f;
+        private const float CustomTop =
+            DeckHeadingHeight + 3 * DeckRowHeight + 2 * DeckRowGap + DeckGroupGap;
+        private const float DeckHeight =
+            CustomTop + DeckHeadingHeight + 3 * DeckRowHeight + 2 * DeckRowGap;
 
         private const float SlotHeight = 136f;
         private const float SlotTextLeft = 156f;
         private const float RowHeight = 140f;
         private const float RowTextLeft = 160f;
+
+        // 左の6行は、上から名前、種類（「攻撃・敵単体」）、効果の文（3行まで）を積む。
+        private const float NameHeight = 46f;
+        private const float DeckNameTop = 14f;
+        private const float DeckKindTop = DeckNameTop + NameHeight + 2f;
+        private const float DeckKindHeight = 32f;
+        private const float DeckTextTop = DeckKindTop + DeckKindHeight + 2f;
+        private const float DeckTextHeight = 84f;
+        private const float DeckArtDot = 3f;
+
+        // 行の右上（名前の行の高さ）の、印・属性・コストの札。挿絵に重ねると絵の模様に溶けて読めないため、
+        // 絵の外に出した（2026-11-03、ユーザーの指示）。印は装備の行の属性と同じ3倍のドット絵。
+        private const float CornerDot = ElementIconRowAssets.Size / 12f;
+        private const float CornerWidth = 260f;
+        private const float CornerMark = 28f;
+        private static readonly float CornerIcons =
+            ElementIconRowAssets.Size + ElementIconRowAssets.Gap + 11f * CornerDot;
+
+        // 右上の印からの名前の行の右端：左の6行（属性とコスト）、ツリーの段階（「E」と属性とコスト）、
+        // 右の一覧（「所持 3」とコストまで入る）。
+        private const float SlotCornerRight = 20f;
+        private static readonly float DeckNameRight = SlotCornerRight + CornerIcons + 12f;
+        private const float StageCornerRight = 24f;
+        private static readonly float StageNameRight = StageCornerRight + CornerIcons + 36f;
+        private const float RowCornerRight = 28f;
+        private const float RowNameRight = 170f;
 
         // 右の上のタブの下の、付けられる属性の行。
         private const float UsableTop = 92f;
@@ -75,7 +108,6 @@ namespace Baryonyx.CardLoadout.Editor
         private const string ArtFolder = "Assets/Baryonyx/Features/CardLoadout/UI/Art";
         private const float SealSize = 112f;
         private const float ChainWidth = 420f;
-        private static readonly Color BadgeColor = new(0.02f, 0.03f, 0.06f, 0.85f);
 
         /// <summary>
         /// Builds the card skills over the guide screen's safe area: the person, their two
@@ -122,11 +154,204 @@ namespace Baryonyx.CardLoadout.Editor
             return view.gameObject;
         }
 
+        // --- The awakening tab ----------------------------------------------------------------
+
+        // 覚醒のタブ：右の面の下に、払う物の札（左）と「覚醒」（右）を置き、その上までツリーを並べる。
+        private const float AwakenBar = 128f;
+        private const float CostWidth = 400f;
+        private const float ShardArt = 32f * 2f;
+
+        // 覚醒の演出：画面を覆う幕と、上の中央に浮かぶ今のカード（戦闘のカードを縮めて。商会のスキル覚醒と同じ）。
+        private const float OriginTop = 22f;
+        private const float OriginScale = 0.55f;
+
+        // スキルの覚醒の形：覚醒する前の1枚と、そこから分かれる2つの枝。
+        private static readonly (int Step, bool Last)[] BranchShape =
+        {
+            (0, false),
+            (1, false),
+            (1, true),
+        };
+
+        /// <summary>
+        /// The adventurer's 「覚醒」 tab (doc/features/screens/loadout.md#覚醒): the card skills
+        /// tab's six rows on the left; on the right the unique skill's tree, or the custom skill's
+        /// card and its two branches, above the shard and runes it takes and 「覚醒」; over all,
+        /// hidden until it awakens, the trading house's awakening effect. The first mock person's
+        /// first unique skill is baked, so the prefab reads in the editor.
+        /// </summary>
+        public static GameObject BuildAwakenPanel(RectTransform safe, GuideMenuView guide)
+        {
+            var party = PartyAssets.CreateData();
+            var training = TrainingAssets.CreateData();
+            var people = CardLoadoutPresenter.People(PartyFormation.From(party));
+
+            var (view, layer) = Frame.FramedPanel<CardLoadoutView>(safe, "CardAwaken");
+            view.Party = party;
+            view.Training = training;
+            view.ItemArt = Baryonyx.Inventory.Editor.ItemArtAssets.Load();
+            view.Guide = guide;
+            view.ElementIcons = Enum.GetValues(typeof(CardElement))
+                .Cast<CardElement>()
+                .Select(ElementIcon)
+                .ToArray();
+
+            RectTransform left,
+                right;
+            (left, right, view.Swipe) = ChangeScreen.Build(layer, Split, "AwakenPane", "Awaken");
+            BuildDeckRows(left, view);
+            var awakening = view.gameObject.AddComponent<CardLoadoutAwakening>();
+            awakening.View = view;
+            view.Awakening = awakening;
+            view.Tree = BuildTree(right);
+            view.Tree.Scroll.viewport.offsetMin = new Vector2(
+                view.Tree.Scroll.viewport.offsetMin.x,
+                AwakenBar
+            );
+            awakening.Branches = BuildTree(right, "Branches", AwakenBar, BranchShape);
+            BuildCost(layer, awakening);
+            (awakening.Confirm, _) = Guide.ConfirmButton(
+                layer,
+                CardLoadoutAwakening.AwakenLabel,
+                PartySheetAssets.ContentRight - 8f
+            );
+            view.Sheet = PartySheetAssets.Build(
+                layer,
+                guide,
+                party,
+                CardLoadoutSession.AwakenItemKey,
+                TrainingAssets.SheetTabs
+            );
+            BuildScene((RectTransform)view.transform, awakening);
+
+            // 仮データの最初の人の1つ目の固有スキルのツリーで描き、Prefabを開くと停止中でも読めるようにする。
+            new CardLoadoutPresenter(
+                view,
+                people,
+                new MockStore(party, training),
+                unique: 0
+            ).Dispose();
+            return view.gameObject;
+        }
+
+        // 右の面の左下の払う物の札：覚醒の欠片の絵と「使う数/持っている数」、ルーンのアイコンと払う額
+        // （商会のスキル覚醒と同じ形）。高さと下の端は「覚醒」にそろえる。
+        private static void BuildCost(RectTransform layer, CardLoadoutAwakening awakening)
+        {
+            var plaque = Layout.Box(
+                layer,
+                "Cost",
+                Split + 24f,
+                Layout.Design.y - Guide.ConfirmBottom - Guide.ConfirmHeight,
+                CostWidth,
+                Guide.ConfirmHeight
+            );
+            awakening.CostCard = plaque.gameObject;
+            var inside = GlassCardAssets.Plaque(plaque, pattern: false);
+            var shard = Rect("Shard", inside);
+            Corner(shard, new Vector2(0f, 0.5f), new Vector2(20f, 0f), Vector2.one * ShardArt);
+            var image = shard.gameObject.AddComponent<RawImage>();
+            image.texture = Baryonyx
+                .Inventory.Editor.ItemArtAssets.Load()
+                .TextureOf(Enhancement.EnhancementMaterials.Shard);
+            image.raycastTarget = false;
+            shard.gameObject.AddComponent<PixelPerfectRawImage>().DotSize = 2f;
+            awakening.ShardCount = Label(
+                inside,
+                "ShardCount",
+                "1/0",
+                40,
+                UiPalette.TextMain,
+                TextAlignmentOptions.MidlineLeft
+            );
+            Corner(
+                awakening.ShardCount.rectTransform,
+                new Vector2(0f, 0.5f),
+                new Vector2(20f + ShardArt + 10f, 0f),
+                new Vector2(120f, 60f)
+            );
+            awakening.RuneCost = Frame.RuneAmount(
+                inside,
+                "RuneCost",
+                0f,
+                0f,
+                200f,
+                60f,
+                UiType.Lead,
+                TextAnchor.MiddleLeft,
+                48f,
+                UiPalette.TextMain
+            );
+            awakening.RuneCost.text = "0";
+            Corner(
+                (RectTransform)awakening.RuneCost.transform.parent,
+                new Vector2(0f, 0.5f),
+                new Vector2(210f, 0f),
+                new Vector2(200f, 60f)
+            );
+            plaque.gameObject.SetActive(false);
+        }
+
+        // 覚醒の演出：ヘッダーごと画面を暗く覆う幕、戦闘と同じ覚醒の演出の層、浮かぶカード（商会のスキル覚醒と同じ）。
+        private static void BuildScene(RectTransform panel, CardLoadoutAwakening awakening)
+        {
+            var scene = Rect("AwakenScene", panel);
+            Stretch(scene);
+            // 演出の間は、後ろの行・タブ・ヘッダーを押せないよう、幕でタップを受ける。
+            AddImage(scene, UiPalette.VeilDeep, true);
+            awakening.Scene = scene.gameObject;
+
+            var stage = Rect("Stage", scene);
+            Stretch(stage);
+            var dim = BattleSkillVfxAssets.Dim(stage);
+            var back = BattleSkillVfxAssets.Layer("VfxBack", stage);
+            var front = BattleSkillVfxAssets.Layer("VfxFront", stage);
+
+            var instance = InstantiatePrefab(BattleInspectAssets.CardPrefabPath, "Origin", scene);
+            var origin = (RectTransform)instance.transform;
+            origin.anchorMin = origin.anchorMax = origin.pivot = new Vector2(0.5f, 1f);
+            origin.anchoredPosition = new Vector2(0f, -OriginTop);
+            origin.localScale = Vector3.one * OriginScale;
+            var input =
+                instance.GetComponent<Baryonyx.Combat.Presentation.BattleInspectCardInput>();
+            if (input != null)
+                UnityEngine.Object.DestroyImmediate(input);
+            foreach (var graphic in instance.GetComponentsInChildren<Graphic>(true))
+                graphic.raycastTarget = false;
+            awakening.Origin =
+                instance.GetComponent<Baryonyx.Combat.Presentation.BattleInspectCardView>();
+            var elements = (CardElement[])Enum.GetValues(typeof(CardElement));
+            awakening.CardFrames = elements
+                .Select(element => (Texture)BattleInspectAssets.Art("CardFrame" + element))
+                .ToArray();
+            awakening.ElementArts = elements
+                .Select(element =>
+                    element == CardElement.None
+                        ? null
+                        : (Texture)BattleInspectAssets.Art("Element" + element)
+                )
+                .ToArray();
+            awakening.Vfx = BattleSkillVfxAssets.Attach(scene, stage, dim, back, front);
+            scene.gameObject.SetActive(false);
+        }
+
         // --- Left: the six cards as rows ---------------------------------------------------
 
         // 見出し「固有スキル」の下に固有スキル3行、見出し「カスタムスキル」の下にカスタムスキルの枠3行。
         private static void BuildDeckRows(RectTransform left, CardLoadoutView view)
         {
+            // 縦のスクロールは、人を替える左右のフリック（GuideSwipe）と同じ左の面で受ける。
+            // 同じ物に付けると、どちらにもドラッグが届く。縁は右の一覧と同じく薄く消す。
+            var viewport = Layout.Viewport(left);
+            viewport.GetComponent<RectMask2D>().softness = new Vector2Int(0, ChangeScreen.ListFade);
+            var rows = Rect("Rows", viewport);
+            rows.anchorMin = new Vector2(0, 1);
+            rows.anchorMax = Vector2.one;
+            rows.pivot = new Vector2(0.5f, 1);
+            rows.sizeDelta = new Vector2(0, DeckHeight + ChangeScreen.ListFade);
+            view.DeckScroll = Layout.Scroll(left, viewport, rows);
+            left = rows;
+
             Title(left, "UniqueTitle", "固有スキル", 0);
             view.UniqueRows = Enumerable
                 .Range(0, CardLoadoutPresenter.UniqueCount)
@@ -144,9 +369,10 @@ namespace Baryonyx.CardLoadout.Editor
         private static float RowTop(int index) => index * (DeckRowHeight + DeckRowGap);
 
         /// <summary>
-        /// One row of the six: a card like the list's (art, name and kind, the effect over two
-        /// lines), 「空き」 for an empty slot, and a lock with the level for a unique skill not
-        /// unlocked yet. Pressing it chooses the slot.
+        /// One row of the six: the art, the name with the cost and element at the top right, the
+        /// kind and the effect over up to three lines under it, 「空き」 for an empty slot, and a
+        /// lock with the level (in place of the effect) for a unique skill not unlocked yet.
+        /// Pressing it chooses the slot.
         /// </summary>
         private static CardLoadoutDeckRowWidget BuildDeckRow(
             RectTransform left,
@@ -167,10 +393,55 @@ namespace Baryonyx.CardLoadout.Editor
             var content = Rect("Content", row);
             Stretch(content);
             widget.Content = content.gameObject;
-            (card.Art, card.Cost, card.Element) = BuildThumb(content, 12);
+            // 挿絵は3倍で行の上下いっぱいに出し、幅は右の一覧と同じにそろえて左右を切る（2026-11-03、ユーザーの指示）。
+            card.Art = BuildThumb(content, 12, DeckArtDot, 64 * ArtDot);
             card.Foil = Baryonyx.Editor.UI.CardFoilAssets.Add(card.Art);
-            (card.Name, card.Kind) = BuildNameLine(content, 6, SlotTextLeft, 20);
-            card.Description = BuildDescription(content, 56, 64, SlotTextLeft, 20);
+            (card.Cost, card.CostDigit, card.Element, _) = BuildCorner(
+                content,
+                DeckNameTop,
+                SlotCornerRight
+            );
+            card.Name = Label(
+                content,
+                "Name",
+                "",
+                34,
+                UiPalette.TextMain,
+                TextAlignmentOptions.BottomLeft
+            );
+            Guide.Band(
+                (RectTransform)card.Name.transform,
+                true,
+                DeckNameTop,
+                NameHeight,
+                SlotTextLeft,
+                DeckNameRight
+            );
+            Guide.Shrink(card.Name, 24);
+            card.Kind = Label(
+                content,
+                "Kind",
+                "",
+                22,
+                UiPalette.TextMain,
+                TextAlignmentOptions.TopLeft
+            );
+            card.Kind.richText = true;
+            Guide.Band(
+                (RectTransform)card.Kind.transform,
+                true,
+                DeckKindTop,
+                DeckKindHeight,
+                SlotTextLeft,
+                SlotCornerRight
+            );
+            card.Description = BuildDescription(
+                content,
+                DeckTextTop,
+                DeckTextHeight,
+                SlotTextLeft,
+                SlotCornerRight
+            );
             Guide.Shrink(card.Description, 18);
             widget.Lock = Frame.IconLock((RectTransform)card.Art.transform);
             widget.Lock.SetActive(false);
@@ -182,7 +453,14 @@ namespace Baryonyx.CardLoadout.Editor
                 UiPalette.Gold,
                 TextAlignmentOptions.TopLeft
             );
-            Guide.Band((RectTransform)widget.When.transform, true, 60, 40, SlotTextLeft, 20);
+            Guide.Band(
+                (RectTransform)widget.When.transform,
+                true,
+                DeckTextTop,
+                DeckKindHeight + 4f,
+                SlotTextLeft,
+                SlotCornerRight
+            );
 
             var empty = Label(
                 row,
@@ -206,14 +484,6 @@ namespace Baryonyx.CardLoadout.Editor
             Frame.HeadingRow(row, 26);
         }
 
-        // カードの右上の金の小さな文字（「Lv 20で解放」「セット中」）。
-        private static TMP_Text BuildMark(RectTransform row)
-        {
-            var mark = Label(row, "Mark", "", 22, UiPalette.Gold, TextAlignmentOptions.TopRight);
-            Guide.Band((RectTransform)mark.transform, true, 12, 30, SlotTextLeft, 20);
-            return mark;
-        }
-
         // --- Right: the evolution tree of the unique skill chosen on the left ---------------
 
         /// <summary>
@@ -222,9 +492,32 @@ namespace Baryonyx.CardLoadout.Editor
         /// branch its first step indented once and its second step indented twice. A line runs
         /// down before each indent and turns into the stage's card.
         /// </summary>
-        private static CardLoadoutTreeWidget BuildTree(RectTransform panel)
+        private static CardLoadoutTreeWidget BuildTree(RectTransform panel) =>
+            BuildTree(
+                panel,
+                "Tree",
+                0f,
+                Enumerable
+                    .Range(0, UniqueSkillTreeShape.Count)
+                    .Select(stage =>
+                        (
+                            UniqueSkillTreeShape.Step(stage),
+                            UniqueSkillTreeShape.Branch(stage) == UniqueSkillTreeShape.Branches - 1
+                        )
+                    )
+                    .ToArray()
+            );
+
+        // 段階を shape の順に1行ずつ並べたツリー。Step は字下げの段（0が最初の段階）、Last は最後の枝か。
+        // bottom は、面の下に空けておく高さ（覚醒のタブの払う物の札と「覚醒」）。
+        private static CardLoadoutTreeWidget BuildTree(
+            RectTransform panel,
+            string name,
+            float bottom,
+            (int Step, bool Last)[] shape
+        )
         {
-            var root = Layout.Box(panel, "Tree", 0, 0, Right.width, Right.height);
+            var root = Layout.Box(panel, name, 0, 0, Right.width, Right.height);
             var tree = new CardLoadoutTreeWidget { Root = root.gameObject };
             tree.Title = Frame.Heading(
                 root,
@@ -239,25 +532,27 @@ namespace Baryonyx.CardLoadout.Editor
 
             // 右の面のスクロールは一覧が使うので、ツリーは自分の面でスクロールする。
             var (viewport, content) = ChangeScreen.List(root, TreeListTop);
+            viewport.offsetMin = new Vector2(viewport.offsetMin.x, bottom);
             content.GetComponent<VerticalLayoutGroup>().spacing = RowSpacing;
             tree.Scroll = Layout.Scroll(root, viewport, content);
 
-            tree.Stages = Enumerable
-                .Range(0, UniqueSkillTreeShape.Count)
-                .Select(stage => BuildStageRow(content, stage))
+            tree.Stages = shape
+                .Select((stage, i) => BuildStageRow(content, "Stage" + i, stage.Step, stage.Last))
                 .ToArray();
             root.gameObject.SetActive(false);
             return tree;
         }
 
         // 段階1行。線を先に作り、カードの下に描く。
-        private static CardLoadoutStageWidget BuildStageRow(RectTransform content, int stage)
+        private static CardLoadoutStageWidget BuildStageRow(
+            RectTransform content,
+            string name,
+            int step,
+            bool lastBranch
+        )
         {
-            var row = Layout.ListItem(content, "Stage" + stage, SlotHeight);
-            int step = UniqueSkillTreeShape.Step(stage);
+            var row = Layout.ListItem(content, name, SlotHeight);
             float middle = (SlotHeight - LineWidth) / 2f;
-            bool lastBranch =
-                UniqueSkillTreeShape.Branch(stage) == UniqueSkillTreeShape.Branches - 1;
             if (step == 1)
             {
                 // 最初の段階から下ろす幹。最後の枝ならここで止める。
@@ -322,8 +617,9 @@ namespace Baryonyx.CardLoadout.Editor
             );
 
         /// <summary>
-        /// One stage: a card like a slot's, its shadow when not acquired, a lock for a locked
-        /// unique skill, and 「セット中」 at the top right.
+        /// One stage: a card like the list's row, its shadow when not acquired, a lock for a
+        /// locked unique skill, and 「E」 (the stage set) or the level to unlock at the top right,
+        /// left of the element and the cost.
         /// </summary>
         private static CardLoadoutStageWidget BuildStage(RectTransform rect)
         {
@@ -336,13 +632,18 @@ namespace Baryonyx.CardLoadout.Editor
             var content = Rect("Content", row);
             Stretch(content);
             widget.Content = content.gameObject;
-            (card.Art, card.Cost, card.Element) = BuildThumb(content, 12);
+            card.Art = BuildThumb(content, 12);
             card.Foil = Baryonyx.Editor.UI.CardFoilAssets.Add(card.Art);
-            (card.Name, card.Kind) = BuildNameLine(content, 8, SlotTextLeft, 24);
+            (card.Cost, card.CostDigit, card.Element, widget.Mark) = BuildCorner(
+                content,
+                8,
+                StageCornerRight,
+                mark: true
+            );
+            (card.Name, card.Kind) = BuildNameLine(content, 8, SlotTextLeft, StageNameRight);
             card.Description = BuildDescription(content, 56, 72, SlotTextLeft, 24);
             widget.Lock = Frame.IconLock((RectTransform)card.Art.transform);
             widget.Lock.SetActive(false);
-            widget.Mark = BuildMark(content);
 
             // 取得していない段階は、カードの中央に「？」の封印を置き、左右へ鎖を渡した封じた札にする。
             var shadow = Rect("Shadow", row);
@@ -474,55 +775,129 @@ namespace Baryonyx.CardLoadout.Editor
             var (button, _, inside) = GlassCardAssets.Choice(row, pattern: false);
             widget.Button = button;
             row = inside;
-            var (art, cost, element) = BuildThumb(row, 12);
+            var art = BuildThumb(row, 12);
             art.texture = ArtAssets.LoadTexture(
                 $"{BattleInspectAssets.ArtFolder}/Card{card.Id}.aseprite"
             );
-            cost.text = card.Cost.ToString();
-            element.sprite = view.IconOf(card.Element);
-            element.enabled = element.sprite != null;
             widget.Art = art;
-            widget.Cost = cost;
-            widget.Element = element;
             widget.Foil = Baryonyx.Editor.UI.CardFoilAssets.Add(art, card.Quality);
+            (widget.Cost, widget.CostDigit, widget.Element, widget.Mark) = BuildCorner(
+                row,
+                12,
+                RowCornerRight,
+                mark: true
+            );
+            CardLoadoutView.ShowCost(widget.Cost, widget.CostDigit, card.Cost);
+            CardLoadoutView.ShowElement(widget.Element, view.IconOf(card.Element));
 
-            var (name, kind) = BuildNameLine(row, 12, RowTextLeft, 150);
+            var (name, kind) = BuildNameLine(row, 12, RowTextLeft, RowNameRight);
             name.text = card.Name;
             kind.text = CardText.KindLine(card);
             widget.Name = name;
             widget.Kind = kind;
             widget.Description = BuildDescription(row, 64, 64, RowTextLeft, 24);
-            widget.Mark = Label(row, "Mark", "", 24, UiPalette.Gold, TextAlignmentOptions.TopRight);
-            Guide.Band((RectTransform)widget.Mark.transform, top: true, 20, 32, RowTextLeft, 28);
-            widget.Mark.gameObject.SetActive(false);
             return widget;
         }
 
         // --- Pieces shared by the slots and the rows ----------------------------------------
 
-        // The card's illustration at 2x, with its cost and element over the top corners.
-        internal static (RawImage Art, TMP_Text Cost, Image Element) BuildThumb(
+        // The card's illustration (64×58 dots) at dot times, 2x by default. With a width, only that
+        // much of its middle shows, so a larger dot fills a taller row without widening it. Its cost
+        // and element go at the row's top right (BuildCorner).
+        internal static RawImage BuildThumb(
             RectTransform parent,
-            float left
+            float left,
+            float dot = ArtDot,
+            float width = 0f
         )
         {
+            var size = new Vector2(64, 58) * dot;
+            float shown = width > 0f ? Mathf.Min(width / size.x, 1f) : 1f;
             var thumb = Rect("Art", parent);
-            Corner(thumb, new Vector2(0, 0.5f), new Vector2(left, 0), new Vector2(64, 58) * ArtDot);
+            Corner(
+                thumb,
+                new Vector2(0, 0.5f),
+                new Vector2(left, 0),
+                new Vector2(size.x * shown, size.y)
+            );
             var art = thumb.gameObject.AddComponent<RawImage>();
             art.raycastTarget = false;
-            thumb.gameObject.AddComponent<PixelPerfectRawImage>().DotSize = ArtDot;
+            art.uvRect = new Rect((1f - shown) / 2f, 0f, shown, 1f);
+            thumb.gameObject.AddComponent<PixelPerfectRawImage>().DotSize = dot;
+            return art;
+        }
 
-            var badge = Rect("Cost", thumb);
-            Corner(badge, new Vector2(0, 1), new Vector2(2, -2), new Vector2(34, 34));
-            AddImage(badge, BadgeColor, false);
-            var cost = Label(badge, "Value", "", 28, UiPalette.Gold, TextAlignmentOptions.Center);
-            Stretch((RectTransform)cost.transform);
+        /// <summary>
+        /// The marks at a row's top right, centred on the name line <paramref name="top"/> down
+        /// and <paramref name="right"/> in from the edge: from the corner leftwards the cost plate
+        /// (the battle card's 11×11 dots, unless <paramref name="cost"/> is false), the element
+        /// (12×12 dots), both at 3x like the equipment's attributes, then with
+        /// <paramref name="mark"/> the mark (「E」「所持 3」「Lv 20で解放」). Hidden ones close up.
+        /// </summary>
+        internal static (GameObject Cost, RawImage Digit, Image Element, TMP_Text Mark) BuildCorner(
+            RectTransform parent,
+            float top,
+            float right,
+            bool cost = true,
+            bool mark = false
+        )
+        {
+            var corner = Rect("Corner", parent);
+            Corner(
+                corner,
+                Vector2.one,
+                new Vector2(-right, -top),
+                new Vector2(CornerWidth, NameHeight)
+            );
+            var group = corner.gameObject.AddComponent<HorizontalLayoutGroup>();
+            group.childAlignment = TextAnchor.MiddleRight;
+            group.spacing = ElementIconRowAssets.Gap;
+            group.childControlWidth = group.childControlHeight = true;
+            group.childForceExpandWidth = group.childForceExpandHeight = false;
 
-            var icon = Rect("Element", thumb);
-            Corner(icon, new Vector2(1, 1), new Vector2(-2, -2), Vector2.one * 12 * ArtDot);
-            var element = icon.gameObject.AddComponent<Image>();
+            TMP_Text text = null;
+            if (mark)
+            {
+                text = Label(
+                    corner,
+                    "Mark",
+                    "",
+                    CornerMark,
+                    UiPalette.Gold,
+                    TextAlignmentOptions.MidlineRight
+                );
+                text.gameObject.SetActive(false);
+            }
+            var element = Fixed(corner, "Element", Vector2.one * ElementIconRowAssets.Size)
+                .gameObject.AddComponent<Image>();
+            element.preserveAspect = true;
             element.raycastTarget = false;
-            return (art, cost, element);
+            if (!cost)
+                return (null, null, element, text);
+
+            var frame = DeckCardAssets.CardArt("CardCostFrame");
+            var digits = DeckCardAssets.CardArt("CardCostDigits");
+            var plate = Fixed(corner, "Cost", new Vector2(frame.width, frame.height) * CornerDot);
+            var back = plate.gameObject.AddComponent<RawImage>();
+            back.texture = frame;
+            back.raycastTarget = false;
+            var digit = Rect("Digit", plate);
+            Place(digit, Vector2.zero, new Vector2(digits.width / 10f, digits.height) * CornerDot);
+            var number = digit.gameObject.AddComponent<RawImage>();
+            number.texture = digits;
+            number.raycastTarget = false;
+            return (plate.gameObject, number, element, text);
+        }
+
+        // 右上の印の並び（レイアウトグループ）の中で、決まった大きさを保つ1つ。
+        private static RectTransform Fixed(RectTransform parent, string name, Vector2 size)
+        {
+            var rect = Rect(name, parent);
+            rect.sizeDelta = size;
+            var layout = rect.gameObject.AddComponent<LayoutElement>();
+            layout.minWidth = layout.preferredWidth = size.x;
+            layout.minHeight = layout.preferredHeight = size.y;
+            return rect;
         }
 
         // The name, then the kind line ("攻撃・敵単体") in its colours, on one baseline.

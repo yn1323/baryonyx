@@ -38,9 +38,12 @@ namespace Baryonyx.CardLoadout
         // その人のどの枠に入っているか（0から）。入っていなければ-1。
         public int Slot { get; internal set; } = -1;
 
-        // 右の一覧の右上の印。その人の枠に入っていれば「1枚目」、ほかの人が使っていれば「トーマが使用中」、
-        // アイテムは「所持 3」。
+        // 右の一覧の右上の印。その人の枠に入っているか、ほかの人が使っていれば「E」、アイテムは「所持 3」。
+        // 何枚目か・誰かの文字は、右上のコストと属性の隣に収まらないため出さない（2026-11-03、ユーザーの指示）。
         public string Mark { get; internal set; } = "";
+
+        // ほかの人が使っている（「E」を灰色にする）。
+        public bool HeldByOther { get; internal set; }
 
         // 押しても入れられない（アイテムを持っている数だけほかの人が使っている）。
         public bool Unavailable { get; internal set; }
@@ -196,6 +199,9 @@ namespace Baryonyx.CardLoadout
 
         // 1人の固有スキルの数（doc/features/party.md）。
         public const int UniqueCount = 3;
+
+        // 付けているカードの印（RPGの装備中の「E」）。
+        public const string EquippedMark = "E";
 
         private readonly ICardLoadoutView view;
         private readonly IReadOnlyList<PartyMember> people;
@@ -409,6 +415,7 @@ namespace Baryonyx.CardLoadout
             people.Sum(person => CardsOf(person.Id).Count(card => card == key));
 
         // キーを枠に入れている、選んでいる人ではない人の名前。いなければ null。
+        // 一覧には名前を出さず、「E」を灰色にする。
         private string HolderOf(string key, string except) =>
             people
                 .FirstOrDefault(person => person.Id != except && CardsOf(person.Id).Contains(key))
@@ -504,14 +511,17 @@ namespace Baryonyx.CardLoadout
                     skill
                 );
             if (slotIndex >= 0)
-                state.Mark = $"{slotIndex + 1}枚目";
+                state.Mark = EquippedMark;
             else if (item != null)
             {
                 state.Mark = $"所持 {item.Count}";
                 state.Unavailable = Holding(key) >= item.Count;
             }
-            else if (store.OwnedSkills != null && HolderOf(key, person) is { } holder)
-                state.Mark = $"{holder}が使用中";
+            else if (store.OwnedSkills != null && HolderOf(key, person) != null)
+            {
+                state.Mark = EquippedMark;
+                state.HeldByOther = true;
+            }
             return state;
         }
 
@@ -597,6 +607,10 @@ namespace Baryonyx.CardLoadout
         }
 
         private CardLoadoutCardState Card(string person, CardSkill card, int slotIndex) =>
+            StateOf(card, slotIndex);
+
+        /// <summary>The card as the tabs show it (the awakening tab's branches too).</summary>
+        internal static CardLoadoutCardState StateOf(CardSkill card, int slotIndex = -1) =>
             new()
             {
                 Id = card.Id,

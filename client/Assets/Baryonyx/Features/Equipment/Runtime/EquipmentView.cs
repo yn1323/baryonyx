@@ -352,6 +352,10 @@ namespace Baryonyx.Equipment
                 Sheet.Show(people, partyCount, state.PersonId);
             }
             bool accessory = state.Accessory >= 0;
+            if (!previewing)
+                EquipmentSession.LastPlace = accessory
+                    ? EquipmentPlace.Accessory(state.Accessory)
+                    : state.Slot;
             // 同じ人の枠の中身が変わったら、描き替える前のカードを写して縦に回す。
             var turning = Turns();
             turning.Begin(state.PersonId);
@@ -522,7 +526,12 @@ namespace Baryonyx.Equipment
                 widget.Icon.color = filled ? Color.white : new Color(1f, 1f, 1f, 0.35f);
             }
             ShowFoil(widget.Foil, filled ? item : null, icon);
-            SetRich(widget.Name, item == null ? "" : filled ? Heading(item) : item.Name);
+            SetRich(
+                widget.Name,
+                item == null ? ""
+                    : filled ? Heading(item)
+                    : item.Name
+            );
             if (widget.Tag != null)
                 widget.Tag.gameObject.SetActive(!filled);
             Set(widget.Detail, filled ? item.Detail : "");
@@ -538,7 +547,13 @@ namespace Baryonyx.Equipment
         public static string Heading(EquipmentItemState item) =>
             item == null ? ""
             : string.IsNullOrEmpty(item.Name) || item.ItemId == null ? item.Name ?? ""
-            : ItemText.Heading(item.Name, item.Stars?.Length ?? 0, true, item.Quality, item.Multiplier);
+            : ItemText.Heading(
+                item.Name,
+                item.Stars?.Length ?? 0,
+                true,
+                item.Quality,
+                item.Multiplier
+            );
 
         /// <summary>
         /// One owned item: its name, rarity, quality, effect, how the stats change when it is put

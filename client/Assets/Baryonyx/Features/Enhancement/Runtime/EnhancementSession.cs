@@ -26,6 +26,9 @@ namespace Baryonyx.Enhancement
         // 商会の「スキル覚醒」の項目のキー。覚醒だけのパネルを開く（品質強化は GuideItemKey）。
         public const string AwakeningItemKey = "workshop-awaken";
 
+        // 編成の冒険者の「強化」のタブの項目のキー。メニューには出さず、冒険者のタブから開く。
+        public const string SheetItemKey = "party-enhance";
+
         private static EnhancementMemorySource local;
         private static Dictionary<string, int> known;
 
@@ -60,7 +63,11 @@ namespace Baryonyx.Enhancement
                 EnhancementMaterials.RunesFor(
                     target == null
                         ? 0
-                        : EnhancementMaterials.StonesFor(target.Multiplier, steps, target.MaxMultiplier)
+                        : EnhancementMaterials.StonesFor(
+                            target.Multiplier,
+                            steps,
+                            target.MaxMultiplier
+                        )
                 ),
                 (source, token) => source.PolishAsync(target, steps, token),
                 outcome =>

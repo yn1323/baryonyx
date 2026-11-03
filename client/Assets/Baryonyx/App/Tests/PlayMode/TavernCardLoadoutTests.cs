@@ -72,7 +72,8 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(ChosenRow(panel), Is.EqualTo(uniques));
             foreach (var entry in panel.UniqueRows.Concat(panel.SlotRows))
                 SceneTests.AssertTouchSize(entry.Card.Button.transform, 0.7f);
-            // 左の行は、固有スキルもカスタムスキルも名前・種類・効果の文まで出す。
+            // 左の行は、固有スキルもカスタムスキルも名前・種類・効果の文まで出す。行を高くしたため、
+            // 6行は面に収まらず縦にスクロールする。開いたときに選ぶ1つ目のカスタムスキルは見えている。
             var cards = PartySession.CardsOf(data, people[0].Id);
             Assert.That(
                 panel.UniqueRows[0].Card.Name.text,
@@ -81,6 +82,17 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(panel.UniqueRows[0].Card.Kind.text, Is.Not.Empty);
             Assert.That(panel.UniqueRows[0].Card.Description.text, Is.Not.Empty);
             Assert.That(panel.SlotRows[0].Card.Description.text, Is.Not.Empty);
+            var deck = panel.DeckScroll;
+            Assert.That(deck.vertical, Is.True);
+            Assert.That(deck.content.rect.height, Is.GreaterThan(deck.viewport.rect.height));
+            Assert.That(
+                SceneTests
+                    .ScreenRect(deck.viewport)
+                    .Contains(
+                        SceneTests.ScreenRect(panel.SlotRows[0].Card.Button.transform).center
+                    ),
+                Is.True
+            );
             AssertShows(panel, data, people[0]);
 
             // 右の上にスキル・アイテムのタブを置く。
@@ -155,7 +167,8 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(panel.LastNotice, Is.Empty);
             Assert.That(panel.SlotRows[1].Card.Name.text, Is.EqualTo(CardSkills.Find(row.Id).Name));
             Assert.That(row.Mark.gameObject.activeSelf, Is.True);
-            Assert.That(row.Mark.text, Is.EqualTo("2枚目"));
+            Assert.That(row.Mark.text, Is.EqualTo(CardLoadoutPresenter.EquippedMark));
+            Assert.That(row.Mark.color, Is.EqualTo(UiPalette.Gold));
 
             // その人のほかの枠にあるカードを押すと、2つの枠の中身を入れ替える。
             Row(panel, after[0]).Button.onClick.Invoke();
@@ -198,6 +211,15 @@ namespace Baryonyx.Tests.PlayMode
                         member.Id
                     );
                     Assert.That(slot.Card.Art.texture, Is.Not.Null, member.Id);
+                    AssertCorner(slot.Card.Art, slot.Card.Cost, slot.Card.Name, member.Id);
+                    // 挿絵は行の上下いっぱいに出す（左右を切る）。
+                    Assert.That(
+                        SceneTests.ScreenRect(slot.Card.Art.transform).height,
+                        Is.GreaterThan(
+                            SceneTests.ScreenRect(slot.Card.Button.transform).height * 0.85f
+                        ),
+                        member.Id
+                    );
                 }
             }
             var usable = CardLoadoutRules.Usable(member);
@@ -211,13 +233,37 @@ namespace Baryonyx.Tests.PlayMode
                 bool held = cards.Contains(row.Id);
                 Assert.That(row.Mark.gameObject.activeSelf, Is.EqualTo(held), row.Id);
                 var transform = row.Button.transform;
+                var kind = transform.Find("Body/Content/NameLine/Kind").GetComponent<TMP_Text>();
                 AssertFits(
                     transform,
                     transform.Find("Body/Content/NameLine/Name").GetComponent<TMP_Text>(),
-                    transform.Find("Body/Content/NameLine/Kind").GetComponent<TMP_Text>(),
+                    kind,
                     row.Description
                 );
+                AssertCorner(row.Art, row.Cost, kind, row.Id);
             }
+        }
+
+        // コストと属性は挿絵に重ねず、行の右上（挿絵の中央より上）で、名前の行の文字の右に置く。
+        private static void AssertCorner(
+            UnityEngine.UI.RawImage art,
+            GameObject cost,
+            TMP_Text text,
+            string label
+        )
+        {
+            Assert.That(cost.activeSelf, Is.True, label);
+            var plate = SceneTests.ScreenRect(cost.transform);
+            var picture = SceneTests.ScreenRect(art.transform);
+            Assert.That(plate.Overlaps(picture), Is.False, label);
+            Assert.That(plate.center.y, Is.GreaterThan(picture.center.y), label);
+            // 同じ並びの印・属性・コストのうち一番左の端より、文字の右端が左にある（同じキャンバスの世界座標で比べる）。
+            float left = cost
+                .transform.parent.Cast<Transform>()
+                .Where(child => child.gameObject.activeSelf)
+                .Min(child => child.TransformPoint(((RectTransform)child).rect.min).x);
+            float end = text.transform.TransformPoint(text.textBounds.max).x;
+            Assert.That(end, Is.LessThanOrEqualTo(left), label + " " + text.text);
         }
 
         private static void AssertFits(Transform box, TMP_Text name, TMP_Text kind, TMP_Text text)

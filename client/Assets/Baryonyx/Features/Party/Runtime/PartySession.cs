@@ -46,6 +46,10 @@ namespace Baryonyx.Party
         // 最後に選んでいた冒険者のID。一覧と冒険者のタブが共有し、開き直すとその人から見せる。
         public static string Selected { get; set; }
 
+        // 冒険者のタブで、ほかのタブへ移る前に開いていたタブの項目のキー。強化・覚醒のタブが、装備・スキルの
+        // タブで選んでいた枠を引き継ぐのに使う。
+        public static string LeftTab { get; set; }
+
         // サーバーが確かめた編成に、保存を待っている変更を当てたもの。サーバーがなければnull。
         public static PartyState State => saves?.Current;
 
@@ -355,6 +359,7 @@ namespace Baryonyx.Party
             cards.Clear();
             Source = null;
             Selected = null;
+            LeftTab = null;
         }
     }
 }

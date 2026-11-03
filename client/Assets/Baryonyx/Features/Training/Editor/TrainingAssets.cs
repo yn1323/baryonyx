@@ -319,8 +319,9 @@ namespace Baryonyx.Training.Editor
         }
 
         /// <summary>
-        /// The adventurer's tabs (<see cref="PartySheet"/>): the page's stats, the equipment and
-        /// the card skills, each the formation's item of its own.
+        /// The adventurer's tabs (<see cref="PartySheet"/>): the page's stats, the equipment, the
+        /// card skills, the breakthrough, then the enhancement and the awakening of what they hold
+        /// (doc/features/screens/loadout.md), each the formation's item of its own.
         /// </summary>
         public static readonly (string Key, string Label)[] SheetTabs =
         {
@@ -328,6 +329,8 @@ namespace Baryonyx.Training.Editor
             (EquipmentSession.GuideItemKey, "装備"),
             (CardLoadout.CardLoadoutSession.GuideItemKey, "スキル"),
             (TrainingSession.BreakthroughItemKey, "突破"),
+            (Enhancement.EnhancementSession.SheetItemKey, "強化"),
+            (CardLoadout.CardLoadoutSession.AwakenItemKey, "覚醒"),
         };
 
         // --- Left: the illustration and the battle sprite in its corner ---------------------

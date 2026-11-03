@@ -1,6 +1,7 @@
 using Baryonyx.CardLoadout;
 using Baryonyx.CardLoadout.Editor;
 using Baryonyx.Editor.Art;
+using Baryonyx.Enhancement;
 using Baryonyx.Equipment;
 using Baryonyx.Equipment.Editor;
 using Baryonyx.Party;
@@ -9,6 +10,7 @@ using Baryonyx.Training;
 using Baryonyx.Training.Editor;
 using Baryonyx.UI;
 using Baryonyx.UI.GuideMenu;
+using Baryonyx.Workshop.Editor;
 using UnityEditor;
 using static Baryonyx.UI.GuideMenu.Editor.GuideMenuAssets;
 
@@ -73,6 +75,14 @@ namespace Baryonyx.Tavern.Editor
                             TrainingAssets.BuildBreakthroughPanel(safe, view),
                         EquipmentSession.GuideItemKey => EquipmentAssets.BuildPanel(safe, view),
                         CardLoadoutSession.GuideItemKey => CardLoadoutAssets.BuildPanel(safe, view),
+                        EnhancementSession.SheetItemKey => WorkshopEnhanceAssets.BuildSheetPanel(
+                            safe,
+                            view
+                        ),
+                        CardLoadoutSession.AwakenItemKey => CardLoadoutAssets.BuildAwakenPanel(
+                            safe,
+                            view
+                        ),
                         _ => null,
                     }
             );
@@ -90,6 +100,8 @@ namespace Baryonyx.Tavern.Editor
                 Hidden("装備", EquipmentSession.GuideItemKey),
                 Hidden("スキル", CardLoadoutSession.GuideItemKey),
                 Hidden("突破", TrainingSession.BreakthroughItemKey),
+                Hidden("強化", EnhancementSession.SheetItemKey),
+                Hidden("覚醒", CardLoadoutSession.AwakenItemKey),
             };
         }
 

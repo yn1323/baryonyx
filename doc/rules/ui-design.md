@@ -214,7 +214,7 @@ uGUIではCanvas、Prefab、Layout、Animator、Presenterの責務を分ける�
 | 属性 | 12×12ドットの四角いドット絵（`Shared/Art/Attributes/Element<属性>.aseprite`）。未開示の弱点は「？」（`Features/Combat/UI/Art/Elements/ElementUnknown.aseprite`） |
 | コスト | 11×11ドットの暗い札（`CardCostFrame`）に、琥珀の細い縁と5×7ドットの数字（`CardCostDigits`、0〜9を横に並べた1枚）を中央に重ねる |
 | 無属性 | 属性のないスキルと装備には、カード・編成・商会・ライブラリのどこにも印を出さない。無属性は弱点にならず、使える属性の行（冒険者・育成・編成の付けられる属性）にも並べない（2026-11-03、ユーザーの指示「やっぱり無属性はカードにも装備にも何もマークなしに」。同じ日に選んだ太い輪の印をやめた） |
-| 大きさ | 整数倍で出し、ドットを崩さない。カードの上ではカードと同じ倍率で角に置き、装備の属性は3倍（編成・売る）と4倍（買うの詳しい面）にする |
+| 大きさ | 整数倍で出し、ドットを崩さない。カードの上ではカードと同じ倍率で角に置き、カードの行（編成のスキル・商会のスキル覚醒）では挿絵に重ねず、名前の行の右端に3倍で並べ（[コストと属性の置き場所](../features/screens/loadout.md#コストと属性の置き場所)）、装備の属性は3倍（編成・売る）と4倍（買うの詳しい面）にする |
 | 読み込み | カードの外で属性を出す所（装備の属性・商会・地図の窓）は [AttributeIconArt](../../client/Assets/Baryonyx/Features/Combat/Editor/AttributeIconArt.cs) の `SpriteOf`・`TextureOf` で読む。無属性には null を返す |
 
 画像を足した・変えたときは、使う画面の生成処理を作り直し、[展示室](../features/showcase.md)の登録とプレビューを直す。

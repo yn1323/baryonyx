@@ -27,10 +27,13 @@ namespace Baryonyx.CardLoadout
         public Button Button;
         public GameObject Selected;
 
-        // カードの挿絵（2倍）と、その上に重ねるキラキラ、コストと属性のアイコン。
+        // カードの挿絵（2倍）と、その上に重ねるキラキラ。
         public RawImage Art;
         public CardFoil Foil;
-        public TMP_Text Cost;
+
+        // 行の右上のコストの札（数字は0〜9を横に並べた絵から切り出す）と属性の印。
+        public GameObject Cost;
+        public RawImage CostDigit;
         public Image Element;
         public TMP_Text Name;
         public TMP_Text Kind;
@@ -39,9 +42,10 @@ namespace Baryonyx.CardLoadout
 
     /// <summary>
     /// One of the person's six cards in the left frame (a unique skill or a custom skill's
-    /// slot), as a row like the list's: the art, the name and kind and the whole effect. Pressing
-    /// it chooses that slot; a unique skill not unlocked yet is dimmed under a lock with its
-    /// level, and an empty slot shows only 「空き」.
+    /// slot), as a row: the art, the name with the cost and element at the top right, the kind
+    /// and the whole effect under the name. Pressing it chooses that slot; a unique skill not
+    /// unlocked yet is dimmed under a lock with its level in place of the effect, and an empty
+    /// slot shows only 「空き」.
     /// </summary>
     [Serializable]
     public sealed class CardLoadoutDeckRowWidget
@@ -67,7 +71,7 @@ namespace Baryonyx.CardLoadout
         public GameObject Shadow;
         public GameObject Content;
 
-        // 未解放の固有スキルの最初の段階に重ねる錠前と、右下の「セット中」「Lv 20で解放」。
+        // 未解放の固有スキルの最初の段階に重ねる錠前と、右上の「E」（セットしている段階）「Lv 20で解放」。
         public GameObject Lock;
         public TMP_Text Mark;
     }
@@ -99,7 +103,10 @@ namespace Baryonyx.CardLoadout
         public Button Button;
         public RawImage Art;
         public CardFoil Foil;
-        public TMP_Text Cost;
+
+        // 行の右上のコストの札と属性の印。
+        public GameObject Cost;
+        public RawImage CostDigit;
         public Image Element;
         public TMP_Text Name;
         public TMP_Text Kind;
@@ -107,7 +114,7 @@ namespace Baryonyx.CardLoadout
         // 説明の数字は選んでいる人のステータスで変わる。
         public TMP_Text Description;
 
-        // その人の何枚目に入っているか（「1枚目」）。入っていなければ隠す。
+        // 属性の左の印：使っていれば「E」（その人は金、ほかの人は灰色）、アイテムは「所持 3」。なければ隠す。
         public TMP_Text Mark;
     }
 
@@ -138,6 +145,9 @@ namespace Baryonyx.CardLoadout
         // まだ解放していない固有スキルの挿絵の色。
         private static readonly Color LockedArt = new(0.25f, 0.25f, 0.3f, 1f);
 
+        // ほかの人が付けているカードの「E」の色（その人が付けているカードは金）。
+        private static readonly Color OtherMark = UiPalette.TextFaint;
+
         public PartyMockData Party;
         public TrainingMockData Training;
 
@@ -154,8 +164,15 @@ namespace Baryonyx.CardLoadout
         public CardLoadoutDeckRowWidget[] UniqueRows = Array.Empty<CardLoadoutDeckRowWidget>();
         public CardLoadoutDeckRowWidget[] SlotRows = Array.Empty<CardLoadoutDeckRowWidget>();
 
+        // 左の6行の縦のスクロール（6行が面に収まらないため）。
+        public ScrollRect DeckScroll;
+
         // 固有スキルを選んでいるときに、タブと一覧の代わりに右に出す進化ツリー。
         public CardLoadoutTreeWidget Tree = new();
+
+        // 冒険者の「覚醒」のタブとして開くときの、覚醒先を選んで覚醒させる部品（スキルのタブではnull）。
+        // 右にはタブと一覧を置かず、固有スキルもカスタムスキルもツリーで出す。
+        public CardLoadoutAwakening Awakening;
 
         // 右の上のスキル・アイテムのタブ（CardLoadoutPresenter.SkillTab・ItemTab の順）。
         public GuideTab[] Tabs = Array.Empty<GuideTab>();
@@ -211,7 +228,8 @@ namespace Baryonyx.CardLoadout
                 int index = i;
                 bindings.Bind(UniqueRows[i].Card.Button, () => UniquePressed?.Invoke(index));
             }
-            for (int i = 0; i < Tree.Stages.Length; i++)
+            // 覚醒のタブでは、ツリーの段階を押すと覚醒先を選ぶ（CardLoadoutAwakening）。セットし直さない。
+            for (int i = 0; i < Tree.Stages.Length && Awakening == null; i++)
             {
                 int stage = i;
                 bindings.Bind(Tree.Stages[i].Card.Button, () => StagePressed?.Invoke(stage));
@@ -283,13 +301,37 @@ namespace Baryonyx.CardLoadout
         private void Present(PartyFormation formation, Func<string, int, string, Task> save)
         {
             presenter?.Dispose();
+            var (slot, unique) =
+                Awakening != null
+                    ? CardLoadoutAwakening.Opened()
+                    : (CardLoadoutSession.OpenSlot, CardLoadoutSession.OpenUnique);
             presenter = new CardLoadoutPresenter(
                 this,
                 CardLoadoutPresenter.People(formation),
                 new CardLoadoutSessionStore(Party, Training),
                 save,
-                CardLoadoutSession.OpenSlot,
-                unique: CardLoadoutSession.OpenUnique
+                slot,
+                unique: unique
+            );
+        }
+
+        /// <summary>Shows the person again from the party as it is now (after an awakening).</summary>
+        public void Refresh() => presenter?.Refresh();
+
+        /// <summary>Reads the party again and shows it, keeping what is shown until it is read.</summary>
+        public void Reload()
+        {
+            var source = PartySession.Source;
+            if (source == null || Party == null)
+            {
+                Refresh();
+                return;
+            }
+            StartLoad(
+                token => LoadAsync(source, false, token),
+                LoadFailedMessage,
+                () => { },
+                readAgain: true
             );
         }
 
@@ -298,6 +340,8 @@ namespace Baryonyx.CardLoadout
         {
             Turns().Forget();
             ShowTree(false);
+            if (Awakening != null)
+                Awakening.Hide();
             ShowTabs(CardLoadoutPresenter.SkillTab);
             Set(Status, "");
             if (UsableLine != null)
@@ -369,10 +413,27 @@ namespace Baryonyx.CardLoadout
         public const string TreePreviewState = "固有スキルを選んだとき";
 
         public IReadOnlyList<string> PreviewStates =>
-            new[] { "アイテム", TreePreviewState }.Concat(GuidePanelLoad.PreviewStates).ToArray();
+            (
+                Awakening != null
+                    ? new[] { CardLoadoutAwakening.CardPreviewState }
+                    : new[] { "アイテム", TreePreviewState }
+            )
+                .Concat(GuidePanelLoad.PreviewStates)
+                .ToArray();
 
         public void ShowPreviewState(int index)
         {
+            // 覚醒のタブ：最初の表示は焼き込んだ1つ目の固有スキルのツリー。次に1つ目のカスタムスキル。
+            if (Awakening != null)
+            {
+                if (index == 0)
+                {
+                    ShowChosen(-1, 0);
+                    Awakening.ShowCardPreview();
+                    return;
+                }
+                index++;
+            }
             switch (index)
             {
                 case 0:
@@ -421,8 +482,9 @@ namespace Baryonyx.CardLoadout
         // パンくずに出す、表示している人の名前。
         private string person;
 
-        // 戻ると、タブを開いた項目（冒険者の一覧か育成の人選び）へ戻る。
-        public bool HandleBack() => TrainingSession.LeavePage(Guide);
+        // 戻ると、タブを開いた項目（冒険者の一覧か育成の人選び）へ戻る。覚醒の演出の間は戻らない。
+        public bool HandleBack() =>
+            (Awakening != null && Awakening.Busy) || TrainingSession.LeavePage(Guide);
 
         public void Render(CardLoadoutState state)
         {
@@ -430,6 +492,11 @@ namespace Baryonyx.CardLoadout
             person = member?.Name;
             if (Guide != null)
                 Guide.RefreshTrail();
+            if (Application.isPlaying)
+            {
+                CardLoadoutSession.LastUnique = state.Unique;
+                CardLoadoutSession.LastSlot = state.Slot;
+            }
             if (Sheet != null && Party != null)
             {
                 var (people, partyCount) = PartySession.Formation(Party).TabOrder();
@@ -455,6 +522,7 @@ namespace Baryonyx.CardLoadout
                     unique != null && unique.Locked,
                     unique?.UnlockLevel ?? 0
                 );
+                DimForAwakening(UniqueRows[i], unique?.Card != null && !unique.Locked);
             }
             for (int i = 0; i < SlotRows.Length; i++)
             {
@@ -467,16 +535,22 @@ namespace Baryonyx.CardLoadout
                     filled ? ArtOf(card) : null
                 );
                 ShowDeckRow(SlotRows[i], card, filled, false, 0);
+                DimForAwakening(SlotRows[i], filled && card.ItemId == null);
             }
             ShowChosen(state.Unique, state.Slot);
-            ShowUsable(Usable, state.Usable, IconOf);
-            ShowTabs(state.Tab, state.Choices.Count == 0);
-            ShowRows(state);
-            if (state.Tree != null)
-                ShowTreeState(state.Tree, state.PersonId);
+            if (Awakening != null)
+                Awakening.Show(state);
             else
-                shownTree = null;
-            ShowTree(state.Tree != null);
+            {
+                ShowUsable(Usable, state.Usable, IconOf);
+                ShowTabs(state.Tab, state.Choices.Count == 0);
+                ShowRows(state);
+                if (state.Tree != null)
+                    ShowTreeState(state.Tree, state.PersonId);
+                else
+                    shownTree = null;
+                ShowTree(state.Tree != null);
+            }
             // 読み込みを待っていたら、左の6行から右の一覧の順にめくる。一覧の伏せた場所のうち、
             // カードも「スキルを外す」も来ない場所の行は、めくってから消す（外すの後ろへ回す）。
             int taken =
@@ -508,6 +582,13 @@ namespace Baryonyx.CardLoadout
                 art => Combat.Presentation.CardArtColor.Of(art, Color.white)
             );
 
+        // 覚醒のタブで、覚醒させられない行（未解放の固有スキル、空いた枠、アイテム）を薄くする。押すことはできる。
+        private void DimForAwakening(CardLoadoutDeckRowWidget row, bool awakens)
+        {
+            if (Awakening != null && CardOf(row) is { } card)
+                card.Dimmed = !awakens;
+        }
+
         private static GlassCard CardOf(CardLoadoutDeckRowWidget row) =>
             row.Card.Button != null && row.Card.Button.TryGetComponent(out GlassCard card)
                 ? card
@@ -532,9 +613,9 @@ namespace Baryonyx.CardLoadout
         }
 
         /// <summary>
-        /// One of the six rows on the left: <paramref name="card"/>'s art, name, kind and effect
-        /// (<paramref name="filled"/>), or 「空き」; a unique skill not unlocked yet is dimmed
-        /// under a lock, with its level in place of the effect.
+        /// One of the six rows on the left: <paramref name="card"/>'s art, name, cost, element,
+        /// kind and effect (<paramref name="filled"/>), or 「空き」; a unique skill not unlocked
+        /// yet is dimmed under a lock, with its level in place of the effect.
         /// </summary>
         private void ShowDeckRow(
             CardLoadoutDeckRowWidget widget,
@@ -578,7 +659,7 @@ namespace Baryonyx.CardLoadout
             if (key != shownTree && Tree.Scroll != null)
                 Tree.Scroll.verticalNormalizedPosition = 1f;
             shownTree = key;
-            Set(Tree.Title, $"{tree.Name}の覚醒");
+            ShowTreeTitle(Tree, tree.Name);
             for (int i = 0; i < Tree.Stages.Length; i++)
             {
                 var stage = i < tree.Stages.Count ? tree.Stages[i] : null;
@@ -627,20 +708,26 @@ namespace Baryonyx.CardLoadout
                 widget.Card.Foil.Image.enabled = false;
             if (widget.Lock != null)
                 widget.Lock.SetActive(acquired && locked);
-            Set(
-                widget.Mark,
+            string mark =
                 !acquired ? ""
-                    : locked ? UnlockText(tree.UnlockLevel)
-                    : stage.Set ? SetMark
-                    : ""
-            );
+                : locked ? UnlockText(tree.UnlockLevel)
+                : stage.Set ? SetMark
+                : "";
+            Set(widget.Mark, mark);
+            // 印は右上で属性の左に並ぶため、ないときは隠して間を詰める。
+            if (widget.Mark != null)
+                widget.Mark.gameObject.SetActive(mark.Length > 0);
         }
+
+        /// <summary>The tree's heading: 「マナバーストの覚醒」.</summary>
+        public static void ShowTreeTitle(CardLoadoutTreeWidget tree, string name) =>
+            Set(tree.Title, $"{name}の覚醒");
 
         // 今出している進化ツリー（人と固有スキル）。
         private string shownTree;
 
-        // ツリーでセットしている段階の印。
-        public const string SetMark = "セット中";
+        // ツリーでセットしている段階の印。右の一覧で付けているカードの印とそろえる。
+        public const string SetMark = CardLoadoutPresenter.EquippedMark;
 
         public Sprite IconOf(CardElement element)
         {
@@ -695,7 +782,11 @@ namespace Baryonyx.CardLoadout
                     Button = copy.GetComponent<Button>(),
                     Art = Same(template.Art, source, copy),
                     Foil = Same(template.Foil, source, copy),
-                    Cost = Same(template.Cost, source, copy),
+                    Cost =
+                        template.Cost != null
+                            ? Same(template.Cost.transform, source, copy).gameObject
+                            : null,
+                    CostDigit = Same(template.CostDigit, source, copy),
                     Element = Same(template.Element, source, copy),
                     Name = Same(template.Name, source, copy),
                     Kind = Same(template.Kind, source, copy),
@@ -743,22 +834,16 @@ namespace Baryonyx.CardLoadout
                 widget.Art.texture = art;
                 widget.Art.enabled = filled && art != null;
             }
+            // キラキラは、挿絵と同じ所を切り出して重ねる（左の6行は挿絵の左右を切っている）。
             if (widget.Foil != null)
                 widget.Foil.Show(
                     art,
+                    widget.Art != null ? widget.Art.uvRect : new Rect(0f, 0f, 1f, 1f),
                     filled ? card.Quality : ItemQuality.C,
                     filled ? card.FoilStyle : 0
                 );
-            if (widget.Cost != null)
-            {
-                widget.Cost.transform.parent.gameObject.SetActive(filled);
-                widget.Cost.text = filled ? card.Cost.ToString() : "";
-            }
-            if (widget.Element != null)
-            {
-                widget.Element.sprite = element;
-                widget.Element.enabled = filled && element != null;
-            }
+            ShowCost(widget.Cost, widget.CostDigit, filled ? card.Cost : -1);
+            ShowElement(widget.Element, filled ? element : null);
             Set(widget.Name, card?.Name ?? "空き");
             Set(widget.Kind, filled ? card.KindLine : "");
             Set(widget.Description, filled ? card.Description : "");
@@ -768,10 +853,39 @@ namespace Baryonyx.CardLoadout
         public const float ArtDot = 2f;
         public const float ItemArtDot = 3f;
 
+        // コストの札の数字の絵は、0〜9を横に並べた1枚。
+        private const int CostDigits = 10;
+
+        /// <summary>
+        /// The cost plate at a row's top right, its digit cut from the 0–9 strip. Hidden for a
+        /// value outside 0–9 (an empty slot). The generator calls it too.
+        /// </summary>
+        public static void ShowCost(GameObject cost, RawImage digit, int value)
+        {
+            bool on = value >= 0 && value < CostDigits;
+            if (cost != null)
+                cost.SetActive(on);
+            if (digit != null && on)
+                digit.uvRect = new Rect(value / (float)CostDigits, 0f, 1f / CostDigits, 1f);
+        }
+
+        /// <summary>
+        /// The element at a row's top right. A card without one hides it, closing the gap next to
+        /// the other marks. The generator calls it too.
+        /// </summary>
+        public static void ShowElement(Image icon, Sprite element)
+        {
+            if (icon == null)
+                return;
+            icon.sprite = element;
+            icon.gameObject.SetActive(element != null);
+        }
+
         /// <summary>
         /// One card on the right: its art, cost, element, name and kind, the description with the
-        /// person's numbers, and the mark (which slot of theirs holds it, who else uses it, or how
-        /// many items there are). A card that cannot be set now is dimmed.
+        /// person's numbers, and the mark (「E」 in gold when the person holds it, in grey when
+        /// someone else does, or how many items there are). A card that cannot be set now is
+        /// dimmed.
         /// </summary>
         public static void ShowRow(
             CardLoadoutRowWidget widget,
@@ -791,12 +905,8 @@ namespace Baryonyx.CardLoadout
             }
             if (widget.Foil != null)
                 widget.Foil.Show(art, card.Quality, card.FoilStyle);
-            Set(widget.Cost, card.Cost.ToString());
-            if (widget.Element != null)
-            {
-                widget.Element.sprite = element;
-                widget.Element.enabled = element != null;
-            }
+            ShowCost(widget.Cost, widget.CostDigit, card.Cost);
+            ShowElement(widget.Element, element);
             Set(widget.Name, card.Name);
             Set(widget.Kind, card.KindLine);
             Set(widget.Description, card.Description);
@@ -804,6 +914,7 @@ namespace Baryonyx.CardLoadout
             {
                 widget.Mark.gameObject.SetActive(!string.IsNullOrEmpty(card.Mark));
                 widget.Mark.text = card.Mark ?? "";
+                widget.Mark.color = card.HeldByOther ? OtherMark : UiPalette.Gold;
             }
             if (widget.Button != null)
             {
@@ -831,7 +942,7 @@ namespace Baryonyx.CardLoadout
         }
 
         // スキルの挿絵（固有スキルの段階を含む）は仮データの挿絵を使う。
-        private Texture2D ArtOf(string skillId) =>
+        internal Texture2D ArtOf(string skillId) =>
             skillId != null && Party != null ? Party.ArtOf(skillId) : null;
 
         // カードの絵。アイテムはアイテムの絵、スキルはスキルの挿絵。

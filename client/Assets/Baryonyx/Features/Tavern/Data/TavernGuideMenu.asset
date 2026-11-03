@@ -55,5 +55,17 @@ MonoBehaviour:
     Hidden: 1
     ConfirmLabel: 
     Entries: []
+  - Key: party-enhance
+    Label: "\u5F37\u5316"
+    Icon: {fileID: 0}
+    Hidden: 1
+    ConfirmLabel: 
+    Entries: []
+  - Key: party-awaken
+    Label: "\u899A\u9192"
+    Icon: {fileID: 0}
+    Hidden: 1
+    ConfirmLabel: 
+    Entries: []
   Destinations: []
   DepartLabel: "\u51FA\u767A"

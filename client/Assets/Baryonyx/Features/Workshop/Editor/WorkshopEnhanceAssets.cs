@@ -259,7 +259,13 @@ namespace Baryonyx.Workshop.Editor
             var content = panel.Content;
             enhance.Content = content;
             enhance.List = panel.Scroll;
-            enhance.Template = ItemRowAssets.Row(content, "Template", RowHeight, ArtBox, ValueWidth);
+            enhance.Template = ItemRowAssets.Row(
+                content,
+                "Template",
+                RowHeight,
+                ArtBox,
+                ValueWidth
+            );
             // 読み込む間は、この写しを伏せて一覧を埋める（GlassCardCover）。
             GlassCardAssets.AddBack(enhance.Template.Card, vertical: true);
             enhance.Template.gameObject.SetActive(false);
@@ -287,8 +293,126 @@ namespace Baryonyx.Workshop.Editor
             enhance.Status = panel.Status;
             enhance.ListCount.text = UiText.Count(mock.Count);
 
-            float left = GuidePanelTemplate.DetailLeft;
-            float right = GuidePanelTemplate.DetailRight;
+            BuildDetail(
+                layer,
+                enhance,
+                GuidePanelTemplate.DetailLeft + 16f,
+                GuidePanelTemplate.DetailRight
+            );
+            (enhance.Confirm, enhance.ConfirmLabel) = ConfirmButton(
+                layer,
+                WorkshopEnhanceView.PolishLabel
+            );
+            enhance.Flip = BuildFlip((RectTransform)enhance.transform);
+            return enhance.gameObject;
+        }
+
+        // 冒険者の強化のタブ：人の列とタブの間を2つに分け、左の面に一覧、金の2本線の右の面に選んだ物を
+        // 商会と同じ並びで出す。左の行に名前と効果が入るよう、スキルのタブと同じく左の面を広くする。
+        private const float SheetSplit = UiSpace.SheetSplitWide;
+        private const float SheetHeadingHeight = 52f;
+
+        /// <summary>
+        /// The adventurer's 「強化」 tab (doc/features/screens/loadout.md#強化): what the person
+        /// holds under the headings 装備・固有スキル・カスタムスキル in the left pane, the chosen
+        /// thing in the right pane as the trading house shows it, between the people's column and
+        /// the tabs. The first mock person is baked, so the prefab reads without Play Mode.
+        /// </summary>
+        public static GameObject BuildSheetPanel(RectTransform safe, GuideMenuView guide)
+        {
+            var (enhance, layer) = GuideFrameAssets.FramedPanel<WorkshopEnhanceView>(
+                safe,
+                "PartyEnhance"
+            );
+            enhance.Guide = guide;
+            enhance.Data = AssetDatabase.LoadAssetAtPath<LibraryData>(LibraryScreenAssets.DataPath);
+            enhance.Party = AssetDatabase.LoadAssetAtPath<PartyMockData>(PartyAssets.DataPath);
+            enhance.Training = AssetDatabase.LoadAssetAtPath<TrainingMockData>(
+                TrainingAssets.DataPath
+            );
+            enhance.ArtBox = ArtBox;
+            enhance.GearArtBox = GearArt;
+            enhance.CardFrames = DeckCardFrames();
+            enhance.ElementIcons = ElementIcons();
+
+            var (left, right, swipe) = PartyChangeScreenAssets.Build(
+                layer,
+                SheetSplit,
+                "EnhancePane",
+                "Enhance"
+            );
+            // 一覧は左の面いっぱいで、上下の縁で行を薄く消す。人を替えるフリックは、一覧の上でも受ける
+            // （一覧のスクロールと同じ所に載る）。
+            var viewport = Layout.Viewport(left);
+            viewport.GetComponent<RectMask2D>().softness = new Vector2Int(
+                0,
+                PartyChangeScreenAssets.ListFade
+            );
+            var content = Layout.Column(
+                viewport,
+                "Rows",
+                10,
+                new RectOffset(
+                    0,
+                    0,
+                    PartyChangeScreenAssets.ListFade,
+                    PartyChangeScreenAssets.ListFade
+                )
+            );
+            enhance.Content = content;
+            enhance.List = Layout.Scroll(left, viewport, content);
+            enhance.Swipes = new[] { swipe };
+            enhance.Template = ItemRowAssets.Row(content, "Template", RowHeight, ArtBox);
+            // 読み込む間は、この写しを伏せて一覧を埋める（GlassCardCover）。
+            GlassCardAssets.AddBack(enhance.Template.Card, vertical: true);
+            enhance.Template.gameObject.SetActive(false);
+            var heading = Layout.ListItem(content, "HeadingTemplate", SheetHeadingHeight);
+            GuideFrameAssets.Heading(
+                heading,
+                "Title",
+                "",
+                0f,
+                8f,
+                left.rect.width,
+                SheetHeadingHeight - 8f,
+                28f
+            );
+            heading.gameObject.SetActive(false);
+            enhance.HeadingTemplate = heading;
+            enhance.Status = GuideFrameAssets.ListStatus(left, 0f, left.rect.width, 100f);
+
+            // 品質のゲージの左端の「C」が金の2本線にかからないよう、右の面の左から少し空ける。
+            BuildDetail(layer, enhance, SheetSplit + 40f, PartySheetAssets.ContentRight - 24f);
+            (enhance.Confirm, enhance.ConfirmLabel) = ConfirmButton(
+                layer,
+                WorkshopEnhanceView.PolishLabel,
+                PartySheetAssets.ContentRight - 8f
+            );
+            enhance.Sheet = PartySheetAssets.Build(
+                layer,
+                guide,
+                enhance.Party,
+                EnhancementSession.SheetItemKey,
+                TrainingAssets.SheetTabs
+            );
+            enhance.Trail = enhance.gameObject.AddComponent<PartySheetTrail>();
+            enhance.Trail.Guide = guide;
+            enhance.Flip = BuildFlip((RectTransform)enhance.transform);
+
+            // 仮データの最初の人で描き、Prefabを開くと停止中でも一覧と右の面が読めるようにする。
+            enhance.Use(PartyFormation.From(enhance.Party), null, EquipmentLocalSource.Starter());
+            enhance.ShowPerson(null, null);
+            return enhance.gameObject;
+        }
+
+        // 右の面：選んだ物の名前・分類、強化する前と後のカード、品質のゲージ、磨き石の札と費用。
+        private static void BuildDetail(
+            RectTransform layer,
+            WorkshopEnhanceView enhance,
+            float left,
+            float right
+        )
+        {
             enhance.DetailName = Layout.Text(
                 layer,
                 "DetailName",
@@ -296,9 +420,9 @@ namespace Baryonyx.Workshop.Editor
                 46,
                 UiPalette.TextMain,
                 TextAlignmentOptions.MidlineLeft,
-                left + 16f,
+                left,
                 128f,
-                right - left - 16f,
+                right - left,
                 56f
             );
             Shrink(enhance.DetailName, 30);
@@ -309,18 +433,16 @@ namespace Baryonyx.Workshop.Editor
                 28,
                 UiPalette.TextSub,
                 TextAlignmentOptions.MidlineLeft,
-                left + 16f,
+                left,
                 184f,
-                right - left - 16f,
+                right - left,
                 36f
             );
             enhance.DetailSub.richText = true;
             Shrink(enhance.DetailSub, 20);
-            BuildCards(layer, enhance, left + 16f, right);
-            BuildGauge(layer, enhance, left + 16f, right);
-
-            BuildMaterials(layer, enhance, left + 16f, right, MaterialsTop);
-
+            BuildCards(layer, enhance, left, right);
+            BuildGauge(layer, enhance, left, right);
+            BuildMaterials(layer, enhance, left, right, MaterialsTop);
             var info = Layout.Text(
                 layer,
                 "Info",
@@ -328,21 +450,15 @@ namespace Baryonyx.Workshop.Editor
                 28,
                 UiPalette.TextSub,
                 TextAlignmentOptions.MidlineLeft,
-                left + 16f,
+                left,
                 MaterialsTop + BarHeight + 4f,
-                right - left - 16f,
+                right - left,
                 InfoHeight
             );
             info.richText = true;
             info.textWrappingMode = TextWrappingModes.NoWrap;
             Shrink(info, 20);
             enhance.Info = info;
-            (enhance.Confirm, enhance.ConfirmLabel) = ConfirmButton(
-                layer,
-                WorkshopEnhanceView.PolishLabel
-            );
-            enhance.Flip = BuildFlip((RectTransform)enhance.transform);
-            return enhance.gameObject;
         }
 
         // 品質強化の演出（裏返して現れる）：画面全体の暗転、中央で回るカード、計算で描く光の板
@@ -405,13 +521,21 @@ namespace Baryonyx.Workshop.Editor
                 WorkshopCraftAssets.Shape("Glow")
             );
             // 表を向いたときの光線と輪は、カードの文字が読めるようカードの奥に置く。
-            flip.Rays = WorkshopCraftAssets.Board(screen, "Rays", WorkshopCraftAssets.Shape("Star"));
+            flip.Rays = WorkshopCraftAssets.Board(
+                screen,
+                "Rays",
+                WorkshopCraftAssets.Shape("Star")
+            );
             flip.MoreRays = WorkshopCraftAssets.Board(
                 screen,
                 "MoreRays",
                 WorkshopCraftAssets.Shape("Star")
             );
-            flip.Ring = WorkshopCraftAssets.Board(screen, "Ring", WorkshopCraftAssets.Shape("Ring"));
+            flip.Ring = WorkshopCraftAssets.Board(
+                screen,
+                "Ring",
+                WorkshopCraftAssets.Shape("Ring")
+            );
             flip.MoreRings = WorkshopCraftAssets.Boards(
                 screen,
                 "MoreRing",

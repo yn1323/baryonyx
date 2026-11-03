@@ -60,6 +60,18 @@ namespace Baryonyx.Enhancement
             };
     }
 
+    /// <summary>One thing on a person's enhance tab: the heading it is listed under and where they hold it.</summary>
+    public sealed class PersonalTarget
+    {
+        public EnhancementTarget Target { get; set; }
+
+        // 見出し（EnhancementTargets.GearGroup などの1つ）。
+        public string Group { get; set; } = "";
+
+        // 付けている所：装備は枠の名前（「weapon」「accessory1」）、固有スキルは「unique:0」、カスタムスキルは「slot:0」。
+        public string Place { get; set; } = "";
+    }
+
     /// <summary>
     /// One stage a card can awaken into: a unique skill's stage not acquired whose stage before
     /// it is, or one of the two branches of an owned skill card that has not awakened
@@ -265,6 +277,83 @@ namespace Baryonyx.Enhancement
                         )
                 )
                 .ToArray();
+
+        // 冒険者の強化のタブの見出し。
+        public const string GearGroup = "装備";
+        public const string UniqueGroup = "固有スキル";
+        public const string SkillGroup = "カスタムスキル";
+
+        /// <summary>Where a unique skill sits on a person's enhance tab ("unique:0").</summary>
+        public static string UniquePlace(int index) => "unique:" + index;
+
+        /// <summary>Where a custom skill slot sits on a person's enhance tab ("slot:0").</summary>
+        public static string SlotPlace(int index) => "slot:" + index;
+
+        /// <summary>
+        /// What <paramref name="person"/> holds, for the adventurer's enhance tab: the equipment
+        /// worn (the weapon, the armour, then the accessory slots), the unique skills unlocked,
+        /// then the skill cards in the custom skill slots, each taken from the lists of every
+        /// owned thing. <paramref name="cards"/> are the owned cards' ids in slot order (null for
+        /// a slot empty or holding an item).
+        /// </summary>
+        public static IReadOnlyList<PersonalTarget> OfPerson(
+            string person,
+            EquipmentState gear,
+            IReadOnlyList<string> cards,
+            IReadOnlyList<EnhancementTarget> equipment,
+            IReadOnlyList<EnhancementTarget> uniques,
+            IReadOnlyList<EnhancementTarget> skills
+        )
+        {
+            var list = new List<PersonalTarget>();
+            var places = new[]
+            {
+                new EquipmentPlace(EquipmentSlot.Weapon),
+                new EquipmentPlace(EquipmentSlot.Armor),
+            }.Concat(Enumerable.Range(0, AccessorySlots.Count).Select(EquipmentPlace.Accessory));
+            foreach (var place in places)
+            {
+                string item = gear?.ItemIn(person, place);
+                var target = item != null ? equipment?.FirstOrDefault(t => t.ItemId == item) : null;
+                if (target != null)
+                    list.Add(
+                        new PersonalTarget
+                        {
+                            Target = target,
+                            Group = GearGroup,
+                            Place = place.Key,
+                        }
+                    );
+            }
+            foreach (
+                var target in (uniques ?? Array.Empty<EnhancementTarget>())
+                    .Where(t => t.CharacterId == person)
+                    .OrderBy(t => t.Index)
+            )
+                list.Add(
+                    new PersonalTarget
+                    {
+                        Target = target,
+                        Group = UniqueGroup,
+                        Place = UniquePlace(target.Index),
+                    }
+                );
+            for (int i = 0; i < (cards?.Count ?? 0); i++)
+            {
+                string id = cards[i];
+                var target = id != null ? skills?.FirstOrDefault(t => t.ItemId == id) : null;
+                if (target != null)
+                    list.Add(
+                        new PersonalTarget
+                        {
+                            Target = target,
+                            Group = SkillGroup,
+                            Place = SlotPlace(i),
+                        }
+                    );
+            }
+            return list;
+        }
 
         private static IEnumerable<(
             PartyMember Member,

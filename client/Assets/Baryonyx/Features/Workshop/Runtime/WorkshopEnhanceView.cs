@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Baryonyx.CardLoadout;
 using Baryonyx.Combat;
 using Baryonyx.Economy;
 using Baryonyx.Enhancement;
@@ -31,12 +32,16 @@ namespace Baryonyx.Workshop
     /// change, the quality gauge with the part the stones add, and the polishing stones and how
     /// many. Press the button: the result shows when the server
     /// answers, since the next enhancement starts from it.
+    /// The adventurer's 「強化」 tab is this panel too, between the people's column and the tabs
+    /// (<see cref="Sheet"/> set): one list of what the person holds under headings instead of
+    /// the tabs, and a flick or the column changes the person (doc/features/screens/loadout.md#強化).
     /// </summary>
     public sealed class WorkshopEnhanceView : GuidePanel, IEditModePreview
     {
         public const string LoadFailedMessage = "強化できる物を取得できませんでした";
         public const string FailedMessage = "強化できませんでした";
         public const string PolishLabel = "強化";
+        public const string PersonEmptyText = "強化できる物を付けていません";
 
         // 読み込む間に伏せて並べる行の数（一覧の見える所を埋める）。
         public const int CoverRows = 7;
@@ -110,6 +115,17 @@ namespace Baryonyx.Workshop
         // 「強化」で流す、カードが中央で回って裏返る演出（doc/features/enhancement.md 品質強化の演出）。
         public WorkshopEnhanceFlip Flip;
 
+        // 冒険者の「強化」のタブとして開くときの、左の人の列と右のタブ、パンくずと戻る（商会ではnull）。
+        public PartySheet Sheet;
+        public PartySheetTrail Trail;
+
+        // 一覧の上と左の面の上の左右のフリックで人を替える（ほかのタブと同じ）。
+        public GuideSwipe[] Swipes = Array.Empty<GuideSwipe>();
+
+        // 一覧の見出し（装備・固有スキル・カスタムスキル）の写し元と、写した見出し。
+        public RectTransform HeadingTemplate;
+        public List<RectTransform> Headings = new();
+
         private readonly HashSet<Component> bound = new();
         private readonly GlassCardCover cover = new();
         private IReadOnlyList<EnhancementTarget> skills = Array.Empty<EnhancementTarget>();
@@ -121,6 +137,17 @@ namespace Baryonyx.Workshop
         private Tab tab;
         private bool shownTab;
         private int selected = -1;
+
+        // 冒険者の強化のタブ：読んだ編成と装備、見ている人と、その人の物。
+        private PartyFormation formation;
+        private PartyState partyState;
+        private EquipmentState gearState;
+        private string person;
+        private IReadOnlyList<PersonalTarget> personal = Array.Empty<PersonalTarget>();
+        private IReadOnlyList<EnhancementTarget> personalTargets = Array.Empty<EnhancementTarget>();
+
+        // 開いて初めて人の物を出すときは、ほかのタブで選んでいた枠の物を選ぶ。
+        private bool focusOnOpen;
 
         // 上げる段階の数。札を押すたびに1つ増える。1段階に使う石の数は品質が上がるほど増える。
         private int steps;
@@ -140,13 +167,22 @@ namespace Baryonyx.Workshop
 
         /// <summary>The rows of the tab shown.</summary>
         public IReadOnlyList<EnhancementTarget> Targets =>
-            tab switch
-            {
-                Tab.Skills => skills,
-                Tab.Equipment => equipment,
-                Tab.Uniques => uniques,
-                _ => Array.Empty<EnhancementTarget>(),
-            };
+            ForPerson
+                ? personalTargets
+                : tab switch
+                {
+                    Tab.Skills => skills,
+                    Tab.Equipment => equipment,
+                    Tab.Uniques => uniques,
+                    _ => Array.Empty<EnhancementTarget>(),
+                };
+
+        /// <summary>Whether this is the adventurer's enhance tab, listing one person's things.</summary>
+        public bool ForPerson => Sheet != null;
+
+        /// <summary>The person the enhance tab shows, and what they hold in the list's order.</summary>
+        public string Person => person;
+        public IReadOnlyList<PersonalTarget> Personal => personal;
 
         private int RowCount => Targets.Count;
 
@@ -157,6 +193,14 @@ namespace Baryonyx.Workshop
         {
             BindControls();
             RuneBalance.Changed += RefreshInfo;
+            if (Sheet != null)
+                Sheet.PersonPressed += ChoosePerson;
+            foreach (var swipe in Swipes)
+                if (swipe != null)
+                    swipe.Flicked += Flick;
+            focusOnOpen = ForPerson;
+            if (Trail != null)
+                Trail.Person = null;
             ShowLoading();
             StartLoad(LoadAsync, LoadFailedMessage, ShowLoadFailed);
         }
@@ -165,6 +209,11 @@ namespace Baryonyx.Workshop
         {
             Load.Cancel();
             RuneBalance.Changed -= RefreshInfo;
+            if (Sheet != null)
+                Sheet.PersonPressed -= ChoosePerson;
+            foreach (var swipe in Swipes)
+                if (swipe != null)
+                    swipe.Flicked -= Flick;
         }
 
         private void BindControls()
@@ -202,6 +251,13 @@ namespace Baryonyx.Workshop
             if (token.IsCancellationRequested)
                 return;
             Use(await reading, PartySession.State, await wearing);
+            if (ForPerson)
+            {
+                // 初めて出すときは、ほかのタブで選んでいた枠の物。読み直したときは選んでいた物のまま。
+                ShowPerson(PartySession.Selected, focusOnOpen ? OpenedPlace() : SelectedPlace());
+                focusOnOpen = false;
+                return;
+            }
             // 初めて開いたときは先頭のタブ（装備）。読み直したときは開いていたタブのまま。
             ShowTab(shownTab && Array.IndexOf(TabOrder, tab) >= 0 ? tab : TabOrder[0]);
         }
@@ -209,6 +265,9 @@ namespace Baryonyx.Workshop
         /// <summary>Takes the party and the equipment as the lists to show.</summary>
         public void Use(PartyFormation formation, PartyState party, EquipmentState gear)
         {
+            this.formation = formation;
+            partyState = party;
+            gearState = gear;
             roster = formation?.Roster ?? Array.Empty<PartyMember>();
             ownedCards = (party?.SkillCards ?? MockCards(roster)).ToList();
             skills = EnhancementTargets.Skills(ownedCards);
@@ -266,11 +325,150 @@ namespace Baryonyx.Workshop
         {
             tab = next;
             shownTab = true;
-            selected = -1;
-            steps = 0;
             for (int i = 0; i < Tabs.Length; i++)
                 if (Tabs[i] != null)
                     Tabs[i].Chosen = i < TabOrder.Length && TabOrder[i] == tab;
+            Set(ListTitle, TabLabels[(int)tab]);
+            ShowRows(EmptyText(tab));
+        }
+
+        /// <summary>
+        /// Shows what the person <paramref name="id"/> holds (the first in the tabs' order when
+        /// not found) under the headings, choosing the thing held at <paramref name="place"/>, or
+        /// the first. The adventurer's enhance tab only.
+        /// </summary>
+        public void ShowPerson(string id, string place)
+        {
+            var (people, partyCount) = (formation ?? PartyFormation.From(Party)).TabOrder();
+            var member = people.FirstOrDefault(entry => entry.Id == id) ?? people.FirstOrDefault();
+            person = member?.Id;
+            if (person != null && Application.isPlaying)
+                PartySession.Selected = person;
+            if (Sheet != null)
+                Sheet.Show(people, partyCount, person);
+            if (Trail != null)
+                Trail.Person = member?.Name;
+            personal =
+                member != null
+                    ? EnhancementTargets.OfPerson(
+                        member.Id,
+                        gearState,
+                        CardIdsOf(member),
+                        equipment,
+                        uniques,
+                        skills
+                    )
+                    : Array.Empty<PersonalTarget>();
+            personalTargets = personal.Select(entry => entry.Target).ToArray();
+            ShowRows(PersonEmptyText);
+            ArrangeHeadings();
+            int at = personal.ToList().FindIndex(entry => entry.Place == place);
+            if (at > 0)
+                Select(at);
+        }
+
+        // その人のカスタムスキルの枠に入っている、持っているスキルの1枚のID（枠の順）。サーバーがなければ、
+        // 仮データのカード（MockCards のID）。
+        private IReadOnlyList<string> CardIdsOf(PartyMember member)
+        {
+            if (partyState == null)
+                return member.Cards.Select((_, i) => $"mock:{member.Id}:{i}").ToArray();
+            return (partyState.Find(member.Id)?.Cards ?? Array.Empty<string>())
+                .Select(key => PartyCardKey.IsCard(key) ? PartyCardKey.IdOf(key) : null)
+                .ToArray();
+        }
+
+        // 見出しを、その見出しの最初の行の前へ置く。使わない見出しは隠す。
+        private void ArrangeHeadings()
+        {
+            int heading = 0;
+            int sibling = 0;
+            string group = null;
+            for (int i = 0; i < personal.Count && i < Rows.Count; i++)
+            {
+                if (personal[i].Group != group)
+                {
+                    group = personal[i].Group;
+                    var rect = EnsureHeading(heading++);
+                    if (rect != null)
+                    {
+                        Set(rect.GetComponentInChildren<TMP_Text>(true), group);
+                        rect.gameObject.SetActive(true);
+                        rect.SetSiblingIndex(sibling++);
+                    }
+                }
+                Rows[i].transform.SetSiblingIndex(sibling++);
+            }
+            for (; heading < Headings.Count; heading++)
+                if (Headings[heading] != null)
+                    Headings[heading].gameObject.SetActive(false);
+        }
+
+        private RectTransform EnsureHeading(int index)
+        {
+            Headings.RemoveAll(heading => heading == null);
+            while (Headings.Count <= index && HeadingTemplate != null && Content != null)
+            {
+                var copy = Instantiate(HeadingTemplate, Content);
+                copy.name = "Heading" + Headings.Count;
+                Headings.Add(copy);
+            }
+            return index < Headings.Count ? Headings[index] : null;
+        }
+
+        private void HideHeadings()
+        {
+            foreach (var heading in Headings)
+                if (heading != null)
+                    heading.gameObject.SetActive(false);
+        }
+
+        // 左の列で押した人。選んでいる物の所（武器・1つ目の固有スキルなど）はそのまま。
+        private void ChoosePerson(string id)
+        {
+            if (busy || formation == null || id == person)
+                return;
+            ShowPerson(id, SelectedPlace());
+        }
+
+        // 左へのフリックで次の人、右へのフリックで前の人（パーティの枠の順、続けて控え。端から反対の端へ回る）。
+        private void Flick(int step)
+        {
+            if (busy || formation == null || step == 0)
+                return;
+            var people = formation.TabOrder().People;
+            if (people.Count < 2)
+                return;
+            int at = Math.Max(0, people.ToList().FindIndex(entry => entry.Id == person));
+            ShowPerson(people[(at + step + people.Count) % people.Count].Id, SelectedPlace());
+        }
+
+        private string SelectedPlace() =>
+            ForPerson && selected >= 0 && selected < personal.Count
+                ? personal[selected].Place
+                : null;
+
+        // 開いたときに選ぶ物：装備のタブから来たら選んでいた枠の装備、スキル・覚醒のタブから来たら選んでいた
+        // 固有スキルかカスタムスキルの枠のスキル。
+        private static string OpenedPlace()
+        {
+            string left = PartySession.LeftTab;
+            if (left == EquipmentSession.GuideItemKey)
+                return EquipmentSession.LastPlace.Key;
+            if (left == CardLoadoutSession.GuideItemKey || left == CardLoadoutSession.AwakenItemKey)
+                return CardLoadoutSession.LastUnique >= 0
+                        ? EnhancementTargets.UniquePlace(CardLoadoutSession.LastUnique)
+                    : CardLoadoutSession.LastSlot >= 0
+                        ? EnhancementTargets.SlotPlace(CardLoadoutSession.LastSlot)
+                    : null;
+            return null;
+        }
+
+        // 一覧の行を描き、先頭を選ぶ。
+        private void ShowRows(string empty)
+        {
+            selected = -1;
+            steps = 0;
             EnsureRows(RowCount);
             for (int i = 0; i < Rows.Count; i++)
             {
@@ -282,8 +480,7 @@ namespace Baryonyx.Workshop
                 if (Rows[i].Card != null)
                     Rows[i].Card.Selected = false;
             }
-            Set(Status, RowCount == 0 ? EmptyText(tab) : "");
-            Set(ListTitle, TabLabels[(int)tab]);
+            Set(Status, RowCount == 0 ? empty : "");
             Set(ListCount, RowCount == 0 ? "" : UiText.Count(RowCount));
             // 強化できる物のない場所の伏せた行も、めくってから静かに消す。
             cover.Reveal(
@@ -399,8 +596,12 @@ namespace Baryonyx.Workshop
         {
             RectTransform Root(GameObject card) =>
                 card != null && card.activeSelf ? (RectTransform)card.transform : null;
-            var before = Root(BeforeCard?.Frame != null ? BeforeCard.Frame.transform.parent.gameObject : null);
-            var after = Root(AfterCard?.Frame != null ? AfterCard.Frame.transform.parent.gameObject : null);
+            var before = Root(
+                BeforeCard?.Frame != null ? BeforeCard.Frame.transform.parent.gameObject : null
+            );
+            var after = Root(
+                AfterCard?.Frame != null ? AfterCard.Frame.transform.parent.gameObject : null
+            );
             if (before != null)
                 return (before, after);
             return (Root(BeforeGear?.Root), Root(AfterGear?.Root));
@@ -495,6 +696,19 @@ namespace Baryonyx.Workshop
             skills = Swap(skills);
             equipment = Swap(equipment);
             uniques = Swap(uniques);
+            personal = personal
+                .Select(entry =>
+                    ReferenceEquals(entry.Target, before)
+                        ? new PersonalTarget
+                        {
+                            Target = after,
+                            Group = entry.Group,
+                            Place = entry.Place,
+                        }
+                        : entry
+                )
+                .ToArray();
+            personalTargets = Swap(personalTargets);
             if (this != null && selected >= 0 && selected < Rows.Count)
                 PaintRow(selected);
         }
@@ -696,9 +910,7 @@ namespace Baryonyx.Workshop
                 {
                     string old = index < before.Count ? before[index].Value : match.Value;
                     index++;
-                    return old == match.Value
-                        ? match.Value
-                        : $"{old}→{ItemText.Rise(match.Value)}";
+                    return old == match.Value ? match.Value : $"{old}→{ItemText.Rise(match.Value)}";
                 }
             );
             return index == before.Count ? changed : after;
@@ -752,7 +964,8 @@ namespace Baryonyx.Workshop
         {
             var row = Rows[index];
             var target = Targets[index];
-            PaintTarget(row, target, OwnerOf(target), EntryOf(target), ArtBox);
+            // 冒険者の強化のタブでは、どれもその人の物なので、使っている人を書かない。
+            PaintTarget(row, target, ForPerson ? "" : OwnerOf(target), EntryOf(target), ArtBox);
             if (target.Category == EnhancementCategory.Unique)
                 PaintTexture(row.Art, Party != null ? Party.ArtOf(target.KindId) : null, ArtBox);
         }
@@ -787,7 +1000,13 @@ namespace Baryonyx.Workshop
         {
             Set(
                 row.Name,
-                ItemText.Heading(target.Name, entry?.Rarity ?? 0, true, target.Quality, target.Multiplier)
+                ItemText.Heading(
+                    target.Name,
+                    entry?.Rarity ?? 0,
+                    true,
+                    target.Quality,
+                    target.Multiplier
+                )
             );
             Set(row.Price, owner);
             Set(row.Detail, EffectOf(target, entry));
@@ -802,7 +1021,9 @@ namespace Baryonyx.Workshop
             if (target.Category == EnhancementCategory.Unique)
             {
                 var card = CardOf(target);
-                return card != null ? CardText.Description(card.WithMultiplier(target.Multiplier)) : "";
+                return card != null
+                    ? CardText.Description(card.WithMultiplier(target.Multiplier))
+                    : "";
             }
             return LibraryFaces.EffectAt(entry, target.Multiplier);
         }
@@ -810,10 +1031,14 @@ namespace Baryonyx.Workshop
         private static IReadOnlyList<CardElement> ElementsOf(EnhancementTarget target) =>
             target.Category switch
             {
-                EnhancementCategory.Unique => CardOf(target) is { Element: not CardElement.None } card
+                EnhancementCategory.Unique => CardOf(target)
+                    is { Element: not CardElement.None } card
                     ? new[] { card.Element }
                     : null,
-                EnhancementCategory.Skill => LibraryFaces.ElementsOf(LibraryKind.Skill, target.KindId),
+                EnhancementCategory.Skill => LibraryFaces.ElementsOf(
+                    LibraryKind.Skill,
+                    target.KindId
+                ),
                 _ => LibraryFaces.ElementsOf(LibraryKind.Weapon, target.KindId),
             };
 
@@ -822,12 +1047,17 @@ namespace Baryonyx.Workshop
         {
             if (target.Category == EnhancementCategory.Unique)
                 return roster.FirstOrDefault(member => member.Id == target.CharacterId)?.Name;
-            return owners.TryGetValue(target.ItemId ?? "", out string name) ? name + "が装備中" : "";
+            return owners.TryGetValue(target.ItemId ?? "", out string name)
+                ? name + "が装備中"
+                : "";
         }
 
         private string DetailOf(EnhancementTarget target)
         {
-            string owner = owners.TryGetValue(target.ItemId ?? "", out string name) ? name : null;
+            string owner =
+                !ForPerson && owners.TryGetValue(target.ItemId ?? "", out string name)
+                    ? name
+                    : null;
             return target.Category switch
             {
                 EnhancementCategory.Unique =>
@@ -905,6 +1135,7 @@ namespace Baryonyx.Workshop
             for (int i = 0; i < Rows.Count; i++)
                 Rows[i].gameObject.SetActive(i < CoverRows);
             cover.Cover(Rows.Take(CoverRows).Select(row => row.gameObject));
+            HideHeadings();
             Set(Status, "");
             // 数が読めないうちは「-」を出す。
             Set(ListCount, "-");
@@ -918,6 +1149,7 @@ namespace Baryonyx.Workshop
             foreach (var row in Rows)
                 if (row != null)
                     row.gameObject.SetActive(false);
+            HideHeadings();
             Set(Status, LoadFailedText);
             Set(ListCount, "-");
         }
@@ -997,11 +1229,23 @@ namespace Baryonyx.Workshop
                 _ = EnhancementSession.LoadAsync(CancellationToken.None);
             }
             cover.Clear();
-            Use(PartyFormation.From(Party), null, null);
-            ShowTab(Tab.Skills);
-            if (skills.Count == 0)
+            // 冒険者の強化のタブでは、先頭の人の、仮の装備とスキル。
+            if (ForPerson)
+            {
+                Use(PartyFormation.From(Party), null, EquipmentLocalSource.Starter());
+                ShowPerson(null, null);
+            }
+            else
+            {
+                Use(PartyFormation.From(Party), null, null);
+                ShowTab(Tab.Skills);
+            }
+            int index = Targets
+                .ToList()
+                .FindIndex(target => target.Category == EnhancementCategory.Skill);
+            if (index < 0)
                 return;
-            var first = skills[0];
+            var first = Targets[index];
             float multiplier = (float)
                 Math.Round(
                     Inventory.Quality.MinMultiplier
@@ -1009,7 +1253,7 @@ namespace Baryonyx.Workshop
                     2
                 );
             Replace(first, first.WithMultiplier(multiplier));
-            Select(0);
+            Select(index);
             for (int i = 0; i < count; i++)
                 AddStep();
         }
@@ -1020,11 +1264,17 @@ namespace Baryonyx.Workshop
 
         // 強化の演出をその秒数で止めて見せる。
         private void ShowFlipState(
-            (string Name, WorkshopEnhanceFlip.Look Look, float? Seconds, float Place, int Steps) state
+            (
+                string Name,
+                WorkshopEnhanceFlip.Look Look,
+                float? Seconds,
+                float Place,
+                int Steps
+            ) state
         )
         {
             ChooseFirst(state.Place, state.Steps);
-            if (skills.Count == 0 || Flip == null)
+            if (SelectedTarget == null || Flip == null)
                 return;
             var (before, after) = Faces();
             Flip.UseFaces(before, after);

@@ -68,8 +68,10 @@ namespace Baryonyx.Party
         // 同じ案内人の画面の、ほかのタブの項目へ切り替える。人は PartySession.Selected で引き継ぐ。
         private void Open(string key)
         {
-            if (Guide != null && !string.IsNullOrEmpty(key) && key != Current && Guide.HasItem(key))
-                Guide.OpenItem(key);
+            if (Guide == null || string.IsNullOrEmpty(key) || key == Current || !Guide.HasItem(key))
+                return;
+            PartySession.LeftTab = Current;
+            Guide.OpenItem(key);
         }
 
         public void ShowTabs()

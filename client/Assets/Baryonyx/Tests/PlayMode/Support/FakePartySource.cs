@@ -37,6 +37,15 @@ namespace Baryonyx.Tests.PlayMode
             return this;
         }
 
+        // 持っているスキルの1枚ずつ（枠には PartyCardKey.Card(id) のキーで入れる）。置かなければ持ち物を返さない。
+        public FakePartySource WithOwned(params PartySkillCard[] cards)
+        {
+            owned = cards;
+            return this;
+        }
+
+        private PartySkillCard[] owned;
+
         // 絆の段と、持っている絆のしるし。
         public FakePartySource WithBond(string id, int bond, int tokens)
         {
@@ -152,7 +161,8 @@ namespace Baryonyx.Tests.PlayMode
                 slots.ToArray(),
                 Runes,
                 30,
-                100
+                100,
+                owned
             );
     }
 }

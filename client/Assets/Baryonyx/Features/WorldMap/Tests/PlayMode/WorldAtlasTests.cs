@@ -116,6 +116,44 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(coast.Graph.Nodes[coast.PartyAt].Id, Is.EqualTo("gate-marina"));
         }
 
+        // 冒険の世界地図でも、エリアマップの入口に止まるか、立っている入口を押すと、Homeへは出ずに
+        // 世界地図のその地域のマスへ戻る。
+        [UnityTest]
+        public IEnumerator AGateClimbsToTheWorldEvenWhenTheHomeLeaves()
+        {
+            var navigator = Spawn();
+            int left = 0;
+            navigator.Leave = () => left++;
+            yield return SceneTests.WaitUntil(() => WorldAtlasSession.Loaded);
+            Assert.That(navigator.Open("marina", null), Is.True);
+            yield return null;
+            var coast = navigator.Current;
+            int gate = coast.Graph.IndexOf("gate-marina");
+            // 入口の隣と世界地図の地域のマスは、開けたことにしておく（開けていないマスに立つと、始まりへ戻される）。
+            Assert.That(
+                WorldAtlasSession.Open(WorldAtlasLayout.WorldKey, "region-marina").Paid,
+                Is.True
+            );
+            string beside = coast.Graph.Nodes[coast.Graph.LinksOf(gate)[0]].Id;
+            Assert.That(WorldAtlasSession.Open("marina", beside).Paid, Is.True);
+            navigator.Open("marina", beside);
+            yield return null;
+            coast = navigator.Current;
+
+            Assert.That(coast.Tap(gate), Is.True);
+            yield return WaitForSwitch(navigator, WorldAtlasLayout.WorldKey);
+            Assert.That(left, Is.Zero);
+            var world = navigator.Current;
+            Assert.That(world.Graph.Nodes[world.PartyAt].Id, Is.EqualTo("region-marina"));
+
+            world.Tap(world.PartyAt);
+            yield return WaitForSwitch(navigator, "marina");
+            coast = navigator.Current;
+            coast.Tap(coast.PartyAt);
+            yield return WaitForSwitch(navigator, WorldAtlasLayout.WorldKey);
+            Assert.That(left, Is.Zero);
+        }
+
         // 端末の戻るキーは、通行料の確認が開いていればそれを閉じ、なければ左上の家と同じくHomeへ出る
         // （doc/rules/ui-design.md#操作の決まり）。
         [UnityTest]
@@ -630,7 +668,10 @@ namespace Baryonyx.Tests.PlayMode
             // 足りない道は進めない。
             toll.Ask(path.GetRange(1, 3), 9999);
             Assert.That(toll.Go.interactable, Is.False);
-            Assert.That(toll.Message.text, Does.Contain($"ルーンが {9999 - (600 - each):N0} 足りません"));
+            Assert.That(
+                toll.Message.text,
+                Does.Contain($"ルーンが {9999 - (600 - each):N0} 足りません")
+            );
             toll.Hide();
 
             // 確認を省くと、次の道からは窓を出さない。途中の拾い物では止まり、閉じると続きを歩く。

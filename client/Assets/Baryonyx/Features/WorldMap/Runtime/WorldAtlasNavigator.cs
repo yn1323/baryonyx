@@ -221,7 +221,7 @@ namespace Baryonyx.WorldMap
             }
             else if (id.StartsWith(WorldAtlasLayout.GatePrefix, StringComparison.Ordinal))
             {
-                Back();
+                Climb();
             }
         }
 
@@ -290,7 +290,11 @@ namespace Baryonyx.WorldMap
                 return;
             if (current.Dialog != null && current.Dialog.HandleBack())
                 return;
-            if (current.Reveal != null && current.Reveal.DetailWindow != null && current.Reveal.DetailWindow.HandleBack())
+            if (
+                current.Reveal != null
+                && current.Reveal.DetailWindow != null
+                && current.Reveal.DetailWindow.HandleBack()
+            )
                 return;
             if (current.EventWindow != null && current.EventWindow.IsShown)
             {
@@ -315,14 +319,22 @@ namespace Baryonyx.WorldMap
                 return;
             if (Leave != null)
                 Leave();
-            else if (currentKey != WorldAtlasLayout.WorldKey)
-                StartCoroutine(
-                    Switch(
-                        WorldAtlasLayout.WorldKey,
-                        WorldAtlasLayout.RegionPrefix + currentKey,
-                        dive: false
-                    )
-                );
+            else
+                Climb();
+        }
+
+        // エリアマップから世界地図のその地域のマスへ戻る。入口に止まったときは、出る先があってもこちら。
+        private void Climb()
+        {
+            if (Switching || currentKey == WorldAtlasLayout.WorldKey)
+                return;
+            StartCoroutine(
+                Switch(
+                    WorldAtlasLayout.WorldKey,
+                    WorldAtlasLayout.RegionPrefix + currentKey,
+                    dive: false
+                )
+            );
         }
 
         // 地域へ入るときは、駒へ近づきながら暗くし、地域の地図は少し引いた所から落ち着かせる。

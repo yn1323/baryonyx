@@ -121,7 +121,11 @@ namespace Baryonyx.Tests.EditMode
             Assert.That(state.Choices.Last().Unavailable, Is.True);
             Assert.That(state.Slots[0].Id, Is.EqualTo(TomaFire));
             Assert.That(state.Slots[0].ArtId, Is.EqualTo("Fire"));
-            Assert.That(state.Choices.Single(card => card.Id == TomaIce).Mark, Is.EqualTo("2枚目"));
+            // その人が付けているカードは、金の「E」（何枚目かは出さない）。
+            var ice = state.Choices.Single(card => card.Id == TomaIce);
+            Assert.That(ice.Mark, Is.EqualTo(CardLoadoutPresenter.EquippedMark));
+            Assert.That(ice.HeldByOther, Is.False);
+            Assert.That(ice.Slot, Is.EqualTo(1));
         }
 
         [Test]
@@ -172,7 +176,7 @@ namespace Baryonyx.Tests.EditMode
         [Test]
         public void AnOwnedCardHeldByAnotherIsMarkedAndMovesWhenSet()
         {
-            // ルカが属性のない「偵察」を使っているとき、トーマの一覧では「ルカが使用中」と出る。
+            // ルカが属性のない「偵察」を使っているとき、トーマの一覧では灰色の「E」が出る（誰かは出さない）。
             store.State = new PartyState(
                 store.State.Owned,
                 store.State.Slots,
@@ -184,7 +188,8 @@ namespace Baryonyx.Tests.EditMode
             ).WithCard("luka", 1, "card:scout");
             presenter.Refresh();
             var scout = view.Last.Choices.Single(card => card.Id == "card:scout");
-            Assert.That(scout.Mark, Is.EqualTo("ルカが使用中"));
+            Assert.That(scout.Mark, Is.EqualTo(CardLoadoutPresenter.EquippedMark));
+            Assert.That(scout.HeldByOther, Is.True);
 
             view.Card("card:scout");
             Assert.That(store.CardsOf("toma"), Is.EqualTo(new[] { "card:scout", TomaIce, null }));

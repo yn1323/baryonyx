@@ -642,16 +642,18 @@ namespace Baryonyx.UI.GuideMenu.Editor
 
         // The button at the bottom right that applies the chosen row; off until one is chosen.
         // 決めるボタンの青い板（プライマリー。doc/rules/ui-design.md の決めるボタン）。
+        // right は板の右に空ける所の左端（冒険者のタブでは右のタブの列の手前）。
         public static (Button Button, TMP_Text Label) ConfirmButton(
             RectTransform layer,
-            string text
+            string text,
+            float right = 1920f
         )
         {
             var (button, label, _) = ActionButtonAssets.Build(
                 Layout.Box(
                     layer,
                     "Confirm",
-                    1920f - GuideFrameAssets.Margin - ConfirmWidth,
+                    right - GuideFrameAssets.Margin - ConfirmWidth,
                     Layout.Design.y - ConfirmBottom - ConfirmHeight,
                     ConfirmWidth,
                     ConfirmHeight

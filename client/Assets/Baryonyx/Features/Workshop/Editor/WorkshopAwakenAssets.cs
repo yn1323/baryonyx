@@ -21,6 +21,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using static Baryonyx.Editor.UI.UiBuild;
 using static Baryonyx.Workshop.Editor.WorkshopPanelAssets;
+using ElementIconRowAssets = Baryonyx.UI.Editor.ElementIconRowAssets;
 using Frame = Baryonyx.UI.GuideMenu.Editor.GuideFrameAssets;
 using GlassCardAssets = Baryonyx.UI.Editor.GlassCardAssets;
 using Guide = Baryonyx.UI.GuideMenu.Editor.GuideMenuAssets;
@@ -156,18 +157,23 @@ namespace Baryonyx.Workshop.Editor
             row.Character.raycastTarget = false;
             sprite.gameObject.AddComponent<PixelPerfectRawImage>().DotSize = PersonDot;
 
-            var (art, cost, element) = CardLoadoutAssets.BuildThumb(inside, ThumbLeft);
+            var art = CardLoadoutAssets.BuildThumb(inside, ThumbLeft);
+            row.Art = art;
+            row.Foil = CardFoilAssets.Add(art);
+            // 属性は、編成のスキルの行と同じく名前の行の右端に出す（2026-11-03）。
             // 一覧ではコストを出さない（左上の数字が覚醒の段階と紛らわしい。2026-11-01、ユーザーの指示）。
             // コストは覚醒の場面のカードで出す。
-            UnityEngine.Object.DestroyImmediate(cost.transform.parent.gameObject);
-            row.Art = art;
-            row.Element = element;
-            row.Foil = CardFoilAssets.Add(art);
+            (_, _, row.Element, _) = CardLoadoutAssets.BuildCorner(
+                inside,
+                12,
+                QualityWidth,
+                cost: false
+            );
             (row.Name, row.Kind) = CardLoadoutAssets.BuildNameLine(
                 inside,
                 12,
                 TextLeft,
-                QualityWidth
+                QualityWidth + ElementIconRowAssets.Size + 12f
             );
             // 名前のすぐ右の品質と倍率は、リッチテキストで色を付ける。
             row.Name.richText = true;

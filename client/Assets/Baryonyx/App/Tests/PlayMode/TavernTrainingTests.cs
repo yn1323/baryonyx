@@ -83,7 +83,7 @@ namespace Baryonyx.Tests.PlayMode
             SceneTests.AssertTouchSize(training.Sheet.People[0].Button.transform);
             Assert.That(
                 training.Sheet.Tabs.Select(tab => tab.Label.text),
-                Is.EqualTo(new[] { "ステータス", "装備", "スキル", "突破" })
+                Is.EqualTo(new[] { "ステータス", "装備", "スキル", "突破", "強化", "覚醒" })
             );
             Assert.That(training.Sheet.Tabs[0].Chosen, Is.True);
 
