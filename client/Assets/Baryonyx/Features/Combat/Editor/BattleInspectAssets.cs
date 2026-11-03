@@ -1430,7 +1430,8 @@ namespace Baryonyx.Combat.Editor
         private static void BuildDiscard(RectTransform safe, BattleInspectView view)
         {
             var button = Art("EndTurnCircle");
-            float bottom = BattleInspectView.EndTurnBottom + button.height - EndTurnGlow + DiscardGap;
+            float bottom =
+                BattleInspectView.EndTurnBottom + button.height - EndTurnGlow + DiscardGap;
             var discardIcon = Art("DiscardIcon");
             var exhaustIcon = Art("ExhaustIcon");
             var (discard, discardCounter) = CornerCounter(
@@ -1477,11 +1478,16 @@ namespace Baryonyx.Combat.Editor
         /// picture's left edge stands on the line of the circle's right edge.
         /// </summary>
         private static float PastCircle(Texture2D icon) =>
-            Art("EndTurnCircle").width - EndTurnGlow * 2f - FlatCounterSize.x * 0.5f - FlatIconAt + IconSize(icon).x * 0.5f;
+            Art("EndTurnCircle").width
+            - EndTurnGlow * 2f
+            - FlatCounterSize.x * 0.5f
+            - FlatIconAt
+            + IconSize(icon).x * 0.5f;
 
         // Pixel art is drawn a dot to DotSize pixels; the flat pieces (PNG) at their own size.
         private static Vector2 IconSize(Texture2D art) =>
-            new Vector2(art.width, art.height) * (AssetDatabase.GetAssetPath(art).EndsWith(".png") ? 1f : DotSize);
+            new Vector2(art.width, art.height)
+            * (AssetDatabase.GetAssetPath(art).EndsWith(".png") ? 1f : DotSize);
 
         // The energy's and the deck's pill (CounterPill), wide enough for two digits.
         private static readonly Vector2 PillCounterSize = new(176, 72);
@@ -1491,7 +1497,12 @@ namespace Baryonyx.Combat.Editor
         /// in a thin line of muted gold, as the end-turn button is, its round picture
         /// <paramref name="icon"/> at the left end and the number centred in the rest.
         /// </summary>
-        public static void DressPill(RectTransform counter, TMP_Text label, string iconName, Texture2D icon)
+        public static void DressPill(
+            RectTransform counter,
+            TMP_Text label,
+            string iconName,
+            Texture2D icon
+        )
         {
             var pill = Rect("Pill", counter);
             Stretch(pill);
@@ -1499,7 +1510,11 @@ namespace Baryonyx.Combat.Editor
             AddRaw(pill, Art("CounterPill")).raycastTarget = false;
             float height = counter.sizeDelta.y;
             var badge = Rect(iconName, counter);
-            Place(badge, new Vector2((height - counter.sizeDelta.x) * 0.5f, 0f), Vector2.one * height);
+            Place(
+                badge,
+                new Vector2((height - counter.sizeDelta.x) * 0.5f, 0f),
+                Vector2.one * height
+            );
             AddRaw(badge, icon).raycastTarget = false;
             label.rectTransform.offsetMin = new Vector2(height, 0f);
             label.rectTransform.offsetMax = new Vector2(-8f, 0f);
@@ -1530,7 +1545,13 @@ namespace Baryonyx.Combat.Editor
         /// hand's end card (on the right when <paramref name="right"/>), <paramref name="outward"/>
         /// further out.
         /// </summary>
-        public static void BesideHand(RectTransform rect, bool right, float bottom, Vector2 size, float outward = 0f)
+        public static void BesideHand(
+            RectTransform rect,
+            bool right,
+            float bottom,
+            Vector2 size,
+            float outward = 0f
+        )
         {
             float side = HandSide() + outward;
             rect.anchorMin = rect.anchorMax = new Vector2(0.5f, 0f);
@@ -1544,7 +1565,8 @@ namespace Baryonyx.Combat.Editor
         {
             var card = AssetDatabase.LoadAssetAtPath<GameObject>(CardPrefabPath);
             var size = ((RectTransform)card.transform).rect.size;
-            return BattleInspectView.HandReach(EnsureHandSettings(), size) + BattleInspectView.HandSideGap;
+            return BattleInspectView.HandReach(EnsureHandSettings(), size)
+                + BattleInspectView.HandSideGap;
         }
 
         /// <summary>
@@ -1566,7 +1588,10 @@ namespace Baryonyx.Combat.Editor
         {
             var instance = InstantiatePrefab(TranslucentTextPanelAssets.PrefabPath, name, safe);
             var rect = (RectTransform)instance.transform;
-            var size = pill ? PillCounterSize : flat ? FlatCounterSize : new Vector2(232, 80);
+            var size =
+                pill ? PillCounterSize
+                : flat ? FlatCounterSize
+                : new Vector2(232, 80);
             BesideHand(rect, right, bottom, size, outward);
             var panel = instance.GetComponent<TranslucentTextPanel>();
             // Darker than Top's gray band so it reads over the lit floor of the battlefield. A
@@ -1848,7 +1873,13 @@ namespace Baryonyx.Combat.Editor
             // 一覧から選んで決める画面と同じ、共通の丸いチェック（doc/rules/ui-design.md#決めるボタン）。
             var button = Rect("EndTurn", safe);
             var art = Art("EndTurnCircle");
-            BesideHand(button, true, BattleInspectView.EndTurnBottom, new Vector2(art.width, art.height), -EndTurnGlow);
+            BesideHand(
+                button,
+                true,
+                BattleInspectView.EndTurnBottom,
+                new Vector2(art.width, art.height),
+                -EndTurnGlow
+            );
             view.EndTurnButton = ActionButtonAssets.RoundCheck(button);
         }
 
@@ -1863,7 +1894,13 @@ namespace Baryonyx.Combat.Editor
         public static RawImage EndTurnCircle(RectTransform button)
         {
             var art = Art("EndTurnCircle");
-            BesideHand(button, true, BattleInspectView.EndTurnBottom, new Vector2(art.width, art.height), -EndTurnGlow);
+            BesideHand(
+                button,
+                true,
+                BattleInspectView.EndTurnBottom,
+                new Vector2(art.width, art.height),
+                -EndTurnGlow
+            );
             var face = AddRaw(button, art);
             face.raycastTarget = true;
             return face;
@@ -1896,6 +1933,12 @@ namespace Baryonyx.Combat.Editor
                 "0",
                 DamageNumberAssets.Weak
             );
+            view.CritNumber = DamageNumberAssets.Label(
+                root,
+                "CritNumber",
+                "0",
+                DamageNumberAssets.Critical
+            );
             view.HealNumber = DamageNumberAssets.Label(
                 root,
                 "HealNumber",
@@ -1904,7 +1947,51 @@ namespace Baryonyx.Combat.Editor
             );
             view.DamageNumber.gameObject.SetActive(false);
             view.WeakNumber.gameObject.SetActive(false);
+            view.CritNumber.gameObject.SetActive(false);
             view.HealNumber.gameObject.SetActive(false);
+
+            view.StatusNote = StatusNote(root, "StatusNote", "出血", Color.white);
+            view.StatusNote.gameObject.SetActive(false);
+        }
+
+        // 状態の帯：黒っぽい半透明の板（角の丸い四角）に、小さな状態の名前を状態の色で書く。
+        private const float StatusNoteHeight = 36f;
+        private const float StatusNoteText = 24f;
+        private const float StatusNoteCorner = 6f;
+        private static readonly Color StatusNoteFill = new(0.04f, 0.04f, 0.07f, 0.72f);
+
+        private static RectTransform StatusNote(
+            RectTransform parent,
+            string name,
+            string text,
+            Color color
+        )
+        {
+            var note = Rect(name, parent);
+            Place(
+                note,
+                Vector2.zero,
+                new Vector2(BattleInspectView.StatusNoteMinWidth, StatusNoteHeight)
+            );
+            var group = note.gameObject.AddComponent<CanvasGroup>();
+            group.blocksRaycasts = false;
+            group.interactable = false;
+            var plate = Sliced(note, UiArt.CapsulePath, StatusNoteFill);
+            plate.raycastTarget = false;
+            // The capsule's ends are 40 px round; a larger multiplier makes its corners small.
+            plate.pixelsPerUnitMultiplier = 40f / StatusNoteCorner;
+            var label = Label(
+                note,
+                "Name",
+                text,
+                StatusNoteText,
+                color,
+                TextAlignmentOptions.Center,
+                shadow: false
+            );
+            label.fontStyle = FontStyles.Bold;
+            Stretch(label.rectTransform);
+            return note;
         }
 
         // The rising numbers only exist while playing, so the showcase gets them laid out on the
@@ -1913,33 +2000,21 @@ namespace Baryonyx.Combat.Editor
         {
             var root = CanvasRoot("BattleDamageNumbers");
             BuildBackground(root);
+            // 弱点に会心が当たったときは、会心の数字で出す（BattleInspectView.Hit と同じ）。
             var samples = new[]
             {
                 ("通常", "128", DamageNumberAssets.Normal),
-                ("会心", "192", DamageNumberAssets.Normal),
                 ("弱点", "192", DamageNumberAssets.Weak),
+                ("会心", "192", DamageNumberAssets.Critical),
+                ("弱点＋会心", "288", DamageNumberAssets.Critical),
                 ("回復", "40", DamageNumberAssets.Heal),
             };
             for (int i = 0; i < samples.Length; i++)
             {
                 var (caption, text, style) = samples[i];
-                float x = (i - 1.5f) * 400f;
+                float x = (i - (samples.Length - 1) / 2f) * 340f;
                 var number = DamageNumberAssets.Label(root, caption, text, style);
-                number.rectTransform.anchoredPosition = new Vector2(x, 0f);
-                // 会心の一撃は数字を大きくし、上に「会心！」を出す（BattleInspectView の会心と同じ）。
-                if (caption == "会心")
-                {
-                    number.fontSize *= BattleInspectView.CriticalNumberScale;
-                    var word = Label(
-                        root,
-                        "CriticalWord",
-                        BattleInspectView.CriticalText,
-                        44,
-                        BattleInspectView.CriticalColor,
-                        TextAlignmentOptions.Center
-                    );
-                    Place(word.rectTransform, new Vector2(x, 130f), new Vector2(320, 60));
-                }
+                number.rectTransform.anchoredPosition = new Vector2(x, 160f);
                 var label = Label(
                     root,
                     caption + "Caption",
@@ -1948,7 +2023,34 @@ namespace Baryonyx.Combat.Editor
                     UiPalette.TextMain,
                     TextAlignmentOptions.Center
                 );
-                Place(label.rectTransform, new Vector2(x, -120f), new Vector2(320, 48));
+                Place(label.rectTransform, new Vector2(x, 40f), new Vector2(320, 48));
+            }
+            // 状態の帯は、プレイ中に数字のあとから順に出る。その見た目を下の段に並べる。
+            var notes = new[]
+            {
+                (CardRules.StatusName(CardStatus.Bleed), CardStatus.Bleed),
+                (CardRules.StatusName(CardStatus.Poison) + " ×2", CardStatus.Poison),
+                (CardRules.StatusName(CardStatus.Vulnerable), CardStatus.Vulnerable),
+                (CardRules.StatusName(CardStatus.Burn), CardStatus.Burn),
+                (BattleInspectView.FrozenText, CardStatus.Freeze),
+            };
+            for (int i = 0; i < notes.Length; i++)
+            {
+                var (text, status) = notes[i];
+                var note = StatusNote(
+                    root,
+                    "Note" + i,
+                    text,
+                    BattleInspectView.StatusColor(status)
+                );
+                var name = note.GetComponentInChildren<TMP_Text>();
+                float width =
+                    name.GetPreferredValues(text).x + BattleInspectView.StatusNotePadding * 2f;
+                note.sizeDelta = new Vector2(
+                    Mathf.Max(BattleInspectView.StatusNoteMinWidth, width),
+                    StatusNoteHeight
+                );
+                note.anchoredPosition = new Vector2((i - (notes.Length - 1) / 2f) * 300f, -160f);
             }
             PrefabUtility.SaveAsPrefabAsset(root.gameObject, NumberSamplesPath);
         }

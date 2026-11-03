@@ -168,11 +168,10 @@ namespace Baryonyx.Combat.Presentation
                     break;
                 }
                 case CardActionKind.Delay:
-                    ShowPopup(
+                    ShowStatusNote(
                         Enemies[target.Index].TargetArea,
                         "行動が遅れる",
-                        StatusColor(CardStatus.Chill),
-                        40f
+                        StatusColor(CardStatus.Chill)
                     );
                     break;
                 case CardActionKind.Cleanse:

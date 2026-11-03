@@ -4,8 +4,8 @@ using UnityEngine;
 namespace Baryonyx.Combat.Presentation
 {
     /// <summary>
-    /// Lines up the popups over one character, so a damage number and the names put on with it
-    /// (a card's 出血・毒・防御ダウン) read one under another instead of on top of each other. Each
+    /// Lines up the popups over one character, so a damage number and the messages shown with it
+    /// (ブロック -〇) read one under another instead of on top of each other. Each
     /// popup goes under the ones still showing over that character; once they have all gone, the
     /// next starts where it wants to be. Popups end at their own heights and rise by their own
     /// distances (a number lifts a little, a name further), so a popup is lowered until it stays
@@ -50,6 +50,26 @@ namespace Baryonyx.Combat.Presentation
             }
             shown.Add((now + duration, now + RiseTime, y - drop - height / 2f, rise));
             return drop;
+        }
+
+        /// <summary>
+        /// Keeps the line of a popup placed elsewhere (a scattered number) where its middle stops
+        /// at <paramref name="y"/>, so the popups after it go under it.
+        /// </summary>
+        public void Hold(
+            Object anchor,
+            float y,
+            float height,
+            float rise,
+            float now,
+            float duration
+        )
+        {
+            if (!lines.TryGetValue(anchor, out var shown))
+                lines[anchor] = shown =
+                    new List<(float until, float rising, float bottom, float rise)>();
+            shown.RemoveAll(line => line.until <= now);
+            shown.Add((now + duration, now + RiseTime, y - height / 2f, rise));
         }
 
         /// <summary>The same for popups that all stop at one height and rise alike.</summary>

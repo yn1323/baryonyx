@@ -19,6 +19,6 @@ TMPのフォントアセット（`DamageNumbers.asset`）には数字0〜9だけ
 このためビルドにはフォント本体（約2.5MB）が入らない。
 数字以外の文字を表示すると欠けるため、文字を足すときは [DamageNumberAssets](../../Editor/DamageNumberAssets.cs) の対象文字を変え、フォントアセットを削除してから作り直す。
 
-通常・弱点・回復のマテリアル（`DamageNormal.mat`・`DamageWeak.mat`・`DamageHeal.mat`）は、縁取りの色だけが違う。
-グラデーションの色と大きさは、各数字のテンプレート（`BattleInspectScreen.prefab` の `DamageNumber`・`WeakNumber`・`HealNumber`）に持たせる。
+通常・弱点・会心・回復のマテリアル（`DamageNormal.mat`・`DamageWeak.mat`・`DamageCritical.mat`・`DamageHeal.mat`）は、縁取りの色だけが違う。HPの数字のマテリアル（`HpNumber.mat`）は、縁取りをこれらより太くしている。
+グラデーションの色と大きさは、各数字のテンプレート（`BattleInspectScreen.prefab` の `DamageNumber`・`WeakNumber`・`CritNumber`・`HealNumber`）に持たせる。
 どれも `Baryonyx > Combat > Create Battle Inspect Assets` で作り直せる。

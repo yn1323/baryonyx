@@ -102,12 +102,15 @@ namespace Baryonyx.Combat.Presentation
                     AtContact(i =>
                     {
                         Retarget(plan, hits, i);
+                        blowCritical = false;
                         var weight = ApplyHit(
                             skill,
                             plan[i],
                             caster,
                             i == 0 || plan[i].Wave != plan[i - 1].Wave
                         );
+                        // 会心の一撃と連撃の最後の1発は、技の演出の止めと揺れに重みを足す。
+                        Vfx.Accent(blowCritical, BattleCardPlan.Finishes(plan, i));
                         for (int j = i + 1; j < plan.Count; j++)
                             Retarget(plan, hits, j);
                         return weight;
@@ -367,7 +370,7 @@ namespace Baryonyx.Combat.Presentation
             // A cloud over the battle shows over the enemies' side rather than the user.
             if (action.Status == CardStatus.Thundercloud && Enemies.Length > 0)
                 area = Enemies[0].TargetArea;
-            ShowPopup(area, name, StatusColor(action.Status), 40f);
+            ShowStatusNote(area, name, StatusColor(action.Status));
             Fire(
                 BattleTrigger.StatusApplied,
                 new BattleEvent
@@ -407,7 +410,7 @@ namespace Baryonyx.Combat.Presentation
             )
                 return true;
             if (!quiet)
-                ShowPopup(Enemies[enemy].TargetArea, ResistedText, ResistedColor, 40f);
+                ShowStatusNote(Enemies[enemy].TargetArea, ResistedText, ResistedColor);
             return false;
         }
 
@@ -692,7 +695,7 @@ namespace Baryonyx.Combat.Presentation
         private static readonly Color Gold = new(1f, 0.86f, 0.42f);
         private static readonly Color SupportColor = new(0.78f, 0.86f, 0.95f);
 
-        /// <summary>The colour a status's name pops up in.</summary>
+        /// <summary>The colour a status's name shows in.</summary>
         public static Color StatusColor(CardStatus status) =>
             status switch
             {

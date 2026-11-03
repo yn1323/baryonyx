@@ -125,7 +125,10 @@ namespace Baryonyx.Tests.PlayMode
                     Cards = view
                         .Deck.Where(data => data.Caster == place)
                         .Take(2)
-                        .Select(data => new BattlePartyCard { Skill = BattleInspectView.SkillOf(data) })
+                        .Select(data => new BattlePartyCard
+                        {
+                            Skill = BattleInspectView.SkillOf(data),
+                        })
                         .Where(card => card.Skill != null)
                         .ToArray(),
                     Passives = new CombatPassiveKind[0],
@@ -138,7 +141,11 @@ namespace Baryonyx.Tests.PlayMode
             {
                 Assert.That(ally.Hp, Is.LessThan(ally.MaxHp));
                 Assert.That(ally.Gauge.Ratio, Is.LessThan(1f));
-                Assert.That(ally.Gauge.TrailRatio, Is.EqualTo(ally.Gauge.Ratio), "No HP drains away.");
+                Assert.That(
+                    ally.Gauge.TrailRatio,
+                    Is.EqualTo(ally.Gauge.Ratio),
+                    "No HP drains away."
+                );
             }
         }
 
@@ -183,8 +190,16 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(view.Acting, Is.False, "The actions end.");
             Assert.That(beaten.Alive, Is.False);
             Assert.That(seen.Numbers, Has.Count.EqualTo(hits), "No blow is lost on the beaten.");
-            Assert.That(standing.Hp, Is.LessThan(standing.MaxHp), "The rest go to the one standing.");
-            Assert.That(shownAtLastBlow, Is.EqualTo(1f), "The beaten one is there at the last blow.");
+            Assert.That(
+                standing.Hp,
+                Is.LessThan(standing.MaxHp),
+                "The rest go to the one standing."
+            );
+            Assert.That(
+                shownAtLastBlow,
+                Is.EqualTo(1f),
+                "The beaten one is there at the last blow."
+            );
             for (float t = 0f; beaten.Group.alpha > 0f && t < 2f; t += Time.deltaTime)
                 yield return null;
             Assert.That(beaten.Group.alpha, Is.EqualTo(0f), "Then it crumbles away.");
@@ -413,7 +428,9 @@ namespace Baryonyx.Tests.PlayMode
 
             public void Look(BattleInspectView view)
             {
-                foreach (var template in new[] { view.DamageNumber, view.WeakNumber })
+                foreach (
+                    var template in new[] { view.DamageNumber, view.WeakNumber, view.CritNumber }
+                )
                     Numbers.UnionWith(Clones(template));
                 // Read as it shows: a popup is destroyed once it fades.
                 foreach (var popup in Clones(view.PopupTemplate))

@@ -100,6 +100,34 @@ namespace Baryonyx.Combat
             return plan;
         }
 
+        /// <summary>
+        /// True when the landing at <paramref name="index"/> is the last blow of several landing
+        /// one after another (a card's ×4): each landing of a blow on enemies at random or in a
+        /// chain is a blow of its own, and a wave on chosen enemies or on all is one blow, as its
+        /// enemies are struck at once. A card that strikes once (on all, at once) has none.
+        /// </summary>
+        public static bool Finishes(IReadOnlyList<Hit> plan, int index)
+        {
+            int blows = 0;
+            int last = -1;
+            int lastWave = -1;
+            for (int i = 0; i < plan.Count; i++)
+            {
+                if (!Strikes(plan[i]))
+                    continue;
+                if (plan[i].AtRandom || plan[i].Wave != lastWave)
+                {
+                    blows++;
+                    last = i;
+                }
+                lastWave = plan[i].Wave;
+            }
+            return blows > 1 && index == last;
+        }
+
+        private static bool Strikes(Hit hit) =>
+            !hit.Ally && hit.Actions.Exists(action => action.Kind == CardActionKind.Damage);
+
         private static bool Same(List<Hit> hits, List<(bool ally, int index)> targets)
         {
             if (hits.Count != targets.Count)

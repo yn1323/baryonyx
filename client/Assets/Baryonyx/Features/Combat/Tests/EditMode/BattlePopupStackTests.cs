@@ -89,6 +89,17 @@ namespace Baryonyx.Tests.EditMode
         }
 
         [Test]
+        public void AMessageGoesUnderANumberHeldWhereItWasScattered()
+        {
+            var stack = new BattlePopupStack();
+            // 散らした数字は動かさずに並びへ入れ、あとの文字はその下へ出す。
+            stack.Hold(enemy, 140f, 46f, 36f, 0f, 1f);
+
+            Assert.That(stack.Place(enemy, 100f, 46f, 36f, 0f, 1.3f), Is.EqualTo(6f));
+            Assert.That(stack.Place(ally, 100f, 46f, 36f, 0f, 1.3f), Is.EqualTo(0f));
+        }
+
+        [Test]
         public void APopupThatStopsLowerThanTheOthersStaysWhereItIs()
         {
             var stack = new BattlePopupStack();

@@ -536,6 +536,37 @@ namespace Baryonyx.Combat.Presentation
             StepTime();
         }
 
+        // 会心の一撃・連撃の最後の1発・その両方に足す、止める時間と揺れ。
+        public const float CriticalStop = 0.08f;
+        public const float CriticalShake = 0.3f;
+        public const float FinishStop = 0.06f;
+        public const float FinishShake = 0.22f;
+        public const float BothStop = 0.11f;
+        public const float BothShake = 0.4f;
+
+        /// <summary>
+        /// Weighs a blow down beyond its effect's own: a critical hit and the last blow of
+        /// several each hold the battle a little longer and knock the stage harder, and a blow
+        /// that is both, more. Overlapping stops keep the longest, so an effect's own heavier
+        /// stop stays.
+        /// </summary>
+        public void Accent(bool critical, bool finishing)
+        {
+            if (!critical && !finishing)
+                return;
+            HitStop(
+                critical && finishing ? BothStop
+                : critical ? CriticalStop
+                : FinishStop
+            );
+            Shake(
+                critical && finishing ? BothShake
+                    : critical ? CriticalShake
+                    : FinishShake,
+                Vector2.zero
+            );
+        }
+
         /// <summary>
         /// Runs the battle at <paramref name="scale"/> speed for a moment after any hit stop, so a
         /// finishing blow feels heavy (slow motion).

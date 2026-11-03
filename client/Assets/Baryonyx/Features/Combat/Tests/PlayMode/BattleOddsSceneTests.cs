@@ -28,7 +28,7 @@ namespace Baryonyx.Tests.PlayMode
                 yield return SceneManager.UnloadSceneAsync(loadedScene);
         }
 
-        // 会心の一撃は1.5倍のダメージになり、数字の上に「会心！」と出る。
+        // 会心の一撃は1.5倍のダメージになり、文字は出さず、会心の色の数字で出る。
         private FixedRandom random;
 
         // 手札を配る順、狙う相手、敵の行動を、いつも同じ乱数で決める。
@@ -44,22 +44,24 @@ namespace Baryonyx.Tests.PlayMode
             int start = wolf.Hp;
 
             var words = new List<string>();
+            var crits = new List<string>();
             Play(view, 0, wolf.TargetArea);
-            yield return WaitActions(view, words);
+            yield return WaitActions(view, words, crits);
             int normal = start - wolf.Hp;
             Assert.That(normal, Is.GreaterThan(0));
-            Assert.That(words, Has.No.Member(BattleInspectView.CriticalText));
+            Assert.That(crits, Is.Empty);
 
             wolf.Hp = start;
             BattleOdds.Fix(critical: true, lands: true);
             view.RestartDeal(Enumerable.Range(0, view.Cards.Length).ToArray(), instant: true);
             Play(view, 0, wolf.TargetArea);
-            yield return WaitActions(view, words);
+            yield return WaitActions(view, words, crits);
             Assert.That(start - wolf.Hp, Is.EqualTo(CombatFormula.Critical(normal)).Within(1));
-            Assert.That(words, Has.Member(BattleInspectView.CriticalText));
+            Assert.That(crits, Has.Member((start - wolf.Hp).ToString()));
+            Assert.That(words, Has.No.Member("会心！"));
         }
 
-        // 外れた状態は付かず、敵の上に「効かなかった」と出る。当たれば付く。
+        // 外れた状態は付かず、敵の上に「効かなかった」の帯が出る。当たれば付く。
         [UnityTest]
         public IEnumerator AStatusThatMissesIsNotPutOnAndSaysSo()
         {
@@ -172,16 +174,28 @@ namespace Baryonyx.Tests.PlayMode
             view.ReleaseCard(Center(target));
         }
 
-        // カードが動き終えるまで待ち、そのあいだに出た文字を集める。
-        private static IEnumerator WaitActions(BattleInspectView view, List<string> words)
+        // カードが動き終えるまで待ち、そのあいだに出た文字・状態の帯・会心の数字を集める。
+        private static IEnumerator WaitActions(
+            BattleInspectView view,
+            List<string> words,
+            List<string> crits = null
+        )
         {
             for (float t = 0f; t < 0.1f || (view.Acting && t < 8f); t += Time.deltaTime)
             {
                 words.AddRange(Rising(view.PopupTemplate));
+                words.AddRange(Notes(view));
+                crits?.AddRange(Rising(view.CritNumber));
                 yield return null;
             }
             Assert.That(view.Acting, Is.False, "The actions end.");
         }
+
+        private static IEnumerable<string> Notes(BattleInspectView view) =>
+            view
+                .StatusNote.parent.GetComponentsInChildren<RectTransform>()
+                .Where(rect => rect.name == view.StatusNote.name + "(Clone)")
+                .Select(rect => rect.GetComponentInChildren<TMP_Text>().text);
 
         private static IEnumerator EndTurn(BattleInspectView view)
         {

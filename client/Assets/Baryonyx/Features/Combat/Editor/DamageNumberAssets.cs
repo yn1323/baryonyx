@@ -9,7 +9,7 @@ namespace Baryonyx.Combat.Editor
 {
     /// <summary>
     /// The font and materials of the damage and heal numbers, and of the HP on the bars: Dela Gothic One, a very thick
-    /// smooth gothic, drawn over the pixel art with a thick dark outline and a hard drop shadow.
+    /// smooth gothic, drawn over the pixel art with a dark outline and a hard drop shadow.
     /// Only the digits are baked, so the font file does not ship in the build.
     /// </summary>
     public static class DamageNumberAssets
@@ -19,22 +19,28 @@ namespace Baryonyx.Combat.Editor
         public const string FontAssetPath = Folder + "/DamageNumbers.asset";
         public const string NormalMaterialPath = Folder + "/DamageNormal.mat";
         public const string WeakMaterialPath = Folder + "/DamageWeak.mat";
+        public const string CriticalMaterialPath = Folder + "/DamageCritical.mat";
         public const string HealMaterialPath = Folder + "/DamageHeal.mat";
         public const string HpMaterialPath = Folder + "/HpNumber.mat";
 
         private const string Characters = "0123456789";
 
-        /// <summary>How one kind of number looks: its size, the gradient from top to bottom, and the outline.</summary>
+        /// <summary>
+        /// How one kind of number looks: its size, the gradient from top to bottom, and the
+        /// outline (its colour and width).
+        /// </summary>
         public sealed class Style
         {
             public float Size;
             public Color Top;
             public Color Bottom;
             public Color Edge;
+            public float Outline = NumberOutline;
             public string MaterialPath;
         }
 
-        // White to warm beige; a weakness hits bigger in yellow to orange; healing is smaller and green.
+        // White to warm beige; a weakness hits bigger in orange to red; a critical hit (on a
+        // weakness too) biggest in pale yellow to gold; healing is smaller and green.
         // The gradient spans the glyph's quad with its padding, so the ends are set past the colours
         // seen on the glyph itself.
         public static readonly Style Normal = new()
@@ -48,10 +54,18 @@ namespace Baryonyx.Combat.Editor
         public static readonly Style Weak = new()
         {
             Size = 44f,
-            Top = new Color(1f, 1f, 0.35f),
-            Bottom = new Color(0.95f, 0.45f, 0.02f),
-            Edge = new Color(0.29f, 0.06f, 0.02f),
+            Top = new Color(1f, 0.8f, 0.45f),
+            Bottom = new Color(0.94f, 0.22f, 0.12f),
+            Edge = new Color(0.24f, 0.03f, 0.02f),
             MaterialPath = WeakMaterialPath,
+        };
+        public static readonly Style Critical = new()
+        {
+            Size = 50f,
+            Top = new Color(1f, 0.98f, 0.66f),
+            Bottom = new Color(1f, 0.56f, 0f),
+            Edge = new Color(0.25f, 0.11f, 0f),
+            MaterialPath = CriticalMaterialPath,
         };
         public static readonly Style Heal = new()
         {
@@ -70,6 +84,7 @@ namespace Baryonyx.Combat.Editor
             Top = new Color(1f, 1f, 1f),
             Bottom = new Color(0.84f, 0.86f, 0.9f),
             Edge = new Color(0.08f, 0.06f, 0.08f),
+            Outline = HpOutline,
             MaterialPath = HpMaterialPath,
         };
 
@@ -87,7 +102,12 @@ namespace Baryonyx.Combat.Editor
                 shadow: false
             );
             label.font = font;
-            label.fontSharedMaterial = EnsureMaterial(font, style.MaterialPath, style.Edge);
+            label.fontSharedMaterial = EnsureMaterial(
+                font,
+                style.MaterialPath,
+                style.Edge,
+                style.Outline
+            );
             label.enableVertexGradient = true;
             label.colorGradient = new VertexGradient(
                 style.Top,
@@ -100,9 +120,12 @@ namespace Baryonyx.Combat.Editor
         }
 
         // Wide padding so the thick outline and the dropped shadow fit in the distance field.
+        // The rising numbers have a thinner outline than the HP on the bars, which needs it to
+        // read over the fill.
         private const int SamplingSize = 90;
         private const int Padding = 20;
-        private const float OutlineWidth = 0.18f;
+        private const float NumberOutline = 0.13f;
+        private const float HpOutline = 0.18f;
 
         public static TMP_FontAsset GetOrCreateFont()
         {
@@ -138,10 +161,15 @@ namespace Baryonyx.Combat.Editor
         }
 
         /// <summary>
-        /// Makes or refreshes a number material: the outline in <paramref name="edge"/> and a
-        /// hard shadow dropped straight down under it.
+        /// Makes or refreshes a number material: the outline in <paramref name="edge"/>,
+        /// <paramref name="width"/> wide, and a hard shadow dropped straight down under it.
         /// </summary>
-        public static Material EnsureMaterial(TMP_FontAsset font, string path, Color edge)
+        public static Material EnsureMaterial(
+            TMP_FontAsset font,
+            string path,
+            Color edge,
+            float width
+        )
         {
             var material = AssetDatabase.LoadAssetAtPath<Material>(path);
             if (material == null)
@@ -156,15 +184,15 @@ namespace Baryonyx.Combat.Editor
             material.CopyPropertiesFromMaterial(font.material);
             // The mobile shader centres the outline on the glyph's edge, so the face is dilated by
             // the same amount to keep the fill its own size and put the whole outline outside it.
-            material.SetFloat("_FaceDilate", OutlineWidth);
+            material.SetFloat("_FaceDilate", width);
             material.EnableKeyword("OUTLINE_ON");
             material.SetColor("_OutlineColor", edge);
-            material.SetFloat("_OutlineWidth", OutlineWidth);
+            material.SetFloat("_OutlineWidth", width);
             material.EnableKeyword("UNDERLAY_ON");
             material.SetColor("_UnderlayColor", new Color(0f, 0f, 0f, 0.6f));
             material.SetFloat("_UnderlayOffsetX", 0f);
             material.SetFloat("_UnderlayOffsetY", -0.5f);
-            material.SetFloat("_UnderlayDilate", OutlineWidth);
+            material.SetFloat("_UnderlayDilate", width);
             material.SetFloat("_UnderlaySoftness", 0f);
             EditorUtility.SetDirty(material);
             AssetDatabase.SaveAssetIfDirty(material);

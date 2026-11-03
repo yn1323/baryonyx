@@ -1942,10 +1942,10 @@ namespace Baryonyx.Tests.PlayMode
                 CombatFormula.Defend(enemy.Power, ally.Stats.PhysicalDefense, enemy.Level)
             );
 
-        /// <summary>The texts of the numbers now rising from a template.</summary>
-        // ダメージと状態を同時に与えると、数字の下に状態の名前が並び、上がる途中でも重ならない。
+        // ダメージと状態を同時に与えると、状態の名前は数字の下に積まず、数字より少しあとに帯で出て、
+        // 右斜め上へ一定の速さで昇る。
         [UnityTest]
-        public IEnumerator ADamageNumberAndTheStatusPutOnWithItDoNotOverlap()
+        public IEnumerator AStatusPutOnWithABlowShowsOnANoteAfterItsNumber()
         {
             var view = default(BattleInspectView);
             yield return Load(value => view = value);
@@ -1963,45 +1963,59 @@ namespace Baryonyx.Tests.PlayMode
             var target = view.Enemies[0];
             Play(view, index, target.TargetArea);
 
-            TMP_Text number = null;
-            TMP_Text name = null;
-            for (
-                float t = 0f;
-                (number == null || name == null) && t < 5f;
-                t += Time.unscaledDeltaTime
-            )
+            float numberAt = -1f;
+            RectTransform note = null;
+            float noteAt = -1f;
+            for (float t = 0f; note == null && t < 5f; t += Time.unscaledDeltaTime)
             {
-                number = RisingLabels(view.DamageNumber)
-                    .Concat(RisingLabels(view.WeakNumber))
-                    .FirstOrDefault();
-                name = RisingLabels(view.PopupTemplate)
-                    .FirstOrDefault(text => text.text.Contains("やけど"));
-                yield return null;
-            }
-            Assert.That(number, Is.Not.Null, "The damage number rises.");
-            Assert.That(name, Is.Not.Null, "The status name rises.");
-
-            // 大きく弾ける最初の一瞬を過ぎてから、消えるまでのあいだを見る。
-            float since = Time.unscaledTime;
-            int checkedFrames = 0;
-            while (number != null && name != null && Time.unscaledTime - since < 1.1f)
-            {
-                if (Time.unscaledTime - since >= 0.2f)
-                {
-                    float scale = number.rectTransform.lossyScale.y;
-                    float gap = number.rectTransform.position.y - name.rectTransform.position.y;
-                    float needed = (number.fontSize + name.fontSize) * 0.5f * scale;
-                    Assert.That(
-                        gap,
-                        Is.GreaterThanOrEqualTo(needed),
-                        $"The number stays a line above the name ({Time.unscaledTime - since:0.00}s)."
+                if (
+                    numberAt < 0f
+                    && RisingLabels(view.DamageNumber)
+                        .Concat(RisingLabels(view.WeakNumber))
+                        .Concat(RisingLabels(view.CritNumber))
+                        .Any(number => number.enabled)
+                )
+                    numberAt = Time.unscaledTime;
+                note = StatusNotes(view)
+                    .FirstOrDefault(shown =>
+                        shown.GetComponentInChildren<TMP_Text>().text.Contains("やけど")
+                        && shown.GetComponent<CanvasGroup>().alpha > 0f
                     );
-                    checkedFrames++;
-                }
+                if (note != null)
+                    noteAt = Time.unscaledTime;
+                Assert.That(
+                    Rising(view.PopupTemplate).Any(text => text.Contains("やけど")),
+                    Is.False,
+                    "The name does not pop up under the number."
+                );
                 yield return null;
             }
-            Assert.That(checkedFrames, Is.GreaterThan(5));
+            Assert.That(numberAt, Is.GreaterThanOrEqualTo(0f), "The damage number rises.");
+            Assert.That(note, Is.Not.Null, "The status shows on a note.");
+            Assert.That(
+                noteAt - numberAt,
+                Is.GreaterThanOrEqualTo(BattleStatusNotes.Lead - 0.05f),
+                "The note comes after the number."
+            );
+
+            var from = note.anchoredPosition;
+            for (float t = 0f; t < 0.2f && note != null; t += Time.unscaledDeltaTime)
+                yield return null;
+            Assert.That(note != null, "The note still shows.");
+            var moved = note.anchoredPosition - from;
+            Assert.That(moved.y, Is.GreaterThan(0f), "It rises.");
+            Assert.That(
+                moved.x,
+                Is.EqualTo(moved.y * BattleStatusNotes.Lean).Within(1f),
+                "It leans right as it rises."
+            );
         }
+
+        /// <summary>The status notes now showing.</summary>
+        private static IEnumerable<RectTransform> StatusNotes(BattleInspectView view) =>
+            view
+                .StatusNote.parent.GetComponentsInChildren<RectTransform>()
+                .Where(rect => rect.name == view.StatusNote.name + "(Clone)");
 
         private static string[] Rising(TMP_Text template) =>
             RisingLabels(template).Select(text => text.text).ToArray();

@@ -65,7 +65,7 @@ namespace Baryonyx.Combat.Presentation
                 yield break;
             if (Frozen(index))
             {
-                ShowPopup(enemy.TargetArea, "凍結で動けない", StatusColor(CardStatus.Freeze), 40f);
+                ShowStatusNote(enemy.TargetArea, FrozenText, StatusColor(CardStatus.Freeze));
                 yield return Wait(Settings.EnemyGap);
                 yield break;
             }
@@ -369,11 +369,10 @@ namespace Baryonyx.Combat.Presentation
             active.Turns = Mathf.Max(active.Turns, turns);
             active.Amount = Mathf.Max(active.Amount, amount);
             active.Power = Mathf.Max(active.Power, power);
-            ShowPopup(
+            ShowStatusNote(
                 Enemies[index].TargetArea,
                 CardRules.StatusName(status),
-                StatusColor(status),
-                40f
+                StatusColor(status)
             );
         }
 
