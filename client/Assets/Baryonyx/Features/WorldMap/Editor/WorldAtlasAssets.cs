@@ -85,6 +85,7 @@ namespace Baryonyx.WorldMap.Editor
             EditorGuard.RequireEditMode();
             Directory.CreateDirectory(PrefabFolder);
             WorldMapScreenAssets.WriteHomeIcon();
+            WorldMapScreenAssets.WriteWorldMapIcon();
             AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
             foreach (var key in Keys)
                 BuildMap(key);
@@ -132,8 +133,11 @@ namespace Baryonyx.WorldMap.Editor
                 layout.PictureSize,
                 pictures,
                 layoutAsset,
-                // 冒険の世界地図のシーンでは、世界地図からダンジョン一覧を開く。
-                dungeons: world
+                // 冒険の世界地図のシーンでは、世界地図からもエリアマップからもダンジョン一覧を開く
+                // （2026-11-03、ユーザーの「小エリアにいてもダンジョンのリストを出したい」）。
+                dungeons: true,
+                // エリアマップには、世界地図のその地域のマスへ出るボタンを置く。
+                worldMap: !world
             );
             return prefab.GetComponent<WorldMapView>();
         }

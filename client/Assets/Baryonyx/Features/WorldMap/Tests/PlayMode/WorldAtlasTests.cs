@@ -297,6 +297,7 @@ namespace Baryonyx.Tests.PlayMode
             // デバッグルームの試作では、世界地図から出る先もダンジョン一覧もない。
             Assert.That(world.Back.gameObject.activeSelf, Is.False);
             Assert.That(world.Dungeons.gameObject.activeSelf, Is.False);
+            Assert.That(world.WorldMap, Is.Null);
             // 遠い地域のマスも押せる。払うルーンを確かめる窓が出て、やめると歩かない。
             yield return SceneTests.WaitUntil(() => WorldAtlasSession.Loaded);
             var toll = world.GetComponent<WorldAtlasToll>();

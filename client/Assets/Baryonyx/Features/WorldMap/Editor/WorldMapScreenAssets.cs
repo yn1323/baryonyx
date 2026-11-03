@@ -30,6 +30,7 @@ namespace Baryonyx.WorldMap.Editor
         public const string HiddenNodePath = ArtFolder + "/WorldNodeLocked.png";
         public const string IconDungeonsPath = ArtFolder + "/IconDungeons.png";
         public const string IconHomePath = ArtFolder + "/IconHome.png";
+        public const string IconWorldMapPath = ArtFolder + "/IconWorldMap.png";
 
         // 背景の1画素を3pxで出す。地図は横に約2.4画面、縦に約2.8画面ぶんになる。
         private const float Scale = 3f;
@@ -143,7 +144,8 @@ namespace Baryonyx.WorldMap.Editor
         /// Builds one map's screen. <paramref name="pictures"/> are the background's pieces with
         /// the pixels of the whole picture each covers. A <paramref name="layout"/> makes it a
         /// map of the nested world map. <paramref name="dungeons"/> adds the button at the bottom
-        /// right that opens the list of dungeons.
+        /// right that opens the list of dungeons, <paramref name="worldMap"/> the one under the
+        /// button at the top left that leaves an area map for the world map.
         /// </summary>
         public static GameObject Build(
             string rootName,
@@ -153,7 +155,8 @@ namespace Baryonyx.WorldMap.Editor
             Vector2 pictureSize,
             IReadOnlyList<(Texture2D Texture, Rect Pixels)> pictures,
             TextAsset layout,
-            bool dungeons
+            bool dungeons,
+            bool worldMap = false
         )
         {
             look = screenLook;
@@ -173,7 +176,7 @@ namespace Baryonyx.WorldMap.Editor
                 view.KindSprites = kinds;
                 view.HiddenSprite = hidden;
                 BuildMap(root, view, graph, pictureSize, pictures);
-                BuildControls(root, view, dungeons);
+                BuildControls(root, view, dungeons, worldMap);
                 view.ItemArt = Baryonyx.Inventory.Editor.ItemArtAssets.Load();
                 view.Reveal = RewardRevealAssets.Build(SafeArea(root), ChestPlateCenter);
                 view.Dialog = GameDialogAssets.Build(root);
@@ -222,6 +225,22 @@ namespace Baryonyx.WorldMap.Editor
                 .Fill(IconShape.Path("M15 32 L32 17 L49 32 L49 56 L15 56Z"), 3.5f)
                 .Cut(IconShape.Rect(27f, 40f, 10f, 16f))
                 .Save(IconHomePath, GuideMenuAssets.SmoothIconTextureSize, UiPalette.TextMain);
+        }
+
+        /// <summary>
+        /// Draws the globe on the area map's button out to the world map, in the same plain shape
+        /// and colour as the house: a round outline, a meridian and three lines of latitude.
+        /// </summary>
+        public static void WriteWorldMapIcon()
+        {
+            Directory.CreateDirectory(ArtFolder);
+            new VectorIcon()
+                .Stroke(IconShape.Circle(32f, 32f, 23f), 5.5f)
+                .Stroke(IconShape.Path("M32 9 Q16 32 32 55 Q48 32 32 9Z"), 4f)
+                .Stroke(IconShape.Path("M9 32 L55 32"), 4f)
+                .Stroke(IconShape.Path("M13 20 L51 20"), 3.5f)
+                .Stroke(IconShape.Path("M13 44 L51 44"), 3.5f)
+                .Save(IconWorldMapPath, GuideMenuAssets.SmoothIconTextureSize, UiPalette.TextMain);
         }
 
         // 出来事ごとの台。どのマスに何を置くかは、地図が Play 中に配置のJSONから読む。
@@ -408,9 +427,16 @@ namespace Baryonyx.WorldMap.Editor
             return party;
         }
 
-        // 画面の端の部品：左上のもどる、右上の今いる場所、右下のダンジョン一覧。
+        // 画面の端の部品：左上のもどる、その下の世界地図へ、右上の今いる場所、右下のダンジョン一覧。
         // 入れ子の地図の左上は、どの地図からでもHomeへ戻るため、家の形にする（2026-11-01、ユーザー）。
-        private static void BuildControls(RectTransform root, WorldMapView view, bool dungeons)
+        // エリアマップでは、家の下に地球儀のボタンを置き、地域のマスへ出る（2026-11-03、ユーザー）。
+        // 左下は歩いている間の「止める」が使うため、同じ「出る」ボタンの家の下にまとめる。
+        private static void BuildControls(
+            RectTransform root,
+            WorldMapView view,
+            bool dungeons,
+            bool worldMap
+        )
         {
             var safe = SafeArea(root);
             view.Back = RoundButton(
@@ -420,6 +446,14 @@ namespace Baryonyx.WorldMap.Editor
                 new Vector2(Margin, -Margin),
                 view.Layout != null ? IconHomePath : GuideMenuAssets.IconBackPath
             );
+            if (worldMap)
+                view.WorldMap = RoundButton(
+                    safe,
+                    "WorldMap",
+                    new Vector2(0f, 1f),
+                    new Vector2(Margin, -Margin - ButtonSize - Margin),
+                    IconWorldMapPath
+                );
             if (dungeons)
                 view.Dungeons = RoundButton(
                     safe,

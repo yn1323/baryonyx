@@ -165,12 +165,18 @@ namespace Baryonyx.WorldMap
             current.IsPaid = square => WorldAtlasSession.IsOpened(map, square);
             current.BackPressed += Back;
             current.DungeonsPressed += PressDungeons;
+            current.WorldMapPressed += Climb;
             if (current.Back != null)
                 current.Back.gameObject.SetActive(
                     key != WorldAtlasLayout.WorldKey || Leave != null
                 );
             if (current.Dungeons != null)
                 current.Dungeons.gameObject.SetActive(OpenDungeons != null);
+            // 世界地図へ出るボタンは、左上がHomeへ出る冒険の地図でだけ出す（試作では左上が世界地図へ戻る）。
+            if (current.WorldMap != null)
+                current.WorldMap.gameObject.SetActive(
+                    key != WorldAtlasLayout.WorldKey && Leave != null
+                );
             // 覚えていたマスが地図からなくなっていれば、その地図の始まりに立つ。
             string start = StartOf(current, key);
             if (at == null || !Has(current, at))
@@ -323,7 +329,8 @@ namespace Baryonyx.WorldMap
                 Climb();
         }
 
-        // エリアマップから世界地図のその地域のマスへ戻る。入口に止まったときは、出る先があってもこちら。
+        // エリアマップから世界地図のその地域のマスへ戻る。入口に止まったときと、家の下の地球儀のボタンを
+        // 押したときは、出る先があってもこちら。
         private void Climb()
         {
             if (Switching || currentKey == WorldAtlasLayout.WorldKey)

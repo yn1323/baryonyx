@@ -28,7 +28,11 @@ namespace Baryonyx.Tests.PlayMode
             services = TestGameServices.Use();
             // 世界地図は、端末に残した駒の場所ではなく、はじめのマスから始める。
             WorldAtlasNavigator.Forget();
+            // テストの途中で止めた消費は、終わったら端末の設定へ戻す。
+            charging = WorldAtlasSession.Charging;
         }
+
+        private bool charging;
 
         [UnityTearDown]
         public IEnumerator RestoreServices()
@@ -36,6 +40,7 @@ namespace Baryonyx.Tests.PlayMode
             services?.Dispose();
             services = null;
             WorldAtlasNavigator.Forget();
+            WorldAtlasSession.Charging = charging;
             yield return SceneTests.UnloadAll(nameof(GuideScenesTests));
         }
 
@@ -395,7 +400,8 @@ namespace Baryonyx.Tests.PlayMode
         }
 
         // 冒険の世界地図の右下のボタンでダンジョン一覧（旅の案内所）を開き、「もどる」で世界地図へ、
-        // ×でHomeへ戻る。世界地図の左上のボタンはHomeへ戻る。
+        // ×でHomeへ戻る。世界地図の左上のボタンはHomeへ戻る。エリアマップ（小エリア）では、家の下の
+        // ボタンで世界地図のその地域のマスへ出られ、右下のボタンからダンジョン一覧も開ける。
         [UnityTest]
         public IEnumerator WorldMapOpensTheDungeonListAndBackReturnsToTheMap()
         {
@@ -406,6 +412,35 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(view.Back.gameObject.activeSelf, Is.True);
             SceneTests.AssertTouchSize(view.Dungeons.transform);
             SceneTests.AssertTouchSize(view.Back.transform);
+
+            // 世界地図には、世界地図へ出るボタンはない。
+            Assert.That(view.WorldMap, Is.Null);
+
+            // エリアマップの家の下のボタンで、世界地図のその地域のマスへ出る。
+            // ここでは地域のマスまで歩いていないため、開けたマスで駒を戻さないよう、消費を止めて確かめる
+            // （ゲームでは、エリアマップへは必ず地域のマスを通って入る）。
+            WorldAtlasSession.Charging = false;
+            Assert.That(map.Navigator.Open("marina", null), Is.True);
+            view = map.Navigator.Current;
+            Assert.That(view.WorldMap.gameObject.activeSelf, Is.True);
+            SceneTests.AssertTouchSize(view.WorldMap.transform);
+            SceneTests.AssertBelow(view.WorldMap.transform, view.Back.transform);
+            view.WorldMap.onClick.Invoke();
+            yield return SceneTests.WaitUntil(() => !map.Navigator.Switching);
+            Assert.That(map.Navigator.CurrentKey, Is.EqualTo(WorldAtlasLayout.WorldKey));
+            view = map.Navigator.Current;
+            Assert.That(
+                view.Graph.Nodes[view.PartyAt].Id,
+                Is.EqualTo(WorldAtlasLayout.RegionPrefix + "marina")
+            );
+            WorldAtlasSession.Charging = charging;
+
+            // エリアマップ（小エリア）でも、右下からダンジョン一覧を開ける。
+            Assert.That(map.Navigator.Open("marina", null), Is.True);
+            view = map.Navigator.Current;
+            Assert.That(view.Dungeons, Is.Not.Null);
+            Assert.That(view.Dungeons.gameObject.activeSelf, Is.True);
+            SceneTests.AssertTouchSize(view.Dungeons.transform);
 
             view.Dungeons.onClick.Invoke();
             yield return SceneTests.WaitUntil(
@@ -501,8 +536,12 @@ namespace Baryonyx.Tests.PlayMode
             StringAssert.StartsWith("クリア ", treasures.Clears.text);
             // 左の列に1〜5回目の報酬を並べ、受け取った回だけ名前を出す。次の回は金の縁で囲む。
             int clears =
-                Baryonyx.Adventure.AdventureSession.Current.RecordOf(destinations[0].Id)?.Clears ?? 0;
-            Assert.That(treasures.Rewards, Has.Length.EqualTo(Baryonyx.Adventure.AdventureClearRewards.Count));
+                Baryonyx.Adventure.AdventureSession.Current.RecordOf(destinations[0].Id)?.Clears
+                ?? 0;
+            Assert.That(
+                treasures.Rewards,
+                Has.Length.EqualTo(Baryonyx.Adventure.AdventureClearRewards.Count)
+            );
             for (int i = 0; i < treasures.Rewards.Length; i++)
             {
                 var reward = treasures.Rewards[i];

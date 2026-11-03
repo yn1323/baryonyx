@@ -68,6 +68,9 @@ namespace Baryonyx.WorldMap
         public Button Back;
         public Button Dungeons;
 
+        // エリアマップの、世界地図のその地域のマスへ出るボタン（家のボタンの下）。世界地図にはない。
+        public Button WorldMap;
+
         // 保存に失敗したときの知らせ。しばらく出して消す。
         public TMP_Text Notice;
         public CanvasGroup NoticeGroup;
@@ -89,7 +92,8 @@ namespace Baryonyx.WorldMap
         private const float NoticeSeconds = 2.5f;
 
         // 宝箱の札が開いてから閉じるまで（中身1つのとき）。
-        private const float ChestReadSeconds = RewardReveal.OpenTime + ExplorationFlow.ItemReadSeconds;
+        private const float ChestReadSeconds =
+            RewardReveal.OpenTime + ExplorationFlow.ItemReadSeconds;
 
         public static readonly Color ClearedLine = new(1f, 0.96f, 0.86f, 1f);
         public static readonly Color OpenLine = new(1f, 0.82f, 0.3f, 1f);
@@ -111,6 +115,7 @@ namespace Baryonyx.WorldMap
 
         public event Action BackPressed;
         public event Action DungeonsPressed;
+        public event Action WorldMapPressed;
 
         // 戦闘のあるマスに着いた。引数はマスのID。
         public event Action<string> BattleRequested;
@@ -251,6 +256,8 @@ namespace Baryonyx.WorldMap
                 Back.onClick.AddListener(PressBack);
             if (Dungeons != null)
                 Dungeons.onClick.AddListener(PressDungeons);
+            if (WorldMap != null)
+                WorldMap.onClick.AddListener(PressWorldMap);
         }
 
         private void OnDisable()
@@ -267,6 +274,8 @@ namespace Baryonyx.WorldMap
                 Back.onClick.RemoveListener(PressBack);
             if (Dungeons != null)
                 Dungeons.onClick.RemoveListener(PressDungeons);
+            if (WorldMap != null)
+                WorldMap.onClick.RemoveListener(PressWorldMap);
         }
 
         // 画面の大きさが決まってから、パーティを画面の中央に置き直し、保存先から読み直す。
@@ -429,6 +438,8 @@ namespace Baryonyx.WorldMap
         private void PressBack() => BackPressed?.Invoke();
 
         private void PressDungeons() => DungeonsPressed?.Invoke();
+
+        private void PressWorldMap() => WorldMapPressed?.Invoke();
 
         private void Hold(bool held)
         {
@@ -700,7 +711,9 @@ namespace Baryonyx.WorldMap
                 {
                     route.Add(path[i]);
                     if (i > 0)
-                        routeLines.Add((Mathf.Min(path[i - 1], path[i]), Mathf.Max(path[i - 1], path[i])));
+                        routeLines.Add(
+                            (Mathf.Min(path[i - 1], path[i]), Mathf.Max(path[i - 1], path[i]))
+                        );
                 }
             Refresh();
         }
@@ -1005,7 +1018,10 @@ namespace Baryonyx.WorldMap
         {
             float scale = 1f + 0.08f * (0.5f + 0.5f * Mathf.Sin(pulse * 4f));
             for (int i = 0; i < Nodes.Length && i < states.Length; i++)
-                if (states[i] == WorldNodeState.Open || (route.Count > 0 && route.Contains(i) && i != partyAt))
+                if (
+                    states[i] == WorldNodeState.Open
+                    || (route.Count > 0 && route.Contains(i) && i != partyAt)
+                )
                     Nodes[i].localScale = Vector3.one * scale;
         }
     }
