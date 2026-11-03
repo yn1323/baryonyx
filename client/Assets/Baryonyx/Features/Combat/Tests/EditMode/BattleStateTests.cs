@@ -312,6 +312,56 @@ namespace Baryonyx.Tests.EditMode
         }
 
         [Test]
+        public void TheEnemiesHoldTheirTraitsThroughAWholeBattle()
+        {
+            var state = new BattleState(BattleDice.Seeded(3));
+            var battle = new BattleSimulation(state);
+            state.Allies.Add(
+                new BattleFighter
+                {
+                    Hp = 400,
+                    MaxHp = 400,
+                    Level = 10,
+                    Stats = new CharacterStats(400, 200, 120, 200, 120, 150, 30, 20),
+                }
+            );
+            battle.AddCard(
+                Card(
+                    CardElement.Slash,
+                    CardAction.Damage(CardTarget.OneEnemy, CardStat.PhysicalAttack, 150)
+                ),
+                0
+            );
+            var slime = BattleFighter.OfEnemy("moss-slime", 10, 1f, 1f, state.Dice.Below);
+            var kind = slime.Brain.Behavior;
+            slime.Brain = new EnemyBrain(
+                new EnemyBehavior
+                {
+                    Id = kind.Id,
+                    Moves = kind.Moves,
+                    Early = kind.Early,
+                    Effects = new[]
+                    {
+                        new BattleEffect("test-trait", "特性").On(
+                            BattleTrigger.BattleStart,
+                            BattleAct.Show
+                        ),
+                    },
+                },
+                state.Dice.Below
+            );
+            state.Enemies.Add(slime);
+
+            battle.Fight(new CarefulSimPolicy(), 40);
+
+            Assert.That(
+                state.Announced,
+                Does.Contain("特性"),
+                "The slime held its trait from the start."
+            );
+        }
+
+        [Test]
         public void AnEnemySlippingThroughTakesNoPhysicalBlowUntilItActs()
         {
             var battle = Battle();

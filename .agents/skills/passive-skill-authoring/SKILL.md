@@ -33,7 +33,7 @@ description: >
 1. 定義と数値を足す。`CombatPassives` の定義に、効果をきっかけ（`BattleTrigger`）か値（`BattleValue`）・条件（`BattleCondition`）・働き（`BattleAct`）・回数で書く（[18個の書き方](../../../doc/plans/2026-11-03-battle-effect-system.md#18個のパッシブの書き方)を手本にする）。戦闘画面にパッシブ専用の処理を足さない。部品で書けない条件・量・働きは `BattleCondition.Of`・`BattleAmount.Of`・`BattleAct.Custom` に書き、ほかでも使えそうなら部品として `Runtime/Effects/` に足す。新しいきっかけや値が要るときは、[きっかけと値の一覧](../../../doc/plans/2026-11-03-battle-effect-system.md#きっかけと値の一覧)に足して、戦闘画面の該当する所から呼ぶ。確率やランダムの規則には `AtRandom()` を付けて予測から外す。
 2. アイコンを描く。[pixel-art-standards](../pixel-art-standards/SKILL.md) に従い、[prompts.json](../../../client/ArtSource/UI/Passives/prompts.json) の共通の指示文に図案を足して描き、24×24ドットの `.aseprite` にして指示文を記録する。
 3. 育成の画面の仮データとPrefabを、メニューの `Baryonyx > Tavern > Create Screen Assets` で作り直す。パッシブの名前はライブラリにも出るため `Baryonyx > Library > Create Screen Assets` も作り直し、[展示室](../../../doc/features/showcase.md)に載ったことを確かめる。
-4. 働き方のテストを `BattleEffectsTests`・`CombatPassivesTests`（EditMode。偽の戦闘で効果だけを確かめられる）と `BattlePassivesSceneTests` に足し、[実装との対応](../../../doc/features/passives.md#実装との対応)の表のテストを実行する（[UnityのテストとCI](../../../doc/rules/client-testing.md)）。
+4. 働き方のテストを `BattleEffectsTests`・`CombatPassivesTests`（EditMode。偽の戦闘で効果だけを確かめられる）、戦闘の形で確かめるなら `BattleStateTests`（[画面なしの戦闘で確かめる](../../../doc/rules/client-testing.md#画面なしの戦闘で確かめる)）、`BattlePassivesSceneTests` に足し、[実装との対応](../../../doc/features/passives.md#実装との対応)の表のテストを実行する（[UnityのテストとCI](../../../doc/rules/client-testing.md)）。
 
 - C#は [unity-csharp-differences](../unity-csharp-differences/SKILL.md)。
 - 働いたときの名前の出し方や演出は [ui-advisor](../ui-advisor/SKILL.md)・[vfx-authoring](../vfx-authoring/SKILL.md)。

@@ -272,7 +272,7 @@ Editorの札は1回15分までのため（[複数のチャットで1台のEditor
 | `startHpShare` | `1` | 始めのHP（最大HPに対する割合）。`through` では最初の戦闘だけ |
 | `knowWeaknesses` | `false` | 敵の弱点を最初から開示しておくか |
 | `odds` | `random` | `random` は会心と状態異常を確率どおりに振る。`fixed` はテストと同じく、会心なし・状態異常は必ず付く |
-| `engine` | `screen` | `screen` は戦闘画面を動かして戦う（ゲームと同じ）。`headless` はシーンを読まずに、画面なしの戦闘（`BattleSimulation`）で1戦をその場で戦う。速いが、画面なしの戦闘に入れていない仕組み（[予測と画面なしの戦闘](../features/combat/effects.md#予測と画面なしの戦闘)）の分だけ結果がずれるため、強さを決める測定は `screen` で行う |
+| `engine` | `screen` | `screen` は戦闘画面を動かして戦う（ゲームと同じ）。`headless` はシーンを読まずに、画面なしの戦闘（`BattleSimulation`）で1戦をその場で戦う。速いが、画面なしの戦闘に入れていない仕組み（[予測と画面なしの戦闘](../features/combat/effects.md#予測と画面なしの戦闘)）の分だけ結果がずれるため、強さを決める測定は `screen` で行う。使い方は[画面なしの戦闘で確かめる](#画面なしの戦闘で確かめる)にある |
 | `enemyEffectSkills` | `true` | 敵が、効果で書いた技（麻痺・毒・防御ダウンを付ける技、2026-11-03〜）を使うか。`false` にすると、その技がなかった頃と同じ戦闘で比べられる（[効果の部品](../features/combat/effects.md#仮設定敵が味方に付ける状態)） |
 | `policy` | `default` | カードの選び方。今は1つだけ |
 | `openShadyChests` | `false` | `through` で怪しい宝箱を開けてミミックと戦うか |
@@ -303,6 +303,64 @@ Editorの札は1回15分までのため（[複数のチャットで1台のEditor
 | カードの選び方（差し替えられる） | [BattleAutoPolicy](../../client/Assets/Baryonyx/Features/Adventure/Runtime/Balance/BattleAutoPolicy.cs) |
 | 集計と表 | [BattleBalanceResult](../../client/Assets/Baryonyx/Features/Adventure/Runtime/Balance/BattleBalanceResult.cs) |
 | 実行の入口と確認のテスト | [BattleBalanceTests](../../client/Assets/Baryonyx/Features/Adventure/Tests/PlayMode/BattleBalanceTests.cs)・[BattleBalanceResultTests](../../client/Assets/Baryonyx/Features/Adventure/Tests/EditMode/BattleBalanceResultTests.cs) |
+
+## 画面なしの戦闘で確かめる
+
+戦闘の効果・状態・敵の技が思った通りに働くかは、シーンを開かずに、画面なしの戦闘（`BattleState`・`BattleSimulation`）で確かめられる。
+画面なしの戦闘は、戦闘画面と同じルールの部品で戦う（[予測と画面なしの戦闘](../features/combat/effects.md#予測と画面なしの戦闘)）。
+シーンを読まず、Playにも入らないため、EditModeのテストとして速く回せる。
+不具合を直すときは、先に画面なしの戦闘で再現するテストを書き、落ちることを確かめてから直す。
+そのテストは、直したあとも同じ不具合が戻らないかを見るために残す。
+
+### 何で確かめるか
+
+| 確かめたいこと | 使うもの |
+|---|---|
+| 部品そのもの（条件・数・回数・重ね・入れ子の呼び出し） | EditModeの `BattleEffectsTests`。偽の戦闘（`FakeWorld`）の上で効果を直接呼ぶ |
+| 1つの効果・状態・敵の技が、決めた場面でどう働くか | EditModeの `BattleStateTests`。`BattleState` を1手ずつ動かす |
+| 1戦が最後まで進むか、途中で止まらないか | 同じく `BattleStateTests` で `BattleSimulation.Fight` を呼ぶ |
+| 多くの戦闘で、止まる戦闘・例外・極端な勝率がないか | [自動対戦](#戦闘の自動対戦)の依頼の `engine` を `headless` にする |
+| 戦闘画面での表示・演出・操作、画面なしの戦闘に入れていない仕組み | PlayModeのテスト（[パッシブの実装との対応](../features/passives.md#実装との対応)ほか）、自動対戦の `screen`、`BattleLab.unity` と[敵の挙動デバッグルーム](../features/screens/debug-rooms.md#敵の挙動デバッグルーム) |
+
+### 1手ずつ動かすテスト
+
+`BattleStateTests` の `Battle()` が、味方2人と敵2体の戦闘を作る。
+これを土台に、確かめたい場面だけを足して1手ずつ動かし、HPや状態を読む。
+
+| 段 | 書き方 |
+|---|---|
+| 並べる | `Allies`・`Enemies` に `BattleFighter` を足す。本物の敵は `BattleFighter.OfEnemy(種類, Lv, HPの倍率, 攻撃の倍率, 乱数)` で、戦闘画面と同じ数値と行動の選び方（`Brain`）になる |
+| 効果を持たせる | 味方は `Give(枠, 効果)`。パッシブは `CombatPassives.Find(種類).Effect`、冒険の強化は `BattleStatBoosts.EffectOf(強化)`。敵の特性（`EnemyBehavior.Effects`）は `BattleSimulation.Fight` が戦闘の初めに持たせ、1手ずつのテストでは `Effects.Add(BattleUnit.Enemy(番号), 効果)` で持たせる |
+| 動かす | カードは `PlayCard(カード, 使う枠, 対象)`、敵の攻撃は `EnemyStrike(敵, 味方, 威力)`、敵の技は `UseEnemyMove(敵, 技)` |
+| ターンを進める | `EndPartyTurn` → `StartEnemyTurn` → 敵の行動 → `StartPartyTurn` の順に呼ぶ。状態の残りターン、燃焼と毒、持ち越したエネルギーは、この順の中で数える |
+| 読む | 味方と敵の `Hp`・`Block`・`Statuses`、戦闘の `Energy`・`HasStatus`・`StatusTurns`・`CostOf`。`Announced` には、名前を出した効果が出た順に「名前 数」の形で入る |
+
+確率は、テストの `SetUp` が `BattleOdds.Fix` で固定する（会心なし・状態異常は必ず付く）。
+狙いや行動の選び方の乱数は、`BattleDice.Seeded(種)` の種で決まる。
+期待する数は、[数を変える順番](../features/combat/effects.md#数を変える順番)と[ダメージと防御](../features/combat/rules.md#ダメージと防御)から計算して書くか、効果のない同じ1手との差で書く（例：にらみつけの前後で、同じカードのダメージを比べる）。
+
+変えたテストのクラスだけを、再コンパイルと合わせて1回で実行する（[作業中に実行するPlayModeテスト](#作業中に実行するplaymodeテスト)と同じスクリプト）。
+1つのテストだけなら `BattleStateTests.テスト名` と書く。
+
+```bash
+python3 client/ci/run-editor-tests.py BattleStateTests --mode editmode --recompile
+```
+
+### 自動対戦を画面なしで回す
+
+[依頼](#依頼の項目)に `"engine": "headless"` を書くと、シーンを読まずに、同じパーティと敵の組み合わせで戦う（`BattleBalanceHeadless`）。
+ミストラ遺跡の強い魔物の気配の24戦が1秒かからない（[戦闘の試し](../features/stage-progression/battle-trials.md#戦闘の試し)）。
+
+```json
+{ "engine": "headless", "destination": "forest-ruins", "room": "elite", "repeats": 3, "seed": 1 }
+```
+
+- 効果や敵の技を足した・直したあとに、全組み合わせを多めの回数で回し、`Timeout` の戦闘、例外、極端な勝率がないかを先に見る。
+- 気になる組を見つけたら、その番号を `variants` に書き、同じ依頼を `screen` で回して比べる。差が[画面なしの戦闘に入れていない仕組み](../features/combat/effects.md#予測と画面なしの戦闘)で説明できなければ、戦闘画面か画面なしの戦闘の片方にだけ書かれた式を探す（[効果の部品の決まり](../../client/Assets/Baryonyx/Features/Combat/Runtime/Effects/AGENTS.md)）。
+- 強さを決める測定は `screen` で行う。
+- `verbose` の1手ごとの記録は `screen` だけが出す。画面なしで1手ずつ追うときは、その戦闘を `BattleStateTests` に写して動かす。
+- 記録は回復を数えない（`partyHealed`・`enemyHealed` は0）。受けたダメージ（`taken`）は戦闘の前後のHPの差のため、回復した分だけ少なく出る。
+- `odds` は画面と同じく効く。`fixed` なら会心なし・状態異常は必ず付き、`random` なら1戦ごとの種で振る。
 
 ## 動画の録画
 

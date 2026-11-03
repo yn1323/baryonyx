@@ -90,6 +90,12 @@
 |---|---|---|---|---|
 | [battle-balance](battle-balance/SKILL.md) | 戦闘の自動対戦で勝率とターン数を測り、目安と比べ、原因の場所と数字の見込みつきの直し方を報告する。倍率・敵・カード・パッシブ・装備・ステータスを変えたあとの測り直し | 手動 | [戦闘の自動対戦](../../doc/rules/client-testing.md#戦闘の自動対戦)、[戦闘の長さ](../../doc/features/combat/rules.md#戦闘の長さ)、[戦闘の試し](../../doc/features/stage-progression/battle-trials.md#戦闘の試し) | カードの効果と説明文は card-skill-authoring、パッシブは passive-skill-authoring |
 
+## 戦闘の不具合
+
+| スキル | 使う場面 | 呼び出し | 正本のdoc | 担当外・一緒に使うスキル |
+|---|---|---|---|---|
+| [battle-debugging](battle-debugging/SKILL.md) | 戦闘の効果・状態・敵の技が思った通りに働かない、数が合わない、画面・予測・自動対戦で結果が違うときに、画面なしの戦闘のテストで再現してから直す。足した効果が狙った場面で働くかを確かめる | 自動 | [画面なしの戦闘で確かめる](../../doc/rules/client-testing.md#画面なしの戦闘で確かめる)、[効果の部品](../../doc/features/combat/effects.md) | 強さの調べ直しは battle-balance、カードは card-skill-authoring、パッシブは passive-skill-authoring、演出は vfx-authoring |
+
 ## ドット絵と画像生成
 
 | スキル | 使う場面 | 呼び出し | 正本のdoc | 担当外・一緒に使うスキル |
@@ -139,6 +145,7 @@
 | カードスキルを足す・文言を直す | card-skill-authoring |
 | キャラのパッシブスキルを考える・直す | passive-skill-authoring |
 | 敵が硬い・弱い、戦闘が長い・危ない、倍率や数値を変えたあとに測り直す | battle-balance（手動専用。使ってよいかユーザーに確認する） |
+| 戦闘の効果・状態・敵の技が思った通りに働かない、数が合わない、戦闘が止まる、画面と予測・自動対戦で結果が違う | battle-debugging |
 | 地図のマスの出来事・賭けの遊び方・戦闘の敵やLvの設定を足す・消す、どのマスに何を置くかを変える、地図エディターを直す | map-event-authoring |
 | 画面を作る・直す | ui-advisor と ui-tone-manner。保存を伴えば data-storage、演出を伴えば vfx-authoring も |
 | 画面の見た目がばらばら、統一感がない、窓・ボタン・タブ・札・戻り方をそろえたい、全画面を撮って見比べて | ui-tone-manner |

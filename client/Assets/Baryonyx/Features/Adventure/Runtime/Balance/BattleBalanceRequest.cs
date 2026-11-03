@@ -73,6 +73,8 @@ namespace Baryonyx.Adventure
         /// <summary>"random" rolls critical hits and statuses; "fixed" has no critical hit and every status land, as the tests do.</summary>
         public string odds = "random";
 
+        public bool IsFixedOdds => string.Equals(odds, "fixed", StringComparison.OrdinalIgnoreCase);
+
         /// <summary>
         /// Whether the enemies use their skills whose working is an effect (麻痺・毒・防御ダウンを付
         /// ける技, 2026-11-03); false leaves them out, as the battle was before they came.

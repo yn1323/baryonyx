@@ -25,7 +25,9 @@ namespace Baryonyx.Adventure
             IReadOnlyList<BattlePartyMember> members
         )
         {
-            BattleOdds.Seed(seed);
+            // 確率を固定する依頼では、セッションが固定した確率をそのまま使う。
+            if (!request.IsFixedOdds)
+                BattleOdds.Seed(seed);
             var state = new BattleState(BattleDice.Seeded(seed))
             {
                 KnowWeaknesses = request.knowWeaknesses,

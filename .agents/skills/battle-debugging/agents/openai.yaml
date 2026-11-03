@@ -1,0 +1,7 @@
+interface:
+  display_name: "戦闘の不具合を画面なしで調べる"
+  short_description: "効果・状態・敵の技の不具合を、画面なしの戦闘のテストで再現してから1か所で直し、画面でも確かめる"
+  default_prompt: "Use $battle-debugging to reproduce a battle effect bug in a headless battle test, trace its cause, fix it in one place and check it on the battle screen."
+
+policy:
+  allow_implicit_invocation: true

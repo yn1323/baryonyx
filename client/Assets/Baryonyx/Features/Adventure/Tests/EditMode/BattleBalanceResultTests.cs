@@ -1,5 +1,6 @@
 using System.Linq;
 using Baryonyx.Adventure;
+using Baryonyx.Combat;
 using Baryonyx.Equipment;
 using Baryonyx.Party;
 using Baryonyx.Party.Editor;
@@ -168,6 +169,37 @@ namespace Baryonyx.Tests.EditMode
             Assert.That(worn[0].TwiceChance, Is.GreaterThan(0));
             Assert.That(worn[1].Stats.PhysicalAttack, Is.EqualTo(bare[1].Stats.PhysicalAttack));
             Assert.That(BattleBalanceParty.Gear(new BattleBalanceRequest(), slots), Is.Null);
+        }
+
+        // 確率を固定した依頼は、画面なしで戦っても固定のまま（会心なし・状態異常は必ず付く）。
+        [Test]
+        public void AHeadlessBattleKeepsTheOddsFixedWhenAsked()
+        {
+            var party = AssetDatabase.LoadAssetAtPath<PartyMockData>(PartyAssets.DataPath);
+            var training = AssetDatabase.LoadAssetAtPath<TrainingMockData>(TrainingAssets.DataPath);
+            var request = new BattleBalanceRequest
+            {
+                engine = BattleBalanceRequest.Headless,
+                odds = "fixed",
+            };
+            var members = BattleBalanceParty.Of(request, party, training);
+            try
+            {
+                BattleOdds.Fix(critical: false, lands: true);
+                var (record, _) = BattleBalanceHeadless.Fight(
+                    request,
+                    BattleBalanceEncounters.Of(request)[0],
+                    1,
+                    members
+                );
+                Assert.That(record.turns, Is.GreaterThan(0));
+                Assert.That(BattleOdds.Critical(0.99), Is.False);
+                Assert.That(BattleOdds.Lands(1), Is.True);
+            }
+            finally
+            {
+                BattleOdds.Fix(critical: false, lands: true);
+            }
         }
 
         private static BattleBalanceRecord Battle(

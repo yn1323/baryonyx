@@ -188,8 +188,7 @@ namespace Baryonyx.Adventure
             }
         }
 
-        private bool FixedOdds =>
-            string.Equals(request.odds, "fixed", StringComparison.OrdinalIgnoreCase);
+        private bool FixedOdds => request.IsFixedOdds;
 
         private static string Line(BattleBalanceRecord record) =>
             $"{record.encounter} ({record.enemies}) {record.outcome} {record.turns}T hp {record.hpEnd:0.00}";

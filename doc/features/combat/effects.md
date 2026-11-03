@@ -179,7 +179,7 @@ HPバーの予測（`ForecastWorld`）は、HP・ブロック・敵に付く状�
 名前を出さず、回数を数えず、確率とランダムの規則（`AtRandom`）を飛ばし、会心を入れず、まだ見つけていない弱点を数えない。
 
 画面なしの戦闘（`BattleState`）は、味方・敵・エネルギー・効果を持ち、カードを使う・敵が攻撃する・敵が技を使う・ターンを進めることを、画面の戦闘と同じルール（`CardPlays`・`CardHits`・`EnemyBlows`・`EnemyActs`・`BattleStatusRules`・効果）で一度に行う。
-EditModeのテストで、効果と状態を戦闘の形で確かめるのに使う。
+EditModeのテストで、効果と状態を戦闘の形で確かめるのに使う（[画面なしの戦闘で確かめる](../../rules/client-testing.md#画面なしの戦闘で確かめる)）。
 
 `BattleSimulation` は、`BattleState` に山札・手札・速さによるターン順・敵の技の選び方（`EnemyBrain`）を足し、1戦を最初から最後まで一度に戦う。
 自動対戦は、依頼の `engine` を `headless` にすると、シーンを読まずにこれで戦う（`BattleBalanceHeadless`）。

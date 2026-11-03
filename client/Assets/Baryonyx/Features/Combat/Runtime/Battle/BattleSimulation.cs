@@ -88,6 +88,14 @@ namespace Baryonyx.Combat
                 card => !state.Stands(BattleUnit.Ally(cards[card].User)),
                 card => cards[card].Skill.Has(CardTrait.Innate)
             );
+            // 敵の特性は、戦闘画面と同じく、戦闘が始まる前から持つ。
+            for (int i = 0; i < state.Enemies.Count; i++)
+                foreach (
+                    var effect in state.Enemies[i].Brain?.Behavior.Effects
+                        ?? Array.Empty<BattleEffect>()
+                )
+                    if (effect != null)
+                        state.Effects.Add(BattleUnit.Enemy(i), effect);
             state.Effects.StartBattle();
             state.Turn = 1;
             state.Effects.StartTurn();
