@@ -4,6 +4,7 @@ using Baryonyx.Combat;
 using Baryonyx.Editor;
 using Baryonyx.Editor.UI;
 using Baryonyx.Enhancement;
+using Baryonyx.Equipment;
 using Baryonyx.Inventory.Editor;
 using Baryonyx.Library;
 using Baryonyx.Library.Editor;
@@ -223,7 +224,7 @@ namespace Baryonyx.Workshop.Editor
         private const float GaugeTop = 690f;
         private const float GaugeBar = 24f;
         private static readonly Color GaugeBack = new(0.02f, 0.03f, 0.08f, 0.8f);
-        private static readonly Color GaugeGain = new(0.5f, 0.89f, 1f, 1f);
+        private static readonly Color GaugeGain = UiPalette.Rise;
 
         /// <summary>
         /// Builds the polishing panel: skills, equipment and unique skills in the tabs. The skill
@@ -241,7 +242,7 @@ namespace Baryonyx.Workshop.Editor
                 tabLabels
             );
             var layer = panel.Layer;
-            enhance.TabOrder = WorkshopEnhanceView.PolishTabs;
+            enhance.TabOrder = (WorkshopEnhanceView.Tab[])WorkshopEnhanceView.PolishTabs.Clone();
             enhance.Guide = view;
             enhance.Data = AssetDatabase.LoadAssetAtPath<LibraryData>(LibraryScreenAssets.DataPath);
             enhance.Party = AssetDatabase.LoadAssetAtPath<PartyMockData>(PartyAssets.DataPath);
@@ -258,30 +259,29 @@ namespace Baryonyx.Workshop.Editor
             var content = panel.Content;
             enhance.Content = content;
             enhance.List = panel.Scroll;
-            enhance.Template = ListRow(content, "Template", RowHeight, ArtBox, 38f, ValueWidth);
+            enhance.Template = ItemRowAssets.Row(content, "Template", RowHeight, ArtBox, ValueWidth);
             // 読み込む間は、この写しを伏せて一覧を埋める（GlassCardCover）。
             GlassCardAssets.AddBack(enhance.Template.Card, vertical: true);
             enhance.Template.gameObject.SetActive(false);
-            // 仮の編成のスキルで描き、Prefabを開くと停止中でも一覧が読めるようにする。覚醒は実行中に読む。
-            var formation = PartyFormation.From(enhance.Party);
-            var mock = EnhancementTargets.Skills(
-                formation.Roster.SelectMany(member =>
-                    member.Cards.Select(
-                        (card, i) => new PartySkillCard($"mock:{member.Id}:{i}", card.Skill, 1f)
-                    )
-                )
-            );
+            // 最初のタブ（装備）の仮の持ち物で描き、Prefabを開くと停止中でも一覧が読めるようにする。覚醒は実行中に読む。
+            var mock = EnhancementTargets.Equipment(EquipmentLocalSource.Starter());
             for (int i = 0; i < mock.Count; i++)
             {
-                var row = ListRow(content, "Row" + i, RowHeight, ArtBox, 38f, ValueWidth);
+                var row = ItemRowAssets.Row(content, "Row" + i, RowHeight, ArtBox, ValueWidth);
                 GlassCardAssets.AddBack(row.Card, vertical: true);
+                var kind = mock[i].Category switch
+                {
+                    EnhancementCategory.Weapon => LibraryKind.Weapon,
+                    EnhancementCategory.Armor => LibraryKind.Armor,
+                    _ => LibraryKind.Accessory,
+                };
                 var entry =
                     enhance.Data != null
                         ? enhance.Data.Entries.FirstOrDefault(e =>
-                            e != null && e.Kind == LibraryKind.Skill && e.Id == mock[i].KindId
+                            e != null && e.Kind == kind && e.Id == mock[i].KindId
                         )
                         : null;
-                WorkshopEnhanceView.PaintTarget(row, mock[i], entry?.KindLine, entry, ArtBox);
+                WorkshopEnhanceView.PaintTarget(row, mock[i], "", entry, ArtBox);
                 enhance.Rows.Add(row);
             }
             enhance.Status = panel.Status;

@@ -58,12 +58,13 @@ namespace Baryonyx.Workshop
         public TMP_Text ListTitle;
         public TMP_Text ListCount;
 
-        // 右の面：出来上がる物の絵・名前・☆・効果・出来上がる品質。
+        // 右の面（詳しい面）：上から出来上がる品質と倍率、絵・名前・☆・効果（出来上がる倍率を掛けた値）・属性。
+        public TMP_Text DetailQuality;
         public RawImage DetailArt;
         public TMP_Text DetailName;
         public TMP_Text DetailStars;
         public TMP_Text DetailEffect;
-        public TMP_Text DetailQuality;
+        public ElementIconRow DetailElements;
 
         // 材料：見出しと、レシピの材料の札（多くて4つ）。
         public GameObject MaterialsTitle;
@@ -480,9 +481,19 @@ namespace Baryonyx.Workshop
         public static void Paint(ItemTile row, WorkshopRecipe recipe, bool canMake, float artBox)
         {
             LibraryCatalogView.PaintArt(row.Art, recipe.Entry, recipe.Found, artBox);
-            Set(row.Name, recipe.Found ? recipe.Name : Hidden);
-            Set(row.Detail, WorkshopBuyView.StarsText(recipe.Stars));
-            Set(row.Price, "");
+            // 名前のすぐ右に☆、2行目に効果、右上に属性。品質は作るまで決まらないため、行には出さない。
+            Set(
+                row.Name,
+                ItemText.Heading(recipe.Found ? recipe.Name : Hidden, recipe.Stars, false, default, 1f)
+            );
+            Set(
+                row.Detail,
+                recipe.Found ? LibraryFaces.EffectAt(recipe.Entry, Quality.MinMultiplier) : Hidden
+            );
+            if (row.Elements != null)
+                row.Elements.Show(
+                    recipe.Found ? LibraryFaces.ElementsOf(recipe.Kind, recipe.Id) : null
+                );
             if (row.Card != null)
             {
                 row.Card.Selected = false;
@@ -542,6 +553,7 @@ namespace Baryonyx.Workshop
         {
             LibraryCatalogView.PaintArt(row.Art, entry, found, artBox);
             Set(row.Name, found ? entry?.Name : Hidden);
+            Set(row.Stars, ItemText.Stars(entry?.Rarity ?? 0));
             Set(row.Count, CountText(have, material.Count));
             if (row.Quality != null)
             {
@@ -563,37 +575,37 @@ namespace Baryonyx.Workshop
         private void RefreshDetail()
         {
             var recipe = SelectedRecipe;
+            // 作れる物がないときは、絵の後ろの光ごと隠す。
             if (DetailArt != null)
-            {
-                // 作れる物がないときは、絵の後ろの光ごと隠す。
                 DetailArt.transform.parent.gameObject.SetActive(recipe != null);
-                if (recipe != null)
-                    LibraryCatalogView.PaintArt(
-                        DetailArt,
-                        recipe.Entry,
-                        recipe.Found,
-                        DetailArtBox
-                    );
-            }
-            Set(
+            // 特別な材料を選び終えるまでは、出来上がる品質を出さず、効果は×1.00の値にする。
+            bool chosen = recipe != null && special.All(piece => piece != null);
+            float multiplier = chosen ? WorkshopCraft.Multiplier(recipe, special) : Quality.MinMultiplier;
+            if (recipe != null)
+                LibraryCatalogView.PaintArt(DetailArt, recipe.Entry, recipe.Found, DetailArtBox);
+            Show(DetailQuality, chosen ? QualityOf(recipe, special) : "");
+            Show(
                 DetailName,
                 recipe == null ? ""
                     : recipe.Found ? recipe.Name
                     : Hidden
             );
-            Set(DetailStars, recipe != null ? WorkshopBuyView.StarsText(recipe.Stars) : "");
-            Set(
+            Show(DetailStars, recipe != null ? ItemText.Stars(recipe.Stars) : "");
+            Show(
                 DetailEffect,
                 recipe == null ? ""
-                    : recipe.Found ? EffectOf(recipe)
+                    : recipe.Found ? LibraryFaces.EffectAt(recipe.Entry, multiplier)
                     : Hidden
             );
-            Set(
-                DetailQuality,
-                recipe != null && special.All(piece => piece != null)
-                    ? QualityOf(recipe, special)
-                    : ""
-            );
+            if (DetailElements != null)
+            {
+                DetailElements.Show(
+                    recipe != null && recipe.Found
+                        ? LibraryFaces.ElementsOf(recipe.Kind, recipe.Id)
+                        : null
+                );
+                DetailElements.gameObject.SetActive(DetailElements.Any);
+            }
             if (Price != null)
                 Price.SetActive(recipe != null);
             Set(PriceLabel, recipe != null ? recipe.Runes.ToString("N0") : "");
@@ -613,7 +625,7 @@ namespace Baryonyx.Workshop
         {
             float multiplier = WorkshopCraft.Multiplier(recipe, used);
             var quality = Quality.Of(multiplier, recipe.MaxMultiplier);
-            return $"<voffset=-0.15em><size=200%>{QualityPalette.Painted(quality)}</size></voffset>  {Quality.Times(multiplier)}";
+            return ItemText.DetailQuality(quality, multiplier);
         }
 
         /// <summary>What is short: the first material short (its name hidden until found), or the runes. Empty when nothing is.</summary>
@@ -660,19 +672,6 @@ namespace Baryonyx.Workshop
         // 特別な材料の、レシピの材料の並びでの番号から、選んだ物の並びでの番号へ。
         private static int SpecialIndex(WorkshopRecipe recipe, int materialIndex) =>
             recipe.Materials.Take(materialIndex).Count(material => !material.IsItem);
-
-        private static string EffectOf(WorkshopRecipe recipe)
-        {
-            var entry = recipe.Entry;
-            return recipe.Kind == LibraryKind.Skill
-                ? string.Join(
-                    "\n",
-                    new[] { entry.KindLine, entry.Description }.Where(text =>
-                        !string.IsNullOrEmpty(text)
-                    )
-                )
-                : entry.Description;
-        }
 
         private LibraryEntryData EntryOf(LibraryKind kind, string id) =>
             Data != null
@@ -752,6 +751,14 @@ namespace Baryonyx.Workshop
         {
             if (label != null)
                 label.text = text ?? "";
+        }
+
+        // 詳しい面の行：書くことのない行は隠して、列を詰める。
+        private static void Show(TMP_Text label, string text)
+        {
+            Set(label, text);
+            if (label != null)
+                label.gameObject.SetActive(label.text.Length > 0);
         }
 
         // 停止中の表示の切り替え：作れる物、選んだとき、使う物を選ぶ、読み込む間、読めなかったとき。

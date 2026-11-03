@@ -32,12 +32,8 @@ namespace Baryonyx.Workshop.Editor
         private const float CardArt = 128f;
         private const float DetailArt = 256f;
 
-        // 右の面の中身の間と、足りないルーンの行の高さ。
-        private const float DetailGap = 12f;
+        // 足りないルーンの行の高さ。
         private const float MissingHeight = 44f;
-
-        // 絵・カードの真上の品質の1行の高さ（品質の文字は3倍の120px）。
-        private const float QualityHeight = 130f;
 
         // スキルのデッキのカード（1ドットを4画素、280×392）。名前の行の下端まで使う。
         private const float CardDot = 4f;
@@ -88,10 +84,11 @@ namespace Baryonyx.Workshop.Editor
             float right = GuidePanelTemplate.DetailRight;
             float width = right - left;
 
-            // 右の面の中身（品質、絵かカード、名前、☆、効果、持っている数）を縦に並べ、
+            // 右の面は詳しい面（品質と倍率・絵・名前・☆・効果・属性。doc/rules/ui-design.md の装備の見せ方）。
+            // スキルは絵・名前・効果の代わりにデッキのカードを絵の位置に出す。その下に持っている数。
             // ヘッダーの下から足りないルーンの行の上までの間で上下中央に置く。
             float detailTop = GuideFrameAssets.HeaderHeight;
-            var detail = Layout.Box(
+            var detail = ItemDetailAssets.Column(
                 layer,
                 "Detail",
                 left,
@@ -99,30 +96,14 @@ namespace Baryonyx.Workshop.Editor
                 width,
                 ConfirmTop - MissingHeight - 12f - detailTop
             );
-            var stack = detail.gameObject.AddComponent<VerticalLayoutGroup>();
-            stack.childAlignment = TextAnchor.MiddleCenter;
-            stack.spacing = DetailGap;
-            stack.childControlWidth = false;
-            stack.childControlHeight = true;
-            stack.childForceExpandWidth = stack.childForceExpandHeight = false;
-
-            // 品質の1行：絵・カードの真上に、品質の文字を大きく、横に倍率。
-            buy.DetailQuality = Layout.Text(
-                detail,
-                "DetailQuality",
-                "",
-                40,
-                UiPalette.TextMain,
-                TextAlignmentOptions.Center,
-                0f,
-                0f,
-                width,
-                QualityHeight
-            );
-            buy.DetailQuality.richText = true;
-            Fixed(buy.DetailQuality.transform, QualityHeight);
-            buy.DetailArt = ArtStage(detail, "DetailArt", 0f, 0f, DetailArt);
-            Fixed(buy.DetailArt.transform.parent, DetailArt + DetailGap * 2f);
+            var face = ItemDetailAssets.Face(detail, width, DetailArt);
+            buy.DetailQuality = face.Quality;
+            buy.DetailArt = face.Art;
+            buy.DetailName = face.Name;
+            buy.DetailLine = face.Stars;
+            buy.DetailEffect = face.Effect;
+            buy.DetailElements = face.Elements;
+            face.ArtStage.SetActive(false);
             var cardSize = DeckCardAssets.Size(CardDot, small: false);
             buy.DetailCard = DeckCardAssets.Build(
                 detail,
@@ -134,71 +115,15 @@ namespace Baryonyx.Workshop.Editor
             );
             var cardRoot = buy.DetailCard.Frame.transform.parent;
             Fixed(cardRoot, cardSize.y);
+            cardRoot.SetSiblingIndex(face.ArtStage.transform.GetSiblingIndex() + 1);
             cardRoot.gameObject.SetActive(false);
             buy.CardFrames = DeckCardFrames();
             buy.ElementIcons = ElementIcons();
-            buy.DetailName = Layout.Text(
-                detail,
-                "DetailName",
-                "",
-                56,
-                UiPalette.TextMain,
-                TextAlignmentOptions.Center,
-                0f,
-                0f,
-                width,
-                72f
-            );
-            Shrink(buy.DetailName, 32);
-            Fixed(buy.DetailName.transform, 72f);
-            buy.DetailLine = Layout.Text(
-                detail,
-                "DetailLine",
-                "",
-                34,
-                UiPalette.TextSub,
-                TextAlignmentOptions.Center,
-                0f,
-                0f,
-                width,
-                56f
-            );
-            buy.DetailLine.richText = true;
-            Fixed(buy.DetailLine.transform, 56f);
-            buy.DetailEffect = Layout.Text(
-                detail,
-                "DetailEffect",
-                "",
-                32,
-                UiPalette.TextSub,
-                TextAlignmentOptions.Top,
-                0f,
-                0f,
-                width,
-                100f
-            );
-            buy.DetailEffect.richText = true;
-            buy.DetailEffect.textWrappingMode = TextWrappingModes.Normal;
-            // 装備の効果の下に、属性のアイコンを左右中央にそろえて並べる（2026-11-03）。
-            var elements = Layout.Box(
-                detail,
-                "DetailElements",
-                0f,
-                0f,
-                width,
-                ElementIconRowAssets.DetailSize
-            );
-            buy.DetailElements = ElementIconRowAssets.Add(
-                elements,
-                TextAnchor.MiddleCenter,
-                ElementIconRowAssets.DetailSize
-            );
-            Fixed(elements, ElementIconRowAssets.DetailSize);
             buy.DetailOwned = Layout.Text(
                 detail,
                 "DetailOwned",
                 "",
-                30,
+                UiType.Small,
                 UiPalette.TextMain,
                 TextAlignmentOptions.Center,
                 0f,

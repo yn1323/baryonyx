@@ -156,6 +156,19 @@ namespace Baryonyx.Workshop.Editor
             row.Art = ArtBox(inside, (size - artBox) / 2f, (size - artBox) / 2f - 6f, artBox);
             ItemTileAssets.QualityMark(row, inside);
             HeldMarks(inside, row, new Vector2(size, size), size - 8f, UiType.Small);
+            // ☆は、右下の数と並ぶ左下に置く（名前は札の下の行）。
+            row.Stars = Layout.Text(
+                inside,
+                "Stars",
+                "",
+                UiType.Tiny,
+                UiPalette.Gold,
+                TextAlignmentOptions.BottomLeft,
+                ItemTileAssets.CornerInset,
+                size - 8f - 30f,
+                size / 2f,
+                30f
+            );
             row.Name = Layout.Text(
                 tile,
                 "Name",
@@ -176,9 +189,9 @@ namespace Baryonyx.Workshop.Editor
         public const float TileNameHeight = 44f;
 
         /// <summary>
-        /// A held piece's card for the craft's picker: the quality's letter at the top left, the
-        /// art, the multiplier and the effect at it, painted opaque; a piece in use is shaded
-        /// with an "E" at the top right.
+        /// A held piece's card for the craft's picker, the shared card's shape: the quality's
+        /// letter at the top left, the art, the name and the stars, painted opaque; a piece in use
+        /// is shaded with an "E" at the top right.
         /// </summary>
         public static ItemTile PieceCard(
             RectTransform content,
@@ -190,31 +203,31 @@ namespace Baryonyx.Workshop.Editor
             var (row, inside) = ItemTileAssets.Build(Rect(name, content), fill: PieceFill);
             row.Art = ArtBox(inside, (cell.x - artBox) / 2f, 24f, artBox);
             ItemTileAssets.QualityMark(row, inside);
-            row.Price = Layout.Text(
+            row.Name = Layout.Text(
                 inside,
-                "Multiplier",
+                "Name",
                 "",
-                32,
+                UiType.Small,
                 UiPalette.TextMain,
                 TextAlignmentOptions.Center,
-                0f,
-                130f,
-                cell.x,
-                44f
+                8f,
+                134f,
+                cell.x - 16f,
+                40f
             );
-            row.Detail = Layout.Text(
+            Shrink(row.Name, 18);
+            row.Stars = Layout.Text(
                 inside,
-                "Effect",
+                "Stars",
                 "",
-                26,
-                UiPalette.TextSub,
+                UiType.Caption,
+                UiPalette.Gold,
                 TextAlignmentOptions.Center,
                 8f,
                 176f,
                 cell.x - 16f,
-                40f
+                34f
             );
-            Shrink(row.Detail, 18);
 
             // 使っている物：札ごと影を重ね、右上に「E」を出す。
             var used = Rect("InUse", inside);
@@ -257,106 +270,6 @@ namespace Baryonyx.Workshop.Editor
         }
 
         /// <summary>
-        /// Puts the rune icon before a row's value (<see cref="ListRow"/>): the value becomes a
-        /// price <paramref name="valueWidth"/> wide at the row's right end.
-        /// </summary>
-        public static void RuneValue(ItemTile row, float valueWidth, float size)
-        {
-            var inside = (RectTransform)row.Price.transform.parent;
-            UnityEngine.Object.DestroyImmediate(row.Price.gameObject);
-            row.Price = RunePrice(
-                inside,
-                "Value",
-                0f,
-                0f,
-                valueWidth,
-                0f,
-                size,
-                TextAnchor.MiddleRight
-            );
-            var price = (RectTransform)row.Price.transform.parent;
-            price.anchorMin = new Vector2(1f, 0f);
-            price.anchorMax = Vector2.one;
-            price.pivot = new Vector2(1f, 0.5f);
-            price.offsetMin = new Vector2(-24f - valueWidth, 0f);
-            price.offsetMax = new Vector2(-24f, 0f);
-        }
-
-        /// <summary>
-        /// A row in a list (the craft's recipes, the enhance targets, the things to sell): the art
-        /// on the left, the name, a line under it, and a text <paramref name="valueWidth"/> wide at
-        /// the right end, which the name and the line stop short of.
-        /// </summary>
-        public static ItemTile ListRow(
-            RectTransform content,
-            string name,
-            float height,
-            float artBox,
-            float nameSize = 40f,
-            float valueWidth = 0f
-        )
-        {
-            var rect = Layout.ListItem(content, name, height);
-            var (card, inside) = GlassCardAssets.Build(rect, pattern: false);
-            var row = rect.gameObject.AddComponent<ItemTile>();
-            row.Card = card;
-            var box = Rect("ArtBox", inside);
-            Corner(box, new Vector2(0, 0.5f), new Vector2(20f, 0), Vector2.one * artBox);
-            var art = Rect("Art", box);
-            Place(art, Vector2.zero, Vector2.one * artBox);
-            row.Art = art.gameObject.AddComponent<RawImage>();
-            row.Art.raycastTarget = false;
-
-            float textLeft = 20f + artBox + 20f;
-            float half = height / 2f;
-            row.Name = Label(
-                inside,
-                "Name",
-                "",
-                nameSize,
-                UiPalette.TextMain,
-                TextAlignmentOptions.BottomLeft
-            );
-            float textRight = valueWidth > 0f ? valueWidth + 40f : 24f;
-            Band((RectTransform)row.Name.transform, top: true, 4f, half - 6f, textLeft, textRight);
-            Shrink(row.Name, 24);
-            row.Detail = Label(
-                inside,
-                "Detail",
-                "",
-                26,
-                UiPalette.TextSub,
-                TextAlignmentOptions.TopLeft
-            );
-            row.Detail.richText = true;
-            Band(
-                (RectTransform)row.Detail.transform,
-                top: false,
-                6f,
-                half - 10f,
-                textLeft + 2f,
-                textRight
-            );
-            Shrink(row.Detail, 18);
-            row.Price = Label(
-                inside,
-                "Value",
-                "",
-                32,
-                UiPalette.TextMain,
-                TextAlignmentOptions.MidlineRight
-            );
-            row.Price.richText = true;
-            var value = (RectTransform)row.Price.transform;
-            value.anchorMin = new Vector2(1f, 0);
-            value.anchorMax = Vector2.one;
-            value.offsetMin = new Vector2(-24f - valueWidth, 0);
-            value.offsetMax = new Vector2(-24f, 0);
-            Shrink(row.Price, 22);
-            return row;
-        }
-
-        /// <summary>
         /// The chosen thing's big art on the right, with a soft warm light behind it, hidden with
         /// its light until something is chosen.
         /// </summary>
@@ -393,39 +306,22 @@ namespace Baryonyx.Workshop.Editor
             TextAnchor alignment
         ) => GuideFrameAssets.RuneAmount(parent, name, x, y, width, height, size, alignment);
 
-        // 戦闘のターン終了と同じ丸いチェックの絵。
-        private const string CheckFolder = "Assets/Baryonyx/Features/Combat/UI/Art";
-
         /// <summary>
-        /// The battle's round check at the bottom right of a full-screen overlay (the craft's
-        /// picker, the enhance's combine prompt), as a button that tints the tick with the face.
+        /// The round check at the bottom right of a full-screen overlay (the craft's picker): the
+        /// battle's end-turn circle, unlit (<see cref="ActionButtonAssets.RoundCheck"/>).
         /// </summary>
         public static Button RoundCheck(RectTransform layer)
         {
-            var circle = UnityEditor.AssetDatabase.LoadAssetAtPath<Texture2D>(
-                CheckFolder + "/EndTurnCircle.png"
-            );
-            var tickArt = UnityEditor.AssetDatabase.LoadAssetAtPath<Texture2D>(
-                CheckFolder + "/EndTurnCheck.png"
-            );
+            var size = ActionButtonAssets.RoundCheckSize;
             var check = Layout.Box(
                 layer,
                 "Check",
-                Layout.Design.x - 48f - circle.width,
-                Layout.Design.y - 40f - circle.height,
-                circle.width,
-                circle.height
+                Layout.Design.x - 48f - size.x,
+                Layout.Design.y - 40f - size.y,
+                size.x,
+                size.y
             );
-            var face = check.gameObject.AddComponent<RawImage>();
-            face.texture = circle;
-            var tick = Rect("Tick", check);
-            Place(tick, new Vector2(-1f, 0f), new Vector2(tickArt.width, tickArt.height));
-            var tickImage = tick.gameObject.AddComponent<RawImage>();
-            tickImage.texture = tickArt;
-            tickImage.raycastTarget = false;
-            var button = (TintGroupButton)AddTintButton(check, face);
-            button.SetTintGraphics(new Graphic[] { tickImage });
-            return button;
+            return ActionButtonAssets.RoundCheck(check);
         }
 
         private static RawImage ArtBox(RectTransform parent, float x, float y, float size)

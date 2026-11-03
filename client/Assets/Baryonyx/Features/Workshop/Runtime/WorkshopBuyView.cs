@@ -39,8 +39,10 @@ namespace Baryonyx.Workshop
         // 買う物の品質。絵（スキルはカード）の真上の1行に、品質の文字を品質の色で大きく、横に倍率を書く。
         // 「品質」とは書かない。装備もスキルも同じ位置・同じ形にする。
         public const ItemQuality BoughtQuality = ItemQuality.C;
-        public static readonly string QualityText =
-            $"<size=300%>{QualityPalette.Painted(BoughtQuality)}</size><voffset=0.3em>　{Inventory.Quality.Times(Inventory.Quality.MinMultiplier)}</voffset>";
+        public static readonly string QualityText = ItemText.DetailQuality(
+            BoughtQuality,
+            Inventory.Quality.MinMultiplier
+        );
 
         // 読み込む間に伏せて並べるカードの数（4列×3段で一覧の見える所を埋める）。
         public const int CoverCards = 12;
@@ -279,15 +281,20 @@ namespace Baryonyx.Workshop
             RefreshConfirm();
         }
 
-        // 買った物を中央で光らせて見せる。
+        // 買った物を中央で光らせて見せ、演出に続けて通知の帯で知らせる（合成・品質強化と同じ）。
         private void PlayReveal(WorkshopGood good)
         {
             if (Reveal == null || !isActiveAndEnabled)
+            {
+                ShowNotice(BoughtText(good));
                 return;
+            }
             if (Confirm != null)
                 StartCoroutine(Press(Confirm.transform));
-            Reveal.Play(RevealPlan(good, UnityEngine.Random.value), null);
+            Reveal.Play(RevealPlan(good, UnityEngine.Random.value), () => ShowNotice(BoughtText(good)));
         }
+
+        public static string BoughtText(WorkshopGood good) => $"{good.Name}を買った";
 
         /// <summary>
         /// What the buy effect shows for <paramref name="good"/>: its art bursting into view in the

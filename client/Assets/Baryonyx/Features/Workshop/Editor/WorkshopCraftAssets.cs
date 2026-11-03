@@ -32,17 +32,16 @@ namespace Baryonyx.Workshop.Editor
     {
         private const float RowHeight = 112f;
         private const float RowArt = 80f;
-        private const float DetailArt = 192f;
-        private const float DetailTop = GuideFrameAssets.HeaderHeight + 24f;
-        private const float MaterialsTop = 620f;
+        private const float DetailArt = 128f;
+        private const float MaterialsTop = 690f;
 
         // 材料の札：一辺160の正方形を4つ横に並べ、下に名前。レシピの材料は多くて4種類。
         private const int MaterialSlots = 4;
         private const float MaterialTile = 160f;
         private const float MaterialArt = 96f;
 
-        // 右の面の☆の欄の幅（☆5つ）。残りに出来上がる品質を書く。
-        private const float StarsWidth = 180f;
+        // 使う物を選ぶ画面を、案内人の画面（並べ順0）の帯や線より手前に描く並べ順。
+        private const int PickerOrder = 10;
 
         // 使う物を選ぶ画面：札を4列で、画面の上から下まで並べる。
         private const int PieceColumns = 4;
@@ -77,7 +76,7 @@ namespace Baryonyx.Workshop.Editor
             var content = panel.Content;
             craft.Content = content;
             craft.List = panel.Scroll;
-            craft.Template = ListRow(content, "Template", RowHeight, RowArt);
+            craft.Template = ItemRowAssets.Row(content, "Template", RowHeight, RowArt);
             // 読み込む間は、この写しを伏せて一覧を埋める（GlassCardCover）。
             GlassCardAssets.AddBack(craft.Template.Card, vertical: true);
             craft.Template.gameObject.SetActive(false);
@@ -89,7 +88,7 @@ namespace Baryonyx.Workshop.Editor
                 .ToArray();
             for (int i = 0; i < recipes.Length; i++)
             {
-                var row = ListRow(content, "Recipe" + i, RowHeight, RowArt);
+                var row = ItemRowAssets.Row(content, "Recipe" + i, RowHeight, RowArt);
                 GlassCardAssets.AddBack(row.Card, vertical: true);
                 WorkshopCraftView.Paint(
                     row,
@@ -102,75 +101,28 @@ namespace Baryonyx.Workshop.Editor
             craft.Status = panel.Status;
             craft.ListCount.text = UiText.Count(recipes.Length);
 
-            // 右の面は、買うの詳細と同じく、上の中央に絵、その下に名前、☆と出来上がる品質、効果を中央に並べる。
+            // 右の面は、買うの詳細と同じ詳しい面（品質と倍率・絵・名前・☆・効果・属性）。
+            // その下に材料の札と値段を置く（doc/rules/ui-design.md の装備の見せ方）。
             float left = GuidePanelTemplate.DetailLeft;
             float right = GuidePanelTemplate.DetailRight;
-            float middle = (left + right) / 2f;
-            craft.DetailArt = ArtStage(
+            var column = ItemDetailAssets.Column(
                 layer,
-                "DetailArt",
-                middle - DetailArt / 2f,
-                DetailTop,
-                DetailArt
-            );
-            float y = DetailTop + DetailArt + 8f;
-            craft.DetailName = Layout.Text(
-                layer,
-                "DetailName",
-                "",
-                UiType.Heading,
-                UiPalette.TextMain,
-                TextAlignmentOptions.Center,
+                "Detail",
                 left,
-                y,
+                GuideFrameAssets.HeaderHeight + 8f,
                 right - left,
-                64f
+                MaterialsTop - 72f - GuideFrameAssets.HeaderHeight - 8f,
+                gap: 8f
             );
-            Shrink(craft.DetailName, 32);
-            y += 64f;
-            craft.DetailStars = Layout.Text(
-                layer,
-                "DetailStars",
-                "",
-                32,
-                UiPalette.Gold,
-                TextAlignmentOptions.MidlineRight,
-                middle - 8f - StarsWidth,
-                y,
-                StarsWidth,
-                52f
-            );
-            craft.DetailStars.richText = true;
-            craft.DetailQuality = Layout.Text(
-                layer,
-                "DetailQuality",
-                "",
-                UiType.Body,
-                UiPalette.TextMain,
-                TextAlignmentOptions.MidlineLeft,
-                middle + 8f,
-                y,
-                right - middle - 8f,
-                52f
-            );
-            craft.DetailQuality.richText = true;
-            y += 56f;
-            craft.DetailEffect = Layout.Text(
-                layer,
-                "DetailEffect",
-                "",
-                28,
-                UiPalette.TextSub,
-                TextAlignmentOptions.Top,
-                left,
-                y,
-                right - left,
-                MaterialsTop - 72f - y
-            );
-            craft.DetailEffect.richText = true;
-            craft.DetailEffect.textWrappingMode = TextWrappingModes.Normal;
+            var face = ItemDetailAssets.Face(column, right - left, DetailArt, compact: true);
+            craft.DetailQuality = face.Quality;
+            craft.DetailArt = face.Art;
+            craft.DetailName = face.Name;
+            craft.DetailStars = face.Stars;
+            craft.DetailEffect = face.Effect;
             craft.DetailEffect.overflowMode = TextOverflowModes.Ellipsis;
-            Shrink(craft.DetailEffect, 20);
+            craft.DetailElements = face.Elements;
+            face.ArtStage.SetActive(false);
 
             // 材料：見出しと、レシピの材料の札を横に並べる。
             var titleGroup = Rect("MaterialsTitle", layer);
@@ -228,6 +180,12 @@ namespace Baryonyx.Workshop.Editor
             craft.Price.SetActive(false);
             (craft.Confirm, _) = ConfirmButton(layer, "合成");
             craft.Picker = BuildPicker((RectTransform)craft.transform);
+            craft.Picker.Behind = new[]
+            {
+                craft.Confirm.gameObject,
+                craft.Price,
+                craft.Missing.gameObject,
+            };
             craft.Swirl = BuildSwirl((RectTransform)craft.transform, "CraftSwirl");
             return craft.gameObject;
         }
@@ -371,6 +329,16 @@ namespace Baryonyx.Workshop.Editor
         {
             var screen = Rect("MaterialPicker", root);
             Stretch(screen);
+            // 案内人の画面の上の帯の金の線より手前に描く。線が札の上を横切ると、札が透けて見えるため
+            // （2026-11-03、ユーザーの指摘「透過していいのは背景」）。
+            var canvas = screen.gameObject.AddComponent<Canvas>();
+            canvas.overrideSorting = true;
+            canvas.sortingOrder = PickerOrder;
+            canvas.additionalShaderChannels |=
+                AdditionalCanvasShaderChannels.TexCoord1
+                | AdditionalCanvasShaderChannels.Normal
+                | AdditionalCanvasShaderChannels.Tangent;
+            screen.gameObject.AddComponent<UnityEngine.UI.GraphicRaycaster>();
             var picker = screen.gameObject.AddComponent<WorkshopMaterialPicker>();
             picker.ArtBox = PieceArt;
 
@@ -404,6 +372,12 @@ namespace Baryonyx.Workshop.Editor
                 new RectOffset(16, 16, 40, 40),
                 PieceColumns
             );
+            // 札が少ないときは、画面の上下・左右の中央にまとめて置く（2026-11-03、ユーザーの指示）。並べる範囲を
+            // 画面の高さより小さくしないことで、札が多いときだけ範囲が伸びて上下に動かせる。
+            content.GetComponent<UnityEngine.UI.GridLayoutGroup>().childAlignment =
+                TextAnchor.MiddleCenter;
+            content.gameObject.AddComponent<UnityEngine.UI.LayoutElement>().minHeight =
+                Layout.Design.y;
             picker.Content = content;
             picker.List = Layout.Scroll(viewport, viewport, content);
             picker.Template = PieceCard(content, "Template", PieceCell, PieceArt);

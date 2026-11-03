@@ -27,6 +27,11 @@ namespace Baryonyx.Workshop
         public List<ItemTile> Rows = new();
 
         private readonly HashSet<Component> bound = new();
+        // 開いている間は隠す、後ろの合成の決めるボタンの段（ボタン・値段・足りない物の文字）。
+        // 1つの画面に決めるボタンの形を2つ見せない（右下の丸いチェックだけにする）。
+        public GameObject[] Behind = Array.Empty<GameObject>();
+        private readonly List<GameObject> hidden = new();
+
         private IReadOnlyList<WorkshopOwned> pieces = Array.Empty<WorkshopOwned>();
         private Action<WorkshopOwned> chosen;
         private int selected = -1;
@@ -62,6 +67,7 @@ namespace Baryonyx.Workshop
                     Paint(Rows[i], pieces[i], entry, ArtBox);
             }
             gameObject.SetActive(true);
+            HideBehind();
             PaintSelection();
             if (List != null)
                 List.verticalNormalizedPosition = 1f;
@@ -90,9 +96,26 @@ namespace Baryonyx.Workshop
         {
             chosen = null;
             gameObject.SetActive(false);
+            foreach (var part in hidden)
+                if (part != null)
+                    part.SetActive(true);
+            hidden.Clear();
         }
 
-        /// <summary>Writes a piece's card: the quality's letter, the art, the multiplier and the effect at it.</summary>
+        private void HideBehind()
+        {
+            foreach (var part in Behind)
+                if (part != null && part.activeSelf)
+                {
+                    part.SetActive(false);
+                    hidden.Add(part);
+                }
+        }
+
+        /// <summary>
+        /// Writes a piece's card like every other card: the quality's letter, the art, the name
+        /// and the stars (the effect is not written on cards, doc/rules/ui-design.md の装備の見せ方).
+        /// </summary>
         public static void Paint(
             ItemTile row,
             WorkshopOwned piece,
@@ -106,8 +129,8 @@ namespace Baryonyx.Workshop
                 row.Quality.text = Inventory.Quality.Letter(piece.Quality);
                 row.Quality.color = QualityPalette.Of(piece.Quality);
             }
-            Set(row.Price, Inventory.Quality.Times(piece.Multiplier));
-            Set(row.Detail, WorkshopSellView.GearEffectOf(piece) ?? "");
+            Set(row.Name, entry != null ? entry.Name : piece.Name);
+            Set(row.Stars, ItemText.Stars(piece.Stars));
             // 使っている物は影と「E」で示し、押しても選ばない（Choose）。札を薄くすると透けるため、押せるままにする。
             if (row.Mark != null)
                 row.Mark.SetActive(piece.User != null);

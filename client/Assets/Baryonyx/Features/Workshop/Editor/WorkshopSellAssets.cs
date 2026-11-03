@@ -36,9 +36,6 @@ namespace Baryonyx.Workshop.Editor
         private const float ChosenValue = 180f;
 
         // 値段は品質・効果の行の高さ、属性のアイコンは名前の行の高さにそろえる（行の下・上から）。
-        private const float ChosenValueBottom = 20f;
-        private const float ChosenValueHeight = 40f;
-        private const float ChosenElementsTop = 38f;
 
         public static GameObject BuildPanel(RectTransform safe, GuideMenuView view)
         {
@@ -151,26 +148,10 @@ namespace Baryonyx.Workshop.Editor
             return sell.gameObject;
         }
 
-        // 選んだ物の行：左に絵、名前と品質・効果。右上（名前の行）に装備の属性のアイコン、
-        // 右下（品質・効果の行）にルーンのアイコンつきの値段（2026-11-03）。
-        private static ItemTile ChosenRow(RectTransform content, string name)
-        {
-            var row = ListRow(content, name, ChosenHeight, ChosenArt, 34f, ChosenValue);
-            RuneValue(row, ChosenValue, 34f);
-            var price = (RectTransform)row.Price.transform.parent;
-            price.anchorMin = price.anchorMax = new Vector2(1f, 0f);
-            price.offsetMin = new Vector2(-24f - ChosenValue, ChosenValueBottom);
-            price.offsetMax = new Vector2(-24f, ChosenValueBottom + ChosenValueHeight);
-            var elements = UiBuild.Rect("Elements", row.Name.transform.parent);
-            UiBuild.Corner(
-                elements,
-                Vector2.one,
-                new Vector2(-24f, -ChosenElementsTop),
-                new Vector2(ElementIconRowAssets.Width(), ElementIconRowAssets.Size)
-            );
-            row.Elements = ElementIconRowAssets.Add(elements, TextAnchor.MiddleRight);
-            return row;
-        }
+        // 選んだ物の行（行の標準の形）：左に絵、名前のすぐ右に☆と品質・倍率、2行目に効果、
+        // 右上に装備の属性のアイコン、右下にルーンのアイコンつきの値段（doc/rules/ui-design.md の装備の見せ方）。
+        private static ItemTile ChosenRow(RectTransform content, string name) =>
+            ItemRowAssets.Row(content, name, ChosenHeight, ChosenArt, ChosenValue, runeValue: true);
 
         private static LibraryEntryData EntryOf(LibraryData data, WorkshopOwned thing) =>
             data != null

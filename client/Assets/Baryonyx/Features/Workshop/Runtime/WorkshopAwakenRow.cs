@@ -28,7 +28,5 @@ namespace Baryonyx.Workshop
         public TMP_Text Name;
         public TMP_Text Kind;
         public TMP_Text Description;
-        public TMP_Text QualityLetter;
-        public TMP_Text Multiplier;
     }
 }

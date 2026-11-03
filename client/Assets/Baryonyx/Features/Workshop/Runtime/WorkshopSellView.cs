@@ -340,8 +340,9 @@ namespace Baryonyx.Workshop
         }
 
         /// <summary>
-        /// Writes a chosen thing's row: its name, quality (or count) and price, and for equipment
-        /// its effect at its own multiplier under the quality.
+        /// Writes a chosen thing's row (the standard row): the name with the stars, the quality and
+        /// the multiplier right after it, the effect at its own multiplier on the second line (the
+        /// count for items), the attributes at the top right and the price at the bottom right.
         /// </summary>
         public static void PaintChosen(
             ItemTile row,
@@ -351,27 +352,19 @@ namespace Baryonyx.Workshop
         )
         {
             LibraryCatalogView.PaintArt(row.Art, entry, true, artBox);
-            Set(row.Name, thing.Name);
-            Set(row.Detail, ChosenLine(thing));
+            Set(
+                row.Name,
+                ItemText.Heading(thing.Name, thing.Stars, thing.HasQuality, thing.Quality, thing.Multiplier)
+            );
+            Set(row.Detail, ChosenLine(thing, entry));
             Set(row.Price, PriceOf(thing).ToString("N0"));
             if (row.Elements != null)
-                row.Elements.Show(GearElementsOf(thing));
+                row.Elements.Show(LibraryFaces.ElementsOf(thing.Kind, thing.KindId));
         }
 
-        /// <summary>
-        /// The line under a chosen thing's name: the quality's letter in its color, larger, and
-        /// the multiplier, as on the buy panel (no "quality" label), with equipment's effect after
-        /// it; the count for items.
-        /// </summary>
-        public static string ChosenLine(WorkshopOwned thing)
-        {
-            if (!thing.HasQuality)
-                return "×" + thing.Count;
-            string quality =
-                $"<size=150%>{QualityPalette.Painted(thing.Quality)}</size>　{Quality.Times(thing.Multiplier)}";
-            string effect = GearEffectOf(thing);
-            return effect != null ? $"{quality}　{effect}" : quality;
-        }
+        /// <summary>The line under a chosen thing's name: its effect at its own multiplier, or the count for items.</summary>
+        public static string ChosenLine(WorkshopOwned thing, LibraryEntryData entry) =>
+            thing.HasQuality ? LibraryFaces.EffectAt(entry, thing.Multiplier) : "×" + thing.Count;
 
         /// <summary>
         /// The provisional price, the server's too (server/src/features/workshop/catalog.ts): a
@@ -389,18 +382,6 @@ namespace Baryonyx.Workshop
                 thing.Multiplier
             );
         }
-
-        /// <summary>The effect of a piece of equipment at its own multiplier, or null for others.</summary>
-        public static string GearEffectOf(WorkshopOwned thing) =>
-            thing != null && thing.Kind != LibraryKind.Skill && thing.Kind != LibraryKind.Item
-                ? EquipmentCatalog.Find(thing.KindId)?.DetailAt(thing.Multiplier)
-                : null;
-
-        /// <summary>The attributes of a piece of equipment, or none for others.</summary>
-        public static IReadOnlyList<CardElement> GearElementsOf(WorkshopOwned thing) =>
-            thing != null && thing.Kind != LibraryKind.Skill && thing.Kind != LibraryKind.Item
-                ? EquipmentCatalog.Find(thing.KindId)?.Elements
-                : null;
 
         public static string EmptyText(string kind) => $"{kind}を持っていません";
 

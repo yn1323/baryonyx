@@ -248,14 +248,19 @@ namespace Baryonyx.Workshop
                 row.Element.sprite = icon;
                 row.Element.enabled = icon != null;
             }
-            Set(row.Name, card?.Name ?? "");
+            // 横長の行：名前のすぐ右に品質と倍率（固有スキルは☆を持たない）。効果は倍率を掛けた全文。
+            Set(
+                row.Name,
+                card != null
+                    ? ItemText.Heading(card.Name, 0, true, entry.Quality, entry.Multiplier)
+                    : ""
+            );
             PaintName(row, entry);
             Set(row.Kind, card != null ? CardText.KindLine(card) : "");
-            Set(row.Description, card != null ? CardText.Description(card) : "");
-            Set(row.QualityLetter, Quality.Letter(entry.Quality));
-            if (row.QualityLetter != null)
-                row.QualityLetter.color = QualityPalette.Of(entry.Quality);
-            Set(row.Multiplier, Quality.Times(entry.Multiplier));
+            Set(
+                row.Description,
+                card != null ? CardText.Description(card.WithMultiplier(entry.Multiplier)) : ""
+            );
         }
 
         // 覚醒の欠片かルーンが足りない行は、名前を足りない数と同じ赤にして、覚醒できないと示す。
@@ -448,6 +453,9 @@ namespace Baryonyx.Workshop
                 Step(option) == 2,
                 () => ShowCard(Origin, next, row.Character, row.Quality)
             );
+            // 演出に続けて、覚醒したことを通知の帯で知らせる（買う・合成・品質強化と同じ）。
+            if (next != null)
+                ShowNotice(AwakenedText(next.Name));
             busy = false;
             running = null;
             StopScene();
@@ -462,6 +470,8 @@ namespace Baryonyx.Workshop
                 card != null && Party != null ? Party.ArtOf(card.Id) : null,
                 BattleSkillVfx.ColorOf(card?.Id ?? "")
             );
+
+        public static string AwakenedText(string card) => $"{card}に覚醒した";
 
         private static int Step(AwakeningOption option) =>
             option.IsSkillCard ? 1 : UniqueSkillTreeShape.Step(option.Stage);

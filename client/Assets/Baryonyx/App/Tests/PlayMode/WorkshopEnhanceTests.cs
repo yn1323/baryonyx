@@ -76,13 +76,17 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(enhance.Rows[0].GetComponent<GlassCardBack>(), Is.Not.Null);
             yield return TurnedFaceUp(enhance);
 
-            // 初めはスキルのタブ。サーバーがないときは、仮の編成のカードを×1.00で並べる。
+            // 初めは装備のタブ（装備→スキル→固有スキルの順）。スキルのタブへ替える。
+            // サーバーがないときは、仮の編成のカードを×1.00で並べる。
+            Assert.That(enhance.Current, Is.EqualTo(WorkshopEnhanceView.Tab.Equipment));
+            enhance.ShowTab(WorkshopEnhanceView.Tab.Skills);
             Assert.That(enhance.Current, Is.EqualTo(WorkshopEnhanceView.Tab.Skills));
             Assert.That(enhance.Targets, Is.Not.Empty);
             var rows = enhance.Rows.Where(row => row.gameObject.activeSelf).ToArray();
             Assert.That(rows.Length, Is.EqualTo(enhance.Targets.Count));
-            Assert.That(rows[0].Name.text, Is.EqualTo(enhance.Targets[0].Name));
-            Assert.That(rows[0].Price.text, Does.Contain("品質C"));
+            // 横長の行：名前のすぐ右に☆と品質・倍率。
+            Assert.That(rows[0].Name.text, Does.StartWith(enhance.Targets[0].Name));
+            Assert.That(rows[0].Name.text, Does.Contain(">C<").And.Contain("×1.00"));
             // 右の面が空にならないよう、先頭の行を選んでおく。強化する前と後をカードで並べる。
             Assert.That(enhance.Selected, Is.EqualTo(0));
             Assert.That(rows[0].Card.Selected, Is.True);
@@ -121,8 +125,8 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(enhance.DetailName.text, Is.EqualTo(target.Name));
             Assert.That(enhance.Info.text, Does.Contain("200 ルーン"));
             // 右に、品質の前と後と、ゲージの今と上がった後を出す。
-            Assert.That(enhance.BeforeQuality.text, Does.Contain("品質C"));
-            Assert.That(enhance.AfterQuality.text, Does.Contain("品質"));
+            Assert.That(enhance.BeforeQuality.text, Does.Contain(">C<").And.Contain("×1.00"));
+            Assert.That(enhance.AfterQuality.text, Does.Contain("×"));
             Assert.That(enhance.Gauge.activeSelf, Is.True);
             Assert.That(
                 enhance.GaugeAfter.anchorMax.x,
@@ -139,7 +143,7 @@ namespace Baryonyx.Tests.PlayMode
             yield return SceneTests.WaitForTask(enhance.Work);
             float expected = EnhancementMaterials.Polished(1f, 2, target.MaxMultiplier);
             Assert.That(enhance.Targets[0].Multiplier, Is.EqualTo(expected).Within(0.001f));
-            Assert.That(rows[0].Price.text, Does.Contain(Quality.Times(expected)));
+            Assert.That(rows[0].Name.text, Does.Contain(Quality.Times(expected)));
             Assert.That(
                 view.ToastMessage,
                 Is.EqualTo(WorkshopEnhanceView.PolishedText(enhance.Targets[0]))
@@ -162,7 +166,9 @@ namespace Baryonyx.Tests.PlayMode
             source.Fail = false;
 
             // 装備のタブでは、カードの代わりに、装備の札で前と後を並べる。
-            enhance.Tabs[(int)WorkshopEnhanceView.Tab.Equipment].Button.onClick.Invoke();
+            enhance
+                .Tabs[Array.IndexOf(enhance.TabOrder, WorkshopEnhanceView.Tab.Equipment)]
+                .Button.onClick.Invoke();
             Assert.That(enhance.Targets, Is.Not.Empty);
             Assert.That(enhance.Selected, Is.EqualTo(0));
             Assert.That(enhance.BeforeGear.Root.activeSelf, Is.True);
@@ -192,7 +198,8 @@ namespace Baryonyx.Tests.PlayMode
             var entry = awaken.Entries[0];
             Assert.That(entry.Character, Is.Not.Null);
             Assert.That(entry.IsSkillCard, Is.False);
-            Assert.That(awaken.Rows[0].Name.text, Is.EqualTo(entry.Card.Name));
+            Assert.That(awaken.Rows[0].Name.text, Does.StartWith(entry.Card.Name));
+            Assert.That(awaken.Rows[0].Name.text, Does.Contain(Quality.Times(entry.Multiplier)));
             var option = entry.Options[0];
             // 欠片が1つある間は、行の名前はいつもの色。
             Assert.That(awaken.Rows[0].Name.color, Is.EqualTo(UiPalette.TextMain));

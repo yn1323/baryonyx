@@ -54,10 +54,11 @@ namespace Baryonyx.Workshop.Editor
         private static readonly Color PersonBack = new(0f, 0f, 0f, 0.22f);
         private static readonly Color PersonLine = new(0.86f, 0.71f, 0.38f, 0.8f);
 
-        // カードの挿絵（2倍）、名前と効果の文の左端、右端の品質と倍率に取っておく幅。
+        // カードの挿絵（2倍）、名前と効果の文の左端、行の右端の余白。品質と倍率は名前のすぐ右に出す
+        // （横長の行。doc/rules/ui-design.md の装備の見せ方）。
         private const float ThumbLeft = PersonWidth + 14f;
         private const float TextLeft = ThumbLeft + 64f * 2f + 20f;
-        private const float QualityWidth = 270f;
+        private const float QualityWidth = 24f;
 
         // 覚醒の場面：一覧を覆う幕、上の中央に浮かぶ今のカード（戦闘のカードを縮めて）。
         private static readonly Color Veil = UiPalette.VeilDeep;
@@ -168,6 +169,8 @@ namespace Baryonyx.Workshop.Editor
                 TextLeft,
                 QualityWidth
             );
+            // 名前のすぐ右の品質と倍率は、リッチテキストで色を付ける。
+            row.Name.richText = true;
             row.Description = CardLoadoutAssets.BuildDescription(
                 inside,
                 64,
@@ -176,34 +179,6 @@ namespace Baryonyx.Workshop.Editor
                 QualityWidth
             );
 
-            row.QualityLetter = Label(
-                inside,
-                "Quality",
-                "",
-                64,
-                UiPalette.TextMain,
-                TextAlignmentOptions.Center
-            );
-            Corner(
-                row.QualityLetter.rectTransform,
-                new Vector2(1f, 0.5f),
-                new Vector2(-170f, 0f),
-                new Vector2(80f, 90f)
-            );
-            row.Multiplier = Label(
-                inside,
-                "Multiplier",
-                "",
-                36,
-                UiPalette.TextMain,
-                TextAlignmentOptions.MidlineLeft
-            );
-            Corner(
-                row.Multiplier.rectTransform,
-                new Vector2(1f, 0.5f),
-                new Vector2(-24f, 0f),
-                new Vector2(140f, 60f)
-            );
             return row;
         }
 
@@ -263,7 +238,8 @@ namespace Baryonyx.Workshop.Editor
             scene.gameObject.SetActive(false);
         }
 
-        // 幕の上の「もどる」：ヘッダーの「もどる」と同じ所に同じ白い矢印を置き、欠片が足りなくても場面を閉じられるようにする。
+        // 幕の上の「もどる」：ヘッダーの「もどる」と同じ所に、同じ紺の板と白い矢印を置き（案内人の画面の←と同じ形）、
+        // 欠片が足りなくても場面を閉じられるようにする。
         private static void BuildBack(RectTransform scene, WorkshopAwakenView view)
         {
             var header = (RectTransform)view.Guide.Back.transform;
@@ -273,13 +249,16 @@ namespace Baryonyx.Workshop.Editor
             back.pivot = header.pivot;
             back.anchoredPosition = header.anchoredPosition;
             back.sizeDelta = header.sizeDelta;
-            AddImage(back, Color.clear, true);
+            var headerTab = (RectTransform)header.Find("Tab");
+            var tab = Rect("Tab", back);
+            Stretch(tab);
+            tab.offsetMin = headerTab.offsetMin;
+            tab.offsetMax = headerTab.offsetMax;
+            var plate = AddImage(tab, GuideFrameAssets.HeaderColor, true);
             var icon = Rect("Icon", back);
             Place(icon, Vector2.zero, Vector2.one * Guide.IconSize);
-            view.SceneBack = UiBuild.AddTintButton(
-                back,
-                SpriteImage(icon, Guide.IconBackPath, Color.white)
-            );
+            SpriteImage(icon, Guide.IconBackPath, Color.white);
+            view.SceneBack = UiBuild.AddTintButton(back, plate);
         }
 
         // 左下の払う物の札：覚醒の欠片の絵と「使う数/持っている数」、ルーンのアイコンと払う額。

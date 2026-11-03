@@ -87,9 +87,10 @@ namespace Baryonyx.Tests.PlayMode
                         .Within(0.001f),
                     craft.Shown[i].Name
                 );
+                // 行は名前のすぐ右に☆を続ける。名前の部分を比べる。
                 Assert.That(
                     craft.Rows[i].Name.text,
-                    Is.EqualTo(
+                    Does.StartWith(
                         craft.Shown[i].Found ? craft.Shown[i].Name : WorkshopCraftView.Hidden
                     )
                 );

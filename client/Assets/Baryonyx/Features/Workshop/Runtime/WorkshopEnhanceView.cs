@@ -50,11 +50,13 @@ namespace Baryonyx.Workshop
 
         public static readonly string[] TabLabels = { "スキル", "装備", "固有スキル" };
 
-        // 品質強化のタブの順。スキル覚醒は別の項目（AwakeningItemKey）で、WorkshopAwakenView を開く。
-        public static readonly Tab[] PolishTabs = { Tab.Skills, Tab.Equipment, Tab.Uniques };
+        // 品質強化のタブの順（装備→スキル→固有スキル。doc/rules/ui-design.md の分類の切り替え）。
+        // スキル覚醒は別の項目（AwakeningItemKey）で、WorkshopAwakenView を開く。
+        public static readonly Tab[] PolishTabs = { Tab.Equipment, Tab.Skills, Tab.Uniques };
 
         /// <summary>The tabs this panel shows, in order; <see cref="Tabs"/> has a button for each (none when one).</summary>
-        public Tab[] TabOrder = PolishTabs;
+        // 共有の PolishTabs を写して持つ。同じ配列を持つと、Prefabを読み込むたびに保存した並びが共有の配列へ書き戻される。
+        public Tab[] TabOrder = (Tab[])PolishTabs.Clone();
 
         public LibraryData Data;
         public PartyMockData Party;
@@ -117,6 +119,7 @@ namespace Baryonyx.Workshop
         private Dictionary<string, string> owners = new();
         private IReadOnlyList<PartyMember> roster = Array.Empty<PartyMember>();
         private Tab tab;
+        private bool shownTab;
         private int selected = -1;
 
         // 上げる段階の数。札を押すたびに1つ増える。1段階に使う石の数は品質が上がるほど増える。
@@ -199,7 +202,8 @@ namespace Baryonyx.Workshop
             if (token.IsCancellationRequested)
                 return;
             Use(await reading, PartySession.State, await wearing);
-            ShowTab(Array.IndexOf(TabOrder, tab) >= 0 ? tab : TabOrder[0]);
+            // 初めて開いたときは先頭のタブ（装備）。読み直したときは開いていたタブのまま。
+            ShowTab(shownTab && Array.IndexOf(TabOrder, tab) >= 0 ? tab : TabOrder[0]);
         }
 
         /// <summary>Takes the party and the equipment as the lists to show.</summary>
@@ -261,6 +265,7 @@ namespace Baryonyx.Workshop
         public void ShowTab(Tab next)
         {
             tab = next;
+            shownTab = true;
             selected = -1;
             steps = 0;
             for (int i = 0; i < Tabs.Length; i++)
@@ -693,13 +698,14 @@ namespace Baryonyx.Workshop
                     index++;
                     return old == match.Value
                         ? match.Value
-                        : $"{old}→<color=#{GainHex}>{match.Value}</color>";
+                        : $"{old}→{ItemText.Rise(match.Value)}";
                 }
             );
             return index == before.Count ? changed : after;
         }
 
-        private const string GainHex = "7fe3ff";
+        // 使う石の数の水色（上がる値の緑とは分ける）。
+        private const string UsedHex = "7fe3ff";
 
         private string InfoText() =>
             SelectedTarget is { } target
@@ -731,22 +737,22 @@ namespace Baryonyx.Workshop
         private static string Missing(string text) => $"　<color=#ff8a7a>{text}</color>";
 
         public static string QualityText(ItemQuality quality, float multiplier) =>
-            $"<color=#{QualityPalette.Hex(quality)}>品質{Inventory.Quality.Letter(quality)}</color>（{Inventory.Quality.Times(multiplier)}）";
+            ItemText.QualityLine(quality, multiplier);
 
         public static string CountText(int count) => $"×{count}";
 
         /// <summary>The stone's chip: how many are held ("×8"), and how many are used when any ("3/8", the used in the gain's light blue).</summary>
         public static string UseText(int used, int held) =>
-            used > 0 ? $"<color=#{GainHex}>{used}</color>/{held}" : CountText(held);
+            used > 0 ? $"<color=#{UsedHex}>{used}</color>/{held}" : CountText(held);
 
         public static string PolishedText(EnhancementTarget target) =>
-            $"{target.Name}が品質{Inventory.Quality.Letter(target.Quality)}（{Inventory.Quality.Times(target.Multiplier)}）になった";
+            $"{target.Name}の品質が {Inventory.Quality.Letter(target.Quality)} {Inventory.Quality.Times(target.Multiplier)} になった";
 
         private void PaintRow(int index)
         {
             var row = Rows[index];
             var target = Targets[index];
-            PaintTarget(row, target, DetailOf(target), EntryOf(target), ArtBox);
+            PaintTarget(row, target, OwnerOf(target), EntryOf(target), ArtBox);
             if (target.Category == EnhancementCategory.Unique)
                 PaintTexture(row.Art, Party != null ? Party.ArtOf(target.KindId) : null, ArtBox);
         }
@@ -766,24 +772,57 @@ namespace Baryonyx.Workshop
             image.rectTransform.sizeDelta = new Vector2(art.width, art.height) * dot;
         }
 
-        /// <summary>Writes a target on a row. The generator bakes the mock targets with it too.</summary>
+        /// <summary>
+        /// Writes a target on a wide row: the name with the stars, the quality and the multiplier
+        /// right after it, the effect in full at the multiplier, the attributes at the top right
+        /// and who uses it at the bottom right. The generator bakes the mock targets with it too.
+        /// </summary>
         public static void PaintTarget(
             ItemTile row,
             EnhancementTarget target,
-            string detail,
+            string owner,
             LibraryEntryData entry,
             float artBox
         )
         {
-            Set(row.Name, target.Name);
-            Set(row.Price, QualityText(target.Quality, target.Multiplier));
-            if (row.Price != null)
-            {
-                row.Price.richText = true;
-                row.Price.color = UiPalette.TextMain;
-            }
-            Set(row.Detail, detail);
+            Set(
+                row.Name,
+                ItemText.Heading(target.Name, entry?.Rarity ?? 0, true, target.Quality, target.Multiplier)
+            );
+            Set(row.Price, owner);
+            Set(row.Detail, EffectOf(target, entry));
+            if (row.Elements != null)
+                row.Elements.Show(ElementsOf(target));
             LibraryCatalogView.PaintArt(row.Art, entry, true, artBox);
+        }
+
+        // 品質を掛けたあとの効果の全文。
+        private static string EffectOf(EnhancementTarget target, LibraryEntryData entry)
+        {
+            if (target.Category == EnhancementCategory.Unique)
+            {
+                var card = CardOf(target);
+                return card != null ? CardText.Description(card.WithMultiplier(target.Multiplier)) : "";
+            }
+            return LibraryFaces.EffectAt(entry, target.Multiplier);
+        }
+
+        private static IReadOnlyList<CardElement> ElementsOf(EnhancementTarget target) =>
+            target.Category switch
+            {
+                EnhancementCategory.Unique => CardOf(target) is { Element: not CardElement.None } card
+                    ? new[] { card.Element }
+                    : null,
+                EnhancementCategory.Skill => LibraryFaces.ElementsOf(LibraryKind.Skill, target.KindId),
+                _ => LibraryFaces.ElementsOf(LibraryKind.Weapon, target.KindId),
+            };
+
+        // 行の右下の、使っている人（「アリアが装備中」）。固有スキルは持ち主。
+        private string OwnerOf(EnhancementTarget target)
+        {
+            if (target.Category == EnhancementCategory.Unique)
+                return roster.FirstOrDefault(member => member.Id == target.CharacterId)?.Name;
+            return owners.TryGetValue(target.ItemId ?? "", out string name) ? name + "が装備中" : "";
         }
 
         private string DetailOf(EnhancementTarget target)
@@ -949,9 +988,14 @@ namespace Baryonyx.Workshop
         // 仮の編成のスキルの先頭を品質の位置 place に置いて選び、steps 段階分だけ札を押す。
         private void ChooseFirst(float place, int count)
         {
-            // 停止中はサーバーがなく、仮の素材がその場で読める。
+            // 停止中はサーバーがなく、仮の素材がその場で読める。前のPlay Modeで減った仮の素材を持ち越さないよう、
+            // 停止中は読み直す前に仮の素材を初めの数へ戻す（見本はいつも石を選べる数で見せる）。
             if (EnhancementSession.Source == null)
+            {
+                if (!Application.isPlaying)
+                    EnhancementSession.Reset();
                 _ = EnhancementSession.LoadAsync(CancellationToken.None);
+            }
             cover.Clear();
             Use(PartyFormation.From(Party), null, null);
             ShowTab(Tab.Skills);
