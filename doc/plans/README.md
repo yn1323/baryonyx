@@ -34,6 +34,7 @@
 | 2026-10-25 | [エネルギー3固定と捨て札のルール、カードの作り直し](2026-10-25-fixed-energy-cards.md) | 完了（実機は未確認） | [戦闘システム](../features/combat.md)・[スキルの定義](../catalog/skills/README.md)・[固有スキルの各段階の効果](../features/skill-evolution/trees.md#各段階の効果) |
 | 2026-10-27 | [街道の世界地図をルーンで開き、日・週・月の出来事を起こす](2026-10-27-world-map-rune-squares.md) | 進行中 | [探索とダンジョンの進行の街道](../features/stage-progression-world-map.md#街道を開くルーンと日週月の出来事2026-10-27)・[ルーンの用途](../features/economy.md#ルーンの用途)・[入れ子の地図](../features/world-atlas.md) |
 | 2026-11-01 | [画面のデザインシステムとテンプレートで、似た画面を共通化する](2026-11-01-ui-design-system.md) | 進行中（第3段まで） | [UI設計ルールの共通の部品](../rules/ui-design.md#共通の部品)・[ui-tone-manner](../../.agents/skills/ui-tone-manner/SKILL.md) |
+| 2026-11-03 | [戦闘の効果を「きっかけ・条件・働き」の部品で書けるようにする](2026-11-03-battle-effect-system.md) | 完了（敵の技のうち仲間を呼ぶ・逃げる・復活など23個は未着手） | [戦闘システム：効果の部品](../features/combat/effects.md)・[パッシブスキルの実装との対応](../features/passives.md#実装との対応) |
 
 Google認証をHealth Connect接続の前提とする古い計画がある。
 今は、Health Connectの連携とGoogle接続を独立して扱う（[健康データの読み取りと保存](../features/health-data.md)）。

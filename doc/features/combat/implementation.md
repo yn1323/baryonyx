@@ -82,7 +82,7 @@ updated: 2026-11-02
 | 50枚の定義（効果・コスト・属性・説明文）。試作（`Prototypes`）と合体カード（`Fusions`）も同じファイル | [CardSkills](../../../client/Assets/Baryonyx/Features/Combat/Runtime/CardSkills.cs)・[CardSkill](../../../client/Assets/Baryonyx/Features/Combat/Runtime/CardSkill.cs) |
 | 威力の計算、説明文の組み立て、状態の名前と持続ダメージ | [CardRules](../../../client/Assets/Baryonyx/Features/Combat/Runtime/CardRules.cs) |
 | キーワードと説明（[カードのキーワード](cards.md#カードのキーワード)） | [CardKeywords](../../../client/Assets/Baryonyx/Features/Combat/Runtime/CardKeywords.cs) |
-| カードの当たる相手の決め方 | [BattleCardPlan](../../../client/Assets/Baryonyx/Features/Combat/Presentation/BattleCardPlan.cs) |
+| カードの当たる相手の決め方 | [BattleCardPlan](../../../client/Assets/Baryonyx/Features/Combat/Runtime/Battle/BattleCardPlan.cs) |
 | 山札（引く・尽きたら作り直す・倒れた味方のカードの出し入れ） | [BattleDeck](../../../client/Assets/Baryonyx/Features/Combat/Runtime/BattleDeck.cs)・[BattleDeckTests](../../../client/Assets/Baryonyx/Features/Combat/Tests/EditMode/BattleDeckTests.cs) |
 | 運に任せるところ（山札を混ぜる・相手をランダムに選ぶ・確率で起こす）の乱数。テストは種を決めた乱数を渡す | [BattleDice](../../../client/Assets/Baryonyx/Features/Combat/Runtime/BattleDice.cs)・[BattleDiceTests](../../../client/Assets/Baryonyx/Features/Combat/Tests/EditMode/BattleDiceTests.cs) |
 | 敵の一撃の弱め方と狙い（麻痺・ブロック・挑発） | [BattleBlows](../../../client/Assets/Baryonyx/Features/Combat/Runtime/BattleBlows.cs)・[BattleBlowsTests](../../../client/Assets/Baryonyx/Features/Combat/Tests/EditMode/BattleBlowsTests.cs) |

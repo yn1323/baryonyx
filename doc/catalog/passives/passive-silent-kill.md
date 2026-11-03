@@ -2,7 +2,7 @@
 id: passive-silent-kill
 type: visual-entity
 status: 候補
-updated: 2026-11-02
+updated: 2026-11-03
 name: 影の一刺し
 category: passives
 silhouette: 紫の影をまとう下向きの短剣
@@ -28,7 +28,7 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Passives/PassiveSilentK
 | 役割・説明 | グレタの攻撃で敵を倒すと、エネルギー+1（1ターンに1回）。 |
 | 関連する仕様・個別ID | [パッシブスキル](../../features/passives.md#仮データの9人のパッシブ)・[戦闘システム](../../features/combat.md) |
 | 必要な画像用途 | パッシブのアイコン（24×24ドット。育成の画面では3倍で表示） |
-| ゲーム内の実装・アセット | 定義 [CombatPassives](../../../client/Assets/Baryonyx/Features/Combat/Runtime/CombatPassives.cs)（`SilentKill`）、戦闘での働き [BattleInspectView.Passives](../../../client/Assets/Baryonyx/Features/Combat/Presentation/BattleInspectView.Passives.cs)、アイコン `PassiveSilentKill.aseprite` |
+| ゲーム内の実装・アセット | 定義と戦闘での働き [CombatPassives](../../../client/Assets/Baryonyx/Features/Combat/Runtime/CombatPassives.cs)（`SilentKill` の効果。部品は[戦闘の効果の計画](../../plans/2026-11-03-battle-effect-system.md#効果の部品)）、アイコン `PassiveSilentKill.aseprite` |
 
 ## 確定した設定
 

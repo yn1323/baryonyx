@@ -2,7 +2,7 @@
 id: passive-holy-flame-hammer
 type: visual-entity
 status: 候補
-updated: 2026-11-02
+updated: 2026-11-03
 name: 聖火の鉄槌
 category: passives
 silhouette: 聖なる炎に包まれた戦鎚
@@ -28,7 +28,7 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Passives/PassiveHolyFla
 | 役割・説明 | アンセルムの打属性の攻撃は、60%で[やけど]2ターンを付ける。 |
 | 関連する仕様・個別ID | [パッシブスキル](../../features/passives.md#仮データの9人のパッシブ)・[戦闘システム](../../features/combat.md) |
 | 必要な画像用途 | パッシブのアイコン（24×24ドット。育成の画面では3倍で表示） |
-| ゲーム内の実装・アセット | 定義 [CombatPassives](../../../client/Assets/Baryonyx/Features/Combat/Runtime/CombatPassives.cs)（`HolyFlameHammer`）、戦闘での働き [BattleInspectView.Passives](../../../client/Assets/Baryonyx/Features/Combat/Presentation/BattleInspectView.Passives.cs)、アイコン `PassiveHolyFlameHammer.aseprite` |
+| ゲーム内の実装・アセット | 定義と戦闘での働き [CombatPassives](../../../client/Assets/Baryonyx/Features/Combat/Runtime/CombatPassives.cs)（`HolyFlameHammer` の効果。部品は[戦闘の効果の計画](../../plans/2026-11-03-battle-effect-system.md#効果の部品)）、アイコン `PassiveHolyFlameHammer.aseprite` |
 
 ## 確定した設定
 

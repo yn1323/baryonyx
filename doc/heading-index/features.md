@@ -44,7 +44,7 @@
 
 ## [features/combat-enemy-behavior.md](../features/combat-enemy-behavior.md)
 
-10KB・72行
+10KB・75行
 
 - 8: # 敵の行動の仮設定
 
@@ -56,10 +56,10 @@
 
 ## [features/combat.md](../features/combat.md)
 
-2KB・27行
+2KB・28行
 
 - 8: # 戦闘システム
-- 25: ## 変更と判断の記録
+- 26: ## 変更と判断の記録
 
 ## [features/combat/cards.md](../features/combat/cards.md)
 
@@ -74,6 +74,27 @@
 - 77: ### スキルの仮設定
 - 100: ### コストと威力の目安
 - 128: ### カードの状態の仮設定
+
+## [features/combat/effects.md](../features/combat/effects.md)
+
+19KB・216行
+
+- 8: # 戦闘システム：効果の部品
+- 16: ## 設計方針
+- 23: ## 効果の部品
+- 45: ## 効果の出どころ
+- 58: ## きっかけと値
+- 60: ### きっかけ
+- 80: ### 値
+- 96: ## 数を変える順番
+- 116: ## 状態の効果
+- 131: ### 仮設定：敵が味方に付ける状態
+- 143: ### 効果の部品で書いた敵の技
+- 169: ## 連鎖と順番
+- 176: ## 予測と画面なしの戦闘
+- 190: ## 未決事項
+- 202: ## 実装との対応
+- 213: ## 変更と判断の記録
 
 ## [features/combat/implementation.md](../features/combat/implementation.md)
 
@@ -216,20 +237,20 @@
 
 ## [features/equipment.md](../features/equipment.md)
 
-21KB・157行
+21KB・158行
 
 - 8: # 装備生成と厳選
 - 12: ## 確定している方針
 - 26: ### アクセサリー
 - 36: ### 装備の効果
-- 52: ### 装備の属性
-- 85: ## 設計方針
-- 87: ### 戦い方を変える装備更新
-- 94: ## 持っている装備と付け替えの保存
-- 113: ## 未決事項
-- 130: ## 関連する仕様とデータ
-- 134: ## 実装との対応
-- 155: ## 変更と判断の記録
+- 53: ### 装備の属性
+- 86: ## 設計方針
+- 88: ### 戦い方を変える装備更新
+- 95: ## 持っている装備と付け替えの保存
+- 114: ## 未決事項
+- 131: ## 関連する仕様とデータ
+- 135: ## 実装との対応
+- 156: ## 変更と判断の記録
 
 ## [features/exercise-rewards-history.md](../features/exercise-rewards-history.md)
 
@@ -407,7 +428,7 @@
 
 ## [features/passives.md](../features/passives.md)
 
-26KB・223行
+26KB・224行
 
 - 8: # パッシブスキル
 - 17: ## 確定している方針
@@ -833,7 +854,7 @@
 
 ## [features/stage-progression/battle-trials.md](../features/stage-progression/battle-trials.md)
 
-20KB・206行
+23KB・237行
 
 - 8: # 探索とダンジョンの進行：行き先の戦闘の試し
 - 12: ## 設計方針
@@ -845,6 +866,7 @@
 - 122: ##### 自動対戦の仕組みでの測り直し（2026-10-25）
 - 157: ##### 強い魔物と最奥の主の入れ替え（2026-10-26）
 - 188: ##### 編成表にしたあとの試し（2026-11-01）
+- 208: ##### 敵の状態の技の試し（2026-11-03）
 
 ## [features/stage-progression/boons.md](../features/stage-progression/boons.md)
 

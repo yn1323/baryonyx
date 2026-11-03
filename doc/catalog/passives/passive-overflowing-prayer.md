@@ -2,7 +2,7 @@
 id: passive-overflowing-prayer
 type: visual-entity
 status: 候補
-updated: 2026-11-02
+updated: 2026-11-03
 name: あふれる祈り
 category: passives
 silhouette: 光の水があふれる金の聖杯
@@ -28,7 +28,7 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Passives/PassiveOverflo
 | 役割・説明 | ミナの回復で最大HPを超えた分を、その味方の[ブロック]にする。 |
 | 関連する仕様・個別ID | [パッシブスキル](../../features/passives.md#仮データの9人のパッシブ)・[戦闘システム](../../features/combat.md) |
 | 必要な画像用途 | パッシブのアイコン（24×24ドット。育成の画面では3倍で表示） |
-| ゲーム内の実装・アセット | 定義 [CombatPassives](../../../client/Assets/Baryonyx/Features/Combat/Runtime/CombatPassives.cs)（`OverflowingPrayer`）、戦闘での働き [BattleInspectView.Passives](../../../client/Assets/Baryonyx/Features/Combat/Presentation/BattleInspectView.Passives.cs)、アイコン `PassiveOverflowingPrayer.aseprite` |
+| ゲーム内の実装・アセット | 定義と戦闘での働き [CombatPassives](../../../client/Assets/Baryonyx/Features/Combat/Runtime/CombatPassives.cs)（`OverflowingPrayer` の効果。部品は[戦闘の効果の計画](../../plans/2026-11-03-battle-effect-system.md#効果の部品)）、アイコン `PassiveOverflowingPrayer.aseprite` |
 
 ## 確定した設定
 

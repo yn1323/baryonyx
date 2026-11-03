@@ -2,7 +2,7 @@
 id: passive-mana-shield
 type: visual-entity
 status: 候補
-updated: 2026-11-02
+updated: 2026-11-03
 name: 魔力の盾
 category: passives
 silhouette: 稲妻の印の水色の六角形の障壁
@@ -28,7 +28,7 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Passives/PassiveManaShi
 | 役割・説明 | ルッツの雷属性の攻撃は、与えたダメージの20%を自分の[ブロック]にする。 |
 | 関連する仕様・個別ID | [パッシブスキル](../../features/passives.md#仮データの9人のパッシブ)・[戦闘システム](../../features/combat.md) |
 | 必要な画像用途 | パッシブのアイコン（24×24ドット。育成の画面では3倍で表示） |
-| ゲーム内の実装・アセット | 定義 [CombatPassives](../../../client/Assets/Baryonyx/Features/Combat/Runtime/CombatPassives.cs)（`ManaShield`）、戦闘での働き [BattleInspectView.Passives](../../../client/Assets/Baryonyx/Features/Combat/Presentation/BattleInspectView.Passives.cs)、アイコン `PassiveManaShield.aseprite` |
+| ゲーム内の実装・アセット | 定義と戦闘での働き [CombatPassives](../../../client/Assets/Baryonyx/Features/Combat/Runtime/CombatPassives.cs)（`ManaShield` の効果。部品は[戦闘の効果の計画](../../plans/2026-11-03-battle-effect-system.md#効果の部品)）、アイコン `PassiveManaShield.aseprite` |
 
 ## 確定した設定
 

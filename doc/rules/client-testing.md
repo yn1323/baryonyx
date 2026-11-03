@@ -272,6 +272,8 @@ Editorの札は1回15分までのため（[複数のチャットで1台のEditor
 | `startHpShare` | `1` | 始めのHP（最大HPに対する割合）。`through` では最初の戦闘だけ |
 | `knowWeaknesses` | `false` | 敵の弱点を最初から開示しておくか |
 | `odds` | `random` | `random` は会心と状態異常を確率どおりに振る。`fixed` はテストと同じく、会心なし・状態異常は必ず付く |
+| `engine` | `screen` | `screen` は戦闘画面を動かして戦う（ゲームと同じ）。`headless` はシーンを読まずに、画面なしの戦闘（`BattleSimulation`）で1戦をその場で戦う。速いが、画面なしの戦闘に入れていない仕組み（[予測と画面なしの戦闘](../features/combat/effects.md#予測と画面なしの戦闘)）の分だけ結果がずれるため、強さを決める測定は `screen` で行う |
+| `enemyEffectSkills` | `true` | 敵が、効果で書いた技（麻痺・毒・防御ダウンを付ける技、2026-11-03〜）を使うか。`false` にすると、その技がなかった頃と同じ戦闘で比べられる（[効果の部品](../features/combat/effects.md#仮設定敵が味方に付ける状態)） |
 | `policy` | `default` | カードの選び方。今は1つだけ |
 | `openShadyChests` | `false` | `through` で怪しい宝箱を開けてミミックと戦うか |
 | `maxTurns` | `40` | このターンを超えた戦闘は打ち切り（`Timeout`）にする |

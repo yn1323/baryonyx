@@ -12,9 +12,9 @@
 |---|---|---|
 | art | 15 | [art.md](heading-index/art.md) |
 | catalog | 22 | [catalog.md](heading-index/catalog.md) |
-| features | 86 | [features.md](heading-index/features.md) |
+| features | 87 | [features.md](heading-index/features.md) |
 | game | 10 | [game.md](heading-index/game.md) |
-| plans | 27 | [plans.md](heading-index/plans.md) |
+| plans | 28 | [plans.md](heading-index/plans.md) |
 | qa | 3 | [qa.md](heading-index/qa.md) |
 | root | 4 | [root.md](heading-index/root.md) |
 | rules | 18 | [rules.md](heading-index/rules.md) |

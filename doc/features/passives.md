@@ -2,7 +2,7 @@
 id: feature-passives
 type: specification
 status: 一部確定
-updated: 2026-11-02
+updated: 2026-11-03
 ---
 
 # パッシブスキル
@@ -187,12 +187,12 @@ Overwatchの開発も、目に見えないパッシブを少なく保つ方針�
 
 | 対象 | 入口 |
 |---|---|
-| 18個の定義（持ち主・解放するLv・名前・説明文）と数値 | [CombatPassives](../../client/Assets/Baryonyx/Features/Combat/Runtime/CombatPassives.cs) |
-| 戦闘での働き | [BattleInspectView.Passives](../../client/Assets/Baryonyx/Features/Combat/Presentation/BattleInspectView.Passives.cs)（呼ぶ所は手札・ターン・カード・敵の攻撃の各処理） |
+| 18個の定義（持ち主・解放するLv・名前・説明文）と数値、戦闘での働き | [CombatPassives](../../client/Assets/Baryonyx/Features/Combat/Runtime/CombatPassives.cs)。各定義の `Effect` に、きっかけ・条件・働きを書く（[戦闘の効果の部品](../plans/2026-11-03-battle-effect-system.md#効果の部品)） |
+| 効果の部品と、戦闘画面からの呼び出し | `Runtime/Effects/`（[BattleEffects](../../client/Assets/Baryonyx/Features/Combat/Runtime/Effects/BattleEffects.cs) ほか）、[BattleInspectView.Effects](../../client/Assets/Baryonyx/Features/Combat/Presentation/BattleInspectView.Effects.cs)。HPバーの予測も同じ効果で動く（`BattleInspectView.Forecast` の `ForecastWorld`） |
 | 編成から戦闘へ渡す | [AdventureParty](../../client/Assets/Baryonyx/Features/Adventure/Runtime/AdventureParty.cs) |
 | 育成の画面の表示 | 仮データ（`TrainingMockData`）を [TrainingAssets](../../client/Assets/Baryonyx/Features/Training/Editor/TrainingAssets.cs) が定義から作る（[ステータスのタブ](screens/adventurers.md#ステータス)） |
 | アイコン | `client/Assets/Baryonyx/Features/Combat/UI/Art/Passives/Passive<種類>.aseprite`（24×24ドット）。指示文と作り方は [prompts.json](../../client/ArtSource/UI/Passives/prompts.json) |
-| テスト | EditModeの `CombatPassivesTests`、PlayModeの `BattlePassivesSceneTests`・`AdventurePartyTests`・`TavernTrainingTests` |
+| テスト | EditModeの `CombatPassivesTests`・`BattleEffectsTests`、PlayModeの `BattlePassivesSceneTests`・`AdventurePartyTests`・`TavernTrainingTests` |
 
 ### 実装での仮の扱い
 
@@ -200,7 +200,7 @@ Overwatchの開発も、目に見えないパッシブを少なく保つ方針�
 
 | 点 | 仮の扱い |
 |---|---|
-| 働いたことの見せ方 | 持ち主の上に、パッシブの名前を薄紫の浮かぶ文字で出す。量のあるものは「星図の計算 +1」「あふれる祈り ブロック +120」のように添える。1枚のカードの中で何度も働くもの（寒暖の理など）は1回だけ出す |
+| 働いたことの見せ方 | 持ち主の上に、パッシブの名前を薄紫の浮かぶ文字で出す。量のあるものは「星図の計算 +1」「あふれる祈り ブロック +120」のように添える。1枚のカードの中で何度も働くもの（寒暖の理など）は1回だけ出す。2026-11-03から、名前は働いたあと（ダメージやブロックと同時か、その直後）に出る |
 | 1ターンに1回 | 味方のターンの始めに数え直す。かばう・浄めの誓いは、その間の敵の行動にまたがって1回 |
 | 星図の計算 | ターン終了を押したとき、または払えるカードがなくなってターンが終わったときに残りを数える。次のターンのエネルギーは、2026-10-25からの毎ターン3に足して4になる。効果で3を超えたときの上限は[未決](combat/implementation.md#未決事項) |
 | 寒暖の理 | カードのダメージと、帯電の盾・切り返しのダメージに掛ける。やけど・毒・出血・雷雲・爆炎の刻印のダメージには掛けない |
@@ -217,6 +217,7 @@ Overwatchの開発も、目に見えないパッシブを少なく保つ方針�
 
 ## 変更と判断の記録
 
+- 2026-11-03：ユーザーの依頼「固有の効果が大量に出てくるので、汎用的に書ける形にしてほしい」により、18個を戦闘の効果の部品（きっかけ・値・条件・働き）で書き直した。働き方と数値は変えていない（[計画](../plans/2026-11-03-battle-effect-system.md)）。名前を出す時点が働きの前から後ろへ移ったもの（切り返し・聖火の鉄槌など）がある。
 - 2026-11-02：ユーザーの了承を得て、パッシブの説明文の正本を CombatPassives.cs と決め、[仮データの9人のパッシブ](#仮データの9人のパッシブ)の表とパッシブの定義の「説明文」はその写しだと書いた。表の「説明文」列は、仕掛けを見比べるために残した。
 - 2026-11-02：スキルとdocの整理で、今のコードに合わせて、固有スキルとアクセサリーの枠を開くレベル、浄めの誓いが働かない理由、固有スキルの使い回しの例、影の一刺しで増えたエネルギーの仮の上限（9）を直した（根拠：AccessorySlots.cs・TrainingAssets.cs の `UniqueUnlockLevels`・EnemyMoves.cs・PartyAssets.cs・BattleInspectView.Passives.cs）。
 - 2026-10-21：ユーザーの依頼「画像とあと実際に冒険で適用されるようにして」により、18個を冒険の戦闘で働くようにし、育成の画面の仮のパッシブを置き換え、アイコン18個をCodex CLIの画像生成で描いて24×24ドットに清書した。説明文だけでは決まらない点は[実装での仮の扱い](#実装での仮の扱い)に置いた。解放するLvの案（Lv 1・Lv 10）を仮データに入れた。

@@ -2,7 +2,7 @@
 id: feature-combat
 type: specification
 status: 一部確定
-updated: 2026-11-02
+updated: 2026-11-03
 ---
 
 # 戦闘システム
@@ -20,6 +20,7 @@ updated: 2026-11-02
 | ルール | [rules.md](combat/rules.md) | 戦闘の形式、ターン順、エネルギーとコスト、手札、威力・ダメージと防御・会心・状態異常、属性と弱点・弱点の開示、固有スキル、倒れた味方、敗北とルーン復活、戦闘の長さ、防御の定数・ターン順・付与率の仮設定 |
 | カード | [cards.md](combat/cards.md) | カードの数値の見せ方、説明文、キーワード、50枚の仮設定、コストと威力の目安、合体カード、カードの状態 |
 | 未決事項と実装 | [implementation.md](combat/implementation.md) | 未決事項、確認待ち、関連する仕様とデータ、実装との対応 |
+| 効果の部品 | [effects.md](combat/effects.md) | カード・パッシブ・装備・状態・冒険の強化・敵の技と特性の効果の書き方、きっかけと値、数を変える順番、敵が味方に付ける状態の仮設定 |
 | 敵の行動 | [combat-enemy-behavior.md](combat-enemy-behavior.md) | 敵の技・行動パターン・激化の仮設定 |
 
 ## 変更と判断の記録
