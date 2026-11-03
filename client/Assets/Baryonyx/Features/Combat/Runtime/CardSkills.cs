@@ -40,17 +40,18 @@ namespace Baryonyx.Combat
             0,
             // --- The mock's first six ---------------------------------------------
             Card(
-                "Slash",
-                "斬り払い",
-                CardUser.Aria,
-                CardElement.Slash,
-                CardKind.Attack,
-                Enemy,
-                1,
-                2.4f,
-                "敵1体に{0}ダメージ。[出血]中の敵には1.5倍。[合体]フレイムエンチャント。",
-                Damage(Enemy, Phy, 150).Bonus(CardCondition.OnBleeding, 50)
-            ).Fuses("FlameEnchant", "FlameSlash"),
+                    "Slash",
+                    "斬り払い",
+                    CardUser.Aria,
+                    CardElement.Slash,
+                    CardKind.Attack,
+                    Enemy,
+                    1,
+                    2.4f,
+                    "敵1体に{0}ダメージ。[出血]中の敵には1.5倍。[合体]フレイムエンチャント。",
+                    Damage(Enemy, Phy, 150).Bonus(CardCondition.OnBleeding, 50)
+                )
+                .Fuses("FlameEnchant", "FlameSlash"),
             Card(
                 "Fire",
                 "ファイア",
@@ -65,18 +66,19 @@ namespace Baryonyx.Combat
                 Apply(Enemy, CardStatus.Burn, 2).WithChance(60).Only(CardCondition.OnWeakness)
             ),
             Card(
-                "Ice",
-                "アイスランス",
-                CardUser.Toma,
-                CardElement.Ice,
-                CardKind.Attack,
-                Enemy,
-                1,
-                2.2f,
-                "敵1体に{0}ダメージ。60%で[凍え]2ターン。[合体]ライトニングボルト。",
-                Damage(Enemy, Mag, 120),
-                Apply(Enemy, CardStatus.Chill, 2).WithChance(60)
-            ).Fuses("LightningBolt", "FrostSpear"),
+                    "Ice",
+                    "アイスランス",
+                    CardUser.Toma,
+                    CardElement.Ice,
+                    CardKind.Attack,
+                    Enemy,
+                    1,
+                    2.2f,
+                    "敵1体に{0}ダメージ。60%で[凍え]2ターン。[合体]ライトニングボルト。",
+                    Damage(Enemy, Mag, 120),
+                    Apply(Enemy, CardStatus.Chill, 2).WithChance(60)
+                )
+                .Fuses("LightningBolt", "FrostSpear"),
             Card(
                 "Thunder",
                 "サンダー",
@@ -129,43 +131,46 @@ namespace Baryonyx.Combat
                 Apply(Enemies, CardStatus.Bleed, 2).WithChance(60)
             ),
             Card(
-                "Iai",
-                "居合一閃",
-                CardUser.Aria,
-                CardElement.Slash,
-                CardKind.Attack,
-                Enemy,
-                3,
-                2.8f,
-                "敵1体に{0}ダメージ。HPが半分以下の敵には1.5倍。[保持]。",
-                Damage(Enemy, Phy, 420).Bonus(CardCondition.OnWounded, 50)
-            ).Is(CardTrait.Retain | CardTrait.CutIn),
+                    "Iai",
+                    "居合一閃",
+                    CardUser.Aria,
+                    CardElement.Slash,
+                    CardKind.Attack,
+                    Enemy,
+                    3,
+                    2.8f,
+                    "敵1体に{0}ダメージ。HPが半分以下の敵には1.5倍。[保持]。",
+                    Damage(Enemy, Phy, 420).Bonus(CardCondition.OnWounded, 50)
+                )
+                .Is(CardTrait.Retain | CardTrait.CutIn),
             Card(
-                "BladeDance",
-                "千刃乱舞",
-                CardUser.Aria,
-                CardElement.Slash,
-                CardKind.Attack,
-                Random,
-                2,
-                1.6f,
-                "手札をすべて[捨てる]。ランダムな敵に{0}ダメージ×3（＋捨てた枚数）。[消滅]。",
-                Discard(-1),
-                Damage(Random, Phy, 50, hits: 3).Discarded()
-            ).Is(CardTrait.Exhaust | CardTrait.CutIn),
+                    "BladeDance",
+                    "千刃乱舞",
+                    CardUser.Aria,
+                    CardElement.Slash,
+                    CardKind.Attack,
+                    Random,
+                    2,
+                    1.6f,
+                    "手札をすべて[捨てる]。ランダムな敵に{0}ダメージ×3（＋捨てた枚数）。[消滅]。",
+                    Discard(-1),
+                    Damage(Random, Phy, 50, hits: 3).Discarded()
+                )
+                .Is(CardTrait.Exhaust | CardTrait.CutIn),
             Card(
-                "Hone",
-                "研ぎ澄ます",
-                CardUser.Aria,
-                CardElement.Slash,
-                CardKind.Support,
-                Nobody,
-                0,
-                2f,
-                "次に使う斬カードの威力+50%。カードを1枚引く。[霧散]。",
-                NextCardBoost(50, CardElement.Slash),
-                Simple(CardActionKind.Draw, Nobody, 1)
-            ).Is(CardTrait.Ethereal),
+                    "Hone",
+                    "研ぎ澄ます",
+                    CardUser.Aria,
+                    CardElement.Slash,
+                    CardKind.Support,
+                    Nobody,
+                    0,
+                    2f,
+                    "次に使う斬カードの威力+50%。カードを1枚引く。[霧散]。",
+                    NextCardBoost(50, CardElement.Slash),
+                    Simple(CardActionKind.Draw, Nobody, 1)
+                )
+                .Is(CardTrait.Ethereal),
             Card(
                 "ShieldBash",
                 "シールドバッシュ",
@@ -179,43 +184,46 @@ namespace Baryonyx.Combat
                 Damage(Enemy, Def, 80).WithBlock(50)
             ),
             Card(
-                "ArmorBreak",
-                "鎧砕き",
-                CardUser.Aria,
-                CardElement.Blunt,
-                CardKind.Debuff,
-                Enemy,
-                1,
-                2.2f,
-                "敵1体に{0}ダメージ。[防御ダウン]2ターン。[初手]。",
-                Damage(Enemy, Phy, 80),
-                Apply(Enemy, CardStatus.Vulnerable, 2).WithChance(100)
-            ).Is(CardTrait.Innate),
+                    "ArmorBreak",
+                    "鎧砕き",
+                    CardUser.Aria,
+                    CardElement.Blunt,
+                    CardKind.Debuff,
+                    Enemy,
+                    1,
+                    2.2f,
+                    "敵1体に{0}ダメージ。[防御ダウン]2ターン。[初手]。",
+                    Damage(Enemy, Phy, 80),
+                    Apply(Enemy, CardStatus.Vulnerable, 2).WithChance(100)
+                )
+                .Is(CardTrait.Innate),
             Card(
-                "EarthSplitter",
-                "大地割り",
-                CardUser.Aria,
-                CardElement.Blunt,
-                CardKind.Attack,
-                Enemies,
-                2,
-                2.4f,
-                "敵全体に{0}ダメージ。[防御ダウン]中は1.5倍。[連携]鎧砕き：先に敵全体を[防御ダウン]2ターン。",
-                Damage(Enemies, Phy, 110).Bonus(CardCondition.OnVulnerable, 50),
-                Apply(Enemies, CardStatus.Vulnerable, 2).WithChance(100).OnCombo()
-            ).Combo("ArmorBreak"),
+                    "EarthSplitter",
+                    "大地割り",
+                    CardUser.Aria,
+                    CardElement.Blunt,
+                    CardKind.Attack,
+                    Enemies,
+                    2,
+                    2.4f,
+                    "敵全体に{0}ダメージ。[防御ダウン]中は1.5倍。[連携]鎧砕き：先に敵全体を[防御ダウン]2ターン。",
+                    Damage(Enemies, Phy, 110).Bonus(CardCondition.OnVulnerable, 50),
+                    Apply(Enemies, CardStatus.Vulnerable, 2).WithChance(100).OnCombo()
+                )
+                .Combo("ArmorBreak"),
             Card(
-                "GiantImpact",
-                "ギガントインパクト",
-                CardUser.Aria,
-                CardElement.Blunt,
-                CardKind.Attack,
-                Enemy,
-                3,
-                2.8f,
-                "敵1体に{0}ダメージ。自分に[ブロック]があれば1.5倍。[眠り札]。",
-                Damage(Enemy, Phy, 380).Bonus(CardCondition.OnGuarded, 50)
-            ).Is(CardTrait.Sleeper | CardTrait.CutIn),
+                    "GiantImpact",
+                    "ギガントインパクト",
+                    CardUser.Aria,
+                    CardElement.Blunt,
+                    CardKind.Attack,
+                    Enemy,
+                    3,
+                    2.8f,
+                    "敵1体に{0}ダメージ。自分に[ブロック]があれば1.5倍。[眠り札]。",
+                    Damage(Enemy, Phy, 380).Bonus(CardCondition.OnGuarded, 50)
+                )
+                .Is(CardTrait.Sleeper | CardTrait.CutIn),
             Card(
                 "StrideStrike",
                 "健脚の一撃",
@@ -229,30 +237,32 @@ namespace Baryonyx.Combat
                 Damage(Enemy, Phy, 150).WithAct(10, 100)
             ),
             Card(
-                "GuardianOath",
-                "守護の誓い",
-                CardUser.Aria,
-                CardElement.None,
-                CardKind.Guard,
-                Self,
-                2,
-                2f,
-                "自分に[ブロック]{0}。2ターン、敵の攻撃を引きつける。[保持]。",
-                Block(Self, Def, 90),
-                Apply(Self, CardStatus.Taunt, 2)
-            ).Is(CardTrait.Retain),
+                    "GuardianOath",
+                    "守護の誓い",
+                    CardUser.Aria,
+                    CardElement.None,
+                    CardKind.Guard,
+                    Self,
+                    2,
+                    2f,
+                    "自分に[ブロック]{0}。2ターン、敵の攻撃を引きつける。[保持]。",
+                    Block(Self, Def, 90),
+                    Apply(Self, CardStatus.Taunt, 2)
+                )
+                .Is(CardTrait.Retain),
             Card(
-                "WarCry",
-                "鬨の声",
-                CardUser.Aria,
-                CardElement.None,
-                CardKind.Buff,
-                Allies,
-                1,
-                2f,
-                "味方全体の攻撃力を2ターン25%上げる。[初手]。",
-                Apply(Allies, CardStatus.AttackUp, 2, 25)
-            ).Is(CardTrait.Innate),
+                    "WarCry",
+                    "鬨の声",
+                    CardUser.Aria,
+                    CardElement.None,
+                    CardKind.Buff,
+                    Allies,
+                    1,
+                    2f,
+                    "味方全体の攻撃力を2ターン25%上げる。[初手]。",
+                    Apply(Allies, CardStatus.AttackUp, 2, 25)
+                )
+                .Is(CardTrait.Innate),
             // --- Toma: fire and ice -----------------------------------------------
             Card(
                 "Embers",
@@ -294,41 +304,44 @@ namespace Baryonyx.Combat
                 Apply(Enemies, CardStatus.Burn, 2).WithChance(60)
             ),
             Card(
-                "BlastSigil",
-                "爆炎の刻印",
-                CardUser.Toma,
-                CardElement.Fire,
-                CardKind.Attack,
-                Enemy,
-                1,
-                2.4f,
-                "敵1体に[刻印]。次のターン、敵全体に{0}ダメージ。[初手]。",
-                Apply(Enemy, CardStatus.BlastSigil, 1, Mag, 150)
-            ).Is(CardTrait.Innate),
+                    "BlastSigil",
+                    "爆炎の刻印",
+                    CardUser.Toma,
+                    CardElement.Fire,
+                    CardKind.Attack,
+                    Enemy,
+                    1,
+                    2.4f,
+                    "敵1体に[刻印]。次のターン、敵全体に{0}ダメージ。[初手]。",
+                    Apply(Enemy, CardStatus.BlastSigil, 1, Mag, 150)
+                )
+                .Is(CardTrait.Innate),
             Card(
-                "Meteor",
-                "メテオ",
-                CardUser.Toma,
-                CardElement.Fire,
-                CardKind.Attack,
-                Enemies,
-                3,
-                3f,
-                "敵全体に{0}ダメージ。[やけど]中の敵には2倍。[眠り札]。",
-                Damage(Enemies, Mag, 250).Bonus(CardCondition.OnBurning, 100)
-            ).Is(CardTrait.Sleeper | CardTrait.CutIn),
+                    "Meteor",
+                    "メテオ",
+                    CardUser.Toma,
+                    CardElement.Fire,
+                    CardKind.Attack,
+                    Enemies,
+                    3,
+                    3f,
+                    "敵全体に{0}ダメージ。[やけど]中の敵には2倍。[眠り札]。",
+                    Damage(Enemies, Mag, 250).Bonus(CardCondition.OnBurning, 100)
+                )
+                .Is(CardTrait.Sleeper | CardTrait.CutIn),
             Card(
-                "FlameEnchant",
-                "フレイムエンチャント",
-                CardUser.Toma,
-                CardElement.Fire,
-                CardKind.Buff,
-                Ally,
-                1,
-                2f,
-                "味方1体の攻撃に、3ターン炎属性を加える。[合体]斬り払い。",
-                Apply(Ally, CardStatus.FireBlade, 3)
-            ).Fuses("Slash", "FlameSlash"),
+                    "FlameEnchant",
+                    "フレイムエンチャント",
+                    CardUser.Toma,
+                    CardElement.Fire,
+                    CardKind.Buff,
+                    Ally,
+                    1,
+                    2f,
+                    "味方1体の攻撃に、3ターン炎属性を加える。[合体]斬り払い。",
+                    Apply(Ally, CardStatus.FireBlade, 3)
+                )
+                .Fuses("Slash", "FlameSlash"),
             Card(
                 "Icicles",
                 "つらら落とし",
@@ -343,55 +356,59 @@ namespace Baryonyx.Combat
                 Damage(Random, Mag, 40, hits: 2).WhenDiscarded()
             ),
             Card(
-                "Blizzard",
-                "ブリザード",
-                CardUser.Toma,
-                CardElement.Ice,
-                CardKind.Attack,
-                Enemies,
-                2,
-                2.2f,
-                "敵全体に{0}ダメージ。60%で[凍え]2ターン。[眠り札]。",
-                Damage(Enemies, Mag, 90),
-                Apply(Enemies, CardStatus.Chill, 2).WithChance(60)
-            ).Is(CardTrait.Sleeper),
+                    "Blizzard",
+                    "ブリザード",
+                    CardUser.Toma,
+                    CardElement.Ice,
+                    CardKind.Attack,
+                    Enemies,
+                    2,
+                    2.2f,
+                    "敵全体に{0}ダメージ。60%で[凍え]2ターン。[眠り札]。",
+                    Damage(Enemies, Mag, 90),
+                    Apply(Enemies, CardStatus.Chill, 2).WithChance(60)
+                )
+                .Is(CardTrait.Sleeper),
             Card(
-                "IceMirror",
-                "アイスミラー",
-                CardUser.Toma,
-                CardElement.Ice,
-                CardKind.Guard,
-                Ally,
-                1,
-                1.6f,
-                "味方1体が次に受ける単体攻撃を、1回はね返す。[保持]。",
-                Apply(Ally, CardStatus.Reflect, 1)
-            ).Is(CardTrait.Retain),
+                    "IceMirror",
+                    "アイスミラー",
+                    CardUser.Toma,
+                    CardElement.Ice,
+                    CardKind.Guard,
+                    Ally,
+                    1,
+                    1.6f,
+                    "味方1体が次に受ける単体攻撃を、1回はね返す。[保持]。",
+                    Apply(Ally, CardStatus.Reflect, 1)
+                )
+                .Is(CardTrait.Retain),
             Card(
-                "AbsoluteZero",
-                "絶対零度",
-                CardUser.Toma,
-                CardElement.Ice,
-                CardKind.Attack,
-                Enemy,
-                3,
-                2.4f,
-                "敵1体に{0}ダメージ。[凍え]中の敵には1.5倍。40%で[凍結]させる。[消滅]。",
-                Damage(Enemy, Mag, 450).Bonus(CardCondition.OnChilled, 50),
-                Apply(Enemy, CardStatus.Freeze, 1).WithChance(40)
-            ).Is(CardTrait.Exhaust | CardTrait.CutIn),
+                    "AbsoluteZero",
+                    "絶対零度",
+                    CardUser.Toma,
+                    CardElement.Ice,
+                    CardKind.Attack,
+                    Enemy,
+                    3,
+                    2.4f,
+                    "敵1体に{0}ダメージ。[凍え]中の敵には1.5倍。40%で[凍結]させる。[消滅]。",
+                    Damage(Enemy, Mag, 450).Bonus(CardCondition.OnChilled, 50),
+                    Apply(Enemy, CardStatus.Freeze, 1).WithChance(40)
+                )
+                .Is(CardTrait.Exhaust | CardTrait.CutIn),
             Card(
-                "QuickCast",
-                "詠唱短縮",
-                CardUser.Toma,
-                CardElement.None,
-                CardKind.Support,
-                Nobody,
-                0,
-                2f,
-                "次に使う炎・氷・雷カードのコストを0にする。[霧散]。",
-                NextCardFree(Magic)
-            ).Is(CardTrait.Ethereal),
+                    "QuickCast",
+                    "詠唱短縮",
+                    CardUser.Toma,
+                    CardElement.None,
+                    CardKind.Support,
+                    Nobody,
+                    0,
+                    2f,
+                    "次に使う炎・氷・雷カードのコストを0にする。[霧散]。",
+                    NextCardFree(Magic)
+                )
+                .Is(CardTrait.Ethereal),
             // --- Luka: pierce, thunder, tricks ------------------------------------
             Card(
                 "VitalThrust",
@@ -435,56 +452,60 @@ namespace Baryonyx.Combat
                 Simple(CardActionKind.Delay, Random, 1).WhenDiscarded()
             ),
             Card(
-                "InsightArrow",
-                "看破の矢",
-                CardUser.Luka,
-                CardElement.Pierce,
-                CardKind.Debuff,
-                Enemy,
-                1,
-                2.2f,
-                "敵1体に{0}ダメージ。その敵の[弱点]をすべて見抜く。[初手]。",
-                Damage(Enemy, Phy, 90),
-                Simple(CardActionKind.RevealWeakness, Enemy)
-            ).Is(CardTrait.Innate),
+                    "InsightArrow",
+                    "看破の矢",
+                    CardUser.Luka,
+                    CardElement.Pierce,
+                    CardKind.Debuff,
+                    Enemy,
+                    1,
+                    2.2f,
+                    "敵1体に{0}ダメージ。その敵の[弱点]をすべて見抜く。[初手]。",
+                    Damage(Enemy, Phy, 90),
+                    Simple(CardActionKind.RevealWeakness, Enemy)
+                )
+                .Is(CardTrait.Innate),
             Card(
-                "ArrowRain",
-                "アローレイン",
-                CardUser.Luka,
-                CardElement.Pierce,
-                CardKind.Attack,
-                Enemies,
-                2,
-                1.8f,
-                "敵全体に{0}ダメージ×2。[毒]がある敵には1.5倍。[連携]毒針：先に敵全体へ[毒]を2つ重ねる。",
-                Damage(Enemies, Phy, 50, hits: 2).Bonus(CardCondition.OnPoisoned, 50),
-                Apply(Enemies, CardStatus.Poison, 0, 2).WithChance(100).OnCombo()
-            ).Combo("PoisonNeedle"),
+                    "ArrowRain",
+                    "アローレイン",
+                    CardUser.Luka,
+                    CardElement.Pierce,
+                    CardKind.Attack,
+                    Enemies,
+                    2,
+                    1.8f,
+                    "敵全体に{0}ダメージ×2。[毒]がある敵には1.5倍。[連携]毒針：先に敵全体へ[毒]を2つ重ねる。",
+                    Damage(Enemies, Phy, 50, hits: 2).Bonus(CardCondition.OnPoisoned, 50),
+                    Apply(Enemies, CardStatus.Poison, 0, 2).WithChance(100).OnCombo()
+                )
+                .Combo("PoisonNeedle"),
             Card(
-                "ShadowSnipe",
-                "シャドウスナイプ",
-                CardUser.Luka,
-                CardElement.Pierce,
-                CardKind.Attack,
-                Enemy,
-                3,
-                2.6f,
-                "敵1体に{0}ダメージ。[弱点]を突くと威力+50%。[保持]。",
-                Damage(Enemy, Phy, 400).Bonus(CardCondition.OnWeakness, 50)
-            ).Is(CardTrait.Retain | CardTrait.CutIn),
+                    "ShadowSnipe",
+                    "シャドウスナイプ",
+                    CardUser.Luka,
+                    CardElement.Pierce,
+                    CardKind.Attack,
+                    Enemy,
+                    3,
+                    2.6f,
+                    "敵1体に{0}ダメージ。[弱点]を突くと威力+50%。[保持]。",
+                    Damage(Enemy, Phy, 400).Bonus(CardCondition.OnWeakness, 50)
+                )
+                .Is(CardTrait.Retain | CardTrait.CutIn),
             Card(
-                "LightningBolt",
-                "ライトニングボルト",
-                CardUser.Luka,
-                CardElement.Thunder,
-                CardKind.Attack,
-                Enemy,
-                1,
-                2.2f,
-                "敵1体に{0}ダメージ。60%で[麻痺]1ターン。[合体]アイスランス。",
-                Damage(Enemy, Mag, 110),
-                Apply(Enemy, CardStatus.Paralysis, 1).WithChance(60)
-            ).Fuses("Ice", "FrostSpear"),
+                    "LightningBolt",
+                    "ライトニングボルト",
+                    CardUser.Luka,
+                    CardElement.Thunder,
+                    CardKind.Attack,
+                    Enemy,
+                    1,
+                    2.2f,
+                    "敵1体に{0}ダメージ。60%で[麻痺]1ターン。[合体]アイスランス。",
+                    Damage(Enemy, Mag, 110),
+                    Apply(Enemy, CardStatus.Paralysis, 1).WithChance(60)
+                )
+                .Fuses("Ice", "FrostSpear"),
             Card(
                 "ChainLightning",
                 "チェインライトニング",
@@ -498,31 +519,33 @@ namespace Baryonyx.Combat
                 Damage(Chain, Mag, 90, hits: 3)
             ),
             Card(
-                "Thundercloud",
-                "雷雲",
-                CardUser.Luka,
-                CardElement.Thunder,
-                CardKind.Attack,
-                Nobody,
-                2,
-                2f,
-                "3ターンの間、毎ターンランダムな敵1体に{0}ダメージ。[消滅]。",
-                Apply(Nobody, CardStatus.Thundercloud, 3, Mag, 100)
-            ).Is(CardTrait.Exhaust),
+                    "Thundercloud",
+                    "雷雲",
+                    CardUser.Luka,
+                    CardElement.Thunder,
+                    CardKind.Attack,
+                    Nobody,
+                    2,
+                    2f,
+                    "3ターンの間、毎ターンランダムな敵1体に{0}ダメージ。[消滅]。",
+                    Apply(Nobody, CardStatus.Thundercloud, 3, Mag, 100)
+                )
+                .Is(CardTrait.Exhaust),
             Card(
-                "ThunderSpear",
-                "雷神の槍",
-                CardUser.Luka,
-                CardElement.Thunder,
-                CardKind.Attack,
-                Enemy,
-                3,
-                2.6f,
-                "手札を1枚[捨てる]。敵1体に{0}、さらに敵全体に{1}ダメージ。",
-                Discard(1),
-                Damage(Enemy, Mag, 380),
-                Damage(Enemies, Mag, 60)
-            ).Is(CardTrait.CutIn),
+                    "ThunderSpear",
+                    "雷神の槍",
+                    CardUser.Luka,
+                    CardElement.Thunder,
+                    CardKind.Attack,
+                    Enemy,
+                    3,
+                    2.6f,
+                    "手札を1枚[捨てる]。敵1体に{0}、さらに敵全体に{1}ダメージ。",
+                    Discard(1),
+                    Damage(Enemy, Mag, 380),
+                    Damage(Enemies, Mag, 60)
+                )
+                .Is(CardTrait.CutIn),
             Card(
                 "Gale",
                 "疾風迅雷",
@@ -563,29 +586,31 @@ namespace Baryonyx.Combat
                 Heal(Allies, Mag, 80).WithAct(10, 100)
             ),
             Card(
-                "Regen",
-                "リジェネ",
-                CardUser.Mina,
-                CardElement.None,
-                CardKind.Heal,
-                Ally,
-                1,
-                2.2f,
-                "味方1体を、3ターンの間、毎ターン{0}回復する。[眠り札]。",
-                Apply(Ally, CardStatus.Regen, 3, Mag, 35)
-            ).Is(CardTrait.Sleeper),
+                    "Regen",
+                    "リジェネ",
+                    CardUser.Mina,
+                    CardElement.None,
+                    CardKind.Heal,
+                    Ally,
+                    1,
+                    2.2f,
+                    "味方1体を、3ターンの間、毎ターン{0}回復する。[眠り札]。",
+                    Apply(Ally, CardStatus.Regen, 3, Mag, 35)
+                )
+                .Is(CardTrait.Sleeper),
             Card(
-                "Resurrection",
-                "リザレクション",
-                CardUser.Mina,
-                CardElement.None,
-                CardKind.Heal,
-                Ally,
-                2,
-                2f,
-                "味方1体のHPを最大の半分回復。倒れていれば復活。[消滅]。",
-                Simple(CardActionKind.Revive, Ally, 50)
-            ).Is(CardTrait.Exhaust | CardTrait.CutIn),
+                    "Resurrection",
+                    "リザレクション",
+                    CardUser.Mina,
+                    CardElement.None,
+                    CardKind.Heal,
+                    Ally,
+                    2,
+                    2f,
+                    "味方1体のHPを最大の半分回復。倒れていれば復活。[消滅]。",
+                    Simple(CardActionKind.Revive, Ally, 50)
+                )
+                .Is(CardTrait.Exhaust | CardTrait.CutIn),
             Card(
                 "HolyHammer",
                 "聖なる鉄槌",
@@ -600,54 +625,58 @@ namespace Baryonyx.Combat
                 Simple(CardActionKind.Dispel, Enemy, 1)
             ),
             Card(
-                "Protect",
-                "プロテクト",
-                CardUser.Mina,
-                CardElement.None,
-                CardKind.Guard,
-                Allies,
-                1,
-                2f,
-                "味方全体の受けるダメージを、2ターン25%減らす。[保持]。",
-                Apply(Allies, CardStatus.Protect, 2, 25)
-            ).Is(CardTrait.Retain),
+                    "Protect",
+                    "プロテクト",
+                    CardUser.Mina,
+                    CardElement.None,
+                    CardKind.Guard,
+                    Allies,
+                    1,
+                    2f,
+                    "味方全体の受けるダメージを、2ターン25%減らす。[保持]。",
+                    Apply(Allies, CardStatus.Protect, 2, 25)
+                )
+                .Is(CardTrait.Retain),
             Card(
-                "Purify",
-                "浄化の光",
-                CardUser.Mina,
-                CardElement.None,
-                CardKind.Heal,
-                Allies,
-                0,
-                2.2f,
-                "味方全体の[状態異常]を消し、HPを{0}回復。[霧散]。",
-                Simple(CardActionKind.Cleanse, Allies),
-                Heal(Allies, Mag, 25)
-            ).Is(CardTrait.Ethereal),
+                    "Purify",
+                    "浄化の光",
+                    CardUser.Mina,
+                    CardElement.None,
+                    CardKind.Heal,
+                    Allies,
+                    0,
+                    2.2f,
+                    "味方全体の[状態異常]を消し、HPを{0}回復。[霧散]。",
+                    Simple(CardActionKind.Cleanse, Allies),
+                    Heal(Allies, Mag, 25)
+                )
+                .Is(CardTrait.Ethereal),
             Card(
-                "ManaPrayer",
-                "マナの祈り",
-                CardUser.Mina,
-                CardElement.None,
-                CardKind.Support,
-                Nobody,
-                0,
-                1.5f,
-                "エネルギー+2。[消滅]。",
-                Simple(CardActionKind.Energy, Nobody, 2)
-            ).Is(CardTrait.Exhaust),
+                    "ManaPrayer",
+                    "マナの祈り",
+                    CardUser.Mina,
+                    CardElement.None,
+                    CardKind.Support,
+                    Nobody,
+                    0,
+                    1.5f,
+                    "エネルギー+2。[消滅]。",
+                    Simple(CardActionKind.Energy, Nobody, 2)
+                )
+                .Is(CardTrait.Exhaust),
             Card(
-                "Revelation",
-                "天啓",
-                CardUser.Mina,
-                CardElement.None,
-                CardKind.Support,
-                Nobody,
-                1,
-                2f,
-                "捨て札からカードを1枚選び、手札に加える。[消滅]。",
-                TakeFromDiscard(1)
-            ).Is(CardTrait.Exhaust),
+                    "Revelation",
+                    "天啓",
+                    CardUser.Mina,
+                    CardElement.None,
+                    CardKind.Support,
+                    Nobody,
+                    1,
+                    2f,
+                    "捨て札からカードを1枚選び、手札に加える。[消滅]。",
+                    TakeFromDiscard(1)
+                )
+                .Is(CardTrait.Exhaust),
             Card(
                 "HolyLight",
                 "ホーリーライト",
@@ -662,17 +691,18 @@ namespace Baryonyx.Combat
                 Heal(Allies, Mag, 35)
             ),
             Card(
-                "DivineShield",
-                "ディバインシールド",
-                CardUser.Mina,
-                CardElement.None,
-                CardKind.Guard,
-                Ally,
-                2,
-                1.6f,
-                "味方1体は、次のターンまでダメージを受けない。[消滅]。",
-                Apply(Ally, CardStatus.Invincible, 1)
-            ).Is(CardTrait.Exhaust)
+                    "DivineShield",
+                    "ディバインシールド",
+                    CardUser.Mina,
+                    CardElement.None,
+                    CardKind.Guard,
+                    Ally,
+                    2,
+                    1.6f,
+                    "味方1体は、次のターンまでダメージを受けない。[消滅]。",
+                    Apply(Ally, CardStatus.Invincible, 1)
+                )
+                .Is(CardTrait.Exhaust)
         );
 
         /// <summary>
@@ -716,35 +746,37 @@ namespace Baryonyx.Combat
             Borrow(
                 "Slash",
                 Card(
-                    "FlameSlash",
-                    "炎の斬り払い",
-                    CardUser.Aria,
-                    CardElement.Fire,
-                    CardKind.Attack,
-                    Enemy,
-                    1,
-                    1f,
-                    "敵1体に{0}の炎属性ダメージ。60%で[やけど]3ターン。[消滅]。",
-                    Damage(Enemy, Phy, 250),
-                    Apply(Enemy, CardStatus.Burn, 3).WithChance(60)
-                ).Is(CardTrait.Exhaust)
+                        "FlameSlash",
+                        "炎の斬り払い",
+                        CardUser.Aria,
+                        CardElement.Fire,
+                        CardKind.Attack,
+                        Enemy,
+                        1,
+                        1f,
+                        "敵1体に{0}の炎属性ダメージ。60%で[やけど]3ターン。[消滅]。",
+                        Damage(Enemy, Phy, 250),
+                        Apply(Enemy, CardStatus.Burn, 3).WithChance(60)
+                    )
+                    .Is(CardTrait.Exhaust)
             ),
             Borrow(
                 "Ice",
                 Card(
-                    "FrostSpear",
-                    "氷雷の槍",
-                    CardUser.Toma,
-                    CardElement.Ice,
-                    CardKind.Attack,
-                    Enemy,
-                    1,
-                    1f,
-                    "敵1体に{0}ダメージ。60%で[凍え]2ターンと[麻痺]1ターン。[消滅]。",
-                    Damage(Enemy, Mag, 200),
-                    Apply(Enemy, CardStatus.Chill, 2).WithChance(60),
-                    Apply(Enemy, CardStatus.Paralysis, 1).WithChance(60)
-                ).Is(CardTrait.Exhaust)
+                        "FrostSpear",
+                        "氷雷の槍",
+                        CardUser.Toma,
+                        CardElement.Ice,
+                        CardKind.Attack,
+                        Enemy,
+                        1,
+                        1f,
+                        "敵1体に{0}ダメージ。60%で[凍え]2ターンと[麻痺]1ターン。[消滅]。",
+                        Damage(Enemy, Mag, 200),
+                        Apply(Enemy, CardStatus.Chill, 2).WithChance(60),
+                        Apply(Enemy, CardStatus.Paralysis, 1).WithChance(60)
+                    )
+                    .Is(CardTrait.Exhaust)
             )
         );
 
