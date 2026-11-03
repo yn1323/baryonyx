@@ -49,15 +49,37 @@ namespace Baryonyx.Temple
     /// <summary>One thing the summoning gave. Only equipment has a quality.</summary>
     public readonly struct SummonResult
     {
-        public SummonResult(SummonEntry entry, ItemQuality? quality, SummonBond bond = null)
+        public SummonResult(
+            SummonEntry entry,
+            ItemQuality? quality,
+            SummonBond bond = null,
+            float multiplier = 0f
+        )
         {
             Entry = entry;
             Quality = quality;
             Bond = bond;
+            this.multiplier = multiplier;
         }
+
+        private readonly float multiplier;
 
         public SummonEntry Entry { get; }
         public ItemQuality? Quality { get; }
+
+        /// <summary>
+        /// The equipment's multiplier, as the server drew it; a draw made on the device (the mock,
+        /// the lab) has only the quality and shows the middle of the quality's range. 1 for others.
+        /// </summary>
+        public float Multiplier =>
+            multiplier > 0f ? multiplier
+            : Quality is { } quality
+                ? Inventory.Quality.Middle(
+                    quality,
+                    Equipment.EquipmentCatalog.Find(Entry.Id)?.MaxMultiplier
+                        ?? Inventory.Quality.MinMultiplier
+                )
+            : Inventory.Quality.MinMultiplier;
 
         // キャラが出たときの絆。サーバーが決めるため、仮に引いた結果ではnull。
         public SummonBond Bond { get; }

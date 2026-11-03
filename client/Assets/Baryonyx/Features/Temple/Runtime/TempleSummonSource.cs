@@ -85,6 +85,7 @@ namespace Baryonyx.Temple
             public string id;
             public int stars;
             public string quality;
+            public float multiplier;
             public bool isNew;
             public int bond;
             public int tokens;
@@ -139,7 +140,8 @@ namespace Baryonyx.Temple
                 quality,
                 kind == LibraryKind.Character
                     ? new SummonBond(drawn.isNew, drawn.bond, drawn.shards, drawn.tokens)
-                    : null
+                    : null,
+                drawn.multiplier
             );
         }
     }

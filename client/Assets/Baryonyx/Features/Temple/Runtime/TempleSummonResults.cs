@@ -31,6 +31,9 @@ namespace Baryonyx.Temple
         public TMP_Text Title;
         public ItemTile[] Cards = Array.Empty<ItemTile>();
 
+        // 札を押すと出す、詳しい面と同じ中身の小さな窓。
+        public ItemDetailWindow DetailWindow;
+
         private IReadOnlyList<SummonResult> shown = Array.Empty<SummonResult>();
 
         public event Action AgainPressed;
@@ -46,7 +49,38 @@ namespace Baryonyx.Temple
                 Close.onClick.AddListener(Hide);
             if (Again != null)
                 Again.onClick.AddListener(() => AgainPressed?.Invoke());
+            for (int i = 0; i < Cards.Length; i++)
+            {
+                int index = i;
+                if (Cards[i] != null && Cards[i].Card != null)
+                    Cards[i].Card.Clicked += () => ShowDetail(index);
+            }
         }
+
+        /// <summary>Opens the small detail window on the result at <paramref name="index"/>.</summary>
+        public void ShowDetail(int index)
+        {
+            if (DetailWindow == null || index < 0 || index >= shown.Count)
+                return;
+            DetailWindow.Show(FaceOf(shown[index], Data));
+        }
+
+        /// <summary>The detail's face of a result: equipment with its quality and multiplier.</summary>
+        public static ItemFace FaceOf(SummonResult result, LibraryData data)
+        {
+            var entry = EntryOf(result, data);
+            return result.Quality is { } quality
+                ? LibraryFaces.Of(entry, quality, result.Multiplier)
+                : LibraryFaces.Of(entry);
+        }
+
+        private static LibraryEntryData EntryOf(SummonResult result, LibraryData data) =>
+            data != null
+                ? Array.Find(
+                    data.Entries,
+                    e => e.Kind == result.Entry.Kind && e.Id == result.Entry.Id
+                )
+                : null;
 
         /// <summary>The mock pool: the library's characters, and the adventure's items and equipment.</summary>
         public static IReadOnlyList<SummonEntry> PoolOf(LibraryData data) =>
@@ -77,28 +111,27 @@ namespace Baryonyx.Temple
 
         public void Hide()
         {
+            if (DetailWindow != null)
+                DetailWindow.Hide();
             if (Window != null)
                 Window.SetActive(false);
         }
 
+        // 詳しい窓を開いていれば、それだけを閉じる。
         public bool HandleBack()
         {
+            if (DetailWindow != null && DetailWindow.HandleBack())
+                return true;
             if (!IsOpen)
                 return false;
             Hide();
             return true;
         }
 
-        /// <summary>Draws one result on a card: its art, name, stars and kind, and quality.</summary>
+        /// <summary>Draws one result on a card: its art, name, stars and quality.</summary>
         public static void Paint(ItemTile card, SummonResult result, LibraryData data, float artBox)
         {
-            var entry =
-                data != null
-                    ? Array.Find(
-                        data.Entries,
-                        e => e.Kind == result.Entry.Kind && e.Id == result.Entry.Id
-                    )
-                    : null;
+            var entry = EntryOf(result, data);
             Set(card.Name, entry != null ? entry.Name : result.Entry.Id);
             Set(card.Stars, StarsLine(result, entry));
             Set(card.Quality, result.Quality is { } quality ? QualityPalette.Painted(quality) : "");
@@ -108,21 +141,15 @@ namespace Baryonyx.Temple
                 card.Card.Selected = result.Highlight;
         }
 
-        // ☆と分類（例：「★★★ 武器」）。キャラは☆を持たないため、加わったか、絆のしるしかかけらを得たことを書く。
+        // ☆（札には分類を書かない）。キャラは☆を持たないため、加わったか、絆のしるしかかけらを得たことを書く。
         private static string StarsLine(SummonResult result, LibraryEntryData entry)
         {
             var summoned = result.Entry;
-            string kind = TempleSummon
-                .Categories.FirstOrDefault(category => category.Kind == summoned.Kind)
-                .Name;
             if (summoned.Kind == LibraryKind.Character && result.Bond != null)
                 return result.Bond.IsNew ? "新しい仲間"
                     : result.Bond.Shards > 0 ? $"かけら+{result.Bond.Shards}"
                     : "突破のしるし+1";
-            if (summoned.Stars <= 0)
-                return kind;
-            string stars = new('★', summoned.Stars);
-            return $"<color=#{ColorUtility.ToHtmlStringRGB(UiPalette.Gold)}>{stars}</color> {kind}";
+            return ItemText.GoldStars(summoned.Stars);
         }
 
         // 絵は、縦横の大きいほうが枠に収まるいちばん大きい整数倍で出す（ライブラリと同じ）。

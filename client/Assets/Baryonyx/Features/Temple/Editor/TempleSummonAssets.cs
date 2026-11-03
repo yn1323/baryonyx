@@ -110,18 +110,23 @@ namespace Baryonyx.Temple.Editor
                 tenLeft,
                 top
             );
-            Layout.Text(
-                layer,
-                "Guarantee",
-                $"★{TempleSummon.GuaranteedStars}以上 1つ確定",
-                28,
-                UiPalette.Gold,
-                TextAlignmentOptions.Center,
-                tenLeft,
-                top - 48f,
-                ButtonWidth,
-                44f
-            );
+            summon.Guarantee = Layout
+                .Text(
+                    layer,
+                    "Guarantee",
+                    $"★{TempleSummon.GuaranteedStars}以上 1つ確定",
+                    UiType.Caption,
+                    UiPalette.Gold,
+                    TextAlignmentOptions.Center,
+                    tenLeft,
+                    top - 48f,
+                    ButtonWidth,
+                    44f
+                )
+                .gameObject;
+            // ルーンが足りないボタンの上の「ルーンが 〇〇 足りません」。
+            summon.SingleMissing = MissingLabel(layer, "SingleMissing", left, top);
+            summon.TenMissing = MissingLabel(layer, "TenMissing", tenLeft, top);
 
             var (rates, _, ratesInside) = GlassCardAssets.Choice(
                 Layout.Box(
@@ -148,7 +153,20 @@ namespace Baryonyx.Temple.Editor
             return panel.gameObject;
         }
 
-        // すりガラスのボタン。上に「1回召喚」、下にルーンのアイコンと値段。
+        private static TMP_Text MissingLabel(RectTransform layer, string name, float x, float top) =>
+            Layout.Text(
+                layer,
+                name,
+                "",
+                UiType.Caption,
+                UiPalette.Fall,
+                TextAlignmentOptions.Center,
+                x,
+                top - 48f,
+                ButtonWidth,
+                44f
+            );
+
         private static Button SummonButton(
             RectTransform layer,
             string name,
@@ -158,18 +176,12 @@ namespace Baryonyx.Temple.Editor
             float y
         )
         {
-            var (button, _, inside) = GlassCardAssets.Choice(
+            // 決めるボタンの青い板（プライマリー）。上に「1回召喚」、下にルーンのアイコンと値段。
+            var (button, label, inside) = ActionButtonAssets.Build(
                 Layout.Box(layer, name, x, y, ButtonWidth, ButtonHeight),
-                pattern: false,
-                fill: GlassCardAssets.SceneFillColor
-            );
-            var label = Label(
-                inside,
-                "Label",
                 text,
-                44,
-                UiPalette.TextMain,
-                TextAlignmentOptions.Center
+                ButtonRole.Primary,
+                UiType.Title
             );
             Band((RectTransform)label.transform, top: true, 16f, 60f, 16f, 16f);
             Frame
@@ -182,7 +194,8 @@ namespace Baryonyx.Temple.Editor
                     RuneIconSize,
                     38f,
                     TextAnchor.MiddleCenter,
-                    RuneIconSize
+                    RuneIconSize,
+                    UiPalette.ButtonText
                 )
                 .text = price.ToString("N0");
             return button;
@@ -426,8 +439,16 @@ namespace Baryonyx.Temple.Editor
                 )
                 .Button;
 
+            // 札を押すと出す、詳しい面と同じ中身の小さな窓。結果の窓の上に重ねる。
+            foreach (var card in cards)
+                card.Card.Interactable = true;
+            results.DetailWindow = ItemDetailAssets.Window(overlay, "ItemDetail");
+
             // 停止中もPrefabを開けば札が読めるよう、決まった種で引いた10回の結果を焼いておき、窓を閉じる。
+            // 詳しい窓には、光る札（☆4以上か品質S）の中身を見本として焼いておく。
             results.ShowPreviewState(1);
+            var sample = results.Shown.FirstOrDefault(result => result.Quality != null);
+            results.DetailWindow.Face.Show(TempleSummonResults.FaceOf(sample, results.Data));
             window.gameObject.SetActive(false);
             return results;
         }

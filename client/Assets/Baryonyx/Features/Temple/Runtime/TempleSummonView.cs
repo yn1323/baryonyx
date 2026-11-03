@@ -2,6 +2,7 @@ using System;
 using System.Threading.Tasks;
 using Baryonyx.Economy;
 using Baryonyx.UI.GuideMenu;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -22,6 +23,12 @@ namespace Baryonyx.Temple
         public Button Single;
         public Button Ten;
         public Button RatesButton;
+
+        // ルーンが足りないボタンの上に出す「ルーンが 〇〇 足りません」。10回の足りない文字は、
+        // 出している間「★3以上 1つ確定」の代わりにする。
+        public TMP_Text SingleMissing;
+        public TMP_Text TenMissing;
+        public GameObject Guarantee;
         public TempleSummonResults Results;
         public TempleSummonRates Rates;
 
@@ -55,10 +62,43 @@ namespace Baryonyx.Temple
                 Show = FindAnyObjectByType<TempleSummonShow>(FindObjectsInactive.Include);
             if (TenShow == null)
                 TenShow = FindAnyObjectByType<TempleSummonTenShow>(FindObjectsInactive.Include);
+            RuneBalance.Changed += RefreshPrices;
+            RefreshPrices();
         }
+
+        /// <summary>
+        /// Greys out a summon button the runes cannot pay for and writes how many are missing above
+        /// it (doc/rules/ui-design.md); while the balance is not read, both stay pressable and the
+        /// server decides.
+        /// </summary>
+        public void RefreshPrices()
+        {
+            var balance = RuneBalance.Known;
+            ShowPrice(Single, SingleMissing, TempleSummon.PriceOf(1), balance);
+            bool tenShort = ShowPrice(Ten, TenMissing, TempleSummon.PriceOf(TempleSummon.TenCount), balance);
+            if (Guarantee != null)
+                Guarantee.SetActive(!tenShort);
+        }
+
+        private static bool ShowPrice(Button button, TMP_Text missing, int price, long? balance)
+        {
+            bool shortOf = balance is { } runes && runes < price;
+            if (button != null)
+            {
+                button.interactable = !shortOf;
+                if (button.TryGetComponent(out UI.GlassCard card))
+                    card.Interactable = !shortOf;
+            }
+            if (missing != null)
+                missing.text = shortOf ? MissingText(price - balance.Value) : "";
+            return shortOf;
+        }
+
+        public static string MissingText(long runes) => $"ルーンが {runes:N0} 足りません";
 
         private void OnDisable()
         {
+            RuneBalance.Changed -= RefreshPrices;
             if (Single != null)
                 Single.onClick.RemoveListener(SummonOnce);
             if (Ten != null)
@@ -98,7 +138,8 @@ namespace Baryonyx.Temple
 
         /// <summary>
         /// Summons <paramref name="count"/> times, plays the presentation and shows what came
-        /// out. Without enough runes it only tells so; one summoning at a time.
+        /// out. Without enough runes it does nothing (the button is greyed out with what is
+        /// missing); one summoning at a time.
         /// </summary>
         public void Summon(int count)
         {
@@ -106,10 +147,7 @@ namespace Baryonyx.Temple
                 return;
             lastCount = Math.Max(1, count);
             if (RuneBalance.Known is { } balance && balance < TempleSummon.PriceOf(lastCount))
-            {
-                ShowNotice(TempleSummonSession.ShortMessage);
                 return;
-            }
             SummonTask = SummonAsync(lastCount);
         }
 

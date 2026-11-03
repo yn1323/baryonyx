@@ -258,6 +258,13 @@ namespace Baryonyx.Tests.PlayMode
                 ),
                 Is.True
             );
+            // 札を押すと詳しい窓を出す。「もどる」は詳しい窓だけを閉じ、もう一度で結果の窓を閉じる。
+            results.Cards[0].Card.Click();
+            Assert.That(results.DetailWindow.IsOpen, Is.True);
+            Assert.That(results.DetailWindow.Face.Name.text, Is.Not.Empty);
+            view.Back.onClick.Invoke();
+            Assert.That(results.DetailWindow.IsOpen, Is.False);
+            Assert.That(results.IsOpen, Is.True);
             view.Back.onClick.Invoke();
             Assert.That(results.IsOpen, Is.False);
 
@@ -272,11 +279,17 @@ namespace Baryonyx.Tests.PlayMode
             results.Veil.onClick.Invoke();
             Assert.That(results.IsOpen, Is.False);
 
-            // 残高が足りなければ引かず、通知の帯で知らせる。
+            // 残高が足りなければ押せなくし、ボタンの上に足りない数を出す。押しても引かない。
             RuneBalance.Set(100);
+            Assert.That(summon.Ten.interactable, Is.False);
+            Assert.That(summon.Single.interactable, Is.False);
+            Assert.That(
+                summon.TenMissing.text,
+                Is.EqualTo(TempleSummonView.MissingText(TempleSummon.TenPrice - 100))
+            );
+            Assert.That(summon.Guarantee.activeSelf, Is.False);
             summon.Ten.onClick.Invoke();
             Assert.That(summon.Presenting, Is.False);
-            Assert.That(view.ToastMessage, Is.EqualTo(TempleSummonSession.ShortMessage));
 
             view.Back.onClick.Invoke();
             Assert.That(view.MenuPanel.activeSelf, Is.True);
