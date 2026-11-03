@@ -44,6 +44,12 @@ namespace Baryonyx.Combat.Presentation
         /// equipment's effect, doc/features/equipment.md#装備の効果).
         /// </summary>
         public int TwiceChance;
+
+        /// <summary>
+        /// The battle effects the member brings in besides its passives: its equipment's
+        /// (doc/plans/2026-11-03-battle-effect-system.md).
+        /// </summary>
+        public IReadOnlyList<BattleEffect> Effects = Array.Empty<BattleEffect>();
     }
 
     /// <summary>
@@ -95,6 +101,7 @@ namespace Baryonyx.Combat.Presentation
                 return;
             var deck = new List<BattleInspectCardData>();
             var passives = new IReadOnlyList<CombatPassiveKind>[Allies.Length];
+            var others = new IReadOnlyList<BattleEffect>[Allies.Length];
             var places = Enumerable
                 .Range(0, Allies.Length)
                 .OrderBy(place => Allies[place].Slot)
@@ -108,6 +115,12 @@ namespace Baryonyx.Combat.Presentation
                 if (member == null)
                     continue;
                 passives[place] = member.Passives;
+                // 装備などの効果と、戦闘後の強化（背水・先手・弔い）の効果。
+                var held = new List<BattleEffect>(member.Effects ?? Array.Empty<BattleEffect>());
+                foreach (var boost in member.Boosts ?? Array.Empty<BattleStatBoost>())
+                    if (boost != null)
+                        held.Add(BattleStatBoosts.EffectOf(boost));
+                others[place] = held;
                 foreach (var card in member.Cards)
                     if (card?.Skill != null)
                     {
@@ -121,7 +134,7 @@ namespace Baryonyx.Combat.Presentation
             }
             Deck = deck.ToArray();
             deckKeywords = null;
-            UsePassives(passives);
+            UsePassives(passives, others);
             ClearBlock();
             // The deck is dealt anew from the new cards; an empty slot's place is down from the
             // start, not fallen in the battle.

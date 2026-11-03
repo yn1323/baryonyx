@@ -74,6 +74,8 @@ namespace Baryonyx.Adventure
                 );
             if (FixedOdds)
                 BattleOdds.Fix(critical: false, lands: true);
+            bool effectSkillsOff = EnemyMove.EffectSkillsOff;
+            EnemyMove.EffectSkillsOff = !request.enemyEffectSkills;
             Time.timeScale = Mathf.Max(1f, request.timeScale);
             try
             {
@@ -87,6 +89,7 @@ namespace Baryonyx.Adventure
                 // 種で振った確率を、本物の戦闘と同じ共有の乱数へ戻す。
                 if (!FixedOdds)
                     BattleOdds.Unfix();
+                EnemyMove.EffectSkillsOff = effectSkillsOff;
                 Time.timeScale = timeScale;
                 foreach (var level in levels)
                     PartySession.SetLevel(level.Key, level.Value);
@@ -205,6 +208,13 @@ namespace Baryonyx.Adventure
         )
         {
             var members = BattleBalanceParty.Of(request, party, training, shares);
+            // 画面なしで戦うなら、シーンを読まずにその場で決める。
+            if (request.IsHeadless)
+            {
+                var (fought, left) = BattleBalanceHeadless.Fight(request, encounter, seed, members);
+                done(fought, left);
+                yield break;
+            }
             BattleInspectView view = null;
             // 戦闘画面が自分の準備（Awake）を終え、戦闘を始める（Start）前に、冒険の戦闘と同じく敵と編成を入れる。
             void Prepare(Scene scene, LoadSceneMode mode)

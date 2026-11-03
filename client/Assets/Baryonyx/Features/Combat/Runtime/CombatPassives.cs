@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using static Baryonyx.Combat.BattleCondition;
 
 namespace Baryonyx.Combat
 {
@@ -27,8 +28,8 @@ namespace Baryonyx.Combat
     }
 
     /// <summary>
-    /// One passive skill: who has it, the level that unlocks it, its name and its text. It works
-    /// by itself in battle while its holder stands (<see cref="CombatPassiveRules"/>).
+    /// One passive skill: who has it, the level that unlocks it, its name, its text and what it
+    /// does in battle (<see cref="Effect"/>), which works by itself while its holder stands.
     /// </summary>
     public sealed class CombatPassive
     {
@@ -44,6 +45,9 @@ namespace Baryonyx.Combat
         public string Character;
         public int UnlockLevel;
 
+        /// <summary>What it does in battle, with its id and name (doc/plans/2026-11-03-battle-effect-system.md).</summary>
+        public BattleEffect Effect;
+
         /// <summary>Its icon's file name under the passives' art folder, without the extension.</summary>
         public string Icon => "Passive" + Kind;
 
@@ -53,12 +57,16 @@ namespace Baryonyx.Combat
 
     /// <summary>
     /// The passive skills of the mock data's nine characters, two each (provisional:
-    /// doc/features/passives.md). The first unlocks at level 1 and the second at level 10.
+    /// doc/features/passives.md). The first unlocks at level 1 and the second at level 10. Each
+    /// is written with its effect: when it works, on what condition and what it does.
     /// </summary>
     public static class CombatPassives
     {
         public const int FirstUnlockLevel = 1;
         public const int SecondUnlockLevel = 10;
+
+        // 独り立ちが見る、見よう見まねの効果のID。
+        private const string CopycatId = "passive-copycat";
 
         public static readonly IReadOnlyList<CombatPassive> All = new[]
         {
@@ -67,126 +75,293 @@ namespace Baryonyx.Combat
                 CombatPassiveKind.StarChart,
                 "star-chart",
                 "星図の計算",
-                "ターンの終わりに残ったエネルギーを1まで、次のターンへ持ち越す。"
+                "ターンの終わりに残ったエネルギーを1まで、次のターンへ持ち越す。",
+                e =>
+                    e.On(
+                        BattleTrigger.PartyTurnEnd,
+                        BattleAct.CarryEnergy(CombatPassiveRules.CarriedEnergy)
+                    )
             ),
             Second(
                 "toma",
                 CombatPassiveKind.ThermalShock,
                 "thermal-shock",
                 "寒暖の理",
-                "[やけど]と[凍え]が両方付いた敵へのダメージ+30%。"
+                "[やけど]と[凍え]が両方付いた敵へのダメージ+30%。",
+                e =>
+                    e.AddPercent(BattleValue.Damage, CombatPassiveRules.ThermalShockPercent)
+                        .When(
+                            ActorIsAlly
+                                & KindIs(BattleDamageKind.Card, BattleDamageKind.Effect)
+                                & TargetHas(CardStatus.Burn)
+                                & TargetHas(CardStatus.Chill)
+                        )
+                        .Shows(BattleShow.OncePerCard)
             ),
             Pair(
                 "luka",
                 CombatPassiveKind.HeadStart,
                 "head-start",
                 "早駆け",
-                "戦闘の始めに配る手札+1。"
+                "戦闘の始めに配る手札+1。",
+                e =>
+                    e.Add(BattleValue.OpeningDraw, CombatPassiveRules.HeadStartCards)
+                        .Shows(BattleShow.Always)
             ),
             Second(
                 "luka",
                 CombatPassiveKind.ChainedArrows,
                 "chained-arrows",
                 "連ね矢",
-                "ルカの×回数の攻撃は、回数+1。"
+                "ルカの×回数の攻撃は、回数+1。",
+                e =>
+                    e.Add(BattleValue.Hits, 1)
+                        .When(ActorIsOwner & HitsMoreThanOnce)
+                        .Shows(BattleShow.OncePerCard)
             ),
             Pair(
                 "aria",
                 CombatPassiveKind.Cover,
                 "cover",
                 "かばう",
-                "HPが30%以下の味方への単体攻撃を、1ターンに1回、代わりに受ける。"
+                "HPが30%以下の味方への単体攻撃を、1ターンに1回、代わりに受ける。",
+                e =>
+                    e.On(BattleTrigger.EnemyTargeting, BattleAct.TakeInstead)
+                        .When(
+                            TargetIsAlly
+                                & !TargetIsOwner
+                                & TargetHpAtMost(CombatPassiveRules.CoverHpPercent)
+                                & !OwnerHpAtMost(CombatPassiveRules.CoverHpPercent)
+                        )
+                        .OncePerTurn()
             ),
             Second(
                 "aria",
                 CombatPassiveKind.IaiForm,
                 "iai-form",
                 "居合の型",
-                "毎ターン、味方が最初に使う斬属性の攻撃のダメージ+40%。"
+                "毎ターン、味方が最初に使う斬属性の攻撃のダメージ+40%。",
+                e =>
+                    e.On(
+                            BattleTrigger.CardPlaying,
+                            BattleAct.BoostCard(CombatPassiveRules.IaiFormPercent)
+                        )
+                        .When(ActorIsAlly & CardElementIs(CardElement.Slash) & CardDeals)
+                        .OncePerTurn()
             ),
             Pair(
                 "mina",
                 CombatPassiveKind.OverflowingPrayer,
                 "overflowing-prayer",
                 "あふれる祈り",
-                "ミナの回復で最大HPを超えた分を、その味方の[ブロック]にする。"
+                "ミナの回復で最大HPを超えた分を、その味方の[ブロック]にする。",
+                e =>
+                    e.On(
+                            BattleTrigger.Healed,
+                            BattleAct.GainBlock(BattleWho.Target, BattleAmount.Overflow)
+                        )
+                        .When(ActorIsOwner & Overflowed)
+                        .ShowsOver(BattleWho.Target)
             ),
             Second(
                 "mina",
                 CombatPassiveKind.WalkersBlessing,
                 "walkers-blessing",
                 "歩み手の加護",
-                "ミナの回復量が、今日のACTが多いほど上がる（最大+50%）。"
+                "ミナの回復量が、今日のACTが多いほど上がる（最大+50%）。",
+                e =>
+                    e.AddPercent(
+                            BattleValue.Heal,
+                            BattleAmount.ByAct(
+                                CombatPassiveRules.WalkersStepPercent,
+                                CombatPassiveRules.WalkersCapPercent
+                            )
+                        )
+                        .When(ActorIsOwner)
             ),
             Pair(
                 "anselm",
                 CombatPassiveKind.HolyFlameHammer,
                 "holy-flame-hammer",
                 "聖火の鉄槌",
-                "アンセルムの打属性の攻撃は、60%で[やけど]2ターンを付ける。"
+                "アンセルムの打属性の攻撃は、60%で[やけど]2ターンを付ける。",
+                e =>
+                    e.On(
+                            BattleTrigger.DealtDamage,
+                            BattleAct.ApplyStatus(
+                                BattleWho.Target,
+                                CardStatus.Burn,
+                                CombatPassiveRules.HolyFlameTurns,
+                                CombatPassiveRules.HolyFlameChance
+                            )
+                        )
+                        .When(
+                            ActorIsOwner
+                                & KindIs(BattleDamageKind.Card)
+                                & ElementIs(CardElement.Blunt)
+                                & TargetStands
+                        )
+                        .AtRandom()
+                        .Shows(BattleShow.OncePerCard)
             ),
             Second(
                 "anselm",
                 CombatPassiveKind.PurifyingVow,
                 "purifying-vow",
                 "浄めの誓い",
-                "味方に付く[状態異常]を、1ターンに1回防ぐ。"
+                "味方に付く[状態異常]を、1ターンに1回防ぐ。",
+                e =>
+                    e.On(BattleTrigger.StatusApplying, BattleAct.Cancel)
+                        .When(TargetIsAlly & StatusIsBad)
+                        .OncePerTurn()
             ),
             Pair(
                 "greta",
                 CombatPassiveKind.MarkTheWeak,
                 "mark-the-weak",
                 "急所狙い",
-                "HPが半分以下の敵へ、グレタの攻撃のダメージ+30%。"
+                "HPが半分以下の敵へ、グレタの攻撃のダメージ+30%。",
+                e =>
+                    e.AddPercent(BattleValue.Damage, CombatPassiveRules.MarkTheWeakPercent)
+                        .When(
+                            ActorIsOwner
+                                & KindIs(BattleDamageKind.Card)
+                                & TargetIsEnemy
+                                & TargetHpAtMost(50)
+                        )
+                        .Shows(BattleShow.OncePerCard)
             ),
             Second(
                 "greta",
                 CombatPassiveKind.SilentKill,
                 "silent-kill",
                 "影の一刺し",
-                "グレタの攻撃で敵を倒すと、エネルギー+1（1ターンに1回）。"
+                "グレタの攻撃で敵を倒すと、エネルギー+1（1ターンに1回）。",
+                e =>
+                    e.On(BattleTrigger.EnemyDefeated, BattleAct.GainEnergy(1))
+                        .When(ActorIsOwner & KindIs(BattleDamageKind.Card))
+                        .OncePerTurn()
             ),
             Pair(
                 "lutz",
                 CombatPassiveKind.ChargedShield,
                 "charged-shield",
                 "帯電の盾",
-                "ルッツが[ブロック]を得るたびに、ランダムな敵に属攻の20%の雷属性ダメージ。"
+                "ルッツが[ブロック]を得るたびに、ランダムな敵に属攻の20%の雷属性ダメージ。",
+                e =>
+                    e.On(
+                            BattleTrigger.GainedBlock,
+                            BattleAct.Strike(
+                                BattleWho.RandomEnemy,
+                                CardStat.MagicAttack,
+                                CombatPassiveRules.ChargedShieldPercent,
+                                CardElement.Thunder,
+                                BattleStrikeLook.Bolt
+                            )
+                        )
+                        .When(TargetIsOwner)
+                        .AtRandom()
             ),
             Second(
                 "lutz",
                 CombatPassiveKind.ManaShield,
                 "mana-shield",
                 "魔力の盾",
-                "ルッツの雷属性の攻撃は、与えたダメージの20%を自分の[ブロック]にする。"
+                "ルッツの雷属性の攻撃は、与えたダメージの20%を自分の[ブロック]にする。",
+                e =>
+                    e.On(
+                            BattleTrigger.CardPlayed,
+                            BattleAct.GainBlock(
+                                BattleWho.Owner,
+                                BattleAmount.PartOfHappened(CombatPassiveRules.ManaShieldPercent, 1)
+                            )
+                        )
+                        .When(ActorIsOwner & CardElementIs(CardElement.Thunder) & AmountAbove(0))
             ),
             Pair(
                 "rita",
                 CombatPassiveKind.Riposte,
                 "riposte",
                 "切り返し",
-                "リタが単体攻撃を受けると、その敵に物攻の30%の斬属性ダメージ。"
+                "リタが単体攻撃を受けると、その敵に物攻の30%の斬属性ダメージ。",
+                e =>
+                    e.On(
+                            BattleTrigger.TookBlow,
+                            BattleAct.Strike(
+                                BattleWho.Actor,
+                                CardStat.PhysicalAttack,
+                                CombatPassiveRules.RipostePercent,
+                                CardElement.Slash
+                            )
+                        )
+                        .When(TargetIsOwner & ActorIsEnemy & ActorStands)
             ),
             Second(
                 "rita",
                 CombatPassiveKind.OpenWounds,
                 "open-wounds",
                 "傷口を開く",
-                "[出血]中の敵にリタの攻撃が当たるたびに、[出血]のダメージがもう1回起きる。"
+                "[出血]中の敵にリタの攻撃が当たるたびに、[出血]のダメージがもう1回起きる。",
+                e =>
+                    e.On(BattleTrigger.DealtDamage, BattleAct.StrikeWith(CardStatus.Bleed))
+                        .When(
+                            ActorIsOwner
+                                & KindIs(BattleDamageKind.Card, BattleDamageKind.Effect)
+                                & TargetHas(CardStatus.Bleed)
+                                & TargetStands
+                        )
+                        .Shows(BattleShow.OncePerCard)
             ),
             Pair(
                 "ritsu",
                 CombatPassiveKind.Copycat,
                 "copycat",
                 "見よう見まね",
-                "ほかの味方が氷・雷属性のカードを使うたびに、リツの氷・雷属性のダメージ+10%（最大+50%）。"
+                "ほかの味方が氷・雷属性のカードを使うたびに、リツの氷・雷属性のダメージ+10%（最大+50%）。",
+                e =>
+                    e.Stacks(
+                            CombatPassiveRules.CopycatCapPercent
+                                / CombatPassiveRules.CopycatStepPercent
+                        )
+                        .On(
+                            BattleTrigger.CardPlaying,
+                            BattleAct.AddStacks(
+                                1,
+                                seen => $"+{CombatPassiveRules.CopycatPercent(seen)}%"
+                            )
+                        )
+                        .When(
+                            ActorIsOtherAlly
+                                & CardElementIs(CardElement.Ice, CardElement.Thunder)
+                                & StacksBelowMax
+                        )
+                        .AddPercent(
+                            BattleValue.Damage,
+                            BattleAmount.PerStack(CombatPassiveRules.CopycatStepPercent)
+                        )
+                        .When(
+                            ActorIsOwner
+                                & KindIs(BattleDamageKind.Card)
+                                & CardElementIs(CardElement.Ice, CardElement.Thunder)
+                        )
             ),
             Second(
                 "ritsu",
                 CombatPassiveKind.StandingAlone,
                 "standing-alone",
                 "独り立ち",
-                "見よう見まねが最大になると、リツの氷・雷属性のカードのコスト-1。"
+                "見よう見まねが最大になると、リツの氷・雷属性のカードのコスト-1。",
+                e =>
+                    e.Add(BattleValue.Cost, -CombatPassiveRules.StandingAloneCostDown)
+                        .When(
+                            ActorIsOwner
+                                & CardElementIs(CardElement.Ice, CardElement.Thunder)
+                                & OwnerEffectFull(CopycatId)
+                        )
+                        // 最大になったカードで1回だけ名前を出す。
+                        .On(BattleTrigger.CardPlaying, BattleAct.Show)
+                        .When(OwnerEffectFull(CopycatId))
+                        .OncePerBattle()
             ),
         };
 
@@ -223,16 +398,18 @@ namespace Baryonyx.Combat
             CombatPassiveKind kind,
             string id,
             string name,
-            string text
-        ) => Passive(character, kind, id, name, text, FirstUnlockLevel);
+            string text,
+            Func<BattleEffect, BattleEffect> effect
+        ) => Passive(character, kind, id, name, text, FirstUnlockLevel, effect);
 
         private static CombatPassive Second(
             string character,
             CombatPassiveKind kind,
             string id,
             string name,
-            string text
-        ) => Passive(character, kind, id, name, text, SecondUnlockLevel);
+            string text,
+            Func<BattleEffect, BattleEffect> effect
+        ) => Passive(character, kind, id, name, text, SecondUnlockLevel, effect);
 
         private static CombatPassive Passive(
             string character,
@@ -240,7 +417,8 @@ namespace Baryonyx.Combat
             string id,
             string name,
             string text,
-            int level
+            int level,
+            Func<BattleEffect, BattleEffect> effect
         ) =>
             new()
             {
@@ -250,12 +428,13 @@ namespace Baryonyx.Combat
                 Text = text,
                 Character = character,
                 UnlockLevel = level,
+                Effect = effect(new BattleEffect("passive-" + id, name)),
             };
     }
 
     /// <summary>
     /// The numbers and the plain rules of the passive skills (provisional:
-    /// doc/catalog/passives). The battle applies them as its turns and blows go.
+    /// doc/catalog/passives), which their effects (<see cref="CombatPassive.Effect"/>) are written with.
     /// </summary>
     public static class CombatPassiveRules
     {
@@ -349,14 +528,10 @@ namespace Baryonyx.Combat
         public static int Overflow(int hp, int maxHp, int heal) => Math.Max(0, hp + heal - maxHp);
 
         /// <summary><paramref name="value"/> grown by <paramref name="percent"/>, rounded half away from zero.</summary>
-        public static int Grow(int value, int percent) =>
-            percent == 0
-                ? value
-                : (int)Math.Round(value * (1 + percent / 100.0), MidpointRounding.AwayFromZero);
+        public static int Grow(int value, int percent) => BattleMath.Grow(value, percent);
 
         /// <summary><paramref name="percent"/> of <paramref name="value"/>, rounded half away from zero.</summary>
-        public static int Percent(int value, int percent) =>
-            (int)Math.Round(value * percent / 100.0, MidpointRounding.AwayFromZero);
+        public static int Percent(int value, int percent) => BattleMath.Percent(value, percent);
 
         /// <summary>True when the card deals damage more than once in a row ("×回数").</summary>
         public static bool HitsMoreThanOnce(CardSkill skill)

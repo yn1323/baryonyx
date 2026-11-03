@@ -80,6 +80,20 @@ namespace Baryonyx.Equipment
             string characterId
         ) => stats + Bonus(stats, state, characterId);
 
+        /// <summary>The effects in battle of <paramref name="items"/>, each at its multiplier.</summary>
+        public static IReadOnlyList<BattleEffect> BattleEffects(
+            IEnumerable<(EquipmentDefinition Kind, float Multiplier)> items
+        ) =>
+            (items ?? Array.Empty<(EquipmentDefinition, float)>())
+                .SelectMany(entry => entry.Kind.BattleEffectsAt(entry.Multiplier))
+                .ToArray();
+
+        /// <summary>The effects in battle of what <paramref name="characterId"/> wears.</summary>
+        public static IReadOnlyList<BattleEffect> BattleEffects(
+            EquipmentState state,
+            string characterId
+        ) => BattleEffects(Worn(state, characterId));
+
         /// <summary>The chance in percent that an attack skill of <paramref name="characterId"/> plays twice.</summary>
         public static int TwiceChance(EquipmentState state, string characterId) =>
             Math.Min(

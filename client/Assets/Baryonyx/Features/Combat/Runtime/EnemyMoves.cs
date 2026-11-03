@@ -106,8 +106,22 @@ namespace Baryonyx.Combat
         /// <summary>Why the battle cannot do it yet; null when it can.</summary>
         public string Unsupported;
 
+        /// <summary>
+        /// What the skill does as an effect (doc/plans/2026-11-03-battle-effect-system.md): its
+        /// rules on <see cref="BattleTrigger.Used"/> work once as it is used, its user the owner
+        /// (麻痺・毒・防御ダウンを付ける技). Null for a skill of the fields above only.
+        /// </summary>
+        public BattleEffect Effect;
+
+        /// <summary>
+        /// True while the skills whose working is an effect (<see cref="Effect"/>: 麻痺・毒・防御
+        /// ダウンを付ける技) are left out as if the battle could not do them, for the auto-battle
+        /// to compare the battles with and without them (doc/rules/client-testing.md#依頼の項目).
+        /// </summary>
+        public static bool EffectSkillsOff;
+
         public bool Strikes => Percent > 0;
-        public bool Supported => Unsupported == null;
+        public bool Supported => Unsupported == null && (Effect == null || !EffectSkillsOff);
 
         /// <summary>A blow on the party: <paramref name="percent"/> of <paramref name="stat"/>.</summary>
         public static EnemyMove Attack(
@@ -171,6 +185,10 @@ namespace Baryonyx.Combat
         /// not in the battle yet (its pattern's changes still come).
         /// </summary>
         public static EnemyMove Awaken(string name) => new() { Name = name };
+
+        /// <summary>A skill whose working is <paramref name="effect"/> (its rules on <see cref="BattleTrigger.Used"/>).</summary>
+        public static EnemyMove Hex(string name, BattleEffect effect) =>
+            new() { Name = name, Effect = effect };
 
         /// <summary>A skill the battle cannot do yet (<paramref name="why"/>): it is never chosen.</summary>
         public static EnemyMove Other(string name, string why) =>
@@ -426,6 +444,12 @@ namespace Baryonyx.Combat
     {
         public string Id;
         public EnemyMove[] Moves = Array.Empty<EnemyMove>();
+
+        /// <summary>
+        /// Effects the kind holds through the battle, as an ally holds its passives (敵の特性:
+        /// doc/plans/2026-11-03-battle-effect-system.md).
+        /// </summary>
+        public BattleEffect[] Effects = Array.Empty<BattleEffect>();
         public EnemyPattern Early = new();
 
         /// <summary>The battle turn its enrage starts on; 0 for none.</summary>

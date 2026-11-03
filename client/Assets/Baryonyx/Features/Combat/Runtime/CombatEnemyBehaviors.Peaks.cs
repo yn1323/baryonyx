@@ -22,7 +22,7 @@ namespace Baryonyx.Combat
                         Attack("火の玉", MagicAttack, 100),
                         // やけど2ターンは入れない。
                         Attack("火の息", MagicAttack, 50, EnemyAim.All),
-                        Other("延焼", "味方全体へのやけどの付与と延長"),
+                        Spread(),
                     },
                     Early = new EnemyPattern
                     {
@@ -83,7 +83,7 @@ namespace Baryonyx.Combat
                         // やけど1ターンは入れない。
                         Attack("火の玉", MagicAttack, 100),
                         Attack("二段突き", PhysicalAttack, 60, One, 2),
-                        Other("金切り声", "味方全体への麻痺"),
+                        Screech(),
                         Other("仲間を呼ぶ", "敵の呼び出し"),
                         // まねたカードの区分・属性と、それを使った味方を狙う分は入れず、
                         // 魔法の属攻80%で単体に当てる形にした。
@@ -114,10 +114,10 @@ namespace Baryonyx.Combat
                         Attack("氷のつぶて", MagicAttack, 100),
                         // 凍え2ターンは入れない。
                         Attack("冷たい息", MagicAttack, 50, EnemyAim.All),
-                        Other("にらみつけ", "味方単体への麻痺"),
+                        Glare(),
                         Guard("身を固める", 120),
                         Other("仲間を呼ぶ", "敵の呼び出し"),
-                        Other("朽ちの呪い", "味方単体への呪い"),
+                        DecayCurse(),
                         // 単体の技を全体へ広げる効果は、後半の SpreadPercent で表す。
                         Awaken("王冠の覚醒"),
                         // 詠唱の間に炎か打で最大HPの10%以上を受けると不発になる分は入れない。
@@ -185,7 +185,7 @@ namespace Baryonyx.Combat
                         Attack("火の息", MagicAttack, 50, EnemyAim.All),
                         Attack("かみつき", PhysicalAttack, 100),
                         Mend("傷ふさぎ", 60).WithRegen(2, 20),
-                        Other("燃えるうろこ", "物理の攻撃をしてきた味方へのやけど"),
+                        BurningScales(),
                     },
                     Early = new EnemyPattern
                     {
@@ -212,10 +212,10 @@ namespace Baryonyx.Combat
                         Attack("二段突き", PhysicalAttack, 60, One, 2),
                         // やけど2ターンは入れない。
                         Attack("火の息", MagicAttack, 50, EnemyAim.All),
-                        Other("金切り声", "味方全体への麻痺"),
+                        Screech(),
                         // 次の味方ターンの開始時に燃え上がる時間差は入れず、使ったときに当てる。
                         Attack("火の尾羽落とし", MagicAttack, 60, EnemyAim.All),
-                        Other("熱風の羽ばたき", "自分と仲間の速度アップ"),
+                        HotGust(),
                     },
                     Early = new EnemyPattern
                     {
@@ -406,8 +406,8 @@ namespace Baryonyx.Combat
                         Attack("なぎ払い", PhysicalAttack, 50, EnemyAim.All),
                         // 凍え2ターンは入れない。
                         Attack("冷たい息", MagicAttack, 50, EnemyAim.All),
-                        Other("金切り声", "味方全体への麻痺"),
-                        Other("霧隠れ", "受ける単体攻撃の軽減"),
+                        Screech(),
+                        MistVeil(),
                         // 戦闘の終わりまで行動のたびに当てる分は入れず、使ったときに1回だけ当てる。
                         Attack("迷い路の霧", MagicAttack, 10, EnemyAim.All),
                         // 次の味方ターンに引くカードが1枚減る分は入れない。

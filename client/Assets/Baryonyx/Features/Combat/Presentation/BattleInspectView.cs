@@ -136,6 +136,14 @@ namespace Baryonyx.Combat.Presentation
         /// <summary>The back, shown over the face while the card is face down.</summary>
         public GameObject Back;
         public int Cost;
+
+        /// <summary>
+        /// The cost the battle's effects gave the card when it was last priced (独り立ち); -1
+        /// before it is priced.
+        /// </summary>
+        [NonSerialized]
+        public int CostByEffects = -1;
+
         public int Power;
         public BattleInspectElement Element;
         public BattleInspectCardEffect Effect;
@@ -1598,7 +1606,10 @@ namespace Baryonyx.Combat.Presentation
                 return;
             PutBack();
             EnemyTurn = true;
-            EndTurnPassives();
+            // 星図の計算など、残ったエネルギーを見る効果に伝える。
+            carriedEnergy = 0;
+            Fire(BattleTrigger.PartyTurnEnd, new BattleEvent { Amount = Energy });
+            CountdownAllyStatuses();
             Refresh();
             Enqueue(EnemyPhase());
         }
@@ -1635,11 +1646,14 @@ namespace Baryonyx.Combat.Presentation
                 FlowHand();
             roundOrder = opening ?? EnemiesAfter(BattleTurn);
             bool enemiesAct = roundOrder.Count > 0;
+            Fire(BattleTrigger.EnemyTurnStart, new BattleEvent());
             if (enemiesAct)
             {
                 ShowTurnBanner(EnemyTurnText, enemies: true);
                 yield return Wait(Settings.TurnBannerHold);
             }
+            // 敵が味方に付けたやけど・毒は、敵のターンの始めに働く。
+            yield return AllyTurnStatuses();
             for (roundStep = 0; roundStep < roundOrder.Count; roundStep++)
             {
                 int entry = roundOrder[roundStep];
@@ -1650,6 +1664,7 @@ namespace Baryonyx.Combat.Presentation
                 yield return EnemyAct(entry);
             }
             roundStep = -1;
+            Fire(BattleTrigger.EnemyTurnEnd, new BattleEvent());
 
             // Burns, poison, regen, sigils and clouds work as the party's turn comes round.
             yield return PartyTurnStatuses();
@@ -1724,13 +1739,23 @@ namespace Baryonyx.Combat.Presentation
             // Block carries over, but only half of it, so it does not pile up turn after turn.
             HalveBlock();
             StartOfTurn(Turn + 1);
-            dealing = StartCoroutine(Deal(TurnDraw(), 0f));
+            dealing = StartCoroutine(Deal(DrawForTurn(apply: true), 0f));
             // Over the deal, so the party's turn begins with no wait.
             ShowPartyTurnBanner(again);
         }
 
-        /// <summary>The cards dealt at the start of a turn (<see cref="BattleInspectHandSettings.TurnDraw"/>).</summary>
-        public int TurnDraw() => Settings.TurnDraw;
+        /// <summary>
+        /// The cards dealt at the start of a turn (<see cref="BattleInspectHandSettings.TurnDraw"/>,
+        /// as the effects change it).
+        /// </summary>
+        public int TurnDraw() => DrawForTurn(apply: false);
+
+        private int DrawForTurn(bool apply) =>
+            Modify(BattleValue.TurnDraw, Settings.TurnDraw, new BattleEvent(), apply);
+
+        /// <summary>The opening hand, as the effects change it (早駆け).</summary>
+        private int OpeningDraw() =>
+            Modify(BattleValue.OpeningDraw, Settings.OpeningDraw, new BattleEvent());
 
         /// <summary>
         /// The enemies standing that act after the party's turn <paramref name="round"/> (1 for
@@ -1791,7 +1816,7 @@ namespace Baryonyx.Combat.Presentation
                 standing,
                 ally => HasStatus(true, ally, CardStatus.Taunt)
             );
-            target = CoverTarget(target);
+            target = TargetOf(target, index);
             yield return Perform(
                 enemy.SkillName,
                 new[] { enemy.Body },
@@ -1844,48 +1869,12 @@ namespace Baryonyx.Combat.Presentation
 
         private void StrikeNow(int target, int power, int attacker, EnemyMove move)
         {
-            if (Guarded(target, ref power, attacker))
-                return;
-            // The ally's defense softens the blow: magic defense against an enemy's spell,
-            // physical defense against its blow. A skill's spell is one of 属攻.
+            // A skill's spell is one of 属攻; the mock's blow is a spell for a magic enemy.
             bool magic =
                 move != null
                     ? move.Stat == CardStat.MagicAttack
                     : attacker >= 0 && Enemies[attacker].Magic;
-            if (attacker >= 0 && move is not { IgnoreDefense: true })
-                power = CombatFormula.Defend(
-                    power,
-                    magic ? StatsNow(target).MagicDefense : StatsNow(target).PhysicalDefense,
-                    Enemies[attacker].Level
-                );
-            if (move is { BreakBlock: true } && BlockOf(target) > 0)
-            {
-                ShowPopup(Allies[target].TargetArea, "ブロックを砕かれた", GuardColor, 36f);
-                allyBlock[target] = 0;
-                RefreshBlock(target);
-            }
-            // An enemy's blow may land as a critical hit, by its critical stat (doc/features/combat.md).
-            bool critical =
-                attacker >= 0
-                && BattleOdds.Critical(
-                    CombatFormula.CriticalChance(
-                        Enemies[attacker].Critical,
-                        Enemies[attacker].Level
-                    )
-                );
-            if (critical)
-                power = CombatFormula.Critical(power);
-            if (Vfx != null)
-                Vfx.Strike(
-                    Allies[target].TargetArea,
-                    move != null ? move.Name
-                        : attacker >= 0 ? Enemies[attacker].SkillName
-                        : null,
-                    attacker >= 0 ? Enemies[attacker].Body : null,
-                    magic
-                );
-            HitAlly(target, power, pastBlock: move is { IgnoreBlock: true }, critical: critical);
-            Riposte(target, attacker);
+            EnemyBlows.Strike(this, effects, EnemyAt(attacker), AllyAt(target), power, magic, move);
         }
 
         // --- Deck ----------------------------------------------------------------------------
@@ -1914,6 +1903,7 @@ namespace Baryonyx.Combat.Presentation
             }
             else
                 dealing = StartCoroutine(Deal(opening, Settings.DealDelay));
+            Fire(BattleTrigger.BattleStart, new BattleEvent());
         }
 
         /// <summary>
@@ -1926,7 +1916,7 @@ namespace Baryonyx.Combat.Presentation
             reserved = 0;
             hand.Clear();
             ClearOmens();
-            ResetPassives();
+            StartEffects();
             AddFusions();
             ResetPiles();
             foreach (var card in Cards)
@@ -2070,7 +2060,7 @@ namespace Baryonyx.Combat.Presentation
             var card = Cards[index];
             var data = Deck[deckIndex];
             card.DeckIndex = deckIndex;
-            card.Cost = CostWithPassives(data);
+            card.Cost = card.CostByEffects = CostWithEffects(data);
             card.Power = data.Power;
             card.Element = data.Element;
             card.Effect = data.Effect;
@@ -2157,8 +2147,11 @@ namespace Baryonyx.Combat.Presentation
             // A combo looks for its partner among the cards played this turn.
             playedRoots.Clear();
             MaxEnergy = MaxEnergyAt(turn);
-            Energy = MaxEnergy;
-            StartTurnPassives();
+            // 1ターンに1回の効果を数え直し、持ち越したエネルギーを足す（星図の計算）。
+            effects.StartTurn();
+            Energy = Modify(BattleValue.TurnEnergy, MaxEnergy, new BattleEvent()) + carriedEnergy;
+            carriedEnergy = 0;
+            Fire(BattleTrigger.PartyTurnStart, new BattleEvent());
             ShowBoostsTurnedOn();
             Refresh();
         }
@@ -2235,13 +2228,18 @@ namespace Baryonyx.Combat.Presentation
         public const string TwiceText = "2回発動";
 
         // 装備の効果で、攻撃のカードはその確率でもう一度効果を起こす（doc/features/equipment.md#装備の効果）。
-        private bool PlaysTwice(BattleInspectCardData data, bool onEnemies, int caster) =>
-            onEnemies
-            && caster >= 0
-            && data.Effect
-                is (BattleInspectCardEffect.DamageOne or BattleInspectCardEffect.DamageAll)
-            && Allies[caster].TwiceChance > 0
-            && Dice.Chance(Allies[caster].TwiceChance);
+        private bool PlaysTwice(BattleInspectCardData data, bool onEnemies, int caster)
+        {
+            if (
+                !onEnemies
+                || caster < 0
+                || data.Effect
+                    is not (BattleInspectCardEffect.DamageOne or BattleInspectCardEffect.DamageAll)
+            )
+                return false;
+            int chance = TwiceChanceOf(data, caster);
+            return chance > 0 && Dice.Chance(chance);
+        }
 
         // 2回目は1回目と同じ相手を狙い、その相手が倒れていれば何も起きない。全体・ランダムの攻撃は残っている敵へ。
         private IEnumerator PerformAgain(
@@ -2648,8 +2646,16 @@ namespace Baryonyx.Combat.Presentation
             // Its protection and block soften a blow, but not a burn, poison nor bleeding (lasting).
             if (!lasting)
             {
-                if (HasStatus(false, index, CardStatus.Protect))
-                    damage = Mathf.RoundToInt(damage * (1f - ProtectCut));
+                // プロテクトなど、受ける側の効果（BattleStatuses）。
+                damage = Modify(
+                    BattleValue.DamageTaken,
+                    damage,
+                    new BattleEvent
+                    {
+                        Target = EnemyAt(index),
+                        Element = BattleCardText.ElementOf(element),
+                    }
+                );
                 damage = AbsorbEnemy(index, damage);
             }
             enemy.Hp = Mathf.Max(0, enemy.Hp - damage);
@@ -2805,6 +2811,7 @@ namespace Baryonyx.Combat.Presentation
         private void Refresh()
         {
             RefreshFallen();
+            RefreshCosts();
             for (int i = 0; i < Cards.Length; i++)
                 RefreshCard(i);
             if (EndTurnButton != null)

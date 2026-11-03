@@ -67,12 +67,11 @@ namespace Baryonyx.Combat.Presentation
         // By cost, then by name: the deck's own order is what is drawn next.
         private List<int> ByCost(IEnumerable<int> cards) =>
             cards
-                .OrderBy(deckIndex => CostWithPassives(Deck[deckIndex]))
+                .OrderBy(deckIndex => CostWithEffects(Deck[deckIndex]))
                 .ThenBy(deckIndex => Deck[deckIndex].Name, StringComparer.Ordinal)
                 .ToList();
 
-        private void ShowPile(BattlePile pile) =>
-            ShowPile(pile, PileOrder(pile));
+        private void ShowPile(BattlePile pile) => ShowPile(pile, PileOrder(pile));
 
         private void ShowPile(BattlePile pile, IReadOnlyList<int> cards)
         {
@@ -102,7 +101,7 @@ namespace Baryonyx.Combat.Presentation
                 Art = data.Art,
                 Frame = data.Frame,
                 Element = data.ElementIcon,
-                Cost = CostWithPassives(data),
+                Cost = CostWithEffects(data),
                 Quality = data.Quality,
                 FoilStyle = data.FoilStyle,
                 Omen = HasOmen(deckIndex),

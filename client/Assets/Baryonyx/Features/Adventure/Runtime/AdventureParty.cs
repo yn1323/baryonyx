@@ -104,6 +104,7 @@ namespace Baryonyx.Adventure
                     member.Id
                 ),
                 TwiceChance = EquipmentStats.TwiceChance(equipment, member.Id),
+                Effects = EquipmentStats.BattleEffects(equipment, member.Id),
                 Cards = cards,
                 Passives = passives,
             };

@@ -147,26 +147,26 @@ namespace Baryonyx.Combat.Presentation
             if (stats == null || definition == null)
                 return;
             enemy.Id = id;
-            enemy.Level = Mathf.Max(1, level);
-            enemy.MaxHp = EnemyStats.At(stats.Hp, enemy.Level);
-            enemy.Magic = stats.Magic;
-            enemy.Power = EnemyStats.At(
-                stats.Magic ? stats.MagicAttack : stats.PhysicalAttack,
-                enemy.Level
-            );
-            enemy.PhysicalDefense = EnemyStats.At(stats.PhysicalDefense, enemy.Level);
-            enemy.MagicDefense = EnemyStats.At(stats.MagicDefense, enemy.Level);
-            enemy.PhysicalAttack = EnemyStats.At(stats.PhysicalAttack, enemy.Level);
-            enemy.MagicAttack = EnemyStats.At(stats.MagicAttack, enemy.Level);
-            enemy.Speed = EnemyStats.At(stats.Speed, enemy.Level);
-            enemy.Critical = EnemyStats.At(stats.Critical, enemy.Level);
-            enemy.Luck = EnemyStats.At(stats.Luck, enemy.Level);
+            // 数値は、画面なしの戦闘と同じ作り方（BattleFighter.OfEnemy）から写す。
+            var made = BattleFighter.OfEnemy(id, level);
+            enemy.Level = made.Level;
+            enemy.MaxHp = made.MaxHp;
+            enemy.Magic = made.Magic;
+            enemy.Power = made.Power;
+            enemy.PhysicalDefense = made.PhysicalDefense;
+            enemy.MagicDefense = made.MagicDefense;
+            enemy.PhysicalAttack = made.PhysicalAttack;
+            enemy.MagicAttack = made.MagicAttack;
+            enemy.Speed = made.Speed;
+            enemy.Critical = made.Critical;
+            enemy.Luck = made.Luck;
             enemy.AttackScale = 1f;
             enemy.Block = 0;
             enemy.PowerUp = 0;
             // その種類の技と行動パターンで動く（doc/catalog/enemies）。定義がなければ、技1つで攻撃する。
             var behavior = CombatEnemyBehaviors.Find(id);
             enemy.Brain = behavior != null ? new EnemyBrain(behavior, n => Dice.Below(n)) : null;
+            UseEnemyEffects(index, behavior?.Effects);
             enemy.SkillName = stats.Skill;
             enemy.Boss = stats.Body == EnemyBody.Large;
             if (look != null && look.Texture != null && enemy.Sprite != null)

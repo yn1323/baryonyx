@@ -52,7 +52,7 @@ namespace Baryonyx.Combat
                         Attack("氷のつぶて", MagicAttack, 100),
                         // 凍え2ターンは入れない。
                         Attack("冷たい息", MagicAttack, 50, EnemyAim.All),
-                        Other("にらみつけ", "味方単体への麻痺"),
+                        Glare(),
                         Attack("かみつき", PhysicalAttack, 100),
                         // 凍えた味方を優先して狙う分と、凍え・凍結は入れない。
                         Attack("つらら刺し", MagicAttack, 80),
@@ -159,7 +159,7 @@ namespace Baryonyx.Combat
                     {
                         // やけど1ターンは入れない。
                         Attack("火の玉", MagicAttack, 100),
-                        Other("金切り声", "味方全体への麻痺"),
+                        Screech(),
                         Other("迷い火の誘い", "味方単体への惑い"),
                     },
                     Early = new EnemyPattern
@@ -185,7 +185,7 @@ namespace Baryonyx.Combat
                     Moves = new[]
                     {
                         Attack("たいあたり", PhysicalAttack, 100),
-                        Other("にらみつけ", "味方単体への麻痺"),
+                        Glare(),
                         Other("仲間を呼ぶ", "敵の呼び出し"),
                         // 標的の強化を1つ奪う分は入れない。
                         Attack("舌のかすめ取り", PhysicalAttack, 60),
@@ -268,7 +268,7 @@ namespace Baryonyx.Combat
                         Attack("なぎ払い", PhysicalAttack, 50, EnemyAim.All),
                         Guard("身を固める", 120),
                         Other("仲間を呼ぶ", "敵の呼び出し"),
-                        Other("丸のみ", "自分以外の敵を倒して回復する"),
+                        Swallow(),
                         // 出血している味方を狙い、その味方へのダメージを1.5倍にする分は、
                         // 出血がないため入れない。後半へ切り替えるだけの技にする。
                         Awaken("血の匂い"),

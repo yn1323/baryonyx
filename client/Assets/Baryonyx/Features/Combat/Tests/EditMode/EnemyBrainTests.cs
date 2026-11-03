@@ -46,8 +46,21 @@ namespace Baryonyx.Tests.EditMode
         [Test]
         public void ASkillTheBattleCannotDoIsPassedOver()
         {
-            // 胞子ばらまき (poison on the party) is never chosen, so the slime keeps to its tackle.
-            var brain = new EnemyBrain(CombatEnemyBehaviors.Find("moss-slime"), n => n - 1);
+            // A skill the battle cannot do yet (calling for help) is never chosen, so the enemy keeps to its tackle.
+            var behavior = new EnemyBehavior
+            {
+                Id = "test",
+                Moves = new[]
+                {
+                    Attack("たいあたり", PhysicalAttack, 100),
+                    Other("仲間を呼ぶ", "敵の呼び出し"),
+                },
+                Early = new EnemyPattern
+                {
+                    Choices = new[] { Weight("たいあたり", 60), Weight("仲間を呼ぶ", 40) },
+                },
+            };
+            var brain = new EnemyBrain(behavior, n => n - 1);
             Assert.That(Run(brain, 4), Has.All.EqualTo("たいあたり"));
         }
 

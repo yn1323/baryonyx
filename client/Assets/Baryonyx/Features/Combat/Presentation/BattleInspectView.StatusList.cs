@@ -155,7 +155,7 @@ namespace Baryonyx.Combat.Presentation
 
         // What is left of a status: poison's stacks, the turns of the others, or the one time
         // of those that wait to be used.
-        private static string LeftOf(ActiveStatus status) =>
+        private static string LeftOf(BattleStatusEntry status) =>
             status.Status switch
             {
                 CardStatus.Poison => $"×{status.Amount}",
@@ -163,7 +163,7 @@ namespace Baryonyx.Combat.Presentation
                 _ => status.Turns > 0 ? $"残り{status.Turns}ターン" : "",
             };
 
-        private static string NoteOf(ActiveStatus status) =>
+        private static string NoteOf(BattleStatusEntry status) =>
             status.Status == CardStatus.AttackUp && status.Amount > 0
                 ? $"与えるダメージ+{status.Amount}%。"
                 : CardRules.StatusNote(status.Status);

@@ -22,7 +22,7 @@ namespace Baryonyx.Combat
                         Attack("火の玉", MagicAttack, 100),
                         // 毒2重ねは入れない。
                         Attack("毒針", PhysicalAttack, 60),
-                        Other("すり抜け", "物理の攻撃の無効"),
+                        SlipThrough(),
                     },
                     Early = new EnemyPattern
                     {
@@ -112,9 +112,9 @@ namespace Baryonyx.Combat
                     Moves = new[]
                     {
                         Attack("たいあたり", PhysicalAttack, 100),
-                        Other("にらみつけ", "味方単体への麻痺"),
+                        Glare(),
                         Focus("力を溜める", 50),
-                        Other("畑の見張り番", "見張り（仲間を攻撃した味方への反撃）"),
+                        FieldWatch(),
                         Attack("種つぶて", PhysicalAttack, 40, EnemyAim.All),
                     },
                     Early = new EnemyPattern
@@ -153,7 +153,7 @@ namespace Baryonyx.Combat
                         Other("仲間を呼ぶ", "敵の呼び出し"),
                         // 捕縛は入れない。
                         Attack("絡め取り", PhysicalAttack, 60),
-                        Other("墨吐き", "味方全体への麻痺と予告を伏せる"),
+                        InkSpray(),
                         // 溜めのターンに身を固めるも使う。
                         Attack("八腕の乱れ打ち", PhysicalAttack, 60, EnemyAim.All, 2)
                             .Charged(1, "身を固める"),
@@ -196,8 +196,8 @@ namespace Baryonyx.Combat
                     Moves = new[]
                     {
                         Attack("吸い取り", PhysicalAttack, 80).Draining(50),
-                        Other("金切り声", "味方全体への麻痺"),
-                        Other("耳ざとい身かわし", "カードの回避"),
+                        Screech(),
+                        KeenDodge(),
                     },
                     Early = new EnemyPattern
                     {

@@ -110,6 +110,9 @@ namespace Baryonyx.Combat
                 ActStepPercent = from.ActStepPercent,
                 ActCapPercent = from.ActCapPercent,
                 BlockPercent = from.BlockPercent,
+                If = from.If,
+                BonusIf = from.BonusIf,
+                Plus = from.Plus,
                 PerDiscarded = from.PerDiscarded,
                 MakesFree = from.MakesFree,
             };

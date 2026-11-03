@@ -96,6 +96,35 @@ namespace Baryonyx.Equipment
         // 属性（doc/features/equipment.md#装備の属性）。2つ以上か、属性なしなら空。
         public IReadOnlyList<CardElement> Elements { get; }
 
+        private readonly List<(string Text, Func<BattleEffect, float, BattleEffect> Rules)> battle =
+            new();
+
+        /// <summary>
+        /// The kind's own effects in battle (doc/plans/2026-11-03-battle-effect-system.md), beyond
+        /// its stats: each with its description and its rules at a multiplier.
+        /// </summary>
+        public IReadOnlyList<(string Text, Func<BattleEffect, float, BattleEffect> Rules)> Battle =>
+            battle;
+
+        /// <summary>
+        /// Gives the kind an effect in battle: <paramref name="text"/> describes it (its numbers
+        /// grow with the multiplier as <see cref="EquipmentCatalog.Scale"/> grows them), and
+        /// <paramref name="rules"/> writes it on an effect with the kind's id and name, at the
+        /// item's multiplier. Called as the catalog is made.
+        /// </summary>
+        public EquipmentDefinition WithBattle(
+            string text,
+            Func<BattleEffect, float, BattleEffect> rules
+        )
+        {
+            battle.Add((text ?? "", rules ?? throw new ArgumentNullException(nameof(rules))));
+            return this;
+        }
+
+        /// <summary>The kind's effects in battle for an item of <paramref name="multiplier"/>.</summary>
+        public IEnumerable<BattleEffect> BattleEffectsAt(float multiplier) =>
+            battle.Select(entry => entry.Rules(new BattleEffect(Id, Name), multiplier));
+
         /// <summary>
         /// Whether a person who can set cards of <paramref name="usable"/> may put it on: one
         /// shared attribute is enough, and equipment without one fits anyone. A person whose
@@ -114,7 +143,12 @@ namespace Baryonyx.Equipment
 
         /// <summary>The description at <paramref name="multiplier"/>, every percent grown with it.</summary>
         public string DetailAt(float multiplier) =>
-            string.Join("｜", Effects.Select(effect => effect.TextAt(multiplier)));
+            string.Join(
+                "｜",
+                Effects
+                    .Select(effect => effect.TextAt(multiplier))
+                    .Concat(battle.Select(entry => EquipmentCatalog.Scale(entry.Text, multiplier)))
+            );
     }
 
     /// <summary>

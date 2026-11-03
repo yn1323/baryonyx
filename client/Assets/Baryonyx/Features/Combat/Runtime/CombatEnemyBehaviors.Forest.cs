@@ -75,7 +75,7 @@ namespace Baryonyx.Combat
                     {
                         Attack("二段突き", PhysicalAttack, 60, One, 2),
                         Focus("力を溜める", 50),
-                        Other("水晶角の照り返し", "単体攻撃の反射"),
+                        CrystalGlare(),
                     },
                     Early = new EnemyPattern
                     {
@@ -95,8 +95,8 @@ namespace Baryonyx.Combat
                     Moves = new[]
                     {
                         Attack("たいあたり", PhysicalAttack, 100),
-                        Other("胞子ばらまき", "味方全体への毒"),
-                        Other("胞子の芽吹き", "味方の毒を増やす"),
+                        SporeScatter(),
+                        SporeBloom(),
                         Guard("身を固める", 120),
                         Mend("傷ふさぎ", 60).WithRegen(2, 20),
                     },
@@ -127,7 +127,7 @@ namespace Baryonyx.Combat
                         // 出血2ターンは入れない。
                         Attack("引き裂き", PhysicalAttack, 60),
                         Attack("なぎ払い", PhysicalAttack, 50, EnemyAim.All),
-                        Other("にらみつけ", "味方単体への麻痺"),
+                        Glare(),
                         // ブロックが残っている間の、攻撃した味方への反撃は入れない。
                         Guard("とげのとぐろ", 80),
                     },
@@ -193,8 +193,8 @@ namespace Baryonyx.Combat
                     {
                         Attack("吸い取り", PhysicalAttack, 80).Draining(50),
                         Attack("なぎ払い", PhysicalAttack, 50, EnemyAim.All),
-                        Other("胞子ばらまき", "味方全体への毒"),
-                        Other("甘い蜜の香り", "味方全体への防御ダウン"),
+                        SporeScatter(),
+                        SweetScent(),
                         Mend("傷ふさぎ", 60).WithRegen(2, 20),
                     },
                     Early = new EnemyPattern

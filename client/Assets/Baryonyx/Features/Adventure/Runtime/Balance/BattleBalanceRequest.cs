@@ -73,6 +73,24 @@ namespace Baryonyx.Adventure
         /// <summary>"random" rolls critical hits and statuses; "fixed" has no critical hit and every status land, as the tests do.</summary>
         public string odds = "random";
 
+        /// <summary>
+        /// Whether the enemies use their skills whose working is an effect (麻痺・毒・防御ダウンを付
+        /// ける技, 2026-11-03); false leaves them out, as the battle was before they came.
+        /// </summary>
+        public bool enemyEffectSkills = true;
+
+        /// <summary>
+        /// "screen" fights on the battle screen (the same as the game); "headless" fights each
+        /// battle at once without it (<see cref="BattleBalanceHeadless"/>, much faster, with what
+        /// <see cref="Combat.BattleSimulation"/> leaves out).
+        /// </summary>
+        public string engine = Screen;
+
+        public const string Screen = "screen";
+        public const string Headless = "headless";
+
+        public bool IsHeadless => engine == Headless;
+
         /// <summary>How the cards are chosen (<see cref="BattleAutoPolicies"/>).</summary>
         public string policy = BattleAutoPolicies.Default;
 

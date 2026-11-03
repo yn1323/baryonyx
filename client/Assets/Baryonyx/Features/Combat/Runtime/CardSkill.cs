@@ -114,6 +114,9 @@ namespace Baryonyx.Combat
         FireBlade,
         Protect,
         Invincible,
+
+        /// <summary>呪い: the block the holder gains is halved (an enemy's skill puts it on).</summary>
+        Curse,
     }
 
     public enum CardActionKind
@@ -282,6 +285,34 @@ namespace Baryonyx.Combat
         public int BlockPercent;
 
         /// <summary>
+        /// A condition of the effects' parts the action also needs (any <see cref="BattleCondition"/>),
+        /// on what it lands on with the card's user as the actor; joined with <see cref="When"/>.
+        /// </summary>
+        public BattleCondition If;
+
+        /// <summary>A condition of the effects' parts for <see cref="BonusPercent"/>, in place of <see cref="BonusWhen"/>.</summary>
+        public BattleCondition BonusIf;
+
+        /// <summary>An amount added to the power before the bonus (any <see cref="BattleAmount"/>), with the user as the actor.</summary>
+        public BattleAmount Plus;
+
+        /// <summary>True when the action works only on a condition.</summary>
+        public bool HasCondition => When != CardCondition.Always || If != null;
+
+        /// <summary>The whole condition the action works on.</summary>
+        public BattleCondition Condition =>
+            If == null ? CardRules.ConditionOf(When)
+            : When == CardCondition.Always ? If
+            : CardRules.ConditionOf(When) & If;
+
+        /// <summary>True when the power grows on a condition.</summary>
+        public bool HasBonus =>
+            BonusPercent > 0 && (BonusIf != null || BonusWhen != CardCondition.Always);
+
+        /// <summary>The condition the power grows on.</summary>
+        public BattleCondition BonusCondition => BonusIf ?? CardRules.ConditionOf(BonusWhen);
+
+        /// <summary>
         /// The hits of a damage, or the cards drawn, grow by one for each card this card
         /// discarded (千刃乱舞).
         /// </summary>
@@ -440,6 +471,28 @@ namespace Baryonyx.Combat
             return this;
         }
 
+        /// <summary>The same action, done only when <paramref name="condition"/> holds too (any condition of the effects' parts).</summary>
+        public CardAction Only(BattleCondition condition)
+        {
+            If = If == null ? condition : If & condition;
+            return this;
+        }
+
+        /// <summary>The same action, growing by <paramref name="percent"/> when <paramref name="condition"/> holds.</summary>
+        public CardAction Bonus(BattleCondition condition, int percent)
+        {
+            BonusIf = condition;
+            BonusPercent = percent;
+            return this;
+        }
+
+        /// <summary>The same action, its power growing by <paramref name="amount"/> (any amount of the effects' parts).</summary>
+        public CardAction Adding(BattleAmount amount)
+        {
+            Plus = amount;
+            return this;
+        }
+
         /// <summary>The same action, done when the card follows its combo partner (連携).</summary>
         public CardAction OnCombo()
         {
@@ -517,6 +570,12 @@ namespace Baryonyx.Combat
 
         /// <summary>The card (its root id) that, played before this one in the same turn, sets off its combo (連携), or null.</summary>
         public string ComboWith;
+
+        /// <summary>
+        /// Effects of the card's own (doc/plans/2026-11-03-battle-effect-system.md): its user holds
+        /// them while the card plays, and they work on what happens in that play only.
+        /// </summary>
+        public IReadOnlyList<BattleEffect> Effects = Array.Empty<BattleEffect>();
 
         /// <summary>The id without an awakening's or evolution's stage ("Slash" of "Slash.1").</summary>
         public string RootId => Id == null ? null : Id.Split('.')[0];

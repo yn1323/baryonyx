@@ -123,16 +123,75 @@ namespace Baryonyx.Combat
             }
             if (!working)
                 return stats;
-            float Before(int index) =>
-                percents != null && index < percents.Count ? percents[index] : 0f;
-            var now = stats;
-            now.PhysicalAttack = Grow(
-                unboosted.PhysicalAttack,
-                Before(PhysicalAttack) + added[PhysicalAttack]
+            return Grown(
+                stats,
+                unboosted,
+                percents,
+                added[PhysicalAttack],
+                added[MagicAttack],
+                added[Speed]
             );
-            now.MagicAttack = Grow(unboosted.MagicAttack, Before(MagicAttack) + added[MagicAttack]);
-            now.Speed = Grow(unboosted.Speed, Before(Speed) + added[Speed]);
+        }
+
+        /// <summary>
+        /// The ally's stats with the percents the effects add in battle
+        /// (<see cref="BattleValue.StatPercent"/>): each grown once from the stats before any boon
+        /// with the boons' percents and the added ones. With nothing added, the stats stay as they
+        /// started; an ally without boons grows from the stats it started with.
+        /// </summary>
+        public static CharacterStats Grown(
+            CharacterStats stats,
+            CharacterStats unboosted,
+            IReadOnlyList<float> percents,
+            float physicalAttack,
+            float magicAttack,
+            float speed
+        )
+        {
+            if (physicalAttack == 0f && magicAttack == 0f && speed == 0f)
+                return stats;
+            // 戦闘後の強化のない味方（強化の前の値がない）は、始めの値から伸ばす。
+            bool boons = unboosted.Hp > 0;
+            var from = boons ? unboosted : stats;
+            float Before(int index) =>
+                boons && percents != null && index < percents.Count ? percents[index] : 0f;
+            var now = stats;
+            now.PhysicalAttack = Grow(from.PhysicalAttack, Before(PhysicalAttack) + physicalAttack);
+            now.MagicAttack = Grow(from.MagicAttack, Before(MagicAttack) + magicAttack);
+            now.Speed = Grow(from.Speed, Before(Speed) + speed);
             return now;
+        }
+
+        /// <summary>
+        /// The boost as an effect (doc/plans/2026-11-03-battle-effect-system.md): while its
+        /// condition holds, it adds its percent to <see cref="BattleValue.StatPercent"/> of its
+        /// stats, and its name shows when it starts to work or grows.
+        /// </summary>
+        public static BattleEffect EffectOf(BattleStatBoost boost)
+        {
+            var effect = new BattleEffect(
+                "boost-" + boost.Condition + "-" + boost.Stats,
+                boost.Name ?? ""
+            );
+            int[] stats =
+                boost.Stats == BattleBoostStats.Speed
+                    ? new[] { Speed }
+                    : new[] { PhysicalAttack, MagicAttack };
+            BattleAmount amount =
+                boost.Condition == BattleBoostCondition.PerFallenAlly
+                    ? BattleAmount.PerFallenAlly(boost.Percent)
+                    : boost.Percent;
+            var when = boost.Condition switch
+            {
+                BattleBoostCondition.HalfHpOrLess => BattleCondition.OwnerHpAtMost(50),
+                BattleBoostCondition.FirstTurns => BattleCondition.TurnAtMost(boost.Turns),
+                BattleBoostCondition.PerFallenAlly => BattleCondition.FallenAtLeast(1),
+                _ => !BattleCondition.Always,
+            };
+            return effect
+                .Add(BattleValue.StatPercent, amount)
+                .When(BattleCondition.ActorIsOwner & BattleCondition.StatIs(stats) & when)
+                .Shows(string.IsNullOrEmpty(boost.Name) ? BattleShow.Quiet : BattleShow.WhenGrows);
         }
     }
 }

@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace Baryonyx.Combat.Presentation
+namespace Baryonyx.Combat
 {
     /// <summary>
     /// Who each action of a card skill lands on, in waves, for the battle mock and the effects'

@@ -44,6 +44,45 @@ namespace Baryonyx.Combat
             return action.ActCapPercent > 0 ? Math.Min(bonus, action.ActCapPercent) : bonus;
         }
 
+        private static readonly BattleCondition[] conditions = BuildConditions();
+
+        /// <summary>
+        /// <paramref name="when"/> as a condition of the effects' parts, on what a card's action
+        /// lands on (doc/plans/2026-11-03-battle-effect-system.md): the target's statuses and HP
+        /// count only on an enemy, a block on the card's user, a weakness on the blow just dealt.
+        /// </summary>
+        public static BattleCondition ConditionOf(CardCondition when) =>
+            (int)when >= 0 && (int)when < conditions.Length
+                ? conditions[(int)when]
+                : !BattleCondition.Always;
+
+        private static BattleCondition[] BuildConditions()
+        {
+            var values = (CardCondition[])Enum.GetValues(typeof(CardCondition));
+            var built = new BattleCondition[values.Length];
+            foreach (var when in values)
+            {
+                BattleCondition On(CardStatus status) =>
+                    BattleCondition.TargetIsEnemy & BattleCondition.TargetHas(status);
+                built[(int)when] = when switch
+                {
+                    CardCondition.Always => BattleCondition.Always,
+                    CardCondition.OnWeakness => BattleCondition.HitWeakness,
+                    CardCondition.OnBurning => On(CardStatus.Burn),
+                    CardCondition.OnWounded => BattleCondition.TargetIsEnemy
+                        & BattleCondition.TargetHpAtMost(50),
+                    CardCondition.OnChilled => On(CardStatus.Chill),
+                    CardCondition.OnPoisoned => On(CardStatus.Poison),
+                    CardCondition.OnBleeding => On(CardStatus.Bleed),
+                    CardCondition.OnVulnerable => On(CardStatus.Vulnerable),
+                    CardCondition.OnParalyzed => On(CardStatus.Paralysis),
+                    CardCondition.OnGuarded => BattleCondition.ActorGuarded,
+                    _ => !BattleCondition.Always,
+                };
+            }
+            return built;
+        }
+
         /// <summary>The power when its bonus holds (a weakness hit, a burning target).</summary>
         public static int WithBonus(CardAction action, int power) =>
             action == null || action.BonusPercent <= 0
@@ -161,6 +200,7 @@ namespace Baryonyx.Combat
                 CardStatus.FireBlade => "炎の加護",
                 CardStatus.Protect => "プロテクト",
                 CardStatus.Invincible => "無敵",
+                CardStatus.Curse => "呪い",
                 _ => "",
             };
 
@@ -188,6 +228,7 @@ namespace Baryonyx.Combat
                 CardStatus.FireBlade => "攻撃に炎属性を加え、炎が弱点の敵には弱点の倍率を掛ける。",
                 CardStatus.Protect => "受けるダメージ-25%。",
                 CardStatus.Invincible => "ダメージを受けない。",
+                CardStatus.Curse => "得るブロックが半分になる。",
                 _ => "",
             };
         }
@@ -202,7 +243,8 @@ namespace Baryonyx.Combat
                     or CardStatus.Freeze
                     or CardStatus.Paralysis
                     or CardStatus.Vulnerable
-                    or CardStatus.BlastSigil;
+                    or CardStatus.BlastSigil
+                    or CardStatus.Curse;
 
         /// <summary>
         /// The damage over time a status deals each turn, as a part of the stat of the ally who

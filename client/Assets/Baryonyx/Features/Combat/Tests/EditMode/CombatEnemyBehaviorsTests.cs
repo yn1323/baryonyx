@@ -66,7 +66,8 @@ namespace Baryonyx.Tests.EditMode
                             || move.RegenTurns > 0
                             || move.AttackUpTurns > 0
                             || move.ProtectTurns > 0
-                            || move.PowerUpPercent > 0,
+                            || move.PowerUpPercent > 0
+                            || move.Effect != null,
                         Is.True,
                         $"{at} does something"
                     );

@@ -161,9 +161,9 @@ namespace Baryonyx.Combat.Presentation
             enemy.Gauge.SetHp(enemy.Hp, enemy.MaxHp);
             var list = StatusesOf(false, index);
             list.Clear();
-            list.Add(new ActiveStatus { Status = CardStatus.Chill, Turns = 2 });
-            list.Add(new ActiveStatus { Status = CardStatus.Vulnerable, Turns = 2 });
-            list.Add(new ActiveStatus { Status = CardStatus.Poison, Amount = 3 });
+            list.Add(new BattleStatusEntry { Status = CardStatus.Chill, Turns = 2 });
+            list.Add(new BattleStatusEntry { Status = CardStatus.Vulnerable, Turns = 2 });
+            list.Add(new BattleStatusEntry { Status = CardStatus.Poison, Amount = 3 });
             ShowStatusList(false, index);
         }
 

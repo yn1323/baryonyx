@@ -17,22 +17,18 @@ namespace Baryonyx.Combat.Presentation
     /// </summary>
     public sealed partial class BattleInspectView
     {
-        // Damage up and down from statuses (provisional).
-        private const float VulnerableBonus = 0.25f;
-
         /// <summary>The words over an enemy a status missed, and their colour.</summary>
         public const string ResistedText = "効かなかった";
         private static readonly Color ResistedColor = new(0.72f, 0.72f, 0.76f);
 
         // 凍結が解けて、次に動くまでは凍結にかからない敵。
         private readonly HashSet<int> thawed = new();
-        private const float ProtectCut = 0.25f;
 
         /// <summary>Today's ACT, for the cards that grow with it (a mock value; the battle has no step data yet).</summary>
         [Min(0)]
         public int TodayAct = 6000;
 
-        private readonly Dictionary<int, List<ActiveStatus>> statuses = new();
+        private readonly Dictionary<int, List<BattleStatusEntry>> statuses = new();
         private int[] allyBlock = Array.Empty<int>();
         private bool nextCardFree;
 
@@ -60,21 +56,6 @@ namespace Baryonyx.Combat.Presentation
         public int StatOf(int ally, CardStat stat) =>
             ally >= 0 && ally < Allies.Length ? StatOf(StatsNow(ally), stat) : 0;
 
-        private sealed class ActiveStatus
-        {
-            public CardStatus Status;
-            public int Turns;
-
-            /// <summary>Poison's stacks, or the part (percent) a buff or debuff changes.</summary>
-            public int Amount;
-
-            /// <summary>The damage or healing it does each time it works.</summary>
-            public int Power;
-
-            /// <summary>The ally who put it on.</summary>
-            public int Source;
-        }
-
         /// <summary>Plays a card skill: its effect from the user, each action landing as its blow does.</summary>
         private IEnumerator UseSkill(
             CardSkill skill,
@@ -84,7 +65,7 @@ namespace Baryonyx.Combat.Presentation
             int caster
         )
         {
-            skill = BeginCardPassives(skill, caster);
+            skill = BeginCard(skill, caster);
             var plan = PlanHits(skill, chosen, onEnemies, caster);
             if (Vfx == null)
             {
@@ -93,7 +74,7 @@ namespace Baryonyx.Combat.Presentation
                     Retarget(plan, null, i);
                     ApplyHit(skill, plan[i], caster, i == 0 || plan[i].Wave != plan[i - 1].Wave);
                 }
-                EndCardPassives(skill, caster);
+                EndCard(skill);
                 Refresh();
                 yield break;
             }
@@ -137,7 +118,7 @@ namespace Baryonyx.Combat.Presentation
             {
                 holdingDefeats--;
             }
-            EndCardPassives(skill, caster);
+            EndCard(skill);
             Refresh();
         }
 
@@ -194,7 +175,8 @@ namespace Baryonyx.Combat.Presentation
         }
 
         /// <summary>
-        /// Lands one hit of a card: each of its actions on the character, in order. Tells how
+        /// Lands one hit of a card: each of its actions on the character, in order, as
+        /// <see cref="CardHits"/> works them out for the battle and its forecast alike. Tells how
         /// hard the blow hit, so the effect can hit as hard.
         /// </summary>
         private BattleHitWeight ApplyHit(
@@ -204,206 +186,13 @@ namespace Baryonyx.Combat.Presentation
             bool first
         )
         {
-            var weight = BattleHitWeight.Normal;
-            bool weak = false;
-            foreach (var action in hit.Actions)
-            {
-                if (
-                    action.When != CardCondition.Always
-                    && !Holds(action.When, hit.Ally ? -1 : hit.Index, caster, weak)
-                )
-                    continue;
-                if (!hit.Ally && !Enemies[hit.Index].Alive && action.Kind != CardActionKind.Damage)
-                    continue;
-                switch (action.Kind)
-                {
-                    case CardActionKind.Damage:
-                        if (!hit.Ally)
-                        {
-                            weak = IsWeak(hit.Index, skill.Element, caster);
-                            var dealt = Damage(skill, action, hit.Index, caster, weak);
-                            if (dealt != BattleHitWeight.Normal || weight == BattleHitWeight.Normal)
-                                weight = dealt;
-                        }
-                        break;
-                    case CardActionKind.Heal:
-                        HealFrom(
-                            hit.Index,
-                            HealWithPassives(Power(action, caster), caster),
-                            caster
-                        );
-                        break;
-                    case CardActionKind.Revive:
-                    {
-                        var ally = Allies[hit.Index];
-                        HealAlly(hit.Index, Mathf.RoundToInt(ally.MaxHp * action.Amount / 100f));
-                        break;
-                    }
-                    case CardActionKind.Block:
-                    {
-                        int block = Power(action, caster);
-                        int gained = AddBlock(hit.Index, block);
-                        // A block for the party shows once, over the party.
-                        if (action.Target == CardTarget.AllAllies)
-                        {
-                            if (first)
-                                ShowPopup(PartyAnchor, $"ブロック +{block}", GuardColor, 48f);
-                        }
-                        else
-                            ShowPopup(
-                                Allies[hit.Index].TargetArea,
-                                $"ブロック +{gained}",
-                                GuardColor,
-                                44f
-                            );
-                        break;
-                    }
-                    case CardActionKind.Status:
-                        if (hit.Ally || Lands(hit.Index, action, caster))
-                            AddStatus(hit.Ally, hit.Index, action, caster);
-                        break;
-                    case CardActionKind.Energy:
-                        Energy = Mathf.Min(MaxEnergyCap, Energy + action.Amount);
-                        ShowPopup(
-                            PopupAreaOf(hit, action, caster),
-                            $"エネルギー +{action.Amount}",
-                            Gold,
-                            42f
-                        );
-                        break;
-                    case CardActionKind.Draw:
-                        ShowPopup(
-                            PopupAreaOf(hit, action, caster),
-                            $"{action.Amount}枚引く",
-                            SupportColor,
-                            42f
-                        );
-                        if (dealing == null)
-                            dealing = StartCoroutine(Deal(action.Amount, 0f));
-                        break;
-                    case CardActionKind.CostDown:
-                        LowerCosts(action);
-                        ShowPopup(
-                            PopupAreaOf(hit, action, caster),
-                            $"コスト -{action.Amount}",
-                            SupportColor,
-                            42f
-                        );
-                        break;
-                    case CardActionKind.NextCardFree:
-                        nextCardFree = true;
-                        nextFreeElements = action.Elements;
-                        ShowPopup(
-                            PopupAreaOf(hit, action, caster),
-                            "次のカード コスト0",
-                            Gold,
-                            42f
-                        );
-                        break;
-                    case CardActionKind.NextCardBoost:
-                        nextBoost = action.Amount;
-                        nextBoostElements = action.Elements;
-                        ShowPopup(AreaOf(hit), $"次のカード 威力+{action.Amount}%", Gold, 42f);
-                        break;
-                    case CardActionKind.RevealWeakness:
-                    {
-                        var enemy = Enemies[hit.Index];
-                        foreach (var weakness in enemy.Weaknesses)
-                            if (!weakness.Revealed)
-                                StartCoroutine(weakness.Reveal(Vfx, () => enemy.Alive));
-                        ShowPopup(enemy.TargetArea, "弱点を見抜いた", SupportColor, 40f);
-                        break;
-                    }
-                    case CardActionKind.Delay:
-                        ShowPopup(
-                            Enemies[hit.Index].TargetArea,
-                            "行動が遅れる",
-                            StatusColor(CardStatus.Chill),
-                            40f
-                        );
-                        break;
-                    case CardActionKind.Cleanse:
-                        StatusesOf(true, hit.Index)
-                            .RemoveAll(active => CardRules.IsBad(active.Status));
-                        if (first)
-                            ShowPopup(PartyAnchor, "浄化", SupportColor, 44f);
-                        break;
-                    case CardActionKind.Dispel:
-                        ShowPopup(Enemies[hit.Index].TargetArea, "強化を消した", SupportColor, 40f);
-                        break;
-                }
-            }
+            var weight = CardHits.Land(this, effects, cardPlay, skill, hit, caster, first);
             Refresh();
-            return weight;
-        }
-
-        /// <summary>A card's damage on an enemy, grown by its bonuses and the statuses on both sides.</summary>
-        private BattleHitWeight Damage(
-            CardSkill skill,
-            CardAction action,
-            int enemy,
-            int caster,
-            bool weak
-        )
-        {
-            var target = Enemies[enemy];
-            int power = Power(action, caster);
-            // シールドバッシュ：使い手のブロックの割合を足す。
-            if (action.BlockPercent > 0)
-                power += Mathf.RoundToInt(BlockOf(caster) * action.BlockPercent / 100f);
-            if (
-                action.BonusWhen != CardCondition.Always
-                && Holds(action.BonusWhen, enemy, caster, weak)
-            )
-                power = CardRules.WithBonus(action, power);
-            power = CardPowerWithPassives(power, skill, enemy, caster);
-            var up = Find(true, caster, CardStatus.AttackUp);
-            if (up != null)
-                power = Mathf.RoundToInt(power * (1f + up.Amount / 100f));
-            if (HasStatus(false, enemy, CardStatus.Vulnerable))
-                power = Mathf.RoundToInt(power * (1f + VulnerableBonus));
-            power = CombatFormula.Defend(
-                power,
-                DefenseOf(target, action.Stat),
-                Allies[caster].Level
-            );
-            // Each blow may land as a critical hit, by the user's critical stat (doc/features/combat.md).
-            bool critical = BattleOdds.Critical(
-                CombatFormula.CriticalChance(StatsNow(caster).Critical, Allies[caster].Level)
-            );
-            if (critical)
-                power = CombatFormula.Critical(power);
-            var element = BattleCardText.ElementOf(skill.Element);
-            var extra = HasStatus(true, caster, CardStatus.FireBlade)
-                ? BattleInspectElement.Fire
-                : BattleInspectElement.None;
-            int before = target.Hp;
-            var weight = Hit(enemy, power, element, extra, critical: critical);
-            AfterCardBlow(skill, enemy, caster, before - target.Hp);
-            return weight;
-        }
-
-        /// <summary>
-        /// True when <paramref name="when"/> holds for the card: on the enemy it lands on (-1 when
-        /// it lands on an ally), for its user, or for the blow just dealt (<paramref name="weak"/>).
-        /// </summary>
-        private bool Holds(CardCondition when, int enemy, int caster, bool weak)
-        {
-            bool On(CardStatus status) => enemy >= 0 && HasStatus(false, enemy, status);
-            return when switch
+            return weight switch
             {
-                CardCondition.Always => true,
-                CardCondition.OnWeakness => weak,
-                CardCondition.OnBurning => On(CardStatus.Burn),
-                CardCondition.OnWounded => enemy >= 0
-                    && Enemies[enemy].Hp * 2 <= Enemies[enemy].MaxHp,
-                CardCondition.OnChilled => On(CardStatus.Chill),
-                CardCondition.OnPoisoned => On(CardStatus.Poison),
-                CardCondition.OnBleeding => On(CardStatus.Bleed),
-                CardCondition.OnVulnerable => On(CardStatus.Vulnerable),
-                CardCondition.OnParalyzed => On(CardStatus.Paralysis),
-                CardCondition.OnGuarded => BlockOf(caster) > 0,
-                _ => false,
+                BattleBlowWeight.Defeat => BattleHitWeight.Defeat,
+                BattleBlowWeight.Weak => BattleHitWeight.Weak,
+                _ => BattleHitWeight.Normal,
             };
         }
 
@@ -444,6 +233,28 @@ namespace Baryonyx.Combat.Presentation
             ShowBoostsTurnedOn();
         }
 
+        /// <summary>
+        /// <paramref name="healer"/> heals an ally, and the effects are told how much and how much
+        /// went past the max HP (あふれる祈り turns it into block).
+        /// </summary>
+        private void HealFrom(int target, int amount, int healer)
+        {
+            var ally = Allies[target];
+            int overflow = CombatPassiveRules.Overflow(ally.Hp, ally.MaxHp, amount);
+            HealAlly(target, amount);
+            Fire(
+                BattleTrigger.Healed,
+                new BattleEvent
+                {
+                    Actor = AllyAt(healer),
+                    Target = AllyAt(target),
+                    Amount = amount,
+                    Overflow = overflow,
+                    Play = cardPlay,
+                }
+            );
+        }
+
         /// <summary>Lowers the cost of the cards in hand of the action's elements, down to 0.</summary>
         private void LowerCosts(CardAction action)
         {
@@ -469,15 +280,15 @@ namespace Baryonyx.Combat.Presentation
 
         // --- Statuses ------------------------------------------------------------------------
 
-        private List<ActiveStatus> StatusesOf(bool ally, int index)
+        private List<BattleStatusEntry> StatusesOf(bool ally, int index)
         {
             int key = ally ? 1000 + index : index;
             if (!statuses.TryGetValue(key, out var list))
-                statuses[key] = list = new List<ActiveStatus>();
+                statuses[key] = list = new List<BattleStatusEntry>();
             return list;
         }
 
-        private ActiveStatus Find(bool ally, int index, CardStatus status)
+        private BattleStatusEntry Find(bool ally, int index, CardStatus status)
         {
             if (index < 0)
                 return null;
@@ -501,31 +312,54 @@ namespace Baryonyx.Combat.Presentation
         /// Puts a card's status on a character (again: the longer turns and the stronger power
         /// stay, and poison stacks up), and shows its name over it.
         /// </summary>
-        private void AddStatus(bool ally, int index, CardAction action, int caster)
+        private bool AddStatus(bool ally, int index, CardAction action, int caster) =>
+            PutStatus(AllyAt(caster), ally, index, action);
+
+        /// <summary>
+        /// <paramref name="from"/> (an ally, an enemy or no one) puts the action's status on a
+        /// character, unless an effect stops it (浄めの誓い). A lasting status's damage comes from
+        /// the stat of the one who put it on. True when it is on.
+        /// </summary>
+        private bool PutStatus(BattleUnit from, bool ally, int index, CardAction action)
         {
-            if (ally && Purified(index, action.Status))
-                return;
-            int power = action.HasPower ? Power(action, caster) : 0;
-            if (action.Status == CardStatus.Regen)
-                power = HealWithPassives(power, caster);
-            var (tickStat, tickPercent) = CardRules.TickOf(action.Status);
-            if (tickPercent > 0)
-                power = Mathf.Max(
-                    1,
-                    Mathf.RoundToInt(StatOf(caster, tickStat) * tickPercent / 100f)
-                );
-            var active = Find(ally, index, action.Status);
-            if (active == null)
+            int caster = from.IsAlly ? from.Index : -1;
+            var applying = new BattleEvent
             {
-                active = new ActiveStatus { Status = action.Status, Source = caster };
-                StatusesOf(ally, index).Add(active);
-            }
-            active.Turns = Mathf.Max(active.Turns, action.Turns);
-            active.Power = Mathf.Max(active.Power, power);
-            active.Amount =
-                action.Status == CardStatus.Poison
-                    ? active.Amount + action.Amount
-                    : Mathf.Max(active.Amount, action.Amount);
+                Actor = from,
+                Target = ally ? AllyAt(index) : EnemyAt(index),
+                Status = action.Status,
+                Play = cardPlay,
+            };
+            // 浄めの誓いなど、効果が付く前に取り消すことがある。
+            if (Fire(BattleTrigger.StatusApplying, applying).Cancelled)
+                return false;
+            int power = action.HasPower ? Power(action, caster) : 0;
+            if (action.Status == CardStatus.Regen && caster >= 0)
+                power = CardHits.HealPower(
+                    this,
+                    effects,
+                    cardPlay,
+                    null,
+                    power,
+                    AllyAt(caster),
+                    ally ? AllyAt(index) : BattleUnit.None
+                );
+            var (tickStat, _) = CardRules.TickOf(action.Status);
+            int tick = BattleStatusRules.TickPower(
+                action.Status,
+                from.IsEnemy ? ((IBattleWorld)this).Stat(from, tickStat) : StatOf(caster, tickStat)
+            );
+            if (tick > 0)
+                power = tick;
+            var active = BattleStatusRules.Put(
+                StatusesOf(ally, index),
+                action.Status,
+                action.Turns,
+                power,
+                action.Amount,
+                caster,
+                ally && from.IsEnemy ? from.Index : -1
+            );
             var area = ally ? Allies[index].TargetArea : Enemies[index].TargetArea;
             string name = CardRules.StatusName(action.Status);
             if (action.Status == CardStatus.Poison)
@@ -534,6 +368,17 @@ namespace Baryonyx.Combat.Presentation
             if (action.Status == CardStatus.Thundercloud && Enemies.Length > 0)
                 area = Enemies[0].TargetArea;
             ShowPopup(area, name, StatusColor(action.Status), 40f);
+            Fire(
+                BattleTrigger.StatusApplied,
+                new BattleEvent
+                {
+                    Actor = applying.Actor,
+                    Target = applying.Target,
+                    Status = action.Status,
+                    Play = cardPlay,
+                }
+            );
+            return true;
         }
 
         /// <summary>
@@ -542,7 +387,7 @@ namespace Baryonyx.Combat.Presentation
         /// enemy, and an enemy that has just come out of a freeze cannot be frozen until it acts
         /// again. A miss shows over the enemy.
         /// </summary>
-        private bool Lands(int enemy, CardAction action, int caster)
+        private bool Lands(int enemy, CardAction action, int caster, bool quiet = false)
         {
             if (!CardRules.IsBad(action.Status))
                 return true;
@@ -561,7 +406,8 @@ namespace Baryonyx.Combat.Presentation
                 )
             )
                 return true;
-            ShowPopup(Enemies[enemy].TargetArea, ResistedText, ResistedColor, 40f);
+            if (!quiet)
+                ShowPopup(Enemies[enemy].TargetArea, ResistedText, ResistedColor, 40f);
             return false;
         }
 
@@ -606,14 +452,14 @@ namespace Baryonyx.Combat.Presentation
                     var active = Find(false, i, status);
                     if (active == null || !Enemies[i].Alive)
                         continue;
-                    int damage =
-                        status == CardStatus.Poison ? active.Power * active.Amount : active.Power;
+                    int damage = BattleStatusRules.TickDamage(active);
                     int enemy = i;
+                    int source = active.Source;
                     ticks.Add(
                         Tick(
                             status,
                             Enemies[i].TargetArea,
-                            () => Hit(enemy, damage, BattleInspectElement.None, lasting: true)
+                            () => HitLasting(enemy, damage, source, status)
                         )
                     );
                     if (status == CardStatus.Poison && --active.Amount <= 0)
@@ -656,21 +502,7 @@ namespace Baryonyx.Combat.Presentation
             // Every lasting status counts down; poison wanes by its stacks, and freezing and
             // reflection wait to be used.
             foreach (var list in statuses.Values)
-            {
-                for (int n = list.Count - 1; n >= 0; n--)
-                {
-                    var active = list[n];
-                    if (
-                        active.Status
-                        is CardStatus.Poison
-                            or CardStatus.Freeze
-                            or CardStatus.Reflect
-                    )
-                        continue;
-                    if (--active.Turns <= 0)
-                        list.RemoveAt(n);
-                }
-            }
+                BattleStatusRules.Countdown(list);
             Refresh();
         }
 
@@ -709,18 +541,20 @@ namespace Baryonyx.Combat.Presentation
             for (int i = 0; i < Enemies.Length; i++)
                 if (Enemies[i].Alive)
                     alive.Add(i);
+            BattleHitWeight Land(int enemy) =>
+                HitBy(
+                    Lasting(enemy, caster, CardStatus.BlastSigil),
+                    Blast(enemy),
+                    BattleInspectElement.Fire
+                );
             if (Vfx == null)
             {
                 foreach (int enemy in alive)
-                    Hit(enemy, Blast(enemy), BattleInspectElement.Fire);
+                    Land(enemy);
                 yield break;
             }
             var areas = alive.ConvertAll(enemy => Enemies[enemy].TargetArea);
-            yield return Vfx.Detonate(
-                Enemies[marked].TargetArea,
-                areas,
-                i => Hit(alive[i], Blast(alive[i]), BattleInspectElement.Fire)
-            );
+            yield return Vfx.Detonate(Enemies[marked].TargetArea, areas, i => Land(alive[i]));
         }
 
         /// <summary>The cloud's bolt on an enemy at random, a spell its 属防 softens.</summary>
@@ -734,15 +568,18 @@ namespace Baryonyx.Combat.Presentation
                 yield break;
             int enemy = Dice.Pick(alive);
             power = CombatFormula.Defend(power, Enemies[enemy].MagicDefense, Allies[caster].Level);
+            BattleHitWeight Land() =>
+                HitBy(
+                    Lasting(enemy, caster, CardStatus.Thundercloud),
+                    power,
+                    BattleInspectElement.Thunder
+                );
             if (Vfx == null)
             {
-                Hit(enemy, power, BattleInspectElement.Thunder);
+                Land();
                 yield break;
             }
-            yield return Vfx.CloudStrike(
-                Enemies[enemy].TargetArea,
-                () => Hit(enemy, power, BattleInspectElement.Thunder)
-            );
+            yield return Vfx.CloudStrike(Enemies[enemy].TargetArea, Land);
         }
 
         /// <summary>A bleeding enemy loses blood after it moves.</summary>
@@ -754,9 +591,19 @@ namespace Baryonyx.Combat.Presentation
             yield return Tick(
                 CardStatus.Bleed,
                 Enemies[enemy].TargetArea,
-                () => Hit(enemy, bleed.Power, BattleInspectElement.None, lasting: true)
+                () => HitLasting(enemy, bleed.Power, bleed.Source, CardStatus.Bleed)
             );
         }
+
+        // 状態が起こすダメージ（爆炎の刻印・雷雲）の、効果に伝える記録。
+        private static BattleEvent Lasting(int enemy, int source, CardStatus status) =>
+            new()
+            {
+                Actor = AllyAt(source),
+                Target = EnemyAt(enemy),
+                Kind = BattleDamageKind.Status,
+                Status = status,
+            };
 
         /// <summary>An enemy's blow, weakened while it is paralysed.</summary>
         private int EnemyPower(int enemy)
@@ -765,35 +612,6 @@ namespace Baryonyx.Combat.Presentation
                 Enemies[enemy].Power,
                 HasStatus(false, enemy, CardStatus.Paralysis)
             );
-        }
-
-        /// <summary>
-        /// Guards an ally from an enemy's blow: an invincible ally takes nothing, a mirror throws
-        /// the blow back at the attacker once, and protection softens it. True when the blow is
-        /// stopped.
-        /// </summary>
-        private bool Guarded(int ally, ref int power, int attacker)
-        {
-            var area = Allies[ally].TargetArea;
-            if (HasStatus(true, ally, CardStatus.Invincible))
-            {
-                ShowPopup(area, "無敵", StatusColor(CardStatus.Invincible), 44f);
-                return true;
-            }
-            if (attacker >= 0 && TakeStatus(true, ally, CardStatus.Reflect))
-            {
-                ShowPopup(area, "反射", StatusColor(CardStatus.Reflect), 44f);
-                var self = Enemies[attacker];
-                Hit(
-                    attacker,
-                    CombatFormula.Defend(power, self.PhysicalDefense, self.Level),
-                    BattleInspectElement.None
-                );
-                return true;
-            }
-            if (HasStatus(true, ally, CardStatus.Protect))
-                power = Mathf.RoundToInt(power * (1f - ProtectCut));
-            return false;
         }
 
         private void EnsureBlock()
@@ -814,7 +632,15 @@ namespace Baryonyx.Combat.Presentation
             RefreshBlock(ally);
             int gained = allyBlock[ally] - before;
             if (gained > 0)
-                ChargedShield(ally);
+                Fire(
+                    BattleTrigger.GainedBlock,
+                    new BattleEvent
+                    {
+                        Target = AllyAt(ally),
+                        Amount = gained,
+                        Play = cardPlay,
+                    }
+                );
             return gained;
         }
 

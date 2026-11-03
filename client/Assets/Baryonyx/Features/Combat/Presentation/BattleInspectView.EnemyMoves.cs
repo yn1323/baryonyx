@@ -17,7 +17,7 @@ namespace Baryonyx.Combat.Presentation
     public sealed partial class BattleInspectView
     {
         // Attack up on an enemy is the cards' 25%.
-        private const int EnemyAttackUp = 25;
+        private const int EnemyAttackUp = EnemyActs.AttackUpPercent;
 
         // The pause between the hits of a skill that lands more than once (each hit is a dash of
         // its own, which spaces them out too).
@@ -54,6 +54,8 @@ namespace Baryonyx.Combat.Presentation
         private IEnumerator EnemyAct(int index)
         {
             var enemy = Enemies[index];
+            // 次の自分の行動まで持つ効果（すり抜け・身かわし）は、行動の始めに消える。
+            effects.OwnerActs(EnemyAt(index));
             if (enemy.Brain == null)
             {
                 yield return EnemyAttack(index);
@@ -182,6 +184,8 @@ namespace Baryonyx.Combat.Presentation
                 yield return Blows(index, move, step);
             if (enemy.Alive)
                 Support(index, move, step.Percent);
+            if (enemy.Alive && move.Effect != null)
+                UseMoveEffect(index, move.Effect);
             Refresh();
         }
 
@@ -209,7 +213,7 @@ namespace Baryonyx.Combat.Presentation
             {
                 if (hit > 0)
                     yield return Wait(EnemyHitGap);
-                var aimed = Aimed(aim);
+                var aimed = Aimed(aim, index);
                 if (aimed.Count == 0)
                     break;
                 // It dashes at the one it aims at (the middle one of several) and strikes.
@@ -262,44 +266,35 @@ namespace Baryonyx.Combat.Presentation
                 CardStat.PhysicalDefense => enemy.PhysicalDefense,
                 _ => enemy.PhysicalAttack,
             };
-            float power = value * percent / 100f * enemy.AttackScale;
-            if (Find(false, index, CardStatus.AttackUp) is { } up)
-                power *= 1f + up.Amount / 100f;
-            if (enemy.PowerUp > 0)
-                power *= 1f + enemy.PowerUp / 100f;
-            if (HasStatus(false, index, CardStatus.Paralysis))
-                power *= 1f - BattleBlows.ParalysisCut;
-            return Mathf.Max(1, Mathf.RoundToInt(power));
+            return EnemyActs.BlowPower(
+                value,
+                percent,
+                enemy.AttackScale,
+                Find(false, index, CardStatus.AttackUp)?.Amount,
+                enemy.PowerUp,
+                HasStatus(false, index, CardStatus.Paralysis)
+            );
         }
 
         /// <summary>The allies standing that one hit of <paramref name="aim"/> lands on.</summary>
-        private List<int> Aimed(EnemyAim aim)
+        private List<int> Aimed(EnemyAim aim, int attacker)
         {
             var standing = new List<int>();
             for (int i = 0; i < Allies.Length; i++)
                 if (!Allies[i].Down)
                     standing.Add(i);
-            if (standing.Count == 0 || aim == EnemyAim.All)
-                return standing;
-            int target = Dice.Pick(standing);
-            if (aim == EnemyAim.Weakest)
-                target = standing.Find(i =>
-                    standing.TrueForAll(other =>
-                        Share(Allies[i].Hp, Allies[i].MaxHp)
-                        <= Share(Allies[other].Hp, Allies[other].MaxHp)
-                    )
-                );
-            else if (aim == EnemyAim.MostBlock && standing.Exists(i => BlockOf(i) > 0))
-                target = standing.Find(i =>
-                    standing.TrueForAll(other => BlockOf(i) >= BlockOf(other))
-                );
-            // A taunting ally draws the blows aimed at one, and Aria may take them for a low ally.
-            target = BattleBlows.Taunted(
-                target,
+            var aimed = EnemyActs.Aimed(
+                aim,
                 standing,
+                Dice.Below,
+                i => Share(Allies[i].Hp, Allies[i].MaxHp),
+                BlockOf,
                 ally => HasStatus(true, ally, CardStatus.Taunt)
             );
-            return new List<int> { CoverTarget(target) };
+            // Aria may take a blow aimed at one for a low ally (かばう).
+            if (aim != EnemyAim.All && aimed.Count == 1)
+                aimed[0] = TargetOf(aimed[0], attacker);
+            return aimed;
         }
 
         /// <summary>
@@ -316,7 +311,7 @@ namespace Baryonyx.Combat.Presentation
                     move.BlockStat == CardStat.MagicAttack
                         ? enemy.MagicAttack
                         : enemy.PhysicalDefense;
-                int block = Mathf.Max(1, stat * move.BlockPercent / 100 * percent / 100);
+                int block = EnemyActs.GuardBlock(stat, move.BlockPercent, percent);
                 foreach (int target in cared)
                 {
                     SetEnemyBlock(target, Enemies[target].Block + block);
@@ -326,11 +321,10 @@ namespace Baryonyx.Combat.Presentation
             if (move.HealPercent > 0)
                 foreach (int target in cared)
                 {
-                    int amount =
-                        move.HealStat == CardStat.None
-                            ? Enemies[target].MaxHp * move.HealPercent / 100
-                            : enemy.MagicAttack * move.HealPercent / 100;
-                    HealEnemy(target, Mathf.Max(1, amount));
+                    HealEnemy(
+                        target,
+                        EnemyActs.Mend(move, Enemies[target].MaxHp, enemy.MagicAttack)
+                    );
                 }
             if (move.RegenTurns > 0)
                 foreach (int target in cared)
@@ -339,7 +333,7 @@ namespace Baryonyx.Combat.Presentation
                         CardStatus.Regen,
                         move.RegenTurns,
                         0,
-                        Mathf.Max(1, enemy.MagicAttack * move.RegenPercent / 100)
+                        EnemyActs.RegenPower(move, enemy.MagicAttack)
                     );
             if (move.AttackUpTurns > 0)
                 foreach (int target in cared)
@@ -357,30 +351,10 @@ namespace Baryonyx.Combat.Presentation
         /// <summary>The enemies standing that a skill of <paramref name="care"/> reaches.</summary>
         private List<int> Cared(int index, EnemyCare care)
         {
-            var others = new List<int>();
-            for (int i = 0; i < Enemies.Length; i++)
-                if (i != index && Enemies[i].Alive)
-                    others.Add(i);
-            switch (care)
-            {
-                case EnemyCare.Others:
-                    return others.Count > 0 ? others : new List<int> { index };
-                case EnemyCare.Everyone:
-                    others.Insert(0, index);
-                    return others;
-                case EnemyCare.WeakestOther:
-                    if (others.Count == 0)
-                        return new List<int> { index };
-                    int weakest = others.Find(i =>
-                        others.TrueForAll(other =>
-                            Share(Enemies[i].Hp, Enemies[i].MaxHp)
-                            <= Share(Enemies[other].Hp, Enemies[other].MaxHp)
-                        )
-                    );
-                    return new List<int> { weakest };
-                default:
-                    return new List<int> { index };
-            }
+            var shares = new float[Enemies.Length];
+            for (int i = 0; i < shares.Length; i++)
+                shares[i] = Enemies[i].Alive ? Share(Enemies[i].Hp, Enemies[i].MaxHp) : -1f;
+            return EnemyActs.Cared(index, care, shares);
         }
 
         /// <summary>Puts a status on an enemy (the longer turns and the stronger power stay) and shows its name.</summary>
@@ -389,7 +363,7 @@ namespace Baryonyx.Combat.Presentation
             var active = Find(false, index, status);
             if (active == null)
             {
-                active = new ActiveStatus { Status = status, Source = -1 };
+                active = new BattleStatusEntry { Status = status, Source = -1 };
                 StatusesOf(false, index).Add(active);
             }
             active.Turns = Mathf.Max(active.Turns, turns);
@@ -448,7 +422,11 @@ namespace Baryonyx.Combat.Presentation
                     continue;
                 int enemy = i;
                 ticks.Add(
-                    Tick(CardStatus.Regen, Enemies[i].TargetArea, () => HealEnemy(enemy, regen.Power))
+                    Tick(
+                        CardStatus.Regen,
+                        Enemies[i].TargetArea,
+                        () => HealEnemy(enemy, regen.Power)
+                    )
                 );
             }
             return ticks;

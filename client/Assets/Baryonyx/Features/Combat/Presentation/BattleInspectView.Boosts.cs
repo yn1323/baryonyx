@@ -1,5 +1,3 @@
-using System.Collections.Generic;
-
 namespace Baryonyx.Combat.Presentation
 {
     /// <summary>
@@ -10,61 +8,58 @@ namespace Baryonyx.Combat.Presentation
     /// </summary>
     public sealed partial class BattleInspectView
     {
-        // 強化ごとに、最後に見せた上がり幅（味方の場所と強化の番号で引く）。上がったときだけ名前を出す。
-        private readonly Dictionary<(int Ally, int Boost), int> boostsShown = new();
+        // 効果のステータスの割合を読んでいる間（効果の量がステータスを読むときに回り続けないため）。
+        private int statsDepth;
 
-        /// <summary>The ally's stats at this moment of the battle, with the boosts working now.</summary>
+        /// <summary>
+        /// The ally's stats at this moment of the battle, with the percents the effects add now
+        /// (<see cref="BattleValue.StatPercent"/>: the boosts and any other effect).
+        /// </summary>
         public CharacterStats StatsNow(int index)
         {
             if (index < 0 || index >= Allies.Length)
                 return default;
             var ally = Allies[index];
-            return BattleStatBoosts.Now(
-                ally.Stats,
-                ally.Unboosted,
-                ally.Percents,
-                ally.Boosts,
-                ally.Hp,
-                ally.MaxHp,
-                BattleTurn,
-                FallenAllies()
-            );
-        }
-
-        // 倒れている仲間の数（空いた枠は数えない）。
-        private int FallenAllies()
-        {
-            int fallen = 0;
-            foreach (var ally in Allies)
-                if (!ally.Absent && ally.Down)
-                    fallen++;
-            return fallen;
+            if (statsDepth > 0)
+                return ally.Stats;
+            statsDepth++;
+            try
+            {
+                int Added(int stat) =>
+                    Modify(
+                        BattleValue.StatPercent,
+                        0,
+                        new BattleEvent
+                        {
+                            Actor = AllyAt(index),
+                            Target = AllyAt(index),
+                            StatIndex = stat,
+                        },
+                        apply: false
+                    );
+                return BattleStatBoosts.Grown(
+                    ally.Stats,
+                    ally.Unboosted,
+                    ally.Percents,
+                    Added(BattleStatBoosts.PhysicalAttack),
+                    Added(BattleStatBoosts.MagicAttack),
+                    Added(BattleStatBoosts.Speed)
+                );
+            }
+            finally
+            {
+                statsDepth--;
+            }
         }
 
         /// <summary>Pops up the name of each boost that has just started to work or grown.</summary>
-        private void ShowBoostsTurnedOn()
-        {
-            int fallen = FallenAllies();
-            for (int place = 0; place < Allies.Length; place++)
-            {
-                var ally = Allies[place];
-                var boosts = ally.Boosts;
-                if (boosts == null)
-                    continue;
-                for (int k = 0; k < boosts.Count; k++)
-                {
-                    var boost = boosts[k];
-                    int now =
-                        !BattleStatBoosts.Works(boost, ally.Hp, ally.MaxHp, BattleTurn, fallen) ? 0
-                        : boost.Condition == BattleBoostCondition.PerFallenAlly
-                            ? boost.Percent * fallen
-                        : boost.Percent;
-                    boostsShown.TryGetValue((place, k), out int shown);
-                    boostsShown[(place, k)] = now;
-                    if (now > shown && !string.IsNullOrEmpty(boost.Name))
-                        ShowPopup(ally.TargetArea, boost.Name, PassiveColor, 36f);
-                }
-            }
-        }
+        private void ShowBoostsTurnedOn() =>
+            effects.ShowGrown(
+                this,
+                BattleValue.StatPercent,
+                BattleStatBoosts.PhysicalAttack,
+                BattleStatBoosts.MagicAttack,
+                BattleStatBoosts.Speed
+            );
     }
 }

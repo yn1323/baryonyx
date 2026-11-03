@@ -195,6 +195,8 @@ namespace Baryonyx.Adventure
                     + $"・種{r.seed}・Lv[{string.Join(",", r.levels ?? Array.Empty<int>())}]"
                     + $"・品質×{F(r.cardMultiplier)}・覚醒{r.awakenedBranch}・装備{r.equipment?.Length ?? 0}個・弱点{(r.knowWeaknesses ? "既知" : "未知")}"
                     + $"・確率{r.odds}・カードの選び方{r.policy}"
+                    + (r.enemyEffectSkills ? "" : "・敵の状態の技なし")
+                    + (r.IsHeadless ? "・画面なし" : "")
             );
             text.AppendLine($"- {startedAt}に開始、{seconds:0}秒");
             text.AppendLine();

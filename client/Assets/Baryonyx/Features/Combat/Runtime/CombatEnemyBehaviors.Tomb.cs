@@ -44,7 +44,7 @@ namespace Baryonyx.Combat
                     {
                         // 凍え1ターンは入れない。
                         Attack("氷のつぶて", MagicAttack, 100),
-                        Other("にらみつけ", "味方単体への麻痺"),
+                        Glare(),
                         // 2ターン後の行動の前に届く詠唱は、2ターンの溜めで近づけた。詠唱の間も
                         // 技を使う分と、届く前に倒されると消える分は入れない。
                         Attack("頁の詠唱", MagicAttack, 100, EnemyAim.All).Charged(2),
@@ -149,7 +149,7 @@ namespace Baryonyx.Combat
                     {
                         // 出血2ターンは入れない。
                         Attack("引き裂き", PhysicalAttack, 60),
-                        Other("にらみつけ", "味方単体への麻痺"),
+                        Glare(),
                         Guard("身を固める", 120),
                         // 飛び上がっている間、味方の単体攻撃が当たらない分は入れない。
                         Attack("屋根からの急降下", PhysicalAttack, 150).Charged(1),
@@ -182,7 +182,7 @@ namespace Baryonyx.Combat
                         // 出血2ターンは入れない。
                         Attack("引き裂き", PhysicalAttack, 60),
                         Boost("遠吠え", 2),
-                        Other("にらみつけ", "味方単体への麻痺"),
+                        Glare(),
                         Other("墓守の呼び覚まし", "倒れた敵を起き上がらせる"),
                     },
                     Early = new EnemyPattern
@@ -218,7 +218,7 @@ namespace Baryonyx.Combat
                         Attack("毒針", PhysicalAttack, 60),
                         Guard("身を固める", 120),
                         Focus("力を溜める", 50),
-                        Other("毒まわし", "味方の毒の残りを一度に与える"),
+                        PoisonRush(),
                     },
                     Early = new EnemyPattern
                     {
