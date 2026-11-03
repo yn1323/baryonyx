@@ -68,10 +68,10 @@ namespace Baryonyx.Library.Editor
         // 装備の一覧は左の縦の分類のぶん狭いため、3列にする。
         private const int GearColumns = 3;
         private const float CardHeight = 300f;
-        private const float TileArtBox = 176f;
+        private const float TileArtBox = 168f;
         private const float DetailLeft = GuidePanelTemplate.DetailLeft;
         private const float DetailWidth = GuidePanelTemplate.DetailWidth;
-        private const float DetailArtBox = 300f;
+        private const float DetailArtBox = 224f;
 
         private const string GearLabel = "装備";
 
@@ -459,40 +459,54 @@ namespace Baryonyx.Library.Editor
             var (widget, inside) = ItemTileAssets.Build(rect, pattern: true);
             widget.Id = entry.Id;
 
-            var box = Layout.Box(
-                inside,
-                "ArtBox",
-                (cardWidth - TileArtBox) / 2f,
-                20f,
-                TileArtBox,
-                TileArtBox
-            );
-            widget.Art = Art(box);
+            // 札の形（doc/rules/ui-design.md の装備の見せ方）：左上に番号（品質の位置。図鑑の物は品質を持たない）、
+            // 中央に絵、下に名前と☆。
             widget.Number = Layout.Text(
                 inside,
                 "Number",
                 LibraryCatalogView.NumberText(entry.Number),
-                26,
+                UiType.Caption,
                 UiPalette.Gold,
                 TextAlignmentOptions.MidlineLeft,
-                20f,
-                CardHeight - 96f,
+                ItemTileAssets.CornerInset,
+                6f,
                 cardWidth - 40f,
-                36f
+                30f
             );
+            var box = Layout.Box(
+                inside,
+                "ArtBox",
+                (cardWidth - TileArtBox) / 2f,
+                36f,
+                TileArtBox,
+                TileArtBox
+            );
+            widget.Art = Art(box);
             widget.Name = Layout.Text(
                 inside,
                 "Name",
                 entry.Name,
-                32,
+                UiType.Small,
                 UiPalette.TextMain,
-                TextAlignmentOptions.MidlineLeft,
-                20f,
-                CardHeight - 60f,
-                cardWidth - 40f,
-                44f
+                TextAlignmentOptions.Center,
+                12f,
+                CardHeight - 90f,
+                cardWidth - 24f,
+                40f
             );
             Shrink(widget.Name, 20);
+            widget.Stars = Layout.Text(
+                inside,
+                "Stars",
+                ItemText.Stars(entry.Rarity),
+                UiType.Caption,
+                UiPalette.Gold,
+                TextAlignmentOptions.Center,
+                12f,
+                CardHeight - 50f,
+                cardWidth - 24f,
+                32f
+            );
             // 新しく載った印は、ほかの札の印と同じく右上に置く。
             ItemTileAssets.CornerTag(
                 widget,
@@ -520,6 +534,8 @@ namespace Baryonyx.Library.Editor
         {
             var detail = Layout.Box(layer, "Detail", 0f, 0f, Layout.Design.x, Layout.Design.y);
             view.Detail = detail.gameObject;
+            // 詳しい面の順（doc/rules/ui-design.md の装備の見せ方）：絵、番号、名前、☆、種類、説明、属性。
+            // 図鑑の物は品質を持たないため、品質の行は置かない。その下に分類ごとの欄（レシピ・倒した数など）。
             float x = DetailLeft;
             float y = ListTop + 8f;
             var box = Layout.Box(
@@ -531,82 +547,54 @@ namespace Baryonyx.Library.Editor
                 DetailArtBox
             );
             view.DetailArt = Art(box);
-            y += DetailArtBox + 16f;
-            view.DetailNumber = Layout.Text(
-                detail,
-                "Number",
-                "",
-                30,
-                UiPalette.Gold,
-                TextAlignmentOptions.MidlineLeft,
-                x,
-                y,
-                DetailWidth,
-                40f
-            );
-            y += 40f;
-            view.DetailName = Layout.Text(
-                detail,
-                "Name",
-                "",
-                48,
-                UiPalette.TextMain,
-                TextAlignmentOptions.MidlineLeft,
-                x,
-                y,
-                DetailWidth - 180f,
-                60f
-            );
+            y += DetailArtBox + 12f;
+            view.DetailNumber = Centered(detail, "Number", UiType.Caption, UiPalette.Gold, x, y, 32f);
+            y += 32f;
+            view.DetailName = Centered(detail, "Name", UiType.Heading, UiPalette.TextMain, x, y, 60f);
             Shrink(view.DetailName, 28);
-            view.DetailRarity = Layout.Text(
-                detail,
-                "Rarity",
-                "",
-                36,
-                UiPalette.Gold,
-                TextAlignmentOptions.MidlineRight,
-                x + DetailWidth - 180f,
-                y,
-                180f,
-                60f
-            );
-            y += 64f;
-            view.DetailKind = Layout.Text(
-                detail,
-                "Kind",
-                "",
-                28,
-                UiPalette.TextSub,
-                TextAlignmentOptions.MidlineLeft,
-                x,
-                y,
-                DetailWidth,
-                40f
-            );
+            y += 60f;
+            view.DetailRarity = Centered(detail, "Rarity", UiType.Body, UiPalette.Gold, x, y, 44f);
+            y += 44f;
+            view.DetailKind = Centered(detail, "Kind", UiType.Caption, UiPalette.TextSub, x, y, 36f);
             view.DetailKind.richText = true;
-            y += 48f;
+            y += 40f;
             view.DetailBody = Layout.Text(
                 detail,
                 "Body",
                 "",
-                30,
+                UiType.Small,
                 UiPalette.TextMain,
-                TextAlignmentOptions.TopLeft,
+                TextAlignmentOptions.Top,
                 x,
                 y,
                 DetailWidth,
-                120f
+                100f
             );
             view.DetailBody.richText = true;
             view.DetailBody.textWrappingMode = TextWrappingModes.Normal;
-            y += 124f;
+            Shrink(view.DetailBody, 20);
+            y += 104f;
+            var elements = Layout.Box(
+                detail,
+                "Elements",
+                x,
+                y,
+                DetailWidth,
+                ElementIconRowAssets.DetailSize
+            );
+            view.DetailElements = ElementIconRowAssets.Add(
+                elements,
+                TextAnchor.MiddleCenter,
+                ElementIconRowAssets.DetailSize
+            );
+            y += ElementIconRowAssets.DetailSize + 8f;
             view.DetailExtra = Layout.Text(
                 detail,
                 "Extra",
                 "",
-                26,
+                UiType.Caption,
                 UiPalette.TextMain,
-                TextAlignmentOptions.TopLeft,
+                TextAlignmentOptions.Top,
                 x,
                 y,
                 DetailWidth,
@@ -614,10 +602,19 @@ namespace Baryonyx.Library.Editor
             );
             view.DetailExtra.richText = true;
             view.DetailExtra.textWrappingMode = TextWrappingModes.Normal;
-            BuildRecipe(detail, view, x, y + 4f);
+            BuildRecipe(detail, view, x, y);
 
             // 敵の開示した弱点。倒した数の下に、「弱点」と属性のアイコン（12×12を4倍）。
-            var row = Layout.Row(detail, "Weakness", x, y + 48f, DetailWidth, 56f, 12f);
+            var row = Layout.Row(
+                detail,
+                "Weakness",
+                x,
+                y + 48f,
+                DetailWidth,
+                56f,
+                12f,
+                TextAnchor.MiddleCenter
+            );
             Layout.Fit(
                 Label(
                     row,
@@ -646,6 +643,18 @@ namespace Baryonyx.Library.Editor
             row.gameObject.SetActive(false);
             detail.gameObject.SetActive(false);
         }
+
+        // 詳しい面の中央にそろえた1行。
+        private static TMP_Text Centered(
+            RectTransform detail,
+            string name,
+            float size,
+            Color color,
+            float x,
+            float y,
+            float height
+        ) =>
+            Layout.Text(detail, name, "", size, color, TextAlignmentOptions.Center, x, y, DetailWidth, height);
 
         // 合成のレシピ：見出しと、材料の札（絵と要る数、下に名前）を横に並べる。武器・防具・アクセサリー・スキルの
         // 説明の下に出し、キャラ・敵の「倒した数」などの欄と同じ場所を使う（その分類では空いている）。

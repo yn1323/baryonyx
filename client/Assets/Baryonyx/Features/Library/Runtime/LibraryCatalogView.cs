@@ -73,6 +73,9 @@ namespace Baryonyx.Library
         public TMP_Text DetailBody;
         public TMP_Text DetailExtra;
 
+        // 説明の下の属性のアイコン（装備の属性、スキルの属性）。
+        public ElementIconRow DetailElements;
+
         // 敵の開示した弱点：「弱点」の行と、開示した弱点のアイコン、まだないときの文字。
         public GameObject WeaknessRow;
         public Image[] DetailIcons = Array.Empty<Image>();
@@ -213,6 +216,8 @@ namespace Baryonyx.Library
                 PaintArt(tile.Art, entry, isFound, TileArtBox);
                 if (tile.Name != null)
                     tile.Name.gameObject.SetActive(isFound);
+                if (tile.Stars != null)
+                    tile.Stars.gameObject.SetActive(isFound);
                 if (tile.Mark != null)
                     tile.Mark.SetActive(seen.IsNew(records, Kind, tile.Id));
             }
@@ -251,10 +256,17 @@ namespace Baryonyx.Library
             Set(DetailNumber, NumberText(entry.Number));
             Set(DetailName, found ? entry.Name : "");
             Set(DetailRarity, found && entry.Rarity > 0 ? new string('★', entry.Rarity) : "");
-            Set(DetailKind, found ? entry.KindLine : "");
+            // 装備の種類（武器・防具）は、左の分類で分かるため書かない。
+            bool gear = entry.Kind is LibraryKind.Weapon or LibraryKind.Armor or LibraryKind.Accessory;
+            Set(DetailKind, found && !gear ? entry.KindLine : "");
             // まだ見つけていないことは、名前を消した影の絵でわかるため書かない。
             Set(DetailBody, found ? entry.Description : "");
             Set(DetailExtra, found ? ExtraOf(entry) : "");
+            if (DetailElements != null)
+            {
+                DetailElements.Show(found ? LibraryFaces.ElementsOf(entry.Kind, entry.Id) : null);
+                DetailElements.gameObject.SetActive(DetailElements.Any);
+            }
             ShowWeaknesses(found ? entry.Id : null);
             ShowRecipe(found ? Workshop.WorkshopRecipes.Find(Kind, entry.Id) : null);
         }
