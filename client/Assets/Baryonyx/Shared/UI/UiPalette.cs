@@ -43,6 +43,17 @@ namespace Baryonyx.UI
         public static readonly Color LineSeparator = new(1f, 0.86f, 0.59f, 0.5f);
         public static readonly Color LineDivider = new(1f, 0.86f, 0.59f, 0.6f);
 
+        // 決めるボタン（doc/rules/ui-design.md#決めるボタン）。前に進める操作は青い板、取り返せない操作の
+        // 確認は赤い板に白い文字。上の縁だけ少し明るくして、板の厚みを出す（2026-11-03、ユーザー）。
+        public static readonly Color PrimaryFill = new(44f / 255f, 90f / 255f, 150f / 255f);
+        public static readonly Color PrimaryEdge = new(92f / 255f, 138f / 255f, 196f / 255f);
+        public static readonly Color DangerFill = new(140f / 255f, 44f / 255f, 44f / 255f);
+        public static readonly Color DangerEdge = new(178f / 255f, 78f / 255f, 70f / 255f);
+        public static readonly Color ButtonText = new(242f / 255f, 236f / 255f, 222f / 255f);
+
+        // 押せないボタンに掛ける色（板も文字も灰色に沈める）。すりガラスの札の押せないときと同じ。
+        public static readonly Color ButtonDisabled = new(0.55f, 0.55f, 0.6f, 0.7f);
+
         // ステータスが上がる数字の緑と、下がる数字の赤（装備の上昇分と増減）。
         public static readonly Color Rise = new(0.49f, 0.88f, 0.42f);
         public static readonly Color Fall = new(1f, 0.45f, 0.4f);

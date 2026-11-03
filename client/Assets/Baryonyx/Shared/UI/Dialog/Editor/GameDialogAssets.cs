@@ -112,25 +112,27 @@ namespace Baryonyx.UI.Editor
             dialog.Labels = labels.ToArray();
 
             // 確かめる窓のように、窓の下に横に並べる選択肢（左にやめる・つづける、右に決める方）。
+            // 見た目は選択肢の役割で替える（doc/rules/ui-design.md#決めるボタン）。
             var row = GuideFrameAssets.ButtonRow(window);
             var rowButtons = new List<Button>();
             var rowLabels = new List<TMP_Text>();
+            var rowFaces = new List<ButtonFaces>();
             for (int i = 0; i < RowCount; i++)
             {
-                var (button, label, _) = GuideFrameAssets.WindowButton(
+                var (button, label, faces) = ActionButtonAssets.Switchable(
                     row,
                     "Choice" + i,
-                    "",
                     RowWidth,
-                    rowHeight,
-                    primary: false
+                    rowHeight
                 );
                 rowButtons.Add(button);
                 rowLabels.Add(label);
+                rowFaces.Add(faces);
             }
             dialog.Row = row.gameObject;
             dialog.RowButtons = rowButtons.ToArray();
             dialog.RowLabels = rowLabels.ToArray();
+            dialog.RowFaces = rowFaces.ToArray();
             row.gameObject.SetActive(false);
 
             // 右上の×。どの窓とも同じ形と場所にし、窓の縦の並びからは外す。

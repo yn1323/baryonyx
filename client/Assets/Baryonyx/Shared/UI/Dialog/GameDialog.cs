@@ -5,19 +5,29 @@ using UnityEngine.UI;
 
 namespace Baryonyx.UI
 {
-    /// <summary>One choice of a <see cref="GameDialog"/>: its label, what it does, and whether it can be pressed.</summary>
+    /// <summary>
+    /// One choice of a <see cref="GameDialog"/>: its label, what it does, whether it can be
+    /// pressed, and its role, which gives its look in a row (doc/rules/ui-design.md#決めるボタン).
+    /// </summary>
     public readonly struct DialogChoice
     {
-        public DialogChoice(string label, Action action, bool enabled = true)
+        public DialogChoice(
+            string label,
+            Action action,
+            bool enabled = true,
+            ButtonRole role = ButtonRole.Secondary
+        )
         {
             Label = label ?? "";
             Action = action;
             Enabled = enabled;
+            Role = role;
         }
 
         public string Label { get; }
         public Action Action { get; }
         public bool Enabled { get; }
+        public ButtonRole Role { get; }
     }
 
     /// <summary>How a <see cref="GameDialog"/> lays out its choices and how it closes.</summary>
@@ -64,6 +74,9 @@ namespace Baryonyx.UI
         public GameObject Row;
         public Button[] RowButtons = Array.Empty<Button>();
         public TMP_Text[] RowLabels = Array.Empty<TMP_Text>();
+
+        // 横の並びのボタンの見た目（選択肢の役割で、決める・取り消し・危険を替える）。
+        public ButtonFaces[] RowFaces = Array.Empty<ButtonFaces>();
 
         // 右上の×。
         public Button Cross;
@@ -174,6 +187,9 @@ namespace Baryonyx.UI
             if (Row != null)
                 Row.SetActive(row);
             Fill(RowButtons, RowLabels, row ? this.choices.Length : 0);
+            for (int i = 0; row && i < RowFaces.Length && i < this.choices.Length; i++)
+                if (RowFaces[i] != null)
+                    RowFaces[i].Show(this.choices[i].Role);
             if (Cross != null)
                 Cross.gameObject.SetActive((style & DialogStyle.Cross) != 0 && cancel != null);
             if (TapAnywhere != null)

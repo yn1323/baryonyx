@@ -628,9 +628,9 @@ namespace Baryonyx.UI.GuideMenu.Editor
         }
 
         /// <summary>
-        /// A button of a window at (x, y) from the window's top left: a frosted glass card with
-        /// the label in the middle. The one that decides (<paramref name="primary"/>) keeps the
-        /// gold rim and light lit; the others (やめる・あとで) stay plain. Returns the button and
+        /// A button of a window at (x, y) from the window's top left, with the label in the
+        /// middle: the one that decides (<paramref name="primary"/>) is the shared primary button,
+        /// the others (やめる・あとで) the unlit frosted glass card. Returns the button and
         /// the label, and the card's inside for more parts (a cost under the label).
         /// </summary>
         public static (Button Button, TMP_Text Label, RectTransform Content) WindowButton(
@@ -668,27 +668,20 @@ namespace Baryonyx.UI.GuideMenu.Editor
             return Decorate(rect, label, primary, size);
         }
 
+        // 決める方はプライマリー（青い板）、ほかはセカンダリー（灯さない札）の共通のボタン
+        // （doc/rules/ui-design.md#決めるボタン）。
         private static (Button Button, TMP_Text Label, RectTransform Content) Decorate(
             RectTransform rect,
             string label,
             bool primary,
             float size
-        )
-        {
-            var (button, rim, content) = GlassCardAssets.Choice(rect, pattern: false);
-            rim.SetActive(primary);
-            var text = Label(
-                content,
-                "Label",
+        ) =>
+            ActionButtonAssets.Build(
+                rect,
                 label,
-                size,
-                UiPalette.TextMain,
-                TextAlignmentOptions.Center
+                primary ? ButtonRole.Primary : ButtonRole.Secondary,
+                size
             );
-            Stretch((RectTransform)text.transform);
-            GuideMenuAssets.Shrink(text, 24);
-            return (button, text, content);
-        }
 
         /// <summary>
         /// Turns <paramref name="window"/> into a window over a screen, whatever its size (a

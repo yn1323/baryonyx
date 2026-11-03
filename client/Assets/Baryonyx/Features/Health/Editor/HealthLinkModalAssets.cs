@@ -14,7 +14,7 @@ namespace Baryonyx.Health.Editor
 {
     // Health Connect連携モーダルのPrefabを生成する。ほかの窓と同じ作り（doc/rules/ui-design.md の共通の部品）で、
     // 親Canvasの全面を共通の暗い幕で覆い、Safe Area内の中央に、濃い紺に金の細い縁の窓を置く。
-    // 窓には明るい金の題、本文、下に「あとで」と、金の縁で灯る決めるボタンを並べる。
+    // 窓には明るい金の題、本文、下に「あとで」と、決めるボタン（青い板）を並べる。
     public static class HealthLinkModalAssets
     {
         public const string PrefabPath =
@@ -60,22 +60,23 @@ namespace Baryonyx.Health.Editor
                 var buttons = GuideFrameAssets.ButtonRow(window);
 
                 // Androidのタップ領域の目安（48dp）を十分に上回る高さにする。
-                (view.LaterButton, view.LaterLabel, _) = GuideFrameAssets.WindowButton(
+                // 左に見送る「あとで」、右に決めるボタン（doc/rules/ui-design.md#決めるボタン）。
+                (view.LaterButton, view.LaterLabel, _) = ActionButtonAssets.InLayout(
                     buttons,
                     "LaterButton",
                     "",
+                    ButtonRole.Secondary,
                     LaterWidth,
                     ButtonHeight,
-                    primary: false,
                     UiType.Lead
                 );
-                (view.ActionButton, view.ActionLabel, _) = GuideFrameAssets.WindowButton(
+                (view.ActionButton, view.ActionLabel, _) = ActionButtonAssets.InLayout(
                     buttons,
                     "ActionButton",
                     "",
+                    ButtonRole.Primary,
                     ActionWidth,
                     ButtonHeight,
-                    primary: true,
                     UiType.Lead
                 );
 
