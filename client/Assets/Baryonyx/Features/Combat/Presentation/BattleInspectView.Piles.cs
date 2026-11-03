@@ -73,7 +73,9 @@ namespace Baryonyx.Combat.Presentation
             deckIndex >= 0 && deckIndex < sleep.Length ? sleep[deckIndex] : 0;
 
         private bool HasTrait(int deckIndex, CardTrait trait) =>
-            deckIndex >= 0 && deckIndex < Deck.Length && (SkillOf(Deck[deckIndex])?.Has(trait) ?? false);
+            deckIndex >= 0
+            && deckIndex < Deck.Length
+            && (SkillOf(Deck[deckIndex])?.Has(trait) ?? false);
 
         private bool Innate(int deckIndex) => HasTrait(deckIndex, CardTrait.Innate);
 
@@ -120,7 +122,10 @@ namespace Baryonyx.Combat.Presentation
                 // The fused card is used by the one of the two whose card it grew from.
                 int user = SkillOf(deck[first]).User == fusion.User ? first : second;
                 // The fused card made before is kept, so the deck stays the same deck.
-                var made = Array.Find(Deck, card => card.Generated && SkillOf(card)?.Id == fusion.Id);
+                var made = Array.Find(
+                    Deck,
+                    card => card.Generated && SkillOf(card)?.Id == fusion.Id
+                );
                 if (made == null)
                 {
                     made = CardOf(fusion, deck[user].Caster, deck[user].Art);
@@ -129,7 +134,10 @@ namespace Baryonyx.Combat.Presentation
                 deck.Add(made);
             }
             // The same cards keep the same deck (the battle's evolutions are kept by it).
-            if (deck.Count == Deck.Length && deck.Select((card, i) => ReferenceEquals(card, Deck[i])).All(same => same))
+            if (
+                deck.Count == Deck.Length
+                && deck.Select((card, i) => ReferenceEquals(card, Deck[i])).All(same => same)
+            )
                 return;
             Deck = deck.ToArray();
             deckKeywords = null;
@@ -155,7 +163,10 @@ namespace Baryonyx.Combat.Presentation
                     && !fused.ContainsKey(index)
                     && SkillOf(Deck[Cards[index].DeckIndex])?.RootId == skill.FuseWith
                 );
-                int into = Array.FindIndex(Deck, card => card.Generated && SkillOf(card)?.Id == skill.FusesInto);
+                int into = Array.FindIndex(
+                    Deck,
+                    card => card.Generated && SkillOf(card)?.Id == skill.FusesInto
+                );
                 if (second < 0 || into < 0)
                     continue;
                 fused[first] = (Cards[first].DeckIndex, Cards[second].DeckIndex);
@@ -221,6 +232,10 @@ namespace Baryonyx.Combat.Presentation
         private void FlowHand()
         {
             PutBack();
+            bool shown =
+                Application.isPlaying && isActiveAndEnabled && Hand.gameObject.activeInHierarchy;
+            // The right card goes first, and each one after a little later.
+            int swept = 0;
             for (int slot = hand.Count - 1; slot >= 0; slot--)
             {
                 int index = hand[slot];
@@ -229,8 +244,10 @@ namespace Baryonyx.Combat.Presentation
                     continue;
                 hand.RemoveAt(slot);
                 bool ethereal = HasTrait(deckIndex, CardTrait.Ethereal);
-                if (ethereal && Application.isPlaying && isActiveAndEnabled && Hand.gameObject.activeInHierarchy)
+                if (ethereal && shown)
                     StartCoroutine(Crumble(CopyToVanish(index)));
+                else if (shown)
+                    SweepToDiscard(CopyToVanish(index), Settings.SweepStagger * swept++);
                 Wake(deckIndex);
                 PutAway(index, ethereal);
             }
@@ -304,7 +321,11 @@ namespace Baryonyx.Combat.Presentation
                 skill.In(CardActionPhase.Discarded).Select(AsPlayed).ToArray()
             );
             bool onEnemies = trigger.Actions.Any(action =>
-                action.Target is CardTarget.OneEnemy or CardTarget.AllEnemies or CardTarget.RandomEnemies or CardTarget.ChainEnemies
+                action.Target
+                    is CardTarget.OneEnemy
+                        or CardTarget.AllEnemies
+                        or CardTarget.RandomEnemies
+                        or CardTarget.ChainEnemies
             );
             int caster = data.Caster;
             if (caster >= 0 && caster < Allies.Length && Allies[caster].Down)
@@ -344,7 +365,11 @@ namespace Baryonyx.Combat.Presentation
             choiceShown.Clear();
             var pile = drawPile.DiscardPile;
             int room = Mathf.Min(TakeShown, pile.Count, Settings.HandLimit - hand.Count);
-            var free = Enumerable.Range(0, Cards.Length).Where(i => !Cards[i].InHand).Take(room).ToList();
+            var free = Enumerable
+                .Range(0, Cards.Length)
+                .Where(i => !Cards[i].InHand)
+                .Take(room)
+                .ToList();
             float width = Cards.Length > 0 ? Cards[0].Body.rect.width * Settings.CardScale : 200f;
             float step = width * 0.85f;
             for (int k = 0; k < free.Count; k++)
@@ -354,7 +379,8 @@ namespace Baryonyx.Combat.Presentation
                 Show(index, deckIndex);
                 Cards[index].Place = BattleInspectCardPlace.Choice;
                 var pose = new Pose(
-                    new Vector2((k - (free.Count - 1) / 2f) * step, Settings.RaisedBottom) - Hand.anchoredPosition,
+                    new Vector2((k - (free.Count - 1) / 2f) * step, Settings.RaisedBottom)
+                        - Hand.anchoredPosition,
                     0f,
                     Settings.CardScale
                 );
@@ -397,7 +423,10 @@ namespace Baryonyx.Combat.Presentation
             if (hand.Count >= Settings.HandLimit || !drawPile.TakeFromDiscard(deckIndex))
                 return;
             if (index < 0)
-                index = Array.FindIndex(Cards, card => !card.InHand && card.Place != BattleInspectCardPlace.Choice);
+                index = Array.FindIndex(
+                    Cards,
+                    card => !card.InHand && card.Place != BattleInspectCardPlace.Choice
+                );
             if (index < 0)
                 return;
             if (Cards[index].Place != BattleInspectCardPlace.Choice)
@@ -470,10 +499,16 @@ namespace Baryonyx.Combat.Presentation
             int firstBlow = actions.FindIndex(action => !IsPileAction(action));
             int discarded = 0;
             var before = firstBlow < 0 ? actions : actions.Take(firstBlow).ToList();
-            var after = firstBlow < 0 ? new List<CardAction>() : actions.Skip(firstBlow).Where(IsPileAction).ToList();
+            var after =
+                firstBlow < 0
+                    ? new List<CardAction>()
+                    : actions.Skip(firstBlow).Where(IsPileAction).ToList();
             foreach (var action in before)
                 yield return PileAction(action, caster, n => discarded += n);
-            var blows = actions.Where(action => !IsPileAction(action)).Select(action => Grown(action, discarded)).ToArray();
+            var blows = actions
+                .Where(action => !IsPileAction(action))
+                .Select(action => Grown(action, discarded))
+                .ToArray();
             if (blows.Length > 0)
             {
                 var main = skill.Copy();

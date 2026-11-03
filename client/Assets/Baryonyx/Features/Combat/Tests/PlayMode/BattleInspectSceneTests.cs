@@ -1099,11 +1099,22 @@ namespace Baryonyx.Tests.PlayMode
             var wolfHome = wolf.Body.anchoredPosition;
             Assert.That(view.TurnBannerGroup.blocksRaycasts, Is.False, "Taps go through the band.");
 
-            // The enemies' band comes up, and the wolf waits for it before stepping out.
+            // The enemies' band comes up once the hand has flown into the discard pile, every
+            // card counted on it, and the wolf waits for the band before stepping out.
             view.EndTurnButton.onClick.Invoke();
             yield return null;
+            Assert.That(view.DiscardLabel.text, Is.Not.EqualTo(view.DiscardPile.Count.ToString()));
+            bool EnemiesBand() =>
+                banner.gameObject.activeSelf
+                && banner.Label.text == BattleInspectView.EnemyTurnText;
+            for (float t = 0f; !EnemiesBand() && t < 3f; t += Time.unscaledDeltaTime)
+            {
+                Assert.That(wolf.Body.anchoredPosition, Is.EqualTo(wolfHome));
+                yield return null;
+            }
             Assert.That(banner.gameObject.activeSelf, Is.True);
             Assert.That(banner.Label.text, Is.EqualTo(BattleInspectView.EnemyTurnText));
+            Assert.That(view.DiscardLabel.text, Is.EqualTo(view.DiscardPile.Count.ToString()));
             for (float t = 0f; t < view.Settings.TurnBannerHold * 0.8f; t += Time.deltaTime)
             {
                 Assert.That(wolf.Body.anchoredPosition, Is.EqualTo(wolfHome));

@@ -1685,6 +1685,9 @@ namespace Baryonyx.Combat.Presentation
             // battle's first turn, when no hand is dealt yet).
             if (opening == null)
                 FlowHand();
+            // The next turn comes once every card that flowed away has landed on the discard pile.
+            while (sweeping > 0)
+                yield return null;
             roundOrder = opening ?? EnemiesAfter(BattleTurn);
             bool enemiesAct = roundOrder.Count > 0;
             Fire(BattleTrigger.EnemyTurnStart, new BattleEvent());
@@ -1955,6 +1958,7 @@ namespace Baryonyx.Combat.Presentation
         {
             PutBack();
             reserved = 0;
+            sweeping = 0;
             hand.Clear();
             ClearOmens();
             StartEffects();
@@ -2126,7 +2130,7 @@ namespace Baryonyx.Combat.Presentation
             if (DeckLabel != null)
                 DeckLabel.text = drawPile.Pile.Count.ToString();
             if (DiscardLabel != null)
-                DiscardLabel.text = drawPile.DiscardPile.Count.ToString();
+                DiscardLabel.text = ShownDiscards.ToString();
             if (ExhaustLabel != null)
                 ExhaustLabel.text = drawPile.Exhausted.Count.ToString();
             // Out of the battle shows only once a card has gone there.
