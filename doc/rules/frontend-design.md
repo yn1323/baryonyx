@@ -163,7 +163,7 @@ client/
 | `GuideMenu/` | 案内人がいる画面の共通部品。項目のパネルは基底クラス `GuidePanel` を継ぎ、通知の帯への通知と、開くたびの読み込み（`GuidePanelLoad`）・読めなかったときの表示を共有する。`IGuideBackHandler` を付けると、戻る操作を先に受け取れる。1人ずつ見せるパネルの左右のフリックは `GuideSwipe`。`Editor/` に、枠つきの表示（`GuideFrameAssets`：面・2本線・見出し・タブ・錠前の画像）と、設計座標での配置とスクロールする一覧（`GuidePanelLayout`）、画面の型のテンプレート（`GuidePanelTemplate`。[画面の型](ui-design.md#画面の型)） |
 | `StatGrid/` | キャラの8つのステータスの表示 `StatGrid`。`Editor/` に4列・2列の生成。冒険者のステータスと装備のタブが使う |
 | `Dialog/` | 暗幕で背面を止め、題名・絵・本文・最大5つの選択肢を出す確認のダイアログ `GameDialog`。`Editor/` に画面への組み込み。冒険の確認・メニュー・報酬・復活・結果が使う |
-| `ItemTile/` | 持ち物の札の型 `ItemTile`。`Editor/` に品質・数・右上の印・「？」を置く `ItemTileAssets`（[持ち物の札](ui-design.md#持ち物の札)） |
+| `ItemTile/` | 持ち物の見せ方の4つの型の部品。札の `ItemTile`、詳しい面の `ItemDetail`、詳細の窓の `ItemDetailWindow`、中身の `ItemFace` と文字の `ItemText`。`Editor/` に札の品質・数・右上の印・「？」を置く `ItemTileAssets`、行の `ItemRowAssets`、詳しい面と窓の `ItemDetailAssets`（[装備の見せ方](ui-design.md#装備の見せ方)） |
 | `PixelIcon/` | ドット絵をアイコンの枠に整数倍で収める `PixelIcon` |
 | `MapPawn/` | 探索の地図と世界地図（入れ子の地図と前の街道の世界地図）の駒を跳ねさせる `MapPawnHop` |
 | `Reward/` | 見つけた物の板を開いて見せる `RewardReveal`。`Editor/` に生成 |

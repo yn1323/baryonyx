@@ -140,7 +140,7 @@ APIは `GET /v1/equipment`、`PUT /v1/equipment/characters/:characterId/:slot`�
 [装備の属性](#装備の属性)は、[EquipmentCatalog](../../client/Assets/Baryonyx/Features/Equipment/Runtime/EquipmentCatalog.cs) の種類ごとの属性として持ち、編成の[装備](screens/loadout.md#装備)の枠と行、商会の[買う](screens/shop.md#買う)の右の面と[売る](screens/shop.md#売る)の行にアイコンで出す（2026-11-03）。アイコンを並べる部品は [ElementIconRow](../../client/Assets/Baryonyx/Shared/UI/ElementIcons/ElementIconRow.cs) である。属性なしの装備とスキルには、どの画面でも印を出さない（2026-11-03、ユーザーの指示「やっぱり無属性はカードにも装備にも何もマークなしに」）。属性の追加効果は未実装で、画面にも書かない（2026-11-03、ユーザーの指示）。
 売却は、[商会](screens/shop.md#売る)の「売る」で、付けていない装備を1つずつ選んでルーンに替え、持ち物から消す（2026-10-24、[API](../../server/src/features/workshop/routes.ts)）。
 購入は、[商会](screens/shop.md#商会)の「買う」で、ライブラリに見つけた記録がある武器・防具・アクセサリーを×1.00で1つずつ持ち物に足す（2026-10-24、[API](../../server/src/features/workshop/routes.ts)）。
-1つずつ持つ倍率はサーバーに保存し、編成の装備と育成の装備の欄は★に続けて品質の文字を品質の色で出し、説明の数字に倍率を掛ける（2026-10-19）。
+1つずつ持つ倍率はサーバーに保存し、編成の装備の欄と一覧は、名前のすぐ右に★と品質の文字（品質の色）と倍率を出し（[装備の見せ方](../rules/ui-design.md#装備の見せ方)）、説明の数字に倍率を掛ける（2026-10-19）。
 上限の倍率は種類ごとに×1.8〜×2.6とし、サーバーの[定義](../../server/src/features/equipment/catalog.ts)とクライアントの[仮データ](../../client/Assets/Baryonyx/Features/Equipment/Runtime/EquipmentCatalog.cs)に同じ値を置く（2026-10-20、[上限の決め方](inventory.md#上限の決め方)）。
 2回攻撃の炎のダガーと、木・革の素朴な装備は低め、戦鎚（×2.6）や雷鳴の槍・鎖かたびら（×2.4）のように尖った性能の装備は高めにした。
 サーバーは上限から品質を決め、冒険のドロップなどで手に入れる物の倍率を、選んだ品質の幅から上限を使って決める（[抽選の順序](drops.md#抽選の順序)）。
