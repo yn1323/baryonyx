@@ -29,11 +29,15 @@ namespace Baryonyx.Equipment
 
         // アイコンに重ねる品質のキラキラ（S・Aだけ光る）。
         public CardFoil Foil;
+
+        // 空いている枠だけに出す枠の名前（武器・防具）。
+        public TMP_Text Tag;
+
+        // 装備の名前と、そのすぐ右の☆・品質・倍率。
         public TMP_Text Name;
-        public TMP_Text Stars;
         public TMP_Text Detail;
 
-        // 右上の属性のアイコン。
+        // 名前の行の右端の属性のアイコン。
         public ElementIconRow Elements;
     }
 
@@ -51,9 +55,11 @@ namespace Baryonyx.Equipment
         public Image Icon;
         public CardFoil Foil;
 
-        // 「Lv 20で解放」、開いた枠では付けている物の名前か「なし」。
+        // 空いている・開いていない枠だけに出す枠の名前（アクセサリー）。
+        public TMP_Text Tag;
+
+        // 「Lv 20で解放」、開いた枠では付けている物の名前と☆・品質・倍率か「なし」。
         public TMP_Text Name;
-        public TMP_Text Stars;
 
         // 付けているアクセサリーの効果。
         public TMP_Text Detail;
@@ -416,13 +422,14 @@ namespace Baryonyx.Equipment
                     PixelIcon.Show(widget.Icon, art);
             }
             ShowFoil(widget.Foil, filled && art != null ? worn : null, art);
-            Set(
+            SetRich(
                 widget.Name,
                 !open ? AccessorySlots.UnlockText(index)
-                    : filled ? worn.Name
+                    : filled ? Heading(worn)
                     : "なし"
             );
-            SetRich(widget.Stars, filled ? Grade(worn) : "");
+            if (widget.Tag != null)
+                widget.Tag.gameObject.SetActive(!filled);
             Set(widget.Detail, filled ? worn.Detail : "");
             if (widget.Elements != null)
                 widget.Elements.Show(filled ? worn.Elements : null);
@@ -515,21 +522,23 @@ namespace Baryonyx.Equipment
                 widget.Icon.color = filled ? Color.white : new Color(1f, 1f, 1f, 0.35f);
             }
             ShowFoil(widget.Foil, filled ? item : null, icon);
-            Set(widget.Name, item == null ? "" : item.Name);
-            SetRich(widget.Stars, filled ? Grade(item) : "");
+            SetRich(widget.Name, item == null ? "" : filled ? Heading(item) : item.Name);
+            if (widget.Tag != null)
+                widget.Tag.gameObject.SetActive(!filled);
             Set(widget.Detail, filled ? item.Detail : "");
             if (widget.Elements != null)
                 widget.Elements.Show(filled ? item.Elements : null);
         }
 
         /// <summary>
-        /// The kind's rarity in stars, then this one item's quality letter in its colour
-        /// ("★★★　S", rich text; doc/features/inventory.md).
+        /// The item's name with the kind's rarity in stars and this one item's quality and
+        /// multiplier right after it ("炎のダガー ★★★★ C ×1.00", rich text;
+        /// doc/rules/ui-design.md の装備の見せ方). An empty slot shows its name alone.
         /// </summary>
-        public static string Grade(EquipmentItemState item) =>
-            item == null || string.IsNullOrEmpty(item.Name) || item.ItemId == null
-                ? item?.Stars ?? ""
-                : $"{item.Stars}　{QualityPalette.Painted(item.Quality)}";
+        public static string Heading(EquipmentItemState item) =>
+            item == null ? ""
+            : string.IsNullOrEmpty(item.Name) || item.ItemId == null ? item.Name ?? ""
+            : ItemText.Heading(item.Name, item.Stars?.Length ?? 0, true, item.Quality, item.Multiplier);
 
         /// <summary>
         /// One owned item: its name, rarity, quality, effect, how the stats change when it is put
@@ -540,8 +549,7 @@ namespace Baryonyx.Equipment
             row.ItemId = item.ItemId;
             PixelIcon.Show(row.Icon, icon);
             ShowFoil(row.Foil, item.ItemId != null ? item : null, icon);
-            Set(row.Name, item.Name);
-            SetRich(row.Stars, Grade(item));
+            SetRich(row.Name, Heading(item));
             Set(row.Detail, item.Detail);
             SetRich(row.Change, ChangeText(item.Changes));
             // 属性が合わず付けられない装備は、薄くして押せなくする。

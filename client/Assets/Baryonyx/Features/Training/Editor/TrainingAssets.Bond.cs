@@ -27,11 +27,10 @@ namespace Baryonyx.Training.Editor
 
         // 突破のタブの右の面（左上から）：見出しの下の6段の札。石は11×11ドットを6倍で出す。
         private const float StagesTop = 84f;
-        private const float StageHeight = 134f;
+        private const float StageHeight = 112f;
         private const float StageGap = 10f;
         private const float StageStoneDot = 6f;
-        private const float StageActionWidth = 220f;
-        private const float StageButtonHeight = 96f;
+        private const float StageActionWidth = 180f;
 
         // 深めた瞬間：イラスト（2:3）と、それを囲む6つの石の弧、右の札。
         private static readonly Rect CelebrationArt = new(480, 70, 640, 960);
@@ -134,7 +133,8 @@ namespace Baryonyx.Training.Editor
         }
 
         // 右の面：見出し「限界突破」の下に、6段を上から縦に並べる。効果の文が2〜3行になっても読めるよう、
-        // 札は面の幅いっぱいに取り、文の右に「突破済み」か「限界突破」を置く。
+        // 札は面の幅いっぱいに取り、突破した段は文の右に「突破済み」を置く。次の段は金の縁で示し、
+        // 「限界突破」は面の右下の決めるボタンにする（ほかの画面の決めるボタンと同じ位置）。
         private static void BuildStages(RectTransform layer, TrainingView view)
         {
             var panel = Layout.Box(layer, "Stages", Panel.x, Panel.y, Panel.width, Panel.height);
@@ -153,6 +153,20 @@ namespace Baryonyx.Training.Editor
                     )
                 )
                 .ToArray();
+
+            var (button, _, _) = ActionButtonAssets.Build(
+                Layout.Box(
+                    panel,
+                    "BreakThrough",
+                    Panel.width - PanelPad - Guide.ConfirmWidth,
+                    Panel.height - Guide.ConfirmBottom - Guide.ConfirmHeight,
+                    Guide.ConfirmWidth,
+                    Guide.ConfirmHeight
+                ),
+                "限界突破",
+                ButtonRole.Primary
+            );
+            view.BreakThrough = button;
         }
 
         private static TrainingStageWidget BuildStage(
@@ -227,27 +241,6 @@ namespace Baryonyx.Training.Editor
                 )
                 .gameObject;
 
-            var (button, _, label) = GlassCardAssets.Choice(
-                Layout.Box(
-                    inside,
-                    "BreakThrough",
-                    actionLeft,
-                    (StageHeight - StageButtonHeight) / 2f,
-                    StageActionWidth,
-                    StageButtonHeight
-                ),
-                pattern: false
-            );
-            widget.BreakThrough = button;
-            var text = Label(
-                label,
-                "Label",
-                "限界突破",
-                28,
-                UiPalette.TextMain,
-                TextAlignmentOptions.Center
-            );
-            Stretch((RectTransform)text.transform);
             return widget;
         }
 

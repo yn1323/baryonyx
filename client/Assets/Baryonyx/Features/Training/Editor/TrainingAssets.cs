@@ -450,19 +450,16 @@ namespace Baryonyx.Training.Editor
         // よう金の縁は付けない（2026-10-26）。
         private static void BuildLevelUp(RectTransform panel, TrainingView view)
         {
-            var (button, _, levelUp) = GlassCardAssets.Choice(
+            // 決めるボタンの青い板（プライマリー）。下に使うルーンを添える。
+            var (button, label, levelUp) = ActionButtonAssets.Build(
                 Layout.Box(panel, "LevelUp", LevelUpX, 8, LevelUpWidth, LevelUpHeight),
-                pattern: false
+                "レベルアップ",
+                ButtonRole.Primary,
+                UiType.Caption
             );
             view.LevelUp = button;
-            view.LevelUpLabel = Label(
-                levelUp,
-                "Label",
-                "レベルアップ",
-                26,
-                UiPalette.TextMain,
-                TextAlignmentOptions.Bottom
-            );
+            view.LevelUpLabel = label;
+            label.alignment = TextAlignmentOptions.Bottom;
             Layout.At(view.LevelUpLabel, 0, 12, LevelUpWidth, 44);
             Guide.Shrink(view.LevelUpLabel, 20);
             // 使うルーンは、右上の所持ルーンと同じアイコンで添える。
@@ -476,7 +473,7 @@ namespace Baryonyx.Training.Editor
                 24,
                 TextAnchor.MiddleCenter,
                 30f,
-                UiPalette.TextMain
+                UiPalette.ButtonText
             );
             view.LevelUpCost = view.LevelUpCostLabel.transform.parent.gameObject;
         }
@@ -685,6 +682,20 @@ namespace Baryonyx.Training.Editor
                 TextAnchor.MiddleCenter,
                 runeSize,
                 UiPalette.TextMain
+            );
+
+            // ルーンが足りないときに、「レベルアップ」の上に出す「ルーンが 〇〇 足りません」。
+            view.Missing = Layout.Text(
+                modal,
+                "Missing",
+                "",
+                UiType.Caption,
+                UiPalette.Fall,
+                TextAlignmentOptions.MidlineRight,
+                confirmX,
+                footY - 34f,
+                confirmWidth,
+                32f
             );
 
             dialog.gameObject.SetActive(false);

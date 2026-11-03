@@ -319,21 +319,21 @@ namespace Baryonyx.Tests.PlayMode
                 Assert.That(view.Breadcrumb.text, Is.EqualTo(Trail("編成", "冒険者", first.Name)));
                 yield return null;
 
-                // 突破した段は石を灯して「突破済み」、次の段は金の縁と「限界突破」、まだの段は薄い。
+                // 突破した段は石を灯して「突破済み」、次の段は金の縁、まだの段は薄い。「限界突破」は右下に1つ。
                 Assert.That(training.Stages, Has.Length.EqualTo(TrainingBond.Max));
                 for (int i = 0; i < training.Stages.Length; i++)
                 {
                     var row = training.Stages[i];
                     Assert.That(row.Effect.text, Is.EqualTo(TrainingBond.EffectOf(i + 1)));
                     Assert.That(row.Done.activeSelf, Is.EqualTo(i < stage));
-                    Assert.That(row.BreakThrough.gameObject.activeSelf, Is.EqualTo(i == stage));
                     Assert.That(row.Card.Selected, Is.EqualTo(i == stage));
                     Assert.That(
                         row.Stone.sprite,
                         Is.EqualTo(i < stage ? training.BondLit : training.BondDark)
                     );
                 }
-                var next = training.Stages[stage].BreakThrough;
+                var next = training.BreakThrough;
+                Assert.That(next.gameObject.activeSelf, Is.True);
                 Assert.That(next.interactable, Is.True);
                 SceneTests.AssertTouchSize(next.transform, 0.7f);
 
@@ -359,7 +359,7 @@ namespace Baryonyx.Tests.PlayMode
                 view.Back.onClick.Invoke();
                 Assert.That(celebration.gameObject.activeSelf, Is.False);
                 Assert.That(training.gameObject.activeSelf, Is.True);
-                Assert.That(training.Stages[stage + 1].BreakThrough.interactable, Is.False);
+                Assert.That(training.BreakThrough.interactable, Is.False);
 
                 // ステータスのタブへ戻ると、突破で上がったステータスを出す。
                 training.Sheet.Tabs[0].Button.onClick.Invoke();
@@ -410,7 +410,7 @@ namespace Baryonyx.Tests.PlayMode
             );
             Assert.That(training.Presenter.State.Bond, Is.EqualTo(2));
 
-            training.Stages[2].BreakThrough.onClick.Invoke();
+            training.BreakThrough.onClick.Invoke();
             Assert.That(training.Celebration.gameObject.activeSelf, Is.True);
             Assert.That(training.Celebration.Stage.text, Is.EqualTo("3"));
             Assert.That(training.Presenter.DeepenTask.IsCompleted, Is.False);
@@ -423,7 +423,7 @@ namespace Baryonyx.Tests.PlayMode
 
             // 保存できなければ、演出を閉じて段としるしを戻す。
             server.Fail = true;
-            training.Stages[3].BreakThrough.onClick.Invoke();
+            training.BreakThrough.onClick.Invoke();
             Assert.That(training.Celebration.gameObject.activeSelf, Is.True);
             yield return SceneTests.WaitUntil(() => training.Presenter.DeepenTask.IsCompleted);
             Assert.That(training.Celebration.gameObject.activeSelf, Is.False);

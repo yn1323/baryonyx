@@ -170,7 +170,7 @@ namespace Baryonyx.Tests.PlayMode
             yield return SceneTests.WaitForTask(panel.Presenter.ChangeTask);
             // 変わったことは通知の帯で知らせず、カードを回して見せる。
             Assert.That(panel.LastNotice, Is.Empty);
-            Assert.That(panel.Slots[0].Name.text, Is.EqualTo("炎のダガー"));
+            Assert.That(panel.Slots[0].Name.text, Does.StartWith("炎のダガー"));
             // 回り終えて上下の辺の線が消えると、写しも線も残らず、元の大きさに戻る。
             yield return SceneTests.WaitUntil(() => !turn.Turning);
             yield return null;
@@ -222,7 +222,7 @@ namespace Baryonyx.Tests.PlayMode
                 .ToArray();
 
         private static EquipmentRow Row(EquipmentView panel, string name) =>
-            Rows(panel).Single(row => row.Name.text == name);
+            Rows(panel).Single(row => row.Name.text.Split('<')[0] == name);
 
         private static void AssertInside(Transform inner, Transform outer)
         {

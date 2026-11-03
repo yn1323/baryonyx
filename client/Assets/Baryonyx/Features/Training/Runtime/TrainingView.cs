@@ -84,7 +84,6 @@ namespace Baryonyx.Training
         public TMP_Text Number;
         public TMP_Text Effect;
         public GameObject Done;
-        public Button BreakThrough;
     }
 
     /// <summary>One stat's row in the level-up dialog: before, after and the gain.</summary>
@@ -171,16 +170,18 @@ namespace Baryonyx.Training
         public Button Confirm;
         public TrainingDiffWidget[] Diffs = Array.Empty<TrainingDiffWidget>();
 
-        // 使うルーン。足りないときは赤くする。
+        // 使うルーン。足りないときは赤くし、上に「ルーンが 〇〇 足りません」を出す（押せない）。
         public TMP_Text Cost;
+        public TMP_Text Missing;
 
         [Header("Breakthrough")]
         // 突破した段と、まだの段の石（突破のタブの段と、突破した演出が使う）。
         public Sprite BondLit;
         public Sprite BondDark;
 
-        // 突破のタブの6段（1段目から）。ステータスのタブでは空。
+        // 突破のタブの6段（1段目から）と、右下の「限界突破」（次の段を突破する）。ステータスのタブでは空。
         public TrainingStageWidget[] Stages = Array.Empty<TrainingStageWidget>();
+        public Button BreakThrough;
 
         [Header("Bond celebration")]
         public TrainingBondCelebration Celebration;
@@ -217,8 +218,7 @@ namespace Baryonyx.Training
             bindings.Bind(Max, () => MaxPressed?.Invoke());
             bindings.Bind(Cancel, () => CancelPressed?.Invoke());
             bindings.Bind(Confirm, () => ConfirmPressed?.Invoke());
-            foreach (var stage in Stages)
-                bindings.Bind(stage.BreakThrough, () => BreakThroughPressed?.Invoke());
+            bindings.Bind(BreakThrough, () => BreakThroughPressed?.Invoke());
             if (Celebration != null)
                 Celebration.Closed += CloseCelebration;
 
@@ -511,6 +511,8 @@ namespace Baryonyx.Training
             Header.localScale = Vector3.one * (HeaderWidth / width);
         }
 
+        public static string MissingText(long runes) => $"ルーンが {runes:N0} 足りません";
+
         private void RenderDialog(TrainingState state)
         {
             if (Dialog != null)
@@ -534,6 +536,7 @@ namespace Baryonyx.Training
             Set(Cost, Number(state.Cost));
             if (Cost != null)
                 Cost.color = state.CanAfford ? UiPalette.TextMain : Short;
+            Set(Missing, state.CanAfford ? "" : MissingText(state.Cost - state.Runes));
         }
 
         // 突破のタブの6段。突破した段は石を灯して「突破済み」、次の段は金の縁で囲んで「限界突破」を出し、
@@ -561,11 +564,12 @@ namespace Baryonyx.Training
                 Set(widget.Effect, TrainingBond.EffectOf(stage));
                 if (widget.Done != null)
                     widget.Done.SetActive(done);
-                if (widget.BreakThrough != null)
-                {
-                    widget.BreakThrough.gameObject.SetActive(next);
-                    widget.BreakThrough.interactable = next && state.CanDeepen;
-                }
+            }
+            // 右下の「限界突破」は次の段を突破する。しるしが足りないときは押せず、上限なら隠す。
+            if (BreakThrough != null)
+            {
+                BreakThrough.gameObject.SetActive(shown && !state.BondMaxed);
+                BreakThrough.interactable = shown && state.CanDeepen;
             }
 
             if (Celebration == null)

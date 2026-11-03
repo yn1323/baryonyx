@@ -46,15 +46,12 @@ namespace Baryonyx.Equipment.Editor
             (ChangeScreen.Height - SlotBottomMargin - SlotTop - SlotGap * 4) / 5f;
         private const float SlotStep = SlotHeight + SlotGap;
 
-        // 枠の文字は、枠の名前・装備の名前と★・効果の3行。3行のまとまりを縦の中央に置く。
+        // 枠の文字は、枠の名前（空きのときだけ）・装備の名前と☆と品質・効果の行。まとまりを縦の中央に置く。
         private const float SlotTagHeight = 26f;
         private const float SlotNameHeight = 40f;
         private const float SlotDetailHeight = 32f;
-        private const float SlotInset =
-            (SlotHeight - SlotTagHeight - SlotNameHeight - 6f - SlotDetailHeight) / 2f;
         private const float SlotTextLeft = 112f;
         private const float SlotRight = 20f;
-        private const float SlotStarsWidth = 150f;
         private const float RowHeight = 128f;
         private const float RowTextLeft = 132f;
 
@@ -137,9 +134,10 @@ namespace Baryonyx.Equipment.Editor
             widget.Icon = icon.gameObject.AddComponent<Image>();
             widget.Icon.raycastTarget = false;
             widget.Foil = CardFoilAssets.Add(widget.Icon);
-            SlotTag(row, EquipmentCatalog.NameOf(slot));
-            (widget.Name, widget.Stars, widget.Detail) = SlotTexts(row);
-            widget.Elements = SlotElements(row);
+            (widget.Tag, widget.Name, widget.Detail, widget.Elements) = SlotTexts(
+                row,
+                EquipmentCatalog.NameOf(slot)
+            );
             return widget;
         }
 
@@ -167,9 +165,10 @@ namespace Baryonyx.Equipment.Editor
             );
             SpriteImage(lockImage, Frame.LockPath, Color.white);
             widget.Lock = lockImage.gameObject;
-            SlotTag(row, EquipmentPresenter.AccessoryTitle);
-            (widget.Name, widget.Stars, widget.Detail) = SlotTexts(row);
-            widget.Elements = SlotElements(row);
+            (widget.Tag, widget.Name, widget.Detail, widget.Elements) = SlotTexts(
+                row,
+                EquipmentPresenter.AccessoryTitle
+            );
             widget.Name.text = AccessorySlots.UnlockText(index);
             return widget;
         }
@@ -178,83 +177,53 @@ namespace Baryonyx.Equipment.Editor
         private static RectTransform SlotBox(RectTransform panel, string name, int index) =>
             Layout.Box(panel, name, 0, SlotTop + index * SlotStep, Left.width, SlotHeight);
 
-        // 枠の上の行の、枠の名前（武器・防具・アクセサリー）。
-        private static void SlotTag(RectTransform row, string tag) =>
-            Layout.Text(
-                row,
-                "Tag",
-                tag,
-                20,
-                UiPalette.Gold,
-                TextAlignmentOptions.BottomLeft,
-                SlotTextLeft,
-                SlotInset,
-                300,
-                SlotTagHeight
-            );
-
-        // 枠の名前の下の装備の名前、その下の効果（「属攻 +20%｜会心 +8%」）と右端の★・品質。
-        // 右上（枠の名前の行）に属性のアイコンを置くため、★・品質は効果の行へ下げる（2026-11-03）。
-        private static (TMP_Text Name, TMP_Text Stars, TMP_Text Detail) SlotTexts(RectTransform row)
+        // 枠の文字（行の標準の形）：装備の名前のすぐ右に☆と品質・倍率、右上に属性、2行目に効果。
+        // 空き・開いていない枠だけは、どの枠か分かるよう上に枠の名前（武器・防具・アクセサリー）を出す。
+        // 縦に並べ、隠した行を詰めて、残りを枠の上下の中央に置く。
+        private static (TMP_Text Tag, TMP_Text Name, TMP_Text Detail, ElementIconRow Elements) SlotTexts(
+            RectTransform row,
+            string tag
+        )
         {
-            float top = SlotInset + SlotTagHeight;
-            float detailTop = top + SlotNameHeight + 6;
-            var name = Layout.Text(
+            var box = Layout.Box(
                 row,
-                "Name",
-                "",
-                30,
-                UiPalette.TextMain,
-                TextAlignmentOptions.BottomLeft,
+                "Texts",
                 SlotTextLeft,
-                top,
+                0f,
                 Left.width - SlotTextLeft - SlotRight,
-                SlotNameHeight
+                SlotHeight
             );
-            Guide.Shrink(name, 22);
-            var stars = Layout.Text(
-                row,
-                "Stars",
-                "",
-                26,
-                UiPalette.Gold,
-                TextAlignmentOptions.TopRight,
-                Left.width - SlotRight - SlotStarsWidth,
-                detailTop,
-                SlotStarsWidth,
-                SlotDetailHeight
-            );
-            // 長い効果（「攻撃スキルが10%で2回発動」など）も、★・品質の左の1行に収まるよう縮めて入れる。
-            var detail = Layout.Text(
-                row,
-                "Detail",
-                "",
-                24,
-                UiPalette.TextSub,
-                TextAlignmentOptions.TopLeft,
-                SlotTextLeft,
-                detailTop,
-                Left.width - SlotTextLeft - SlotRight - SlotStarsWidth - 8,
-                SlotDetailHeight
-            );
+            var stack = box.gameObject.AddComponent<VerticalLayoutGroup>();
+            stack.childAlignment = TextAnchor.MiddleLeft;
+            stack.spacing = 4f;
+            stack.childControlWidth = stack.childForceExpandWidth = true;
+            stack.childControlHeight = true;
+            stack.childForceExpandHeight = false;
+
+            var label = Label(box, "Tag", tag, UiType.Tiny, UiPalette.Gold, TextAlignmentOptions.BottomLeft);
+            Fixed(label.transform, SlotTagHeight);
+
+            var line = Rect("NameLine", box);
+            Fixed(line, SlotNameHeight);
+            float width = ElementIconRowAssets.Width();
+            var name = Label(line, "Name", "", UiType.Small, UiPalette.TextMain, TextAlignmentOptions.MidlineLeft);
+            name.richText = true;
+            Stretch((RectTransform)name.transform);
+            ((RectTransform)name.transform).offsetMax = new Vector2(-width - 8f, 0f);
+            Guide.Shrink(name, 18);
+            var icons = Rect("Elements", line);
+            Corner(icons, new Vector2(1f, 0.5f), Vector2.zero, new Vector2(width, ElementIconRowAssets.Size));
+            var elements = ElementIconRowAssets.Add(icons, TextAnchor.MiddleRight);
+
+            // 長い効果（「攻撃スキルが10%で2回発動」など）も1行に収まるよう縮めて入れる。
+            var detail = Label(box, "Detail", "", UiType.Tiny, UiPalette.TextSub, TextAlignmentOptions.MidlineLeft);
+            Fixed(detail.transform, SlotDetailHeight);
             Guide.Shrink(detail, 16);
-            return (name, stars, detail);
+            return (label, name, detail, elements);
         }
 
-        // 枠の右上、枠の名前の行の高さに並べる属性のアイコン。右端は★・品質にそろえる。
-        private static ElementIconRow SlotElements(RectTransform row)
-        {
-            float width = ElementIconRowAssets.Width();
-            var rect = Layout.Box(
-                row,
-                "Elements",
-                Left.width - SlotRight - width,
-                SlotInset + (SlotTagHeight - ElementIconRowAssets.Size) / 2f,
-                width,
-                ElementIconRowAssets.Size
-            );
-            return ElementIconRowAssets.Add(rect, TextAnchor.MiddleRight);
-        }
+        private static void Fixed(Transform part, float height) =>
+            part.gameObject.AddComponent<LayoutElement>().preferredHeight = height;
 
         // --- Right: the owned items for the chosen slot, then "外す" -------------------------
 
@@ -282,32 +251,18 @@ namespace Baryonyx.Equipment.Editor
             row.Icon.raycastTarget = false;
             row.Foil = CardFoilAssets.Add(row.Icon);
 
+            // 横長の行：名前のすぐ右に☆と品質・倍率、2行目に効果の全文、右下に増減、右上に属性と印。
             row.Name = Label(
                 card,
                 "Name",
                 "",
-                32,
+                UiType.Small,
                 UiPalette.TextMain,
                 TextAlignmentOptions.BottomLeft
             );
+            row.Name.richText = true;
             Guide.Band((RectTransform)row.Name.transform, top: true, 12, 44, RowTextLeft, 300);
             Guide.Shrink(row.Name, 22);
-            row.Stars = Label(
-                card,
-                "Stars",
-                "",
-                26,
-                UiPalette.Gold,
-                TextAlignmentOptions.BottomLeft
-            );
-            Guide.Band(
-                (RectTransform)row.Stars.transform,
-                top: true,
-                12,
-                44,
-                RowTextLeft + 290,
-                140
-            );
             row.Detail = Label(
                 card,
                 "Detail",

@@ -17,8 +17,8 @@ namespace Baryonyx.Equipment
 
         // アイコンに重ねる品質のキラキラ（S・Aだけ光る）。
         public CardFoil Foil;
+        // 装備の名前と、そのすぐ右の☆・品質・倍率。
         public TMP_Text Name;
-        public TMP_Text Stars;
         public TMP_Text Detail;
 
         // 誰が付けているか（「装備中」「アリアが装備中」）。誰も付けていなければ隠す。

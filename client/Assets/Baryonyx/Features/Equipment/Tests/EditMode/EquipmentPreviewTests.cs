@@ -49,8 +49,9 @@ namespace Baryonyx.Tests.EditMode
             var shown = view.Rows.Where(row => row.gameObject.activeSelf).ToArray();
             int armour = EquipmentCatalog.All.Count(entry => entry.Slot == EquipmentSlot.Armor);
             Assert.That(shown, Has.Length.EqualTo(armour));
+            // 行の名前の欄は、名前のすぐ右に☆と品質・倍率を続ける。名前の部分を比べる。
             Assert.That(
-                shown.Select(row => row.Name.text),
+                shown.Select(row => row.Name.text.Split('<')[0]),
                 Is.SubsetOf(
                     EquipmentCatalog
                         .All.Where(entry => entry.Slot == EquipmentSlot.Armor)
@@ -90,9 +91,10 @@ namespace Baryonyx.Tests.EditMode
                 Detail = "属攻 +8%｜会心 +4%",
             };
             EquipmentView.ShowAccessory(view.Accessories[0], 0, 1, false, worn);
-            Assert.That(view.Accessories[0].Name.text, Is.EqualTo("大ダコの黒真珠"));
+            Assert.That(view.Accessories[0].Name.text, Does.StartWith("大ダコの黒真珠"));
+            Assert.That(view.Accessories[0].Name.text, Does.Contain("★★★★★").And.Contain("×1.00"));
             Assert.That(view.Accessories[0].Detail.text, Is.EqualTo("属攻 +8%｜会心 +4%"));
-            Assert.That(view.Accessories[0].Stars.text, Does.StartWith("★★★★★"));
+            Assert.That(view.Accessories[0].Tag.gameObject.activeSelf, Is.False);
             Assert.That(view.Accessories[0].Lock.activeSelf, Is.False);
 
             // 開いていない枠は、武器・防具と同じ高さのまま、錠前と解放するLvだけを出す。
