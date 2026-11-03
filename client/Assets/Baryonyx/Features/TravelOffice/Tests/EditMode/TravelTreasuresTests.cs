@@ -27,21 +27,26 @@ namespace Baryonyx.Tests.EditMode
                 .Range(0, TravelTreasures.Sections.Count)
                 .Select(section => TravelTreasures.Of("port-portoria", section))
                 .ToArray();
+            // 段の順は、武器・防具→アクセサリー→スキル→アイテム（doc/rules/ui-design.md の分類の切り替え）。
             Assert.That(
-                sections[0].All(treasure => treasure.Category == AdventureDropCategory.Item),
+                TravelTreasures.Sections.Select(section => section.Title),
+                Is.EqualTo(new[] { "武器・防具", "アクセサリー", "スキル", "アイテム" })
+            );
+            Assert.That(
+                sections[3].All(treasure => treasure.Category == AdventureDropCategory.Item),
                 Is.True
             );
             // 武器・防具の段は、武器を先にまとめてから防具を並べる。
             Assert.That(
-                sections[2].Select(treasure => treasure.Category),
+                sections[0].Select(treasure => treasure.Category),
                 Is.EqualTo(
-                    sections[2]
+                    sections[0]
                         .Select(treasure => treasure.Category)
                         .OrderBy(category => category == AdventureDropCategory.Armor)
                 )
             );
             Assert.That(
-                sections[2].Select(treasure => treasure.Category).Distinct(),
+                sections[0].Select(treasure => treasure.Category).Distinct(),
                 Is.EqualTo(new[] { AdventureDropCategory.Weapon, AdventureDropCategory.Armor })
             );
         }

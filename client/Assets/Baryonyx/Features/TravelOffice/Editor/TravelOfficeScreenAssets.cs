@@ -4,6 +4,7 @@ using Baryonyx.Adventure;
 using Baryonyx.Adventure.Editor;
 using Baryonyx.Combat.Editor;
 using Baryonyx.Editor.UI;
+using Baryonyx.Equipment;
 using Baryonyx.Inventory.Editor;
 using Baryonyx.Library;
 using Baryonyx.Library.Editor;
@@ -230,6 +231,22 @@ namespace Baryonyx.TravelOffice.Editor
                 .ToArray();
 
             BuildWindow(treasures, view, destinations.Select(pair => pair.destination), mock);
+            // 受け取ったクリアの報酬を押すと出す小さな窓。お宝の窓の上に重ねる。
+            view.DetailWindow = ItemDetailAssets.Window(treasures, "ItemDetail");
+            // 停止中の表示で開いた形を確かめられるよう、最初の武器を品質Bの見本として焼いておく。
+            var sample = data != null
+                ? data.Entries.FirstOrDefault(entry => entry.Kind == LibraryKind.Weapon)
+                : null;
+            if (sample != null)
+                view.DetailWindow.Face.Show(
+                    LibraryFaces.Of(
+                        sample,
+                        Baryonyx.Inventory.ItemQuality.B,
+                        EquipmentCatalog.Find(sample.Id) is { } gear
+                            ? Baryonyx.Inventory.Quality.Middle(Baryonyx.Inventory.ItemQuality.B, gear.MaxMultiplier)
+                            : 1f
+                    )
+                );
             return treasures.gameObject;
         }
 
@@ -364,19 +381,19 @@ namespace Baryonyx.TravelOffice.Editor
                 window,
                 "Info",
                 "",
-                36,
+                UiType.Body,
                 UiPalette.TextMain,
                 TextAlignmentOptions.MidlineLeft,
                 Pad,
                 WindowHeight - InfoHeight + 16f,
-                WindowWidth - Pad * 2f,
+                WindowWidth - Pad * 2f - ElementIconRowAssets.Width() - 16f,
                 52f
             );
             view.InfoBody = Layout.Text(
                 window,
                 "InfoBody",
                 "",
-                28,
+                UiType.Caption,
                 UiPalette.TextSub,
                 TextAlignmentOptions.MidlineLeft,
                 Pad,
@@ -387,6 +404,16 @@ namespace Baryonyx.TravelOffice.Editor
             Shrink(view.InfoBody, 20);
             // ☆の色と、説明文のキーワードの色はリッチテキストで書く。
             view.Info.richText = view.InfoBody.richText = true;
+            // 効果の行の右に、属性のアイコン。
+            var elements = Layout.Box(
+                window,
+                "InfoElements",
+                WindowWidth - Pad - ElementIconRowAssets.Width(),
+                WindowHeight - InfoHeight + 16f + (52f - ElementIconRowAssets.Size) / 2f,
+                ElementIconRowAssets.Width(),
+                ElementIconRowAssets.Size
+            );
+            view.InfoElements = ElementIconRowAssets.Add(elements, TextAnchor.MiddleRight);
 
             root.gameObject.SetActive(false);
         }
@@ -460,8 +487,10 @@ namespace Baryonyx.TravelOffice.Editor
                 RewardRowHeight
             );
             var (card, inside) = GlassCardAssets.Build(rect, pattern: false);
-            card.Group.blocksRaycasts = false;
+            // 受け取った回だけ押せ、詳しい窓を出す（ビューが押せる回を決める）。
+            card.Interactable = false;
             row.Card = card.Group;
+            row.Tap = card;
 
             var next = Rect("Next", rect);
             Stretch(next);
@@ -498,33 +527,36 @@ namespace Baryonyx.TravelOffice.Editor
             row.Unknown = unknown.gameObject;
             row.Unknown.SetActive(false);
 
+            // 行の標準の形：名前のすぐ右に☆と品質・倍率、2行目に効果、右下にルーン。
             float textX = 16f + RewardArtSize + 16f;
             row.Name = Layout.Text(
                 inside,
                 "Name",
                 "",
-                32,
+                UiType.Small,
                 UiPalette.TextMain,
                 TextAlignmentOptions.MidlineLeft,
                 textX,
                 12f,
-                width - textX - 24f,
+                width - textX - 72f,
                 46f
             );
+            row.Name.richText = true;
             Shrink(row.Name, 20);
-            row.Grade = Layout.Text(
+            row.Effect = Layout.Text(
                 inside,
-                "Grade",
+                "Effect",
                 "",
-                26,
-                UiPalette.Gold,
+                UiType.Tiny,
+                UiPalette.TextSub,
                 TextAlignmentOptions.MidlineLeft,
                 textX,
                 58f,
-                220f,
+                width - textX - 200f - 8f,
                 40f
             );
-            row.Grade.richText = true;
+            row.Effect.richText = true;
+            Shrink(row.Effect, 16);
 
             row.Runes = Frame.RuneAmount(
                 inside,

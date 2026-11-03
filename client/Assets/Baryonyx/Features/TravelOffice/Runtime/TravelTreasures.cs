@@ -34,16 +34,19 @@ namespace Baryonyx.TravelOffice
             public LibraryKind Kind => KindOf(Category);
         }
 
-        /// <summary>The sections of the treasures' window, top to bottom. Weapons and armor share one.</summary>
+        /// <summary>
+        /// The sections of the treasures' window, top to bottom, in the shared order of the kinds
+        /// (doc/rules/ui-design.md の分類の切り替え). Weapons and armor share one.
+        /// </summary>
         public static readonly IReadOnlyList<(
             string Title,
             AdventureDropCategory[] Categories
         )> Sections = new[]
         {
-            ("アイテム", new[] { AdventureDropCategory.Item }),
-            ("アクセサリー", new[] { AdventureDropCategory.Accessory }),
             ("武器・防具", new[] { AdventureDropCategory.Weapon, AdventureDropCategory.Armor }),
+            ("アクセサリー", new[] { AdventureDropCategory.Accessory }),
             ("スキル", new[] { AdventureDropCategory.Skill }),
+            ("アイテム", new[] { AdventureDropCategory.Item }),
         };
 
         /// <summary>The treasures of a section in the destination; empty for an unknown one.</summary>

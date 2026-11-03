@@ -46,8 +46,9 @@ namespace Baryonyx.TravelOffice
 
     /// <summary>
     /// One clear's reward in the window's left column (doc/features/stage-progression.md,
-    /// ダンジョンのクリア回数の報酬): its mark on the line, the card with the art, name, stars and
-    /// quality and the runes, a check once received, and a gold rim on the next one.
+    /// ダンジョンのクリア回数の報酬), a standard item row: its mark on the line, the card with the
+    /// art, the name with the stars and the quality right after it, the effect and the runes, a
+    /// check once received, and a gold rim on the next one. A received reward opens its detail.
     /// </summary>
     [Serializable]
     public sealed class TravelClearRewardRow
@@ -55,9 +56,10 @@ namespace Baryonyx.TravelOffice
         public Image Mark;
         public Image Link;
         public CanvasGroup Card;
+        public GlassCard Tap;
         public Image Art;
         public TMP_Text Name;
-        public TMP_Text Grade;
+        public TMP_Text Effect;
         public TMP_Text Runes;
         public GameObject Received;
         public GameObject Next;
@@ -113,9 +115,13 @@ namespace Baryonyx.TravelOffice
         public ScrollRect Scroll;
         public TravelTreasureList[] Lists = Array.Empty<TravelTreasureList>();
 
-        // 窓の下の、選んだお宝の名前・☆・分類と説明。
+        // 窓の下の帯：選んだお宝の名前と☆、効果、属性（詳しい面と同じ並びを横に置く）。
         public TMP_Text Info;
         public TMP_Text InfoBody;
+        public ElementIconRow InfoElements;
+
+        // 受け取ったクリアの報酬を押すと出す、詳しい面と同じ中身の小さな窓。
+        public ItemDetailWindow DetailWindow;
 
         private readonly GuidePanelLoad load = new();
         private readonly List<Action> unbind = new();
@@ -149,6 +155,16 @@ namespace Baryonyx.TravelOffice
                     continue;
                 button.onClick.AddListener(Hide);
                 unbind.Add(() => button.onClick.RemoveListener(Hide));
+            }
+            for (int i = 0; i < Rewards.Length; i++)
+            {
+                var tap = Rewards[i]?.Tap;
+                if (tap == null)
+                    continue;
+                int index = i;
+                Action click = () => ShowReward(index);
+                tap.Clicked += click;
+                unbind.Add(() => tap.Clicked -= click);
             }
             foreach (var tile in Lists.SelectMany(list => list.Tiles))
             {
@@ -227,13 +243,17 @@ namespace Baryonyx.TravelOffice
         {
             open = -1;
             selected = null;
+            if (DetailWindow != null)
+                DetailWindow.Hide();
             if (Window != null)
                 Window.SetActive(false);
         }
 
-        // 窓を開いている間は、「もどる」と端末の戻るキーで窓を閉じる。
+        // 窓を開いている間は、「もどる」と端末の戻るキーで窓を閉じる。詳しい窓を開いていれば、それだけを閉じる。
         public bool HandleBack()
         {
+            if (DetailWindow != null && DetailWindow.HandleBack())
+                return true;
             if (!IsOpen)
                 return false;
             Hide();
@@ -314,15 +334,21 @@ namespace Baryonyx.TravelOffice
                 if (row.Unknown != null)
                     row.Unknown.SetActive(square && !received);
                 string count = rewards[i].Count > 1 ? $" ×{rewards[i].Count}" : "";
-                Set(row.Name, received ? AdventureTexts.DropName(drop) + count : HiddenName);
-                string stars = StarsText(drop.Stars);
+                var face = received ? RewardFaceOf(drop) : null;
                 Set(
-                    row.Grade,
-                    !received ? ""
-                        : drop.Quality is { } quality
-                            ? $"{stars}  {QualityPalette.Painted(quality)}"
-                        : stars
+                    row.Name,
+                    !received ? HiddenName
+                        : ItemText.Heading(
+                            AdventureTexts.DropName(drop) + count,
+                            drop.Stars,
+                            face != null && face.HasQuality,
+                            face?.Quality ?? ItemQuality.C,
+                            face?.Multiplier ?? 1f
+                        )
                 );
+                Set(row.Effect, face?.Effect ?? "");
+                if (row.Tap != null)
+                    row.Tap.Interactable = received;
                 Set(row.Runes, rewards[i].Runes.ToString("N0"));
                 if (row.Received != null)
                     row.Received.SetActive(received);
@@ -337,6 +363,32 @@ namespace Baryonyx.TravelOffice
             }
         }
 
+        // 受け取ったクリアの報酬の、詳しい窓。まだの回は中身を伏せるため開かない。
+        private void ShowReward(int index)
+        {
+            if (DetailWindow == null || open < 0)
+                return;
+            var rewards = AdventureClearRewards.Of(Lists[open].DestinationId);
+            if (index >= rewards.Count)
+                return;
+            var face = RewardFaceOf(rewards[index].Drop);
+            if (face != null)
+                DetailWindow.Show(face);
+        }
+
+        // クリアの報酬の中身。強化素材など図鑑に載らない物は null。
+        private ItemFace RewardFaceOf(AdventureDrop drop)
+        {
+            if (drop.Category == AdventureDropCategory.Material)
+                return null;
+            var entry = EntryOf(TravelTreasures.KindOf(drop.Category), drop.Id);
+            if (entry == null)
+                return null;
+            return drop.Quality is { } quality
+                ? LibraryFaces.Of(entry, quality, drop.Multiplier)
+                : LibraryFaces.Of(entry);
+        }
+
         /// <summary>
         /// How many times the destination was cleared (its master beaten), from the adventure's
         /// records (doc/features/stage-progression/destinations.md#ダンジョンのクリア回数の報酬). "-" before
@@ -348,27 +400,18 @@ namespace Baryonyx.TravelOffice
         private void ShowInfo()
         {
             var tile = open >= 0 ? selected : null;
-            if (tile == null)
-            {
-                Set(Info, "");
-                Set(InfoBody, "");
-                return;
-            }
-            var entry = EntryOf(tile.Kind, tile.Id);
+            var entry = tile != null ? EntryOf(tile.Kind, tile.Id) : null;
             bool found = entry != null && IsFound(tile.Kind, tile.Id);
-            // まだ見つけていないお宝は名前を伏せるが、☆は札と同じく出す。分類は段の名前でわかるため書かない。
-            string stars = entry != null ? StarsText(entry.Rarity) : "";
+            // 詳しい面と同じ並び（名前→☆→効果→属性）を横に置く。まだ見つけていないお宝は名前と効果を伏せるが、
+            // ☆は札と同じく出す。分類は段の名前でわかるため書かない。
             Set(
                 Info,
-                Join(
-                    found ? entry.Name : HiddenName,
-                    stars.Length > 0
-                        ? $"<color=#{ColorUtility.ToHtmlStringRGB(UiPalette.Gold)}>{stars}</color>"
-                        : ""
-                )
+                entry == null ? ""
+                    : ItemText.Heading(found ? entry.Name : HiddenName, entry.Rarity, false, default, 1f)
             );
-            // 主の物は札の王冠で、まだ見つけていない物は伏せた名前でわかるため、説明だけを書く。
-            Set(InfoBody, found ? entry.Description : "");
+            Set(InfoBody, found ? LibraryFaces.EffectAt(entry, Quality.MinMultiplier) : "");
+            if (InfoElements != null)
+                InfoElements.Show(found ? LibraryFaces.ElementsOf(entry.Kind, entry.Id) : null);
         }
 
         private void Paint(TravelTreasureTile tile, bool found)
@@ -396,9 +439,6 @@ namespace Baryonyx.TravelOffice
                 : null;
 
         public static string StarsText(int stars) => stars > 0 ? new string('★', stars) : "";
-
-        private static string Join(string first, string second) =>
-            string.Join("　", new[] { first, second }.Where(text => !string.IsNullOrEmpty(text)));
 
         private static void Set(TMP_Text label, string text)
         {
