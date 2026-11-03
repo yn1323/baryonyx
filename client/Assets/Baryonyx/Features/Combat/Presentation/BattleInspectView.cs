@@ -190,6 +190,9 @@ namespace Baryonyx.Combat.Presentation
         /// <summary>The ally's name under the HP bar, shown with the ring.</summary>
         public GameObject NameTag;
 
+        /// <summary>The row of status icons under the HP bar, one place for each kind.</summary>
+        public BattleInspectStatusIcon[] StatusIcons = Array.Empty<BattleInspectStatusIcon>();
+
         /// <summary>The ally's name, shown on the name tag and as the owner of its cards.</summary>
         public string Name;
 
@@ -286,6 +289,9 @@ namespace Baryonyx.Combat.Presentation
         /// only its weaknesses (<see cref="Weaknesses"/>) are shown.
         /// </summary>
         public BattleInspectWeakness[] WeaknessSlots = Array.Empty<BattleInspectWeakness>();
+
+        /// <summary>The row of status icons under the HP bar, one place for each kind.</summary>
+        public BattleInspectStatusIcon[] StatusIcons = Array.Empty<BattleInspectStatusIcon>();
 
         /// <summary>The shadow at its feet, as wide as its picture.</summary>
         public RectTransform Shadow;
@@ -1120,6 +1126,7 @@ namespace Baryonyx.Combat.Presentation
 
             // An ally felled or raised by anything (a lab, a moment) takes its cards with it.
             RefreshFallen();
+            RefreshStatusIcons();
             // Laid out every frame so changes to the settings show at once.
             LayoutHand();
             PlaceEndTurn();

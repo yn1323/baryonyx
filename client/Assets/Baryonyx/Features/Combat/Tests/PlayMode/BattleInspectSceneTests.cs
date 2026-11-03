@@ -1765,6 +1765,41 @@ namespace Baryonyx.Tests.PlayMode
         }
 
         [UnityTest]
+        public IEnumerator StatusesShowAsIconsUnderTheHpBars()
+        {
+            var view = default(BattleInspectView);
+            yield return Load(value => view = value);
+            var wolf = view.Enemies[1];
+            var ally = view.Allies[0];
+            Assert.That(wolf.StatusIcons, Has.Length.EqualTo(BattleStatusIcons.Order.Length));
+            Assert.That(ally.StatusIcons, Has.Length.EqualTo(BattleStatusIcons.Order.Length));
+            yield return null;
+            Assert.That(Shown(wolf.StatusIcons), Is.Empty, "No status, no icon.");
+
+            int embers = DealInto(view, "Embers");
+            Play(view, embers, wolf.TargetArea);
+            yield return WaitActions(view);
+            yield return null;
+            Assert.That(Shown(wolf.StatusIcons), Is.EqualTo(new[] { BattleStatusIcon.Burn }));
+            Assert.That(Shown(ally.StatusIcons), Is.Empty);
+
+            // Gathering its strength (力を溜める) shows as attack up, ahead of the rest.
+            wolf.PowerUp = 50;
+            yield return null;
+            Assert.That(
+                Shown(wolf.StatusIcons),
+                Is.EqualTo(new[] { BattleStatusIcon.AttackUp, BattleStatusIcon.Burn })
+            );
+            wolf.PowerUp = 0;
+        }
+
+        private static BattleStatusIcon[] Shown(BattleInspectStatusIcon[] icons) =>
+            System
+                .Array.FindAll(icons, icon => icon.Icon.activeSelf)
+                .Select(icon => icon.Kind)
+                .ToArray();
+
+        [UnityTest]
         public IEnumerator ACardThatDrawsAddsCardsToTheHand()
         {
             var view = default(BattleInspectView);

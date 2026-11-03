@@ -118,6 +118,11 @@ namespace Baryonyx.Combat.Editor
         // 行動順の列の左端。左上の冒険のメニューの右に空ける。
         public const float TurnOrderLeft = 208f;
         private const float WeakIconSize = 48f;
+
+        // The status icons under the HP bars: 16 dots at 3 px, as tall as the weaknesses.
+        private const float StatusIconDot = 3f;
+        private const float StatusIconSize = 16 * StatusIconDot;
+        private const float StatusIconGap = 4f;
         private const int AimDotCount = 16;
 
         // The HP gauges, drawn as pixel art on the allies' 4px dots.
@@ -896,6 +901,14 @@ namespace Baryonyx.Combat.Editor
                 gauge.Block = BlockStrip((RectTransform)gauge.transform, gauge.InnerDots);
                 // The number stays over the block strip.
                 gauge.Number.rectTransform.SetAsLastSibling();
+                // Made before the name tag, which is drawn over it while a card is up. Lined up
+                // from the bar's left end, as the enemies' are.
+                var statusIcons = StatusIconRow(
+                    (RectTransform)gauge.transform,
+                    7 * DotSize,
+                    30 * DotSize,
+                    TextAnchor.MiddleLeft
+                );
                 var tag = NameTag((RectTransform)gauge.transform, ally.Label);
                 allies.Add(
                     new BattleInspectAlly
@@ -907,6 +920,7 @@ namespace Baryonyx.Combat.Editor
                         Marker = TargetMarker(areas[i], cursor),
                         CasterRing = rings[i],
                         NameTag = tag,
+                        StatusIcons = statusIcons,
                         StartHp = ally.Hp,
                         MaxHp = ally.MaxHp,
                         Name = ally.Label,
@@ -974,6 +988,13 @@ namespace Baryonyx.Combat.Editor
                 gauge.Block = BlockStrip((RectTransform)gauge.transform, gauge.InnerDots);
                 gauge.Number.rectTransform.SetAsLastSibling();
                 gauge.DefeatTag = DefeatTag((RectTransform)gauge.transform);
+                // Lined up on the left like the weaknesses over the bar.
+                var statusIcons = StatusIconRow(
+                    (RectTransform)gauge.transform,
+                    8 * DotSize,
+                    65 * DotSize,
+                    TextAnchor.MiddleLeft
+                );
 
                 enemies.Add(
                     new BattleInspectEnemy
@@ -994,6 +1015,7 @@ namespace Baryonyx.Combat.Editor
                         Magic = false,
                         Weaknesses = weaknesses,
                         WeaknessSlots = slots,
+                        StatusIcons = statusIcons,
                         Shadow = footShadow.rectTransform,
                         IconUv = FaceUv(texture, spec.Face, TurnIconDots),
                         Boss = spec.Boss,
@@ -1084,13 +1106,56 @@ namespace Baryonyx.Combat.Editor
             return weakness;
         }
 
-        /// <summary>A pixel-art image on the stage at 4 px per dot, centered in its parent.</summary>
-        private static GameObject PixelIcon(RectTransform parent, string name, Texture2D texture)
+        /// <summary>
+        /// The row of status icons just under an HP bar <paramref name="barHeight"/> px tall
+        /// (doc/features/screens/battle-deck.md, 状態のアイコン): a place for every kind in
+        /// <see cref="BattleStatusIcons.Order"/>, hidden until the character has the status. The
+        /// 16x16 icons are drawn at 3 px per dot, as tall as the weaknesses' 12 dots at 4.
+        /// </summary>
+        private static BattleInspectStatusIcon[] StatusIconRow(
+            RectTransform bar,
+            float barHeight,
+            float width,
+            TextAnchor alignment
+        )
+        {
+            var row = Rect("Statuses", bar);
+            Place(
+                row,
+                new Vector2(0, -(barHeight * 0.5f + StatusIconGap + StatusIconSize * 0.5f)),
+                new Vector2(width, StatusIconSize)
+            );
+            var layout = row.gameObject.AddComponent<HorizontalLayoutGroup>();
+            layout.spacing = 4;
+            layout.childAlignment = alignment;
+            layout.childControlWidth = layout.childControlHeight = true;
+            layout.childForceExpandWidth = layout.childForceExpandHeight = false;
+
+            var icons = new List<BattleInspectStatusIcon>();
+            foreach (var kind in BattleStatusIcons.Order)
+            {
+                var slot = Rect("Status" + kind, row);
+                var size = slot.gameObject.AddComponent<LayoutElement>();
+                size.preferredWidth = size.preferredHeight = StatusIconSize;
+                PixelIcon(slot, "Icon", Art(BattleStatusIcons.ArtName(kind)), StatusIconDot);
+                slot.gameObject.SetActive(false);
+                icons.Add(new BattleInspectStatusIcon { Kind = kind, Icon = slot.gameObject });
+            }
+            return icons.ToArray();
+        }
+
+        /// <summary>A pixel-art image on the stage at 4 px per dot (or <paramref name="dot"/>), centered in its parent.</summary>
+        private static GameObject PixelIcon(
+            RectTransform parent,
+            string name,
+            Texture2D texture,
+            float dot = DotSize
+        )
         {
             var icon = Rect(name, parent);
-            Place(icon, Vector2.zero, new Vector2(texture.width, texture.height) * DotSize);
+            Place(icon, Vector2.zero, new Vector2(texture.width, texture.height) * dot);
             AddRaw(icon, texture).material = EnsurePixelArtMaterial();
-            icon.gameObject.AddComponent<PixelPerfectRawImage>().DotSize = DotSize;
+            icon.gameObject.AddComponent<PixelPerfectRawImage>().DotSize = dot;
             return icon.gameObject;
         }
 

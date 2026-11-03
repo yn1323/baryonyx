@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b840e69afabe41cf8f8842a1fe99a83a, type: 3}
+  m_Name: 8a7cc300e8c334938967e115f4dbbf1b_StatusBlastSigil
+  m_EditorClassIdentifier: Baryonyx.Runtime::Baryonyx.Showcase.ShowcaseEntry
+  Id: 8a7cc300e8c334938967e115f4dbbf1b_StatusBlastSigil
+  DisplayName: StatusBlastSigil
+  Description: Assets/Baryonyx/Features/Combat/UI/Art/Statuses/StatusBlastSigil.aseprite#StatusBlastSigil
+  Category: 9
+  Asset: {fileID: 5349011544834349465, guid: 8a7cc300e8c334938967e115f4dbbf1b, type: 3}
+  PreviewPrefab: {fileID: 0}
+  PreviewAnimation: {fileID: 0}
+  AnimationStateName: 
+  ScenePath: 
+  Enabled: 1
