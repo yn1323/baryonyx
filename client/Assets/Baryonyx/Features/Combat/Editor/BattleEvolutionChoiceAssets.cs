@@ -1,5 +1,6 @@
 using Baryonyx.Combat.Presentation;
 using Baryonyx.UI;
+using Baryonyx.UI.Editor;
 using TMPro;
 using UnityEditor;
 using UnityEngine;
@@ -83,44 +84,22 @@ namespace Baryonyx.Combat.Editor
             return choice;
         }
 
-        // The check that confirms, in the end-turn button's shape (its circle, a gold check where
-        // its white tick is) by its place (ConfirmShift), over a glow that breathes while it can
-        // be pressed.
+        // The check that confirms: the shared round check, unlit like the end-turn button
+        // (doc/rules/ui-design.md#決めるボタン), by its place (ConfirmShift).
         private static void BuildConfirm(RectTransform root, BattleEvolutionChoice choice)
         {
             var safe = SafeArea(root);
             var art = BattleInspectAssets.Art("EndTurnCircle");
-            float circle = art.width - BattleInspectAssets.EndTurnGlow * 2f;
-
-            // The glow round the circle (white, coloured by the choice), as far out on every side.
-            var haloArt = BattleInspectAssets.Art("EndTurnHalo");
-            float spread = (haloArt.width - circle) * 0.5f;
-            var glow = Rect("ConfirmGlow", safe);
-            BattleInspectAssets.BesideHand(
-                glow,
-                true,
-                BattleInspectView.EndTurnBottom + BattleInspectAssets.EndTurnGlow - spread,
-                new Vector2(haloArt.width, haloArt.height),
-                -spread
-            );
-            glow.anchoredPosition += ConfirmShift;
-            var light = BattleInspectAssets.AddRaw(glow, haloArt);
-            light.raycastTarget = false;
-            light.color = Color.clear;
-            choice.ConfirmGlow = light;
-
             var button = Rect("Confirm", safe);
-            var face = BattleInspectAssets.EndTurnCircle(button);
+            BattleInspectAssets.BesideHand(
+                button,
+                true,
+                BattleInspectView.EndTurnBottom,
+                new Vector2(art.width, art.height),
+                -BattleInspectAssets.EndTurnGlow
+            );
             button.anchoredPosition += ConfirmShift;
-            var checkArt = BattleInspectAssets.Art("ConfirmCheck");
-            var check = Rect("Check", button);
-            Place(check, Vector2.zero, new Vector2(checkArt.width, checkArt.height));
-            var mark = BattleInspectAssets.AddRaw(check, checkArt);
-            mark.raycastTarget = false;
-            mark.color = Gold;
-            var confirm = (TintGroupButton)AddTintButton(button, face);
-            confirm.SetTintGraphics(new Graphic[] { mark });
-            choice.ConfirmButton = confirm;
+            choice.ConfirmButton = ActionButtonAssets.RoundCheck(button);
         }
 
         /// <summary>The material of the haze behind the stage picked (BattleCardAura.shader).</summary>

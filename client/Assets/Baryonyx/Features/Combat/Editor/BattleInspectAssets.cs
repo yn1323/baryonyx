@@ -114,6 +114,9 @@ namespace Baryonyx.Combat.Editor
         private const int TurnSlotCount = 6;
         private const int TurnIconDots = 24;
         private const float TurnSlotSize = (TurnIconDots + 2) * DotSize;
+
+        // 行動順の列の左端。左上の冒険のメニューの右に空ける。
+        public const float TurnOrderLeft = 208f;
         private const float WeakIconSize = 48f;
         private const int AimDotCount = 16;
 
@@ -1209,7 +1212,8 @@ namespace Baryonyx.Combat.Editor
         {
             var bar = Rect("TurnOrder", safe);
             bar.anchorMin = bar.anchorMax = bar.pivot = new Vector2(0f, 1f);
-            bar.anchoredPosition = new Vector2(32, -24);
+            // 左上の冒険のメニュー（羅針盤、幅128を左から40）の右に並べる（doc/rules/ui-design.md#操作の決まり）。
+            bar.anchoredPosition = new Vector2(TurnOrderLeft, -24);
             bar.sizeDelta = new Vector2(0, TurnSlotSize);
             var row = bar.gameObject.AddComponent<HorizontalLayoutGroup>();
             row.spacing = 2 * DotSize;
@@ -1841,15 +1845,11 @@ namespace Baryonyx.Combat.Editor
         /// </summary>
         private static void BuildEndTurn(RectTransform safe, BattleInspectView view)
         {
+            // 一覧から選んで決める画面と同じ、共通の丸いチェック（doc/rules/ui-design.md#決めるボタン）。
             var button = Rect("EndTurn", safe);
-            var face = EndTurnCircle(button);
-            var tickArt = Art("EndTurnCheck");
-            var tick = Rect("Check", button);
-            Place(tick, EndTurnTickAt, new Vector2(tickArt.width, tickArt.height));
-            AddRaw(tick, tickArt).raycastTarget = false;
-            var endTurn = (TintGroupButton)AddTintButton(button, face);
-            endTurn.SetTintGraphics(new Graphic[] { tick.GetComponent<RawImage>() });
-            view.EndTurnButton = endTurn;
+            var art = Art("EndTurnCircle");
+            BesideHand(button, true, BattleInspectView.EndTurnBottom, new Vector2(art.width, art.height), -EndTurnGlow);
+            view.EndTurnButton = ActionButtonAssets.RoundCheck(button);
         }
 
         /// <summary>Where the tick stands in the circle: a little left, as its long stroke reaches right.</summary>
