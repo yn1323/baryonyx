@@ -82,6 +82,9 @@ namespace Baryonyx.UI
         private Image shade;
         private float elapsed = float.PositiveInfinity;
         private int turns;
+
+        // 縦の軸で回す（幅が縮む）。スキルのタブの6枚の戦闘のカード（2026-11-03、ユーザーの指示）。
+        private bool sideways;
         private readonly List<Spark> sparks = new();
 
         // 上の辺と下の辺の高さ、左右の端（線を描く面の座標）。
@@ -97,9 +100,15 @@ namespace Baryonyx.UI
         /// Starts turning <paramref name="card"/> from what it shows now to what it shows next,
         /// with lines of light tinted <paramref name="tint"/> on <paramref name="layer"/>. Call it
         /// before the card shows the new contents. Does nothing while stopped, or for a card not
-        /// on screen or lying face down.
+        /// on screen or lying face down. A <paramref name="sideways"/> card turns about its
+        /// upright axis instead, narrowing in width.
         /// </summary>
-        public static void Turn(GlassCard card, RectTransform layer, Color tint)
+        public static void Turn(
+            GlassCard card,
+            RectTransform layer,
+            Color tint,
+            bool sideways = false
+        )
         {
             if (
                 !Application.isPlaying
@@ -115,15 +124,16 @@ namespace Baryonyx.UI
                 return;
             if (!card.TryGetComponent(out GlassCardTurn turn))
                 turn = card.gameObject.AddComponent<GlassCardTurn>();
-            turn.Begin(card, layer, tint);
+            turn.Begin(card, layer, tint, sideways);
         }
 
         /// <summary>The light of the lines: white with a little of <paramref name="art"/>'s colour.</summary>
         public static Color TintOf(Color art) => Color.Lerp(Color.white, art, 0.35f);
 
-        private void Begin(GlassCard target, RectTransform lines, Color color)
+        private void Begin(GlassCard target, RectTransform lines, Color color, bool aside)
         {
             Settle();
+            sideways = aside;
             card = target;
             layer = lines;
             tint = color;
@@ -185,8 +195,8 @@ namespace Baryonyx.UI
         // 板・影・選んだときの縁を、カードの中心を軸に高さだけ縮める。閉じる間は古い面の写しを、開く間は板を見せる。
         private void Scale(float height, bool closing)
         {
-            var scale = GlassCardBack.FlipScale(height, 1f, true);
-            card.Body.localScale = closing ? GlassCardBack.FlipScale(0f, 1f, true) : scale;
+            var scale = GlassCardBack.FlipScale(height, 1f, !sideways);
+            card.Body.localScale = closing ? GlassCardBack.FlipScale(0f, 1f, !sideways) : scale;
             if (ghost != null)
                 ghost.transform.localScale = scale;
             if (card.Shadow != null)

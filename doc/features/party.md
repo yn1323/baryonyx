@@ -117,7 +117,7 @@ Lvが低いうちはデッキが少ないが、ユーザーはそれでよいと
 | 対象 | 入口 |
 |---|---|
 | 編成の冒険者の一覧（入れ替え） | [入れ替えの決まり](../../client/Assets/Baryonyx/Features/Party/Runtime/PartyFormation.cs)・[一覧の操作](../../client/Assets/Baryonyx/Features/Party/Runtime/PartyRosterPresenter.cs)・[表示](../../client/Assets/Baryonyx/Features/Tavern/Runtime/AdventurerRosterView.cs)・[パネルの生成](../../client/Assets/Baryonyx/Features/Tavern/Editor/AdventurerRosterAssets.cs)・[仮データ（絵・イラスト）の生成](../../client/Assets/Baryonyx/Features/Party/Editor/PartyAssets.cs) |
-| 冒険者のタブの共通の枠（左の人の列・右のタブ） | [表示と操作](../../client/Assets/Baryonyx/Features/Party/Runtime/PartySheet.cs)・[生成](../../client/Assets/Baryonyx/Features/Party/Editor/PartySheetAssets.cs)・[フリック](../../client/Assets/Baryonyx/Shared/UI/GuideMenu/GuideSwipe.cs) |
+| 冒険者のタブの共通の枠（左の人の列・その右のタブ） | [表示と操作](../../client/Assets/Baryonyx/Features/Party/Runtime/PartySheet.cs)・[生成](../../client/Assets/Baryonyx/Features/Party/Editor/PartySheetAssets.cs)・[フリック](../../client/Assets/Baryonyx/Shared/UI/GuideMenu/GuideSwipe.cs) |
 | 冒険者のステータスと突破のタブ（ステータス・パッシブ・レベルアップ・限界突破） | [表示](../../client/Assets/Baryonyx/Features/Training/Runtime/TrainingView.cs)・[操作](../../client/Assets/Baryonyx/Features/Training/Runtime/TrainingPresenter.cs)・[パネルの生成](../../client/Assets/Baryonyx/Features/Training/Editor/TrainingAssets.cs) |
 | 装備とスキルのタブの共通の配置（左右の面・ステータス・タブ・一覧） | [配置の生成](../../client/Assets/Baryonyx/Features/Party/Editor/PartyChangeScreenAssets.cs) |
 | 冒険者のスキルのタブ（仲間ごとのカスタムスキル3枚） | [付け替えの決まり](../../client/Assets/Baryonyx/Features/CardLoadout/Runtime/CardLoadoutRules.cs)・[表示と操作](../../client/Assets/Baryonyx/Features/CardLoadout/Runtime/CardLoadoutView.cs)・[パネルの生成](../../client/Assets/Baryonyx/Features/CardLoadout/Editor/CardLoadoutAssets.cs) |
@@ -163,7 +163,7 @@ Lvが低いうちはデッキが少ないが、ユーザーはそれでよいと
 サーバーが保存するのはカスタムスキルの3枠と、固有スキルの取得した段階・セットした段階・倍率（`party_unique_skills`）である。固有スキルの名前・効果・ツリーはクライアントの定義が持つ。
 
 2026-10-20に、スキルを1枚ずつ持つ形と倍率、カスタムスキルにアイテムを入れることを実装した（[冒険のドロップ](drops.md)）。
-編成のスキルの画面は、サーバーから読んだ持ち物を候補にする。持っているスキルは1枚ずつ別の行にし（品質の高い順）、ほかの人が使っている1枚には「〇〇が使用中」と出して、押すとその人から外して付け替える。アイテムのタブには持っているアイテムを並べ、「所持 3」のように数を出し、数だけ使っていれば押せない。
+編成のスキルの画面は、サーバーから読んだ持ち物を候補にする。持っているスキルは1枚ずつ別のカードにし（品質の高い順）、ほかの人が使っている1枚には灰色の「E」を出して、選んで決めるとその人から外して付け替える。持っているアイテムはスキルの後に並べ、「所持 3」のように数を出し、数だけ使っていれば押せない。
 カスタムスキルに入れたアイテムは、冒険と街道の戦闘でデッキのカードになる（2026-10-25、[アイテム](items.md#実装との対応)）。
 アクセサリーは、[装備のタブ](screens/loadout.md#装備)の3つの枠に付ける（2026-10-25、[装備](equipment.md#実装との対応)）。
 

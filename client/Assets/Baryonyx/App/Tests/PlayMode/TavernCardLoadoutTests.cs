@@ -9,7 +9,6 @@ using Baryonyx.Tavern;
 using Baryonyx.Training;
 using Baryonyx.UI;
 using NUnit.Framework;
-using TMPro;
 using UnityEngine;
 using UnityEngine.TestTools;
 
@@ -39,9 +38,10 @@ namespace Baryonyx.Tests.PlayMode
             yield return SceneTests.UnloadAll(nameof(TavernCardLoadoutTests));
         }
 
-        // 冒険者のタブの「スキル」は、ステータスのタブで見ていた人の6枚を左に効果まで出し、1つ目のカスタムスキルの
-        // 枠を選んで開く。行を押すとその枠を選び、右のカードを押すとその場で入れ替える。固有スキルの行を押すと、
-        // 右は進化ツリーになる。「もどる」は冒険者の一覧へ戻る。
+        // 冒険者のタブの「スキル」は、ステータスのタブで見ていた人の6枚を戦闘のカードで3枚ずつ2段に並べる。
+        // カードを押すと、画面を覆う幕の上に選べるカードを大きく出し、今のカードを選んでおく。押したカードを選び、
+        // 右下のチェックで入れ替えて幕を閉じる。固有スキルを押すと覚醒ツリーの段階を出す。
+        // 幕の余白と戻るキーは何も変えずに閉じる。
         [UnityTest]
         public IEnumerator CardsChangeFromTheAdventurersTab()
         {
@@ -56,61 +56,45 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(panel.gameObject.activeInHierarchy, Is.True);
             Assert.That(view.ListPanel.activeSelf, Is.False);
             Assert.That(view.GuideArt.activeSelf, Is.False);
-            SceneTests.AssertBelow(panel.transform.Find("Layout/Person"), view.Back.transform);
-            SceneTests.AssertBelow(panel.transform.Find("Layout/Cards"), view.Back.transform);
+            var deck = panel.transform.Find("Layout/Deck");
+            SceneTests.AssertBelow(deck, view.Back.transform);
             yield return null;
 
-            // 開いたときは、ステータスのタブで見ていた人の、1つ目のカスタムスキルの枠。
             var data = panel.Party;
             var people = CardLoadoutPresenter.People(PartySession.Formation(data));
             var store = new CardLoadoutSessionStore(data, panel.Training);
-            int uniques = CardLoadoutPresenter.UniqueCount;
             Assert.That(panel.Presenter.State.PersonId, Is.EqualTo(people[0].Id));
             Assert.That(panel.Sheet.Tabs[2].Chosen, Is.True);
-            Assert.That(panel.UniqueRows.Length, Is.EqualTo(uniques));
-            Assert.That(panel.SlotRows.Length, Is.EqualTo(CardLoadoutRules.Size));
-            Assert.That(ChosenRow(panel), Is.EqualTo(uniques));
-            foreach (var entry in panel.UniqueRows.Concat(panel.SlotRows))
-                SceneTests.AssertTouchSize(entry.Card.Button.transform, 0.7f);
-            // 左の行は、固有スキルもカスタムスキルも名前・種類・効果の文まで出す。行を高くしたため、
-            // 6行は面に収まらず縦にスクロールする。開いたときに選ぶ1つ目のカスタムスキルは見えている。
-            var cards = PartySession.CardsOf(data, people[0].Id);
-            Assert.That(
-                panel.UniqueRows[0].Card.Name.text,
-                Is.EqualTo(store.UniqueCardOf(people[0].Id, 0).Name)
-            );
-            Assert.That(panel.UniqueRows[0].Card.Kind.text, Is.Not.Empty);
-            Assert.That(panel.UniqueRows[0].Card.Description.text, Is.Not.Empty);
-            Assert.That(panel.SlotRows[0].Card.Description.text, Is.Not.Empty);
-            var deck = panel.DeckScroll;
-            Assert.That(deck.vertical, Is.True);
-            Assert.That(deck.content.rect.height, Is.GreaterThan(deck.viewport.rect.height));
-            Assert.That(
-                SceneTests
-                    .ScreenRect(deck.viewport)
-                    .Contains(
-                        SceneTests.ScreenRect(panel.SlotRows[0].Card.Button.transform).center
-                    ),
-                Is.True
-            );
+            Assert.That(panel.Picker.Open, Is.False);
+            Assert.That(panel.UniqueCards.Length, Is.EqualTo(CardLoadoutPresenter.UniqueCount));
+            Assert.That(panel.SlotCards.Length, Is.EqualTo(CardLoadoutRules.Size));
+            // 6枚はスクロールせずに面に収まり、名前・種類・効果の文まで出す。
+            var area = SceneTests.ScreenRect(deck);
+            foreach (var card in panel.UniqueCards.Concat(panel.SlotCards))
+            {
+                var rect = SceneTests.ScreenRect(card.transform);
+                Assert.That(area.Contains(rect.min) && area.Contains(rect.max), Is.True, card.name);
+                SceneTests.AssertTouchSize(card.transform, 0.7f);
+            }
+            var unique = store.UniqueCardOf(people[0].Id, 0);
+            Assert.That(panel.UniqueCards[0].Face.Name.text, Is.EqualTo(unique.Name));
+            Assert.That(panel.UniqueCards[0].Face.Kind.text, Is.Not.Empty);
+            Assert.That(panel.UniqueCards[0].Face.Description.text, Is.Not.Empty);
             AssertShows(panel, data, people[0]);
-
-            // 右の上にスキル・アイテムのタブを置く。
+            // 左の縦の欄に、ステータス8つの数字をカードの段より左に出す。
+            Assert.That(panel.Stats.Length, Is.EqualTo(CharacterStats.Count));
+            Assert.That(panel.Stats.All(stat => int.TryParse(stat.text, out _)), Is.True);
             Assert.That(
-                panel.Tabs.Select(tab => tab.Label.text),
-                Is.EqualTo(new[] { "スキル", "アイテム" })
+                SceneTests.ScreenRect(panel.Stats[0].transform).xMax,
+                Is.LessThan(SceneTests.ScreenRect(panel.UniqueCards[0].transform).xMin)
             );
-            Assert.That(panel.Tabs[0].Chosen, Is.True);
-            Assert.That(panel.Tabs[1].Chosen, Is.False);
-            Assert.That(panel.Tabs.All(tab => tab.Button.interactable), Is.True);
 
-            // 固有スキルの行を押すと、右はタブと一覧の代わりに進化ツリーになる。取得した段階を押すと、
-            // その場でセットし、左の行も変わる。取得していない段階は影だけで押せない。
-            panel.UniqueRows[0].Card.Button.onClick.Invoke();
-            Assert.That(ChosenRow(panel), Is.EqualTo(0));
-            Assert.That(panel.Tree.Root.activeSelf, Is.True);
-            Assert.That(panel.List.viewport.gameObject.activeSelf, Is.False);
-            Assert.That(panel.Tabs.All(tab => !tab.gameObject.activeSelf), Is.True);
+            // 固有スキルを押すと、覚醒ツリーの7つの段階を出す。取得していない段階は封印した裏で押せない。
+            // 取得した段階を押すと幕を閉じ、6枚の固有スキルが変わる（変わったカードは縦に回る）。
+            panel.UniqueCards[0].Glass.Click();
+            Assert.That(panel.Picker.Open, Is.True);
+            Assert.That(panel.Picker.TreeRoot.activeSelf, Is.True);
+            Assert.That(panel.Picker.ChoicesRoot.activeSelf, Is.False);
             var stages = store.UniquesOf(people[0].Id)[0];
             var unset = Enumerable
                 .Range(0, UniqueSkillTreeShape.Count)
@@ -118,23 +102,36 @@ namespace Baryonyx.Tests.PlayMode
             var shadow = Enumerable
                 .Range(0, UniqueSkillTreeShape.Count)
                 .First(stage => !stages.Progress.Has(stage));
-            Assert.That(panel.Tree.Stages[shadow].Shadow.activeSelf, Is.True);
-            Assert.That(panel.Tree.Stages[shadow].Card.Button.interactable, Is.False);
-            foreach (var stage in panel.Tree.Stages)
-                SceneTests.AssertTouchSize(stage.Card.Button.transform, 0.7f);
-            panel.Tree.Stages[unset].Card.Button.onClick.Invoke();
+            Assert.That(panel.Picker.Stages[shadow].Face.Back.gameObject.activeSelf, Is.True);
+            Assert.That(panel.Picker.Stages[shadow].Seal.activeSelf, Is.True);
+            Assert.That(panel.Picker.Stages[shadow].Glass.Interactable, Is.False);
+            var setStage = panel.Picker.Stages[stages.Progress.SetStage];
+            Assert.That(setStage.Glass.Selected, Is.True);
+            Assert.That(setStage.Mark.text, Is.EqualTo(CardLoadoutView.SetMark));
+            foreach (var stage in panel.Picker.Stages)
+                SceneTests.AssertTouchSize(stage.transform, 0.7f);
+            Pick(panel, panel.Picker.Stages[unset]);
+            Assert.That(panel.Picker.Open, Is.False);
             var set = stages.Tree.StageAt(unset).Card;
-            Assert.That(panel.UniqueRows[0].Card.Name.text, Is.EqualTo(set.Name));
-            Assert.That(panel.Tree.Stages[unset].Mark.text, Is.EqualTo(CardLoadoutView.SetMark));
+            Assert.That(panel.UniqueCards[0].Face.Name.text, Is.EqualTo(set.Name));
+            Assert.That(
+                panel.UniqueCards[0].GetComponent<GlassCardTurn>() is { Turning: true },
+                Is.True
+            );
             Assert.That(panel.LastNotice, Is.Empty);
 
-            // カスタムスキルの行を押すと、その枠を選び、右はタブと一覧に戻る。
-            panel.SlotRows[1].Card.Button.onClick.Invoke();
-            Assert.That(panel.Tree.Root.activeSelf, Is.False);
-            Assert.That(panel.List.viewport.gameObject.activeSelf, Is.True);
-            Assert.That(ChosenRow(panel), Is.EqualTo(uniques + 1));
+            // カスタムスキルを押すと、その人が付けられるカードを出す。今の枠のカードは金の縁で囲む。
+            // 幕の余白を押すと、何も変えずに閉じる。
+            var before = PartySession.CardsOf(data, people[0].Id).ToArray();
+            panel.SlotCards[1].Glass.Click();
+            Assert.That(panel.Picker.Open, Is.True);
+            Assert.That(panel.Picker.ChoicesRoot.activeSelf, Is.True);
+            AssertChoices(panel, people[0], before, 1);
+            panel.Picker.Closers[0].onClick.Invoke();
+            Assert.That(panel.Picker.Open, Is.False);
+            Assert.That(PartySession.CardsOf(data, people[0].Id), Is.EqualTo(before));
 
-            // 右へのフリックで、パーティにいない最後の仲間へ回る。枠は2つ目のまま。左の列も光る。
+            // 右へのフリックで、パーティにいない最後の仲間へ回る。左の列も光る。
             var other = people[people.Count - 1];
             panel.Swipe.Flick(-1);
             Assert.That(panel.Presenter.State.PersonId, Is.EqualTo(other.Id));
@@ -142,54 +139,55 @@ namespace Baryonyx.Tests.PlayMode
                 panel.Sheet.People.Single(person => person.Id == other.Id).Selected.activeSelf,
                 Is.True
             );
-            Assert.That(ChosenRow(panel), Is.EqualTo(uniques + 1));
             AssertShows(panel, data, other);
 
-            // アイテムのタブは、アイテムをまだ持てないので一覧を空にして、持っていないことだけを出す。
-            panel.Tabs[1].Button.onClick.Invoke();
-            Assert.That(panel.Tabs[1].Chosen, Is.True);
-            Assert.That(panel.Tabs[0].Chosen, Is.False);
-            Assert.That(Rows(panel), Is.Empty);
-            Assert.That(panel.Status.text, Is.EqualTo(CardLoadoutView.NoItemText));
-            Assert.That(panel.UsableLine.activeSelf, Is.False);
-            Assert.That(ChosenRow(panel), Is.EqualTo(uniques + 1));
-            panel.Tabs[0].Button.onClick.Invoke();
-            Assert.That(panel.Tabs[0].Chosen, Is.True);
-            AssertShows(panel, data, other);
-
-            // 2つ目の枠に、まだ付けていないカードを入れる。左の行もすぐ変わる。
-            var before = PartySession.CardsOf(data, other.Id).ToArray();
-            var row = Rows(panel).First(entry => !before.Contains(entry.Id));
-            row.Button.onClick.Invoke();
+            // 2つ目の枠に、まだ付けていないカードを入れる。幕を閉じ、6枚のカードもすぐ変わる。
+            before = PartySession.CardsOf(data, other.Id).ToArray();
+            panel.SlotCards[1].Glass.Click();
+            AssertChoices(panel, other, before, 1);
+            var choice = Choices(panel)
+                .First(card => card.Glass.Interactable && !before.Contains(card.Id));
+            string id = choice.Id;
+            // 押すだけでは入れ替えず、選んだカードを金の縁で囲む。
+            choice.Glass.Click();
+            Assert.That(panel.Picker.Open, Is.True);
+            Assert.That(choice.Glass.Selected, Is.True);
+            Assert.That(PartySession.CardsOf(data, other.Id), Is.EqualTo(before));
+            panel.Picker.Confirm.onClick.Invoke();
+            Assert.That(panel.Picker.Open, Is.False);
             var after = PartySession.CardsOf(data, other.Id);
-            Assert.That(after[1], Is.EqualTo(row.Id));
-            // 変わったことは行を見ればわかるので、通知の帯は出さない。
+            Assert.That(after[1], Is.EqualTo(id));
+            // 変わったことはカードを見ればわかるので、通知の帯は出さない。
             Assert.That(panel.LastNotice, Is.Empty);
-            Assert.That(panel.SlotRows[1].Card.Name.text, Is.EqualTo(CardSkills.Find(row.Id).Name));
-            Assert.That(row.Mark.gameObject.activeSelf, Is.True);
-            Assert.That(row.Mark.text, Is.EqualTo(CardLoadoutPresenter.EquippedMark));
-            Assert.That(row.Mark.color, Is.EqualTo(UiPalette.Gold));
+            Assert.That(panel.SlotCards[1].Face.Name.text, Is.EqualTo(CardSkills.Find(id).Name));
+            Assert.That(
+                panel.SlotCards[1].GetComponent<GlassCardTurn>() is { Turning: true },
+                Is.True
+            );
 
-            // その人のほかの枠にあるカードを押すと、2つの枠の中身を入れ替える。
-            Row(panel, after[0]).Button.onClick.Invoke();
+            // 開き直すと、入れたカードに金の「E」が付く。その人のほかの枠にあるカードを押すと、2つの枠を入れ替える。
+            panel.SlotCards[1].Glass.Click();
+            var held = Choices(panel).Single(card => card.Id == id);
+            Assert.That(held.MarkPlate.activeSelf, Is.True);
+            Assert.That(held.Mark.text, Is.EqualTo(CardLoadoutPresenter.EquippedMark));
+            Assert.That(held.Mark.color, Is.EqualTo(UiPalette.Gold));
+            Pick(panel, Choices(panel).Single(card => card.Id == after[0]));
             Assert.That(PartySession.CardsOf(data, other.Id)[1], Is.EqualTo(after[0]));
-            Assert.That(PartySession.CardsOf(data, other.Id)[0], Is.EqualTo(row.Id));
+            Assert.That(PartySession.CardsOf(data, other.Id)[0], Is.EqualTo(id));
             Assert.That(panel.LastNotice, Is.Empty);
 
-            // 「もどる」で冒険者の一覧へ戻る。
+            // 幕を開いているときの「もどる」（端末の戻るキー）は、幕だけを閉じる。もう一度で冒険者の一覧へ戻る。
+            panel.SlotCards[0].Glass.Click();
+            Assert.That(panel.Picker.Open, Is.True);
+            view.Back.onClick.Invoke();
+            Assert.That(panel.Picker.Open, Is.False);
+            Assert.That(panel.gameObject.activeSelf, Is.True);
             view.Back.onClick.Invoke();
             Assert.That(panel.gameObject.activeSelf, Is.False);
             Assert.That(view.PanelFor(ItemOf(view, PartySession.GuideItemKey)).activeSelf, Is.True);
         }
 
-        // 左の6行（固有スキル3つ、続けてカスタムスキル3つ）のうち、金の枠を付けている行。どれもなければ-1。
-        private static int ChosenRow(CardLoadoutView panel) =>
-            System.Array.FindIndex(
-                panel.UniqueRows.Concat(panel.SlotRows).ToArray(),
-                row => row.Card.Selected.activeSelf
-            );
-
-        // 6枚の一覧のカスタムスキルと右の行を、その人のカードと付けられるカードで出し、文字は枠からはみ出さない。
+        // 6枚のカスタムスキルを、その人のカードで出す。空いた枠は点線のカード。
         private static void AssertShows(
             CardLoadoutView panel,
             PartyMockData data,
@@ -197,85 +195,57 @@ namespace Baryonyx.Tests.PlayMode
         )
         {
             var cards = PartySession.CardsOf(data, member.Id);
-            for (int i = 0; i < panel.SlotRows.Length; i++)
+            for (int i = 0; i < panel.SlotCards.Length; i++)
             {
-                var slot = panel.SlotRows[i];
+                var slot = panel.SlotCards[i];
                 bool filled = i < cards.Count && cards[i] != null;
-                Assert.That(slot.Content.activeSelf, Is.EqualTo(filled), member.Id);
+                Assert.That(slot.Face.Back.gameObject.activeSelf, Is.False, member.Id);
+                Assert.That(slot.Face.gameObject.activeSelf, Is.EqualTo(filled), member.Id);
                 Assert.That(slot.Empty.activeSelf, Is.EqualTo(!filled), member.Id);
                 if (filled)
                 {
                     Assert.That(
-                        slot.Card.Name.text,
+                        slot.Face.Name.text,
                         Is.EqualTo(CardSkills.Find(cards[i]).Name),
                         member.Id
                     );
-                    Assert.That(slot.Card.Art.texture, Is.Not.Null, member.Id);
-                    AssertCorner(slot.Card.Art, slot.Card.Cost, slot.Card.Name, member.Id);
-                    // 挿絵は行の上下いっぱいに出す（左右を切る）。
-                    Assert.That(
-                        SceneTests.ScreenRect(slot.Card.Art.transform).height,
-                        Is.GreaterThan(
-                            SceneTests.ScreenRect(slot.Card.Button.transform).height * 0.85f
-                        ),
-                        member.Id
-                    );
+                    Assert.That(slot.Face.Art.texture, Is.Not.Null, member.Id);
                 }
             }
-            var usable = CardLoadoutRules.Usable(member);
-            var expected = CardLoadoutRules.Listed(usable).Select(card => card.Id).ToArray();
-            Assert.That(Rows(panel).Select(row => row.Id), Is.EqualTo(expected), member.Id);
-            Assert.That(panel.Status.text, Is.Empty);
-            Assert.That(panel.UsableLine.activeSelf, Is.True);
-            foreach (var row in Rows(panel))
-            {
-                SceneTests.AssertTouchSize(row.Button.transform);
-                bool held = cards.Contains(row.Id);
-                Assert.That(row.Mark.gameObject.activeSelf, Is.EqualTo(held), row.Id);
-                var transform = row.Button.transform;
-                var kind = transform.Find("Body/Content/NameLine/Kind").GetComponent<TMP_Text>();
-                AssertFits(
-                    transform,
-                    transform.Find("Body/Content/NameLine/Name").GetComponent<TMP_Text>(),
-                    kind,
-                    row.Description
-                );
-                AssertCorner(row.Art, row.Cost, kind, row.Id);
-            }
         }
 
-        // コストと属性は挿絵に重ねず、行の右上（挿絵の中央より上）で、名前の行の文字の右に置く。
-        private static void AssertCorner(
-            UnityEngine.UI.RawImage art,
-            GameObject cost,
-            TMP_Text text,
-            string label
+        // 選ぶ画面の候補：その人が付けられるカードをコストの低い順に並べ、付けているカードに「E」、今の枠のカードを金の縁で囲む。
+        // 枠に何か入っていれば、最後に「スキルを外す」を出す。
+        private static void AssertChoices(
+            CardLoadoutView panel,
+            PartyMember member,
+            string[] cards,
+            int slot
         )
         {
-            Assert.That(cost.activeSelf, Is.True, label);
-            var plate = SceneTests.ScreenRect(cost.transform);
-            var picture = SceneTests.ScreenRect(art.transform);
-            Assert.That(plate.Overlaps(picture), Is.False, label);
-            Assert.That(plate.center.y, Is.GreaterThan(picture.center.y), label);
-            // 同じ並びの印・属性・コストのうち一番左の端より、文字の右端が左にある（同じキャンバスの世界座標で比べる）。
-            float left = cost
-                .transform.parent.Cast<Transform>()
-                .Where(child => child.gameObject.activeSelf)
-                .Min(child => child.TransformPoint(((RectTransform)child).rect.min).x);
-            float end = text.transform.TransformPoint(text.textBounds.max).x;
-            Assert.That(end, Is.LessThanOrEqualTo(left), label + " " + text.text);
-        }
-
-        private static void AssertFits(Transform box, TMP_Text name, TMP_Text kind, TMP_Text text)
-        {
-            var frame = SceneTests.ScreenRect(box);
-            Assert.That(
-                SceneTests.ScreenRect(kind.transform).xMax,
-                Is.LessThanOrEqualTo(frame.xMax),
-                name.text
-            );
-            // 2026-10-25のカードの作り直しで、説明文が欄からはみ出すカードがある。ユーザーの判断で当面はそのままにし、
-            // 説明文の高さは確かめない（doc/plans/2026-10-25-fixed-energy-cards.md の未決）。
+            var usable = CardLoadoutRules.Usable(member);
+            var expected = CardLoadoutRules.Listed(usable).Select(card => card.Id).ToArray();
+            var shown = Choices(panel);
+            Assert.That(shown.Select(card => card.Id), Is.EqualTo(expected), member.Id);
+            foreach (var card in shown)
+            {
+                bool held = cards.Contains(card.Id);
+                Assert.That(card.MarkPlate.activeSelf, Is.EqualTo(held), card.Id + " E");
+                Assert.That(
+                    card.Glass.Selected,
+                    Is.EqualTo(card.Id == cards[slot]),
+                    card.Id + " selected"
+                );
+                // 属性が合わないカードは、下の段に暗くして押せない。
+                Assert.That(
+                    card.Glass.Interactable,
+                    Is.EqualTo(CardLoadoutRules.CanUse(usable, CardSkills.Find(card.Id))),
+                    card.Id + " interactable"
+                );
+                SceneTests.AssertTouchSize(card.transform, 0.7f);
+            }
+            Assert.That(panel.Picker.Remove.gameObject.activeSelf, Is.EqualTo(cards[slot] != null));
+            Assert.That(panel.Picker.Confirm.interactable, Is.EqualTo(cards[slot] != null));
         }
 
         // サーバーがあるときは、開くたびにサーバーのカードを読み、付け替えを保存してから表示を変える。
@@ -289,7 +259,103 @@ namespace Baryonyx.Tests.PlayMode
             var guide = default(GuideSceneBootstrap);
             yield return SceneTests.LoadGuide(SceneNames.Pub, value => guide = value);
             var view = guide.View;
-            // 一覧がサーバーの編成を読んでから、パーティの先頭を選んで帯から冒険者のタブを開く。
+            var panel = default(CardLoadoutView);
+            yield return OpenOnServer(view, value => panel = value);
+
+            // ステータスのタブで読んだ編成をすぐ出し、読み直しを待たない（カードを伏せない）。
+            Assert.That(panel.LoadTask.IsCompleted, Is.False);
+            Assert.That(panel.Status.text, Is.Not.EqualTo(CardLoadoutView.LoadingText));
+            Assert.That(
+                panel
+                    .UniqueCards.Concat(panel.SlotCards)
+                    .All(card => !card.Face.Back.gameObject.activeSelf),
+                Is.True
+            );
+            Assert.That(panel.Presenter.State.PersonId, Is.EqualTo("toma"));
+            yield return SceneTests.WaitUntil(
+                () => panel.LoadTask.IsCompleted,
+                message: "The party did not load."
+            );
+
+            // サーバーのパーティと仲間だけをフリックで回る。
+            var second = panel.SlotCards[1].Face;
+            Assert.That(second.Name.text, Is.EqualTo(CardSkills.Find("Ice").Name));
+            panel.Swipe.Flick(1);
+            Assert.That(panel.Presenter.State.PersonId, Is.EqualTo("luka"));
+            panel.Swipe.Flick(1);
+            Assert.That(panel.Presenter.State.PersonId, Is.EqualTo("toma"));
+
+            // 保存を待たずに枠を変え、そのあとで保存する。
+            panel.SlotCards[1].Glass.Click();
+            Pick(panel, Choice(panel, "Embers"));
+            Assert.That(panel.Presenter.ChooseTask.IsCompleted, Is.False);
+            Assert.That(second.Name.text, Is.EqualTo(CardSkills.Find("Embers").Name));
+            yield return SceneTests.WaitUntil(() => panel.Presenter.ChooseTask.IsCompleted);
+            Assert.That(server.Calls, Is.EqualTo(new[] { "card toma 1 Embers" }));
+            Assert.That(server.CardsOf("toma")[1], Is.EqualTo("Embers"));
+            Assert.That(second.Name.text, Is.EqualTo(CardSkills.Find("Embers").Name));
+            Assert.That(panel.LastNotice, Is.Empty);
+
+            // 保存できなかったときは、出したカードを戻して通知の帯で知らせる。
+            server.Fail = true;
+            panel.SlotCards[1].Glass.Click();
+            Pick(panel, Choice(panel, "Meteor"));
+            Assert.That(second.Name.text, Is.EqualTo(CardSkills.Find("Meteor").Name));
+            yield return SceneTests.WaitUntil(() => panel.Presenter.ChooseTask.IsCompleted);
+            Assert.That(second.Name.text, Is.EqualTo(CardSkills.Find("Embers").Name));
+            Assert.That(view.ToastMessage, Is.EqualTo(CardLoadoutPresenter.SaveFailedMessage));
+        }
+
+        // 持っているスキルのうち、属性が合わないスキルは、付けられるスキルの下の段から暗くして並べ、押せない。
+        [UnityTest]
+        public IEnumerator SkillsOfOtherElementsAreDarkBelow()
+        {
+            var server = new FakePartySource(0, "toma")
+                .With("toma", 12, PartyCardKey.Card("c1"), PartyCardKey.Card("c2"))
+                .WithOwned(
+                    new PartySkillCard("c1", "Fire", 1f),
+                    new PartySkillCard("c2", "Ice", 1f),
+                    new PartySkillCard("c3", "Embers", 1f),
+                    new PartySkillCard("c4", "Thunder", 1f)
+                );
+            PartySession.Source = server;
+            var guide = default(GuideSceneBootstrap);
+            yield return SceneTests.LoadGuide(SceneNames.Pub, value => guide = value);
+            var panel = default(CardLoadoutView);
+            yield return OpenOnServer(guide.View, value => panel = value);
+            yield return SceneTests.WaitUntil(
+                () => panel.LoadTask.IsCompleted,
+                message: "The party did not load."
+            );
+
+            panel.SlotCards[2].Glass.Click();
+            var thunder = Choice(panel, PartyCardKey.Card("c4"));
+            var usable = Choices(panel).Where(card => card != thunder).ToArray();
+            Assert.That(usable.Length, Is.EqualTo(3));
+            Assert.That(usable.All(card => card.Glass.Interactable), Is.True);
+            Assert.That(thunder.Glass.Interactable, Is.False);
+            Assert.That(thunder.Face.Shade.enabled, Is.True);
+            // 段を改めるので、付けられないカードはどれよりも下にある。
+            float top = SceneTests.ScreenRect(thunder.transform).yMax;
+            Assert.That(
+                usable.All(card => SceneTests.ScreenRect(card.transform).yMin > top),
+                Is.True
+            );
+            // 空いた枠なので、初めは何も選ばずチェックも押せない。暗いカードは押しても選ばない。
+            Assert.That(panel.Picker.Confirm.interactable, Is.False);
+            thunder.Glass.Click();
+            Assert.That(thunder.Glass.Selected, Is.False);
+            Assert.That(panel.Picker.Confirm.interactable, Is.False);
+            Assert.That(panel.Picker.Open, Is.True);
+            Assert.That(server.Calls, Is.Empty);
+        }
+
+        // 一覧がサーバーの編成を読んでから、パーティの先頭を選んで帯から冒険者のタブを開き、スキルのタブへ移る。
+        private static IEnumerator OpenOnServer(
+            Baryonyx.UI.GuideMenu.GuideMenuView view,
+            System.Action<CardLoadoutView> opened
+        )
+        {
             int item = ItemOf(view, PartySession.GuideItemKey);
             view.MenuItems[item].onClick.Invoke();
             var roster = view.PanelFor(item).GetComponent<AdventurerRosterView>();
@@ -307,58 +373,10 @@ namespace Baryonyx.Tests.PlayMode
                 message: "The party did not load."
             );
             page.Sheet.Tabs[2].Button.onClick.Invoke();
-            var panel = view.PanelFor(ItemOf(view, CardLoadoutSession.GuideItemKey))
-                .GetComponent<CardLoadoutView>();
-            // ステータスのタブで読んだ編成をすぐ出し、読み直しを待たない（カードを伏せない）。
-            // 横長の行は、伏せるときに上下にめくる。
-            Assert.That(panel.LoadTask.IsCompleted, Is.False);
-            Assert.That(panel.Status.text, Is.Not.EqualTo(CardLoadoutView.LoadingText));
-            Assert.That(
-                panel
-                    .UniqueRows.Concat(panel.SlotRows)
-                    .Select(row => row.Card.Button.GetComponent<GlassCardBack>())
-                    .All(back => back != null && back.Vertical && !back.FaceDown && !back.Flipping),
-                Is.True
+            opened(
+                view.PanelFor(ItemOf(view, CardLoadoutSession.GuideItemKey))
+                    .GetComponent<CardLoadoutView>()
             );
-            Assert.That(
-                panel
-                    .Rows.Take(CardLoadoutView.CoverRows)
-                    .All(row => row.Button.GetComponent<GlassCardBack>() is { Vertical: true }),
-                Is.True
-            );
-            Assert.That(panel.Presenter.State.PersonId, Is.EqualTo("toma"));
-            yield return SceneTests.WaitUntil(
-                () => panel.LoadTask.IsCompleted,
-                message: "The party did not load."
-            );
-
-            // サーバーのパーティと仲間だけをフリックで回る。
-            var second = panel.SlotRows[1].Card;
-            Assert.That(panel.Presenter.State.PersonId, Is.EqualTo("toma"));
-            panel.SlotRows[1].Card.Button.onClick.Invoke();
-            Assert.That(second.Name.text, Is.EqualTo(CardSkills.Find("Ice").Name));
-            panel.Swipe.Flick(1);
-            Assert.That(panel.Presenter.State.PersonId, Is.EqualTo("luka"));
-            panel.Swipe.Flick(1);
-            Assert.That(panel.Presenter.State.PersonId, Is.EqualTo("toma"));
-
-            // 保存を待たずに枠を変え、そのあとで保存する。
-            Row(panel, "Embers").Button.onClick.Invoke();
-            Assert.That(panel.Presenter.ChooseTask.IsCompleted, Is.False);
-            Assert.That(second.Name.text, Is.EqualTo(CardSkills.Find("Embers").Name));
-            yield return SceneTests.WaitUntil(() => panel.Presenter.ChooseTask.IsCompleted);
-            Assert.That(server.Calls, Is.EqualTo(new[] { "card toma 1 Embers" }));
-            Assert.That(server.CardsOf("toma")[1], Is.EqualTo("Embers"));
-            Assert.That(second.Name.text, Is.EqualTo(CardSkills.Find("Embers").Name));
-            Assert.That(panel.LastNotice, Is.Empty);
-
-            // 保存できなかったときは、出したカードを戻して通知の帯で知らせる。
-            server.Fail = true;
-            Row(panel, "Meteor").Button.onClick.Invoke();
-            Assert.That(second.Name.text, Is.EqualTo(CardSkills.Find("Meteor").Name));
-            yield return SceneTests.WaitUntil(() => panel.Presenter.ChooseTask.IsCompleted);
-            Assert.That(second.Name.text, Is.EqualTo(CardSkills.Find("Embers").Name));
-            Assert.That(view.ToastMessage, Is.EqualTo(CardLoadoutPresenter.SaveFailedMessage));
         }
 
         private static int ItemOf(Baryonyx.UI.GuideMenu.GuideMenuView view, string key) =>
@@ -376,13 +394,23 @@ namespace Baryonyx.Tests.PlayMode
                 .GetComponent<TrainingView>();
         }
 
-        private static CardLoadoutRowWidget[] Rows(CardLoadoutView panel) =>
+        // 選ぶ画面に出ているカードを、上の段から左から順に。
+        private static CardLoadoutCard[] Choices(CardLoadoutView panel) =>
             panel
-                .Rows.Where(row => row.Button.gameObject.activeSelf)
-                .OrderBy(row => row.Button.transform.GetSiblingIndex())
+                .Picker.Cards.Where(card => card.gameObject.activeSelf)
+                .OrderByDescending(card => ((RectTransform)card.transform).anchoredPosition.y)
+                .ThenBy(card => ((RectTransform)card.transform).anchoredPosition.x)
                 .ToArray();
 
-        private static CardLoadoutRowWidget Row(CardLoadoutView panel, string id) =>
-            panel.Rows.Single(row => row.Id == id);
+        // 選ぶ画面でカードを押して選び、右下のチェックで決める。
+        private static void Pick(CardLoadoutView panel, CardLoadoutCard card)
+        {
+            card.Glass.Click();
+            Assert.That(card.Glass.Selected, Is.True, card.name);
+            panel.Picker.Confirm.onClick.Invoke();
+        }
+
+        private static CardLoadoutCard Choice(CardLoadoutView panel, string id) =>
+            Choices(panel).Single(card => card.Id == id);
     }
 }

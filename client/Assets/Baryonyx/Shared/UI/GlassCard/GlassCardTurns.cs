@@ -17,16 +17,19 @@ namespace Baryonyx.UI
 
         private readonly Transform panel;
         private readonly Func<Texture, Color> colorOf;
+        private readonly bool sideways;
         private readonly Dictionary<int, string> shown = new();
         private string person;
         private RectTransform layer;
 
         /// <param name="panel">The panel the lines are drawn over.</param>
         /// <param name="colorOf">The colour of a picture, for the lines' light.</param>
-        public GlassCardTurns(Transform panel, Func<Texture, Color> colorOf)
+        /// <param name="sideways">Turn the cards about their upright axis (narrowing in width), not their level one.</param>
+        public GlassCardTurns(Transform panel, Func<Texture, Color> colorOf, bool sideways = false)
         {
             this.panel = panel;
             this.colorOf = colorOf;
+            this.sideways = sideways;
         }
 
         /// <summary>Forgets what the cards showed, so the next drawing turns nothing.</summary>
@@ -57,7 +60,7 @@ namespace Baryonyx.UI
                 && was != key
                 && card != null
             )
-                GlassCardTurn.Turn(card, Layer(), GlassCardTurn.TintOf(colorOf(art)));
+                GlassCardTurn.Turn(card, Layer(), GlassCardTurn.TintOf(colorOf(art)), sideways);
             shown[index] = key;
         }
 

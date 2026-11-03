@@ -370,10 +370,9 @@ namespace Baryonyx.Tests.EditMode
             Assert.That(state.Tab, Is.EqualTo(CardLoadoutPresenter.ItemTab));
             Assert.That(state.Choices, Is.Empty);
             Assert.That(state.Slot, Is.EqualTo(1));
-            // アイテムのタブでは、スキルを押しても入れない。
-            var before = store.Cards["toma"].ToArray();
+            // 入れる物は押したカードで決まる（選ぶ画面にタブはない）。アイテムのタブのままでもスキルを入れられる。
             view.Card("Embers");
-            Assert.That(store.Cards["toma"], Is.EqualTo(before));
+            Assert.That(store.Cards["toma"][1], Is.EqualTo("Embers"));
 
             // 人を替えても、枠とタブはそのまま。スキルのタブに戻すと一覧を並べる。
             view.Next();

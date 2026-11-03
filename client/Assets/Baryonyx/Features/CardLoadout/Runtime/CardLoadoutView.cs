@@ -130,7 +130,7 @@ namespace Baryonyx.CardLoadout
     /// and saves every change there; otherwise it uses the mock data. Back returns to the
     /// adventurers' list. Changes are told on the guide screen's notice band.
     /// </summary>
-    public sealed class CardLoadoutView
+    public sealed partial class CardLoadoutView
         : GuidePanel,
             ICardLoadoutView,
             IGuideBackHandler,
@@ -146,7 +146,7 @@ namespace Baryonyx.CardLoadout
         private static readonly Color LockedArt = new(0.25f, 0.25f, 0.3f, 1f);
 
         // ほかの人が付けているカードの「E」の色（その人が付けているカードは金）。
-        private static readonly Color OtherMark = UiPalette.TextFaint;
+        internal static readonly Color OtherMark = UiPalette.TextFaint;
 
         public PartyMockData Party;
         public TrainingMockData Training;
@@ -243,6 +243,7 @@ namespace Baryonyx.CardLoadout
             foreach (var row in Rows)
                 BindRow(row);
             BindRemove();
+            BindCards();
 
             // 開くたびに、サーバーの編成とカード（なければアプリを動かしている間のもの）を読み直す。
             presenter?.Dispose();
@@ -300,6 +301,7 @@ namespace Baryonyx.CardLoadout
 
         private void Present(PartyFormation formation, Func<string, int, string, Task> save)
         {
+            shownFormation = formation;
             presenter?.Dispose();
             var (slot, unique) =
                 Awakening != null
@@ -348,6 +350,7 @@ namespace Baryonyx.CardLoadout
                 UsableLine.SetActive(false);
             foreach (var row in UniqueRows.Concat(SlotRows))
                 ShowDeckRow(row, null, false, false, 0);
+            ShowCardsLoading();
             ShowUsable(Usable, Array.Empty<CardElement>(), IconOf);
             HideRows();
             if (Remove != null)
@@ -412,14 +415,11 @@ namespace Baryonyx.CardLoadout
         // 1つ目のカスタムスキルの枠を選んだスキルのタブ。
         public const string TreePreviewState = "固有スキルを選んだとき";
 
-        public IReadOnlyList<string> PreviewStates =>
-            (
-                Awakening != null
-                    ? new[] { CardLoadoutAwakening.CardPreviewState }
-                    : new[] { "アイテム", TreePreviewState }
-            )
-                .Concat(GuidePanelLoad.PreviewStates)
-                .ToArray();
+        public IReadOnlyList<string> PreviewStates => (
+                Awakening != null ? new[] { CardLoadoutAwakening.CardPreviewState }
+                : HasCards ? CardPreviewStates
+                : new[] { "アイテム", TreePreviewState }
+            ).Concat(GuidePanelLoad.PreviewStates).ToArray();
 
         public void ShowPreviewState(int index)
         {
@@ -433,6 +433,16 @@ namespace Baryonyx.CardLoadout
                     return;
                 }
                 index++;
+            }
+            // スキルのタブ：1つ目のカスタムスキルの枠の候補、1つ目の固有スキルのツリー、読み込みの順。
+            else if (HasCards)
+            {
+                if (index < CardPreviewStates.Length)
+                {
+                    ShowPickerPreview(index == 1);
+                    return;
+                }
+                index = index - CardPreviewStates.Length + 2;
             }
             switch (index)
             {
@@ -465,6 +475,7 @@ namespace Baryonyx.CardLoadout
         {
             Load.Cancel();
             bindings.Clear();
+            UnbindCards();
             if (Swipe != null)
                 Swipe.Flicked -= Flick;
             if (Sheet != null)
@@ -484,7 +495,9 @@ namespace Baryonyx.CardLoadout
 
         // 戻ると、タブを開いた項目（冒険者の一覧か育成の人選び）へ戻る。覚醒の演出の間は戻らない。
         public bool HandleBack() =>
-            (Awakening != null && Awakening.Busy) || TrainingSession.LeavePage(Guide);
+            (Awakening != null && Awakening.Busy)
+            || ClosePicker()
+            || TrainingSession.LeavePage(Guide);
 
         public void Render(CardLoadoutState state)
         {
@@ -537,6 +550,8 @@ namespace Baryonyx.CardLoadout
                 ShowDeckRow(SlotRows[i], card, filled, false, 0);
                 DimForAwakening(SlotRows[i], filled && card.ItemId == null);
             }
+            if (HasCards)
+                ShowCards(state, turning);
             ShowChosen(state.Unique, state.Slot);
             if (Awakening != null)
                 Awakening.Show(state);
@@ -576,10 +591,12 @@ namespace Baryonyx.CardLoadout
         }
 
         // 付け替えた行を回す部品。線の光は、新しく入れたカードの挿絵の色から取る。
+        // スキルのタブの6枚（戦闘のカード）は縦の軸で回す（2026-11-03、ユーザーの指示「水平方向で」）。
         private GlassCardTurns Turns() =>
             turns ??= new GlassCardTurns(
                 transform,
-                art => Combat.Presentation.CardArtColor.Of(art, Color.white)
+                art => Combat.Presentation.CardArtColor.Of(art, Color.white),
+                HasCards
             );
 
         // 覚醒のタブで、覚醒させられない行（未解放の固有スキル、空いた枠、アイテム）を薄くする。押すことはできる。
@@ -649,7 +666,7 @@ namespace Baryonyx.CardLoadout
             Set(widget.When, locked ? UnlockText(unlockLevel) : "");
         }
 
-        private static string UnlockText(int level) => $"Lv {level}で解放";
+        internal static string UnlockText(int level) => $"Lv {level}で解放";
 
         // 右の進化ツリー。取得した段階は名前と効果、取得していない段階は封印だけを出す。
         // 別の人か別の固有スキルのツリーを出すときは、一番上から見せる。

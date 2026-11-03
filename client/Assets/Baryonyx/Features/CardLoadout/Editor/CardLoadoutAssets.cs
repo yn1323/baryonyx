@@ -17,6 +17,7 @@ using UnityEditor;
 using UnityEngine;
 using UnityEngine.UI;
 using static Baryonyx.Editor.UI.UiBuild;
+using ActionButtonAssets = Baryonyx.UI.Editor.ActionButtonAssets;
 using ChangeScreen = Baryonyx.Party.Editor.PartyChangeScreenAssets;
 using ElementIconRowAssets = Baryonyx.UI.Editor.ElementIconRowAssets;
 using Frame = Baryonyx.UI.GuideMenu.Editor.GuideFrameAssets;
@@ -61,8 +62,6 @@ namespace Baryonyx.CardLoadout.Editor
 
         private const float SlotHeight = 136f;
         private const float SlotTextLeft = 156f;
-        private const float RowHeight = 140f;
-        private const float RowTextLeft = 160f;
 
         // 左の6行は、上から名前、種類（「攻撃・敵単体」）、効果の文（3行まで）を積む。
         private const float NameHeight = 46f;
@@ -81,18 +80,11 @@ namespace Baryonyx.CardLoadout.Editor
         private static readonly float CornerIcons =
             ElementIconRowAssets.Size + ElementIconRowAssets.Gap + 11f * CornerDot;
 
-        // 右上の印からの名前の行の右端：左の6行（属性とコスト）、ツリーの段階（「E」と属性とコスト）、
-        // 右の一覧（「所持 3」とコストまで入る）。
+        // 右上の印からの名前の行の右端：左の6行（属性とコスト）、ツリーの段階（「E」と属性とコスト）。
         private const float SlotCornerRight = 20f;
         private static readonly float DeckNameRight = SlotCornerRight + CornerIcons + 12f;
         private const float StageCornerRight = 24f;
         private static readonly float StageNameRight = StageCornerRight + CornerIcons + 36f;
-        private const float RowCornerRight = 28f;
-        private const float RowNameRight = 170f;
-
-        // 右の上のタブの下の、付けられる属性の行。
-        private const float UsableTop = 92f;
-        private const float ListTop = 152f;
 
         // 右の進化ツリー：上に見出し、その下に7つの段階を1行ずつ縦に並べ、はみ出す分はスクロールする。
         // 最初の段階、続けて枝ごとに1段目（1段字下げ）、2段目（2段字下げ）の順。
@@ -131,12 +123,7 @@ namespace Baryonyx.CardLoadout.Editor
                 .Select(ElementIcon)
                 .ToArray();
 
-            RectTransform left,
-                right;
-            (left, right, view.Swipe) = ChangeScreen.Build(layer, Split, "CardsPane", "Cards");
-            BuildDeckRows(left, view);
-            BuildCards(right, view);
-            view.Tree = BuildTree(right);
+            view.Swipe = BuildDeck(layer, view);
             view.Sheet = PartySheetAssets.Build(
                 layer,
                 guide,
@@ -144,14 +131,539 @@ namespace Baryonyx.CardLoadout.Editor
                 CardLoadoutSession.GuideItemKey,
                 TrainingAssets.SheetTabs
             );
+            BuildPicker((RectTransform)view.transform, view);
 
             // 仮データの最初の人で描き、Prefabを開くと停止中でも文字と絵が読めるようにする。
-            // 先に1つ目の固有スキルの進化ツリーを作り込み（停止中の表示の切り替えで見せる）、
-            // そのあと開いたときの表示（1つ目のカスタムスキルの枠）に戻す。
+            // 選ぶ画面には、1つ目の固有スキルの覚醒ツリーと、1つ目のカスタムスキルの枠の候補を作り込む
+            // （停止中の表示の切り替えで見せる）。最後に開いたときの表示（1つ目のカスタムスキルの枠）に戻す。
             var store = new MockStore(party, training);
-            new CardLoadoutPresenter(view, people, store, unique: 0).Dispose();
-            new CardLoadoutPresenter(view, people, store).Dispose();
+            var tree = new CardLoadoutPresenter(view, people, store, unique: 0);
+            view.BakePicker(tree.State, true);
+            tree.Dispose();
+            var choices = new CardLoadoutPresenter(view, people, store);
+            view.BakePicker(choices.State, false);
+            choices.Dispose();
             return view.gameObject;
+        }
+
+        // --- The skill tab: six battle cards, and the cards to choose from ------------------
+
+        // スキルのタブ（2026-11-03、ユーザーが案Dを選んだ）：人の列とタブの列の間を1枚の透ける面にし、
+        // 見出し「◆固有スキル」「◆カスタムスキル」と右へ伸びる金の線の下に、戦闘のカードを3枚ずつ並べる。
+        // カードは2段が面の高さに収まる大きさ（戦闘の手札の約1.3倍）にする。設計座標、左上から。
+        private static readonly Vector2 BattleCardSize = new(210f, 294f);
+        private const float GridTop = Frame.HeaderHeight + 6f;
+        private const float GridHeight = ChangeScreen.Height;
+        private const float GridPad = 10f;
+        private const float GridHeading = 40f;
+        private const float GridHeadingGap = 8f;
+        private const float GridRowGap = 24f;
+        private const float GridCardGap = 40f;
+        private const float GridHeadingSize = 26f;
+        private const float GridLineGap = 18f;
+        private const float GridCardHeight =
+            (GridHeight - 2 * GridPad - 2 * (GridHeading + GridHeadingGap) - GridRowGap) / 2f;
+        private static readonly float GridScale = GridCardHeight / BattleCardSize.y;
+
+        // 左の縦の欄のステータス8つ（項目名を左、数字を右に1列で。2026-11-03、ユーザーが4案から選んだ）。
+        // 色は項目名も数字も白（目立たせる項目は作らない、同日のユーザーの指示）。
+        private const float StatsWidth = 260f;
+        private const float StatsGap = 28f;
+        private const float StatsInset = 22f;
+        private const float StatLabelSize = 28f;
+        private const float StatValueSize = 34f;
+        private static readonly Color StatsBackdrop = new(0f, 0f, 0f, 0.28f);
+
+        // 右上の印（「E」「所持 3」）の札：カードの中の大きさ（戦闘のカードの設計座標）。
+        private static readonly Vector2 MarkSize = new(64f, 26f);
+        private const float MarkFont = 17f;
+
+        // 空いた枠の点線のカードの板（暗いすりガラス）と「＋」の大きさ（×印の絵を45度回す）。
+        // 白い板では明るい灰色になって目立ったため、暗くして「＋」を小さくした（2026-11-03）。
+        private static readonly Color EmptyFill = new(0.02f, 0.03f, 0.08f, 0.35f);
+        private const float EmptyPlus = 0.55f;
+
+        // 未取得の段階の封印（カードの中の大きさ）。
+        private const float CardSealSize = 96f;
+        private const string SealPath = ArtFolder + "/StageSeal.png";
+
+        /// <summary>
+        /// The pane between the people's column and the tabs, the two headings with their gold
+        /// lines and the six cards under them; flicking on it walks the people.
+        /// </summary>
+        private static GuideSwipe BuildDeck(RectTransform layer, CardLoadoutView view)
+        {
+            SmoothTexture(SealPath);
+            Frame.Pane(
+                layer,
+                "DeckPane",
+                PartySheetAssets.ContentLeft,
+                PartySheetAssets.ContentRight,
+                Frame.HeaderHeight,
+                Frame.PaneLight,
+                false,
+                true
+            );
+            float left = PartySheetAssets.ContentLeft + 24f;
+            float width = PartySheetAssets.ContentRight - 24f - left;
+            var deck = Layout.Box(layer, "Deck", left, GridTop, width, GridHeight);
+            // 面の上の左右のフリックで人を替える。カードを押したところから動かしても届くよう、面全体で受ける。
+            AddImage(deck, Color.clear, true);
+            var swipe = deck.gameObject.AddComponent<GuideSwipe>();
+
+            view.Stats = BuildStats(deck);
+
+            // カードの段は、ステータスの欄の右の残りの真ん中に置く。
+            var size = BattleCardSize * GridScale;
+            float rowWidth = 3 * size.x + 2 * GridCardGap;
+            float rest = width - StatsWidth - StatsGap;
+            float x0 = StatsWidth + StatsGap + (rest - rowWidth) / 2f;
+            float y = GridPad;
+            view.UniqueCards = DeckRow(deck, "Unique", "固有スキル", x0, ref y, size, rowWidth);
+            y += GridRowGap;
+            view.SlotCards = DeckRow(deck, "Slot", "カスタムスキル", x0, ref y, size, rowWidth);
+
+            // 読み込めなかったときの文字。カードは伏せたままにする。
+            view.Status = Layout.Text(
+                deck,
+                "Status",
+                "",
+                UiType.Lead,
+                UiPalette.TextSub,
+                TextAlignmentOptions.Center,
+                0f,
+                0f,
+                width,
+                GridHeight
+            );
+            return swipe;
+        }
+
+        // 左の縦の欄：縁のない薄い黒の下地に、ステータス8つを1行ずつ（項目名を左、数字を右）並べ、行の間に細い線を
+        // 引く。札（すりガラスの板と縁）にはしない（2026-11-03、ユーザーの指示）。
+        private static TMP_Text[] BuildStats(RectTransform deck)
+        {
+            var inside = Layout.Box(
+                deck,
+                "Stats",
+                0f,
+                GridPad,
+                StatsWidth,
+                GridHeight - 2 * GridPad
+            );
+            AddImage(inside, StatsBackdrop, false);
+            float rowWidth = StatsWidth - 2 * StatsInset;
+            float row = (GridHeight - 2 * GridPad - 2 * StatsInset) / CharacterStats.Count;
+            var values = new TMP_Text[CharacterStats.Count];
+            for (int i = 0; i < CharacterStats.Count; i++)
+            {
+                float y = StatsInset + i * row;
+                Layout.Text(
+                    inside,
+                    "Label" + i,
+                    CharacterStats.Labels[i],
+                    StatLabelSize,
+                    UiPalette.TextMain,
+                    TextAlignmentOptions.MidlineLeft,
+                    StatsInset,
+                    y,
+                    rowWidth,
+                    row
+                );
+                values[i] = Layout.Text(
+                    inside,
+                    "Value" + i,
+                    "",
+                    StatValueSize,
+                    UiPalette.TextMain,
+                    TextAlignmentOptions.MidlineRight,
+                    StatsInset,
+                    y,
+                    rowWidth,
+                    row
+                );
+                if (i > 0)
+                    Layout.Line(inside, "Line" + i, StatsInset, y - 1f, rowWidth, 2f);
+            }
+            return values;
+        }
+
+        // 見出しの段1つと、その下の3枚。
+        private static CardLoadoutCard[] DeckRow(
+            RectTransform deck,
+            string name,
+            string title,
+            float x,
+            ref float y,
+            Vector2 size,
+            float rowWidth
+        )
+        {
+            DeckHeading(deck, name + "Title", title, x, y, rowWidth);
+            y += GridHeading + GridHeadingGap;
+            float top = y;
+            var cards = Enumerable
+                .Range(0, 3)
+                .Select(i =>
+                    BuildCard(
+                        Layout.Box(
+                            deck,
+                            name + i,
+                            x + i * (size.x + GridCardGap),
+                            top,
+                            size.x,
+                            size.y
+                        ),
+                        GridScale
+                    )
+                )
+                .ToArray();
+            y += size.y;
+            return cards;
+        }
+
+        // 見出し：金のひし形と明るい金の文字、その右からカードの右端まで伸びる金の細い線。
+        private static void DeckHeading(
+            RectTransform deck,
+            string name,
+            string text,
+            float x,
+            float y,
+            float width
+        )
+        {
+            var row = Layout.Row(deck, name, x, y, width, GridHeading, 12, TextAnchor.MiddleLeft);
+            Label(row, "Title", text, GridHeadingSize, UiPalette.Gold, TextAlignmentOptions.Left);
+            Frame.HeadingRow(row, GridHeadingSize);
+            var cell = Rect("Line", row);
+            cell.gameObject.AddComponent<LayoutElement>().flexibleWidth = 1f;
+            var line = Rect("Gold", cell);
+            line.anchorMin = new Vector2(0f, 0.5f);
+            line.anchorMax = new Vector2(1f, 0.5f);
+            line.pivot = new Vector2(0.5f, 0.5f);
+            line.offsetMin = new Vector2(GridLineGap - 12f, -1f);
+            line.offsetMax = new Vector2(0f, 1f);
+            AddImage(line, UiPalette.LineDivider, false);
+        }
+
+        /// <summary>
+        /// One battle card that takes a tap: the battle's card prefab scaled by
+        /// <paramref name="scale"/> into <paramref name="rect"/>, as the body of a
+        /// <see cref="GlassCard"/> (it sinks when pressed and turns over when its slot changes),
+        /// with the gold rim of the card chosen, the mark at the top right, the text in place of
+        /// the effect and the seal of a stage not acquired.
+        /// </summary>
+        private static CardLoadoutCard BuildCard(RectTransform rect, float scale)
+        {
+            GlassCardAssets.EnsureArt();
+            AddImage(rect, Color.clear, true);
+            var glass = rect.gameObject.AddComponent<GlassCard>();
+            var card = rect.gameObject.AddComponent<CardLoadoutCard>();
+            card.Glass = glass;
+
+            // 回す処理（GlassCardTurn）は板の拡大率を書き換えるので、拡大しない板に戦闘のカードを入れる。
+            var body = Rect("Body", rect);
+            Stretch(body);
+            glass.Body = body;
+            var instance = InstantiatePrefab(BattleInspectAssets.CardPrefabPath, "Face", body);
+            var input =
+                instance.GetComponent<Baryonyx.Combat.Presentation.BattleInspectCardInput>();
+            if (input != null)
+                UnityEngine.Object.DestroyImmediate(input);
+            foreach (var graphic in instance.GetComponentsInChildren<Graphic>(true))
+                graphic.raycastTarget = false;
+            var face = (RectTransform)instance.transform;
+            face.anchorMin = face.anchorMax = face.pivot = new Vector2(0.5f, 0.5f);
+            face.anchoredPosition = Vector2.zero;
+            face.localScale = Vector3.one * scale;
+            card.Face = instance.GetComponent<Baryonyx.Combat.Presentation.BattleInspectCardView>();
+
+            // 効果の欄の真ん中の文字（「空き」「Lv 30で解放」）。効果の文と同じ所に置く。
+            var note = UnityEngine.Object.Instantiate(
+                card.Face.Description.gameObject,
+                card.Face.Description.transform.parent
+            );
+            note.name = "Note";
+            card.Note = note.GetComponent<TMP_Text>();
+            card.Note.text = "";
+            card.Note.alignment = TextAlignmentOptions.Center;
+            card.Note.color = UiPalette.GoldLight;
+            note.SetActive(false);
+
+            // 右上の印：属性の絵の下に、濃い札と金の文字。
+            var plate = Rect("Mark", face);
+            plate.anchorMin = plate.anchorMax = plate.pivot = Vector2.one;
+            plate.anchoredPosition = new Vector2(-8f, -40f);
+            plate.sizeDelta = MarkSize;
+            AddImage(plate, new Color(0f, 0f, 0f, 0.65f), false);
+            card.Mark = Label(
+                plate,
+                "Text",
+                "",
+                MarkFont,
+                UiPalette.Gold,
+                TextAlignmentOptions.Center
+            );
+            Stretch((RectTransform)card.Mark.transform);
+            card.MarkPlate = plate.gameObject;
+            plate.gameObject.SetActive(false);
+
+            // 取得していない段階：伏せたカードの上の「？」の封印。
+            var seal = Rect("Seal", face);
+            Place(seal, Vector2.zero, Vector2.one * CardSealSize);
+            var sealImage = seal.gameObject.AddComponent<RawImage>();
+            sealImage.texture = AssetDatabase.LoadAssetAtPath<Texture2D>(SealPath);
+            sealImage.raycastTarget = false;
+            card.Seal = seal.gameObject;
+            seal.gameObject.SetActive(false);
+
+            // 空いた枠：戦闘のカードの代わりに、同じ大きさの点線のカード（うすい板、点線の縁、真ん中に「＋」、
+            // その下に「空き」）。ほかの画面の空き（点線の札）と同じ見せ方（2026-11-03、ユーザーが5案から選んだ）。
+            var empty = Rect("Empty", body);
+            Stretch(empty);
+            var fill = SpriteImage(empty, GlassCardAssets.FillPath, EmptyFill);
+            fill.type = Image.Type.Sliced;
+            fill.raycastTarget = false;
+            var rim = Rect("Rim", empty);
+            Stretch(rim);
+            var dashed = SpriteImage(
+                rim,
+                GlassCardAssets.DashedPath,
+                new Color(1f, 0.93f, 0.78f, 0.45f)
+            );
+            dashed.type = Image.Type.Tiled;
+            dashed.raycastTarget = false;
+            var plus = Frame.CrossIcon(
+                empty,
+                new Vector2(0f, 20f * scale),
+                Guide.IconSize * scale * EmptyPlus
+            );
+            plus.transform.localRotation = Quaternion.Euler(0f, 0f, 45f);
+            plus.color = new Color(
+                UiPalette.TextSub.r,
+                UiPalette.TextSub.g,
+                UiPalette.TextSub.b,
+                0.8f
+            );
+            plus.raycastTarget = false;
+            var emptyLabel = Label(
+                empty,
+                "Label",
+                CardLoadoutView.EmptyText,
+                UiType.Body,
+                UiPalette.TextSub,
+                TextAlignmentOptions.Center
+            );
+            Place(
+                (RectTransform)emptyLabel.transform,
+                new Vector2(0f, -40f * scale),
+                new Vector2(rect.rect.width, 48f)
+            );
+            card.Empty = empty.gameObject;
+            empty.gameObject.SetActive(false);
+
+            // 選んでいるカード（今の枠のカード、セットしている段階）の金の縁と光。
+            var selection = Rect("Selection", rect);
+            Stretch(selection);
+            selection.offsetMin = new Vector2(-10f, -10f);
+            selection.offsetMax = new Vector2(10f, 10f);
+            var glow = SpriteImage(selection, GlassCardAssets.GlowPath, GlassCardAssets.GoldColor);
+            glow.type = Image.Type.Sliced;
+            glow.raycastTarget = false;
+            glass.Selection = selection.gameObject;
+            selection.gameObject.SetActive(false);
+            return card;
+        }
+
+        // 選ぶ画面：候補は戦闘の手札の約1.8倍で1行4枚（2026-11-03、ユーザーの指示。2倍は「でかすぎる」）。
+        // ツリーは同じ大きさで、1段目の真ん中に最初の段階、その下の段に枝1〜3の1段目、さらに下の段に
+        // 2段目を並べる（右へ伸ばすと見づらいため、下へ伸ばす。同日、ユーザーの指示）。どちらも縦にスクロールする。
+        private const float PickerScale = 1.8f;
+        private const float TreePad = 48f;
+
+        // 案内人の画面（0）より手前、画面の切り替えの幕（1000）より奥。
+        private const int PickerSortingOrder = 10;
+        private const float StageColumnGap = 64f;
+        private const float StageRowGap = 96f;
+
+        /// <summary>
+        /// The picker over the whole panel, header too: the dark veil (a tap on it closes), the
+        /// list of choices that scrolls, and the unique skill's tree with its gold lines. Hidden
+        /// until a card is pressed.
+        /// </summary>
+        private static void BuildPicker(RectTransform panel, CardLoadoutView view)
+        {
+            var elements = (CardElement[])Enum.GetValues(typeof(CardElement));
+            view.CardFrames = elements
+                .Select(element => (Texture)BattleInspectAssets.Art("CardFrame" + element))
+                .ToArray();
+            view.ElementArts = elements
+                .Select(element =>
+                    element == CardElement.None
+                        ? null
+                        : (Texture)BattleInspectAssets.Art("Element" + element)
+                )
+                .ToArray();
+
+            var root = Rect("Picker", panel);
+            Stretch(root);
+            // ヘッダーの金の線（画面より後に描く）も覆うよう、自分のCanvasで手前に出す。
+            var canvas = root.gameObject.AddComponent<Canvas>();
+            canvas.overrideSorting = true;
+            canvas.sortingOrder = PickerSortingOrder;
+            root.gameObject.AddComponent<GraphicRaycaster>();
+            var picker = root.gameObject.AddComponent<CardLoadoutPicker>();
+            picker.Group = root.gameObject.AddComponent<CanvasGroup>();
+            var veil = AddImage(root, UiPalette.VeilDeep, true);
+            var closers = new List<Button> { Closer(veil) };
+            var layer = Layout.Layer(root, "Layer");
+
+            var choices = Rect("Choices", layer);
+            Stretch(choices);
+            picker.ChoicesRoot = choices.gameObject;
+            var viewport = Layout.Viewport(choices);
+            viewport.GetComponent<RectMask2D>().softness = new Vector2Int(0, ChangeScreen.ListFade);
+            // 候補の間の余白を押しても閉じる。
+            closers.Add(Closer(viewport.GetComponent<Image>()));
+            var content = Rect("Content", viewport);
+            content.anchorMin = new Vector2(0f, 1f);
+            content.anchorMax = Vector2.one;
+            content.pivot = new Vector2(0.5f, 1f);
+            content.sizeDelta = Vector2.zero;
+            picker.Content = content;
+            picker.Scroll = Layout.Scroll(choices, viewport, content);
+            var size = BattleCardSize * PickerScale;
+            var first = BuildCard(
+                Layout.Box(content, "Choice0", 0f, 0f, size.x, size.y),
+                PickerScale
+            );
+            picker.Cards = new[] { first };
+            var line = Layout.Box(content, "Line0", 0f, 0f, 100f, 2f);
+            AddImage(line, UiPalette.LineSeparator, false);
+            line.gameObject.SetActive(false);
+            picker.Lines = new[] { line };
+            picker.Remove = BuildPickerRemove(content, size);
+
+            picker.TreeRoot = BuildStages(layer, picker, closers).gameObject;
+            picker.Closers = closers.ToArray();
+
+            // 右下の丸いチェック（戦闘のターン終了と同じ形。商会の合成の選ぶ画面と同じ所）。
+            var checkSize = ActionButtonAssets.RoundCheckSize;
+            var check = Layout.Box(
+                layer,
+                "Check",
+                Layout.Design.x - 48f - checkSize.x,
+                Layout.Design.y - 40f - checkSize.y,
+                checkSize.x,
+                checkSize.y
+            );
+            picker.Confirm = ActionButtonAssets.RoundCheck(check);
+            view.Picker = picker;
+            root.gameObject.SetActive(false);
+        }
+
+        private static Button Closer(Image target)
+        {
+            var button = target.gameObject.AddComponent<Button>();
+            button.targetGraphic = target;
+            button.transition = Selectable.Transition.None;
+            return button;
+        }
+
+        // 一覧の付けられるスキルの最後の「スキルを外す」：点線のカードの真ん中に×、その下に文字。
+        private static GlassCard BuildPickerRemove(RectTransform content, Vector2 size)
+        {
+            var rect = Layout.Box(content, "Remove", 0f, 0f, size.x, size.y);
+            var (card, inside) = GlassCardAssets.Build(rect, dashed: true, pattern: false);
+            Frame.CrossIcon(inside, new Vector2(0f, 24f), Guide.IconSize);
+            var label = Label(
+                inside,
+                "Label",
+                CardLoadoutPresenter.RemoveLabel,
+                UiType.Body,
+                UiPalette.TextSub,
+                TextAlignmentOptions.Center
+            );
+            Place((RectTransform)label.transform, new Vector2(0f, -48f), new Vector2(size.x, 40f));
+            rect.gameObject.SetActive(false);
+            return card;
+        }
+
+        /// <summary>
+        /// The seven stages laid out as the tree, top down: the first stage in the middle of the
+        /// first row, the first step of branches 1 to 3 in the row under it and their second
+        /// steps in the row under that, joined by gold lines; the rows scroll.
+        /// </summary>
+        private static RectTransform BuildStages(
+            RectTransform layer,
+            CardLoadoutPicker picker,
+            List<Button> closers
+        )
+        {
+            var size = BattleCardSize * PickerScale;
+            int rows = 3;
+            float height = rows * size.y + (rows - 1) * StageRowGap;
+            float ColumnLeft(int column) =>
+                Layout.Design.x / 2f + (column - 1) * (size.x + StageColumnGap) - size.x / 2f;
+            float RowTop(int row) => TreePad + row * (size.y + StageRowGap);
+
+            var tree = Rect("Tree", layer);
+            Stretch(tree);
+            var viewport = Layout.Viewport(tree);
+            viewport.GetComponent<RectMask2D>().softness = new Vector2Int(0, ChangeScreen.ListFade);
+            closers.Add(Closer(viewport.GetComponent<Image>()));
+            var root = Rect("Content", viewport);
+            root.anchorMin = new Vector2(0f, 1f);
+            root.anchorMax = Vector2.one;
+            root.pivot = new Vector2(0.5f, 1f);
+            root.sizeDelta = new Vector2(0f, height + 2 * TreePad);
+            picker.TreeScroll = Layout.Scroll(tree, viewport, root);
+
+            // 線を先に作り、カードの下に描く。最初の段階の下から幹を下ろして横に分け、枝の1段目へ下ろす。
+            // 枝の1段目の下からは、同じ枝の2段目へまっすぐ下ろす。
+            float half = LineWidth / 2f;
+            float middle = Layout.Design.x / 2f;
+            float split = RowTop(1) - StageRowGap / 2f;
+            float Center(int column) => ColumnLeft(column) + size.x / 2f;
+            Bar(root, "Root", middle - half, RowTop(0) + size.y, split - RowTop(0) - size.y);
+            Bar(
+                root,
+                "Split",
+                Center(0) - half,
+                split - half,
+                Center(2) - Center(0) + LineWidth,
+                horizontal: true
+            );
+            for (int branch = 0; branch < UniqueSkillTreeShape.Branches; branch++)
+            {
+                Bar(root, "Branch" + branch, Center(branch) - half, split, RowTop(1) - split);
+                Bar(root, "Step" + branch, Center(branch) - half, RowTop(1) + size.y, StageRowGap);
+            }
+
+            var stages = new CardLoadoutCard[UniqueSkillTreeShape.Count];
+            stages[0] = BuildCard(
+                Layout.Box(root, "Stage0", ColumnLeft(1), RowTop(0), size.x, size.y),
+                PickerScale
+            );
+            for (int branch = 0; branch < UniqueSkillTreeShape.Branches; branch++)
+            for (int step = 1; step <= 2; step++)
+            {
+                int stage = UniqueSkillTreeShape.StageAt(branch, step);
+                stages[stage] = BuildCard(
+                    Layout.Box(
+                        root,
+                        "Stage" + stage,
+                        ColumnLeft(branch),
+                        RowTop(step),
+                        size.x,
+                        size.y
+                    ),
+                    PickerScale
+                );
+            }
+            picker.Stages = stages;
+            tree.gameObject.SetActive(false);
+            return tree;
         }
 
         // --- The awakening tab ----------------------------------------------------------------
@@ -699,104 +1211,6 @@ namespace Baryonyx.CardLoadout.Editor
             importer.npotScale = TextureImporterNPOTScale.None;
             importer.SaveAndReimport();
             return AssetDatabase.LoadAssetAtPath<Texture2D>(path);
-        }
-
-        // --- Right: the skill and item tabs, then every card the person can set -------------
-
-        private static void BuildCards(RectTransform panel, CardLoadoutView view)
-        {
-            // 上に、面の幅いっぱいのスキル・アイテムのタブ（装備のタブと同じ形）。
-            view.Tabs = ChangeScreen.Tabs(panel, "スキル", "アイテム");
-
-            // タブの下に、その人が付けられる属性のアイコンだけを並べる。属性のないカードは誰でも
-            // 付けられる。見出しや「属性なし」の文字は付けず、下の一覧の属性のアイコンと見比べさせる。
-            var usable = Layout.Box(panel, "Usable", 36, UsableTop, Right.width - 72, 48);
-            view.UsableLine = usable.gameObject;
-            var group = usable.gameObject.AddComponent<HorizontalLayoutGroup>();
-            group.spacing = 8;
-            group.childAlignment = TextAnchor.MiddleLeft;
-            group.childControlWidth = group.childControlHeight = true;
-            group.childForceExpandWidth = group.childForceExpandHeight = false;
-            view.Usable = Enumerable
-                .Range(0, 2)
-                .Select(i =>
-                {
-                    var icon = Rect("Element" + i, usable);
-                    var size = icon.gameObject.AddComponent<LayoutElement>();
-                    size.minWidth = size.preferredWidth = 12 * Guide.DotScale;
-                    size.minHeight = size.preferredHeight = 12 * Guide.DotScale;
-                    var image = icon.gameObject.AddComponent<Image>();
-                    image.raycastTarget = false;
-                    return image;
-                })
-                .ToArray();
-
-            var (viewport, content) = ChangeScreen.List(panel, ListTop);
-
-            // One row per card in the catalog's order; the view shows only the cards the person
-            // can set, by cost.
-            view.Rows = CardSkills.All.Select(card => BuildRow(content, card, view)).ToArray();
-            // 読み込む間に伏せるのは先頭の行だけ（CardLoadoutView.CoverRows）。足りない行は1行目を写すので、写しも裏を持つ。
-            foreach (var row in view.Rows.Take(CardLoadoutView.CoverRows))
-                GlassCardAssets.AddBack(row.Button.GetComponent<GlassCard>(), vertical: true);
-            view.Remove = BuildRemove(content);
-
-            view.List = Layout.Scroll(panel, viewport, content);
-
-            // 読み込み中と読めなかったとき、アイテムのタブを選んでいるときだけ出す文字。
-            view.Status = ChangeScreen.Status(panel);
-        }
-
-        // 一覧の最後の「スキルを外す」。点線のカードに×と文字（パーティの「パーティから外す」と同じ形）。
-        private static Button BuildRemove(RectTransform content)
-        {
-            var row = Layout.ListItem(content, "Remove", RowHeight);
-            var (button, _, inside) = GlassCardAssets.Choice(row, pattern: false, dashed: true);
-            Frame.RemoveFace(
-                inside,
-                CardLoadoutPresenter.RemoveLabel,
-                (RowTextLeft - Guide.IconSize) / 2f,
-                RowTextLeft,
-                RowTextLeft + 400f,
-                RowHeight
-            );
-            row.gameObject.SetActive(false);
-            return button;
-        }
-
-        private static CardLoadoutRowWidget BuildRow(
-            RectTransform content,
-            CardSkill card,
-            CardLoadoutView view
-        )
-        {
-            var row = Layout.ListItem(content, "Card_" + card.Id, RowHeight);
-            var widget = new CardLoadoutRowWidget { Id = card.Id };
-            var (button, _, inside) = GlassCardAssets.Choice(row, pattern: false);
-            widget.Button = button;
-            row = inside;
-            var art = BuildThumb(row, 12);
-            art.texture = ArtAssets.LoadTexture(
-                $"{BattleInspectAssets.ArtFolder}/Card{card.Id}.aseprite"
-            );
-            widget.Art = art;
-            widget.Foil = Baryonyx.Editor.UI.CardFoilAssets.Add(art, card.Quality);
-            (widget.Cost, widget.CostDigit, widget.Element, widget.Mark) = BuildCorner(
-                row,
-                12,
-                RowCornerRight,
-                mark: true
-            );
-            CardLoadoutView.ShowCost(widget.Cost, widget.CostDigit, card.Cost);
-            CardLoadoutView.ShowElement(widget.Element, view.IconOf(card.Element));
-
-            var (name, kind) = BuildNameLine(row, 12, RowTextLeft, RowNameRight);
-            name.text = card.Name;
-            kind.text = CardText.KindLine(card);
-            widget.Name = name;
-            widget.Kind = kind;
-            widget.Description = BuildDescription(row, 64, 64, RowTextLeft, 24);
-            return widget;
         }
 
         // --- Pieces shared by the slots and the rows ----------------------------------------

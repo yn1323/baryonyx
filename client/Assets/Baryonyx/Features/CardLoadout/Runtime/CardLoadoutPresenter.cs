@@ -124,6 +124,9 @@ namespace Baryonyx.CardLoadout
         // 右に並べる、その人が付けられるカード（コストの低い順）か、持っているアイテム。
         public IReadOnlyList<CardLoadoutCardState> Choices { get; internal set; }
 
+        // 持っているアイテム（タブによらない）。スキルのタブの選ぶ画面で、スキルの後に並べる。
+        public IReadOnlyList<CardLoadoutCardState> Items { get; internal set; }
+
         // 選んでいるカスタムスキルの枠に何か入っていて、一覧の最後に「スキルを外す」を出す。
         public bool CanRemove => Slot >= 0 && Slot < (Slots?.Count ?? 0) && Slots[Slot] != null;
     }
@@ -366,7 +369,7 @@ namespace Baryonyx.CardLoadout
                 return;
             int target = slot;
             var cards = Cards(member.Id);
-            if (tab == ItemTab)
+            if (PartyCardKey.IsItem(key))
             {
                 var item = OwnedItem(key);
                 if (item == null)
@@ -441,6 +444,7 @@ namespace Baryonyx.CardLoadout
                     Uniques = Array.Empty<CardLoadoutUniqueState>(),
                     Tab = tab,
                     Choices = Array.Empty<CardLoadoutCardState>(),
+                    Items = Array.Empty<CardLoadoutCardState>(),
                 };
                 view.Render(State);
                 return;
@@ -463,6 +467,9 @@ namespace Baryonyx.CardLoadout
                 Tree = unique >= 0 ? Tree(member.Id, unique) : null,
                 Tab = tab,
                 Choices = (tab == SkillTab ? SkillChoices(usable) : ItemChoices())
+                    .Select(key => Choice(member.Id, key, Array.IndexOf(cards, key)))
+                    .ToArray(),
+                Items = ItemChoices()
                     .Select(key => Choice(member.Id, key, Array.IndexOf(cards, key)))
                     .ToArray(),
             };

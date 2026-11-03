@@ -173,6 +173,24 @@ namespace Baryonyx.Tests.EditMode
             );
         }
 
+        // スキルのタブの選ぶ画面は、スキルの後に持っているアイテムを並べ、タブを替えずにアイテムを入れられる。
+        [Test]
+        public void ItemsAreChoicesWithoutTheItemTab()
+        {
+            view.Slot(2);
+            var items = view.Last.Items;
+            Assert.That(view.Last.Tab, Is.EqualTo(CardLoadoutPresenter.SkillTab));
+            Assert.That(items.Select(card => card.ItemId), Is.EqualTo(new[] { "herb", "acorn" }));
+            Assert.That(items.Select(card => card.Mark), Is.EqualTo(new[] { "所持 1", "所持 2" }));
+            Assert.That(view.Last.Choices.All(card => card.ItemId == null), Is.True);
+            view.Card("item:acorn");
+            Assert.That(
+                store.CardsOf("toma"),
+                Is.EqualTo(new[] { TomaFire, TomaIce, "item:acorn" })
+            );
+            Assert.That(view.Last.Slots[2].ItemId, Is.EqualTo("acorn"));
+        }
+
         [Test]
         public void AnOwnedCardHeldByAnotherIsMarkedAndMovesWhenSet()
         {

@@ -13,16 +13,19 @@ namespace Baryonyx.Party.Editor
 {
     /// <summary>
     /// Bakes the frame the adventurer's tabs share (<see cref="PartySheet"/>) into a framed
-    /// panel's layer: the column of people on the left and the tabs down the right, each on a
-    /// pane of its own behind the gold double line. The tab's own contents go between
-    /// <see cref="ContentLeft"/> and <see cref="ContentRight"/>. Design pixels from the top left
-    /// of the 1920x1080 layer (<see cref="Layout"/>).
+    /// panel's layer: the column of people on the left and the tabs right of it, each on a pane
+    /// of its own behind the gold double line. The tab's own contents go between
+    /// <see cref="ContentLeft"/> and <see cref="ContentRight"/>, the screen's right edge.
+    /// Design pixels from the top left of the 1920x1080 layer (<see cref="Layout"/>).
     /// </summary>
     public static class PartySheetAssets
     {
-        // 左の人の列と、右のタブの列の境目。その間に各タブの中身を置く。
-        public const float ContentLeft = 160f;
-        public const float ContentRight = 1736f;
+        // 左から人の列（0〜PeopleRight）、タブの列（〜ContentLeft）、各タブの中身（〜ContentRight、画面の右端）。
+        // 2026-11-03に、タブの列を右端から人の列の右へ移した（ユーザーの指示）。中身の幅は変えていない。
+        public const float PeopleRight = 160f;
+        public const float TabWidth = 184f;
+        public const float ContentLeft = PeopleRight + TabWidth;
+        public const float ContentRight = 1920f;
 
         // 人の札：ドット絵の上半身（36×32ドット）を3倍で出す。
         private const float BustDot = 3f;
@@ -50,7 +53,7 @@ namespace Baryonyx.Party.Editor
                 layer,
                 "SheetPeoplePane",
                 0f,
-                ContentLeft,
+                PeopleRight,
                 Frame.HeaderHeight,
                 Frame.PaneLight,
                 true,
@@ -59,12 +62,12 @@ namespace Baryonyx.Party.Editor
             Frame.Pane(
                 layer,
                 "SheetTabPane",
-                ContentRight,
-                Layout.Design.x,
+                PeopleRight,
+                ContentLeft,
                 Frame.HeaderHeight,
                 Frame.PaneLight,
                 false,
-                true
+                false
             );
             var root = Layout.Box(layer, "Sheet", 0, 0, Layout.Design.x, Layout.Design.y);
             var sheet = root.gameObject.AddComponent<PartySheet>();
@@ -72,8 +75,8 @@ namespace Baryonyx.Party.Editor
             sheet.Current = current;
             BuildPeople(root, sheet, party);
             BuildTabs(root, sheet, tabs);
+            Frame.Divider(layer, PeopleRight, Frame.HeaderHeight);
             Frame.Divider(layer, ContentLeft, Frame.HeaderHeight);
-            Frame.Divider(layer, ContentRight, Frame.HeaderHeight);
 
             var (people, partyCount) = PartyFormation.From(party).TabOrder();
             sheet.Show(people, partyCount, people.FirstOrDefault()?.Id);
@@ -89,7 +92,7 @@ namespace Baryonyx.Party.Editor
                 "People",
                 0,
                 Frame.HeaderHeight,
-                ContentLeft,
+                PeopleRight,
                 Layout.Design.y - Frame.HeaderHeight
             );
             var viewport = Layout.Viewport(list);
@@ -131,14 +134,14 @@ namespace Baryonyx.Party.Editor
             };
         }
 
-        // 右の列：縦のタブ。選んだタブは明るい金の文字と、左の金の縦線（横のタブの下線と同じ金）。
+        // 人の列の右の列：縦のタブ。選んだタブは明るい金の文字と、左の金の縦線（横のタブの下線と同じ金）。
         private static void BuildTabs(
             RectTransform root,
             PartySheet sheet,
             IReadOnlyList<(string Key, string Label)> tabs
         )
         {
-            float width = Layout.Design.x - ContentRight;
+            float width = TabWidth;
             sheet.TabKeys = tabs.Select(tab => tab.Key).ToArray();
             sheet.Tabs = tabs.Select(
                     (tab, i) =>
@@ -146,7 +149,7 @@ namespace Baryonyx.Party.Editor
                             root,
                             "Tab_" + tab.Key,
                             tab.Label,
-                            ContentRight,
+                            PeopleRight,
                             Frame.HeaderHeight + 24f + i * TabHeight,
                             width,
                             TabHeight

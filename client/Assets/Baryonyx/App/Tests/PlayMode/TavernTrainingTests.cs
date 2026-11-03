@@ -195,13 +195,16 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(training.gameObject.activeSelf, Is.False);
             Assert.That(loadout.Presenter.State.PersonId, Is.EqualTo(second));
             Assert.That(loadout.Sheet.Tabs[2].Chosen, Is.True);
-            Assert.That(loadout.SlotRows[0].Card.Selected.activeSelf, Is.True);
+            Assert.That(loadout.Presenter.State.Slot, Is.EqualTo(0));
+            Assert.That(loadout.Picker.Open, Is.False);
 
-            // 固有スキルの行を押すと、右にその進化ツリーを出す。
-            loadout.UniqueRows[1].Card.Button.onClick.Invoke();
-            Assert.That(loadout.UniqueRows[1].Card.Selected.activeSelf, Is.True);
-            Assert.That(loadout.SlotRows.Any(row => row.Card.Selected.activeSelf), Is.False);
-            Assert.That(loadout.Tree.Root.activeSelf, Is.True);
+            // 固有スキルのカードを押すと、選ぶ画面にその覚醒ツリーを出す。幕の余白を押すと閉じる。
+            loadout.UniqueCards[1].Glass.Click();
+            Assert.That(loadout.Presenter.State.Unique, Is.EqualTo(1));
+            Assert.That(loadout.Picker.Open, Is.True);
+            Assert.That(loadout.Picker.TreeRoot.activeSelf, Is.True);
+            loadout.Picker.Closers[0].onClick.Invoke();
+            Assert.That(loadout.Picker.Open, Is.False);
 
             // 「ステータス」のタブへ戻ると同じ人。左の列で人を替えられる。
             loadout.Sheet.Tabs[0].Button.onClick.Invoke();

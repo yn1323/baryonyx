@@ -20,7 +20,7 @@ updated: 2026-11-03
 | 戦闘のスキルの演出と背景 | [battle-effects.md](screens/battle-effects.md) | スキルの演出と背景、敵の技の演出、当たりの瞬間と読みやすさ、勝利の演出、カメラの中心のゆっくりした円運動 |
 | デバッグルーム | [debug-rooms.md](screens/debug-rooms.md) | スキル・品質・持ち物・敵の挙動・戦闘の演出・探索の演出・召喚の演出・冒険のデバッグルーム、入れ子の地図（試作）、地図エディター、ドロップエディター、TempLab |
 | 編成・商会・神殿・旅の案内所の共通 | [guide.md](screens/guide.md) | 案内人の画面の形、停止中の確認、枠つきの表示、すりガラスのカード |
-| パーティと冒険者のタブ | [adventurers.md](screens/adventurers.md) | パーティ、冒険者のタブ（左の人の列と右のタブ）、ステータス、絆 |
+| パーティと冒険者のタブ | [adventurers.md](screens/adventurers.md) | パーティ、冒険者のタブ（左の人の列とその右のタブ）、ステータス、絆 |
 | 冒険者の装備・スキル・強化・覚醒のタブ | [loadout.md](screens/loadout.md) | 育成の人選び、装備、スキル、強化、覚醒 |
 | 商会 | [shop.md](screens/shop.md) | 画面の形、買う、売る、合成、品質強化とスキル覚醒 |
 | 神殿 | [temple.md](screens/temple.md) | 神殿、召喚の演出 |

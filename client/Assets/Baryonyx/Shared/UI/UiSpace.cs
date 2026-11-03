@@ -20,9 +20,10 @@ namespace Baryonyx.UI
         public const float WindowMedium = 1400f;
         public const float WindowLarge = 1840f;
 
-        // パネルの左右の分け目。一覧と詳細は1160、冒険者のシートは人の列の幅で760か860。
+        // パネルの左右の分け目。一覧と詳細は1160、冒険者のシートは人の列の幅で944か1044。
+        // 冒険者のシートは、左から人の列・タブの列・中身（2026-11-03に、タブの列を右端から人の列の右へ移した）。
         public const float ListSplit = 1160f;
-        public const float SheetSplit = 760f;
-        public const float SheetSplitWide = 860f;
+        public const float SheetSplit = 944f;
+        public const float SheetSplitWide = 1044f;
     }
 }
