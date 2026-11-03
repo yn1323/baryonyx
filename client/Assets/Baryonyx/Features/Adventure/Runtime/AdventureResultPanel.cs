@@ -59,10 +59,15 @@ namespace Baryonyx.Adventure
 
         public Button Home;
 
+        // 札を押すと開く詳しい窓と、その中身を引く図鑑（doc/rules/ui-design.md の装備の見せ方）。
+        public ItemDetailWindow DetailWindow;
+        public Library.LibraryData DropLibrary;
+
         public Color FloorCleared = new(1f, 0.86f, 0.5f, 0.55f);
         public Color FloorEnded = new(0.6f, 0.7f, 1f, 0.22f);
 
         private readonly List<ItemTile> cells = new();
+        private readonly List<ItemFace> faces = new();
         private Action home;
         private bool cleared;
         private float openedAt;
@@ -156,8 +161,23 @@ namespace Baryonyx.Adventure
                 Home.interactable = true;
         }
 
-        /// <summary>The device's back key: the result stays until "ホームへ". False when closed.</summary>
-        public bool HandleBack() => IsOpen;
+        /// <summary>
+        /// The device's back key: closes a card's detail, and otherwise the result stays until
+        /// "ホームへ". False when closed.
+        /// </summary>
+        public bool HandleBack()
+        {
+            if (IsOpen && DetailWindow != null && DetailWindow.HandleBack())
+                return true;
+            return IsOpen;
+        }
+
+        // 札を押したとき：図鑑に載る物なら、詳しい窓を開く。
+        private void ShowDetail(int index)
+        {
+            if (DetailWindow != null && index < faces.Count && faces[index] != null)
+                DetailWindow.Show(faces[index]);
+        }
 
         /// <summary>Presses "ホームへ" (tests).</summary>
         public void GoHome()
@@ -241,12 +261,17 @@ namespace Baryonyx.Adventure
             {
                 var cell = Instantiate(CellTemplate, Cells);
                 cell.name = $"Cell{cells.Count + 1}";
+                int index = cells.Count;
+                if (cell.Card != null)
+                    cell.Card.Clicked += () => ShowDetail(index);
                 cells.Add(cell);
             }
+            faces.Clear();
             for (int i = 0; i < cells.Count; i++)
             {
                 bool used = i < kinds.Count;
                 cells[i].gameObject.SetActive(used);
+                faces.Add(used ? AdventureDropFaces.Of(DropLibrary, kinds[i].Drop) : null);
                 if (used)
                     Paint(cells[i], kinds[i].Drop, kinds[i].Count, art);
             }

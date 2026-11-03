@@ -30,6 +30,13 @@ namespace Baryonyx.UI
 
         /// <summary>A small tag on the plate's top edge ("2回目のクリア報酬"); empty shows none.</summary>
         public string Tag = "";
+
+        /// <summary>
+        /// What the detail window shows when the plate is tapped (doc/rules/ui-design.md の装備の見せ方);
+        /// none leaves the plate untappable (the runes, the materials).
+        /// </summary>
+        [System.NonSerialized]
+        public ItemFace Face;
     }
 
     /// <summary>
@@ -58,6 +65,9 @@ namespace Baryonyx.UI
 
         public RectTransform Plate;
         public CanvasGroup Group;
+
+        // 札を押すと開く、詳しい面の小さな窓（画面が置く）。開いている間は、画面が先へ進まずに待つ。
+        public ItemDetailWindow DetailWindow;
 
         [Tooltip("品質の色にする縁。")]
         public Graphic Rim;
@@ -93,6 +103,9 @@ namespace Baryonyx.UI
         /// <summary>True while the plate is shown (opening, or open).</summary>
         public bool Shown => Plate != null && Plate.gameObject.activeSelf;
 
+        /// <summary>The detail of a plate is open: the screen waits before it goes on.</summary>
+        public bool Reading => DetailWindow != null && DetailWindow.IsOpen;
+
         /// <summary>How many plates the last <see cref="Show(RewardItem)"/> or <see cref="ShowAll"/> opened.</summary>
         public int ShownCount => Shown ? count : 0;
 
@@ -121,6 +134,7 @@ namespace Baryonyx.UI
             for (int i = 0; i < plates.Count; i++)
             {
                 Fill(plates[i], drops != null && i < drops.Count ? drops[i] : null);
+                Tap(plates[i], drops != null && i < drops.Count ? drops[i] : null);
                 plates[i].Plate.anchoredPosition = fitted + OffsetOf(i, count);
                 plates[i].Plate.gameObject.SetActive(true);
             }
@@ -138,6 +152,7 @@ namespace Baryonyx.UI
             count = 1;
             var plates = PlatesFor(1);
             Fill(plates[0], drop);
+            Tap(plates[0], drop);
             Plate.anchoredPosition = home;
             Plate.gameObject.SetActive(true);
             Pose(plates[0], 1f, 1f);
@@ -155,6 +170,7 @@ namespace Baryonyx.UI
             for (int i = 0; i < plates.Count; i++)
             {
                 Fill(plates[i], drops != null && i < drops.Count ? drops[i] : null);
+                Tap(plates[i], drops != null && i < drops.Count ? drops[i] : null);
                 plates[i].Plate.anchoredPosition = fitted + OffsetOf(i, count);
                 plates[i].Plate.gameObject.SetActive(true);
                 Pose(plates[i], 1f, 1f);
@@ -322,6 +338,21 @@ namespace Baryonyx.UI
             }
         }
 
+        // 中身のある札だけ押せるようにし、押すと詳しい窓を開く。
+        private void Tap(Parts plate, RewardItem drop)
+        {
+            var face = drop?.Face;
+            bool can = face != null && DetailWindow != null;
+            if (plate.Group != null)
+                plate.Group.blocksRaycasts = plate.Group.interactable = can;
+            var button = plate.Plate.GetComponent<Button>();
+            if (button == null)
+                return;
+            button.onClick.RemoveAllListeners();
+            if (can)
+                button.onClick.AddListener(() => DetailWindow.Show(face));
+        }
+
         private static void Fill(Parts plate, RewardItem drop)
         {
             bool found = drop != null;
@@ -357,7 +388,8 @@ namespace Baryonyx.UI
             float textLeft = left + size.x + TextGap;
             StartText(plate.Kind, textLeft);
             StartText(plate.Name, textLeft);
-            UiText.Set(plate.Kind, drop.Kind);
+            // 名前の上の行は☆を金で出すため、色の指定（リッチテキスト）を読む。
+            UiText.SetRich(plate.Kind, drop.Kind);
             UiText.Set(plate.Name, drop.Name);
             if (plate.Quality != null)
             {

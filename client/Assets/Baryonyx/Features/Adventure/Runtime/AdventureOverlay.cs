@@ -27,6 +27,10 @@ namespace Baryonyx.Adventure
         // ドロップのアイテム・装備の絵（種類のIDで引く）。
         public ItemArt ItemArt;
 
+        // ドロップ・結果の札を押すと開く詳しい窓の中身を引く図鑑と、その窓。
+        public Library.LibraryData DropLibrary;
+        public ItemDetailWindow DetailWindow;
+
         // クリア報酬のルーンの札の絵。
         public Sprite RuneIcon;
 
@@ -42,6 +46,9 @@ namespace Baryonyx.Adventure
 
         // 端末の戻るキー。開いているダイアログが先に受け取り、なければメニューを開く。
         public event Action BackPressed;
+
+        // 戦闘の画面の重ね（山札の一覧など）を戻るキーで閉じる処理。閉じたら true。戦闘の流れが渡す。
+        public Func<bool> BattleBack { get; set; }
 
         private void Awake() => Wire();
 
@@ -64,9 +71,13 @@ namespace Baryonyx.Adventure
         {
             if (Dialog != null && Dialog.HandleBack())
                 return;
+            if (DetailWindow != null && DetailWindow.HandleBack())
+                return;
             if (Result != null && Result.HandleBack())
                 return;
             if (Boons != null && Boons.HandleBack())
+                return;
+            if (BattleBack != null && BattleBack())
                 return;
             BackPressed?.Invoke();
         }
@@ -175,7 +186,8 @@ namespace Baryonyx.Adventure
                             AdventureDropItems.FromClearReward(
                                 AdventureClearRewards.At(AdventureCatalog.ForestRuins, 2),
                                 ItemArt,
-                                RuneIcon
+                                RuneIcon,
+                                DropLibrary
                             )[0]
                         );
                     break;

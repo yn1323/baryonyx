@@ -503,7 +503,11 @@ namespace Baryonyx.Adventure
         private void OnWarePressed(AdventureWare ware)
         {
             if (busy || Leaving || State?.Run == null)
+            {
+                if (view.Peddler != null)
+                    view.Peddler.Resume();
                 return;
+            }
             Work = BuyAsync(ware);
         }
 
@@ -528,6 +532,8 @@ namespace Baryonyx.Adventure
                     return;
                 busy = false;
                 view.ShowNotice(AdventureTexts.BuyFailed);
+                if (view.Peddler != null)
+                    view.Peddler.Resume();
                 return;
             }
             if (disposed)
@@ -839,7 +845,7 @@ namespace Baryonyx.Adventure
         )
         {
             var items = AdventureDropItems
-                .All(drops, view.ItemArt)
+                .All(drops, view.ItemArt, view.DropLibrary)
                 .OrderByDescending(item => item.Graded ? Quality.Grade(item.Quality) : -1)
                 .ToList();
             try
@@ -853,6 +859,9 @@ namespace Baryonyx.Adventure
                         ExtraReadSeconds * (items.Count - 1),
                         lifetime.Token
                     );
+                // 札を押して詳しい窓を開いている間は、閉じるまで待つ。
+                while (reveal != null && reveal.Reading && !disposed)
+                    await Awaitable.NextFrameAsync(lifetime.Token);
                 if (reveal != null)
                     reveal.Hide();
                 return !disposed;

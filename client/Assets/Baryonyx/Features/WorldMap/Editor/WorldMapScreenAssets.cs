@@ -183,6 +183,11 @@ namespace Baryonyx.WorldMap.Editor
                     PlaceEventSprites(view);
                     WorldAtlasTollAssets.Build(root, view);
                     view.EventWindow = WorldMapEventWindowAssets.Build(root);
+                    // 宝箱の札を押すと開く詳しい窓（doc/rules/ui-design.md の装備の見せ方）。
+                    view.DropLibrary = AssetDatabase.LoadAssetAtPath<Baryonyx.Library.LibraryData>(
+                        Baryonyx.Library.Editor.LibraryScreenAssets.DataPath
+                    );
+                    view.Reveal.DetailWindow = ItemDetailAssets.Window(root);
                 }
                 CollectTintGraphics(root);
                 var prefab = PrefabUtility.SaveAsPrefabAsset(root.gameObject, prefabPath);

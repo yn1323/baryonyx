@@ -162,6 +162,12 @@ namespace Baryonyx.Adventure
         // ドロップのアイテム・装備の絵（種類のIDで引く）。
         public ItemArt ItemArt;
 
+        // 宝箱・結果の札を押すと開く詳しい窓の中身を引く図鑑（doc/rules/ui-design.md の装備の見せ方）。
+        public Library.LibraryData DropLibrary;
+
+        // 札の詳しい窓（宝箱の札・冒険の結果の札・行商人で共有）。
+        public ItemDetailWindow DetailWindow;
+
         // 見本の種。冒険の流れが動かさないとき（展示室など）に、この種の道を描く。0なら描かない。
         public int SampleSeed;
 
@@ -357,6 +363,8 @@ namespace Baryonyx.Adventure
         public void PressBack()
         {
             if (Dialog != null && Dialog.HandleBack())
+                return;
+            if (DetailWindow != null && DetailWindow.HandleBack())
                 return;
             if (Awakening != null && Awakening.HandleBack())
                 return;
@@ -971,15 +979,44 @@ namespace Baryonyx.Adventure
                 "覚醒の祭壇",
                 "覚醒の祭壇 › 固有スキル",
                 "覚醒の場面",
+                "焚き火",
+                "焚き火 › 鍛える",
+                "焚き火 › 研鑽",
+                "結果（クリア） › 札の詳しさ",
             };
 
         public void ShowPreviewState(int index)
         {
             if (Result != null)
                 Result.Close();
+            if (Campfire != null)
+                Campfire.Close();
+            if (DetailWindow != null)
+                DetailWindow.Hide();
             if (Dialog == null)
                 return;
             Action none = () => { };
+            if (index == 14)
+            {
+                // 冒険の結果の先頭の札を押した形（詳しい窓を重ねる）。
+                Dialog.Hide();
+                if (Result == null || DetailWindow == null)
+                    return;
+                Result.ShowSample(AdventureEndStatus.Cleared, ItemArt);
+                foreach (var drop in AdventureDialogSamples.ResultDrops())
+                    if (AdventureDropFaces.Of(DropLibrary, drop) is { } face)
+                    {
+                        DetailWindow.Show(face);
+                        break;
+                    }
+                return;
+            }
+            if (index >= 11)
+            {
+                Dialog.Hide();
+                ShowCampfirePreview(index - 11);
+                return;
+            }
             if (index >= 6)
             {
                 Dialog.Hide();
@@ -1006,7 +1043,7 @@ namespace Baryonyx.Adventure
                     Dialog.Hide();
                     if (Moments != null && Moments.Reveal != null)
                         Moments.Reveal.ShowAllStill(
-                            AdventureDropItems.All(AdventureDialogSamples.Drops(), ItemArt)
+                            AdventureDropItems.All(AdventureDialogSamples.Drops(), ItemArt, DropLibrary)
                         );
                     break;
                 case 3:
@@ -1047,8 +1084,9 @@ namespace Baryonyx.Adventure
                     );
                     OpenEvent(Peddler, null);
                     Events.FinishOpening();
-                    // 吹き出しの文字を書き終えた形で見せる。
+                    // 吹き出しの文字を書き終えた形で、品を1つ選んで「買う」の段を見せる。
                     Peddler.Advance();
+                    Peddler.Pick(3);
                     Peddler.Tick(0f);
                     break;
                 case 1:
@@ -1087,6 +1125,56 @@ namespace Baryonyx.Adventure
                     Awakening.Choice.Settle();
                     break;
             }
+        }
+
+        // 焚き火の見本：野営地、鍛える（1人目を選んだ形）、研鑽（1枚目を選んだ形）。
+        private void ShowCampfirePreview(int panel)
+        {
+            if (Campfire == null)
+                return;
+            Campfire.Open(CampfireSamples(), null, null, null, null);
+            if (panel == 1)
+            {
+                Campfire.OpenTrain();
+                Campfire.PickMember(0);
+            }
+            else if (panel == 2)
+            {
+                Campfire.OpenStudy();
+                Campfire.PickCard(0);
+            }
+        }
+
+        // 焚き火の4人：絵は焚き火に作り込んだ見本を使い、研鑽できるカスタムスキルを2枚ずつ持たせる。
+        private List<Combat.Presentation.BattlePartyMember> CampfireSamples()
+        {
+            string[] names = { "トーマ", "ルカ", "アリア", "ミナ" };
+            var skills = Combat
+                .CardSkills.All.Where(skill => Items.ItemCards.Find(skill.Id) == null)
+                .ToList();
+            var party = new List<Combat.Presentation.BattlePartyMember>();
+            for (int slot = 0; slot < names.Length && slot < Campfire.Party.Length; slot++)
+            {
+                var cards = new List<Combat.Presentation.BattlePartyCard>();
+                for (int k = 0; k < ExplorationCampfire.CardsPerMember; k++)
+                {
+                    var skill = skills[(slot * ExplorationCampfire.CardsPerMember + k) % skills.Count];
+                    cards.Add(
+                        new Combat.Presentation.BattlePartyCard { Skill = skill, Art = ArtOf(skill) }
+                    );
+                }
+                party.Add(
+                    new Combat.Presentation.BattlePartyMember
+                    {
+                        Name = names[slot],
+                        Art = Campfire.Party[slot] != null ? Campfire.Party[slot].texture : null,
+                        Level = 10,
+                        Stats = new Combat.CharacterStats(300, 60, 40, 60, 40, 50, 10, 10),
+                        Cards = cards,
+                    }
+                );
+            }
+            return party;
         }
 
         // 祭壇の見本：固有スキルを2つ覚醒できるトーマと、1つずつの3人。絵は札に作り込んだ見本を使う。

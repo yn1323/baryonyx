@@ -116,6 +116,34 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(coast.Graph.Nodes[coast.PartyAt].Id, Is.EqualTo("gate-marina"));
         }
 
+        // 端末の戻るキーは、通行料の確認が開いていればそれを閉じ、なければ左上の家と同じくHomeへ出る
+        // （doc/rules/ui-design.md#操作の決まり）。
+        [UnityTest]
+        public IEnumerator TheBackKeyClosesTheTollFirstThenLeavesLikeTheHome()
+        {
+            WorldAtlasSession.Source = new WorldAtlasMemorySource(600, (map, square) => 0);
+            var navigator = Spawn();
+            int left = 0;
+            navigator.Leave = () => left++;
+            yield return SceneTests.WaitUntil(
+                () => WorldAtlasSession.Loaded && navigator.Current != null,
+                message: "The runes were not read."
+            );
+            var world = navigator.Current;
+            var toll = world.GetComponent<WorldAtlasToll>();
+            var path = QuietPath(world, 3);
+            Assert.That(path, Is.Not.Null);
+            toll.Ask(path, 9999);
+            Assert.That(toll.Asking, Is.True);
+
+            navigator.PressBack();
+            Assert.That(toll.Asking, Is.False);
+            Assert.That(left, Is.Zero);
+
+            navigator.PressBack();
+            Assert.That(left, Is.EqualTo(1));
+        }
+
         // 端末に覚えた位置が、開けていないマス（消費を止めて歩いた、DBを作り直した）なら、開けたマスを読んだあと
         // 地図の始まりへ戻す。そのままだと、隣がつながっていないとしてサーバーに支払いを断られ、先へ進めない。
         [UnityTest]
@@ -602,7 +630,7 @@ namespace Baryonyx.Tests.PlayMode
             // 足りない道は進めない。
             toll.Ask(path.GetRange(1, 3), 9999);
             Assert.That(toll.Go.interactable, Is.False);
-            Assert.That(toll.Message.text, Does.Contain($"あと{9999 - (600 - each):N0}歩"));
+            Assert.That(toll.Message.text, Does.Contain($"ルーンが {9999 - (600 - each):N0} 足りません"));
             toll.Hide();
 
             // 確認を省くと、次の道からは窓を出さない。途中の拾い物では止まり、閉じると続きを歩く。

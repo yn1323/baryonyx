@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Baryonyx.UI;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -158,7 +159,6 @@ namespace Baryonyx.WorldMap
         public void Ask(IReadOnlyList<int> path, int total)
         {
             int runes = WorldAtlasSession.Runes;
-            // 1歩で1ルーンになるため、足りない分は歩数で出す。
             int shortBy = total - runes;
             bool single = path.Count <= 2;
             if (shortBy <= 0 && (single || WorldAtlasSession.SkipConfirm))
@@ -168,13 +168,13 @@ namespace Baryonyx.WorldMap
             }
             if (single)
             {
-                View.ShowNotice($"{WorldAtlasSession.ShortMessage}（あと{shortBy:N0}歩）");
+                View.ShowNotice(UiText.RunesShort(shortBy));
                 return;
             }
             asked = path;
             Message.text =
                 shortBy > 0
-                    ? $"合計{total:N0}ルーンかかります。\n{WorldAtlasSession.ShortMessage}（あと{shortBy:N0}歩）"
+                    ? $"合計{total:N0}ルーンかかります。\n{UiText.RunesShort(shortBy)}"
                     : $"合計{total:N0}ルーンかかります。\nよろしいですか？";
             Go.interactable = shortBy <= 0;
             skipChecked = false;

@@ -39,10 +39,10 @@ namespace Baryonyx.Adventure.Editor
 
         // 持ち帰った物の札（6列、見えるのは2段）。
         private const int Columns = 6;
-        private static readonly Vector2 CellSize = new(196, 122);
+        private static readonly Vector2 CellSize = new(196, 130);
         private const float CellGap = 16f;
         private const float GridY = -140f;
-        private const float ArtSize = 80f;
+        private const float ArtSize = 56f;
 
         // ホームへ。
         private const float HomeY = -336f;
@@ -237,70 +237,56 @@ namespace Baryonyx.Adventure.Editor
             panel.Empty.gameObject.SetActive(false);
         }
 
-        // 札：ほかの持ち物の札と同じく、左上に品質の文字、右下に数、下に名前（doc/rules/ui-design.md の共通の部品）。
-        // 絵は左寄せ、☆は絵の右に置く。
+        // 札の型（doc/rules/ui-design.md の装備の見せ方）：左上に品質の文字、中央に絵、下に名前→☆、
+        // 右下に数。分類の文字と属性は出さない（2026-11-03、ユーザー。それまでは絵を左寄せ、☆を絵の右に置いていた）。
         private static ItemTile Cell(RectTransform content)
         {
             var rect = Rect("CellTemplate", content);
             var (cell, inside) = ItemTileAssets.Build(rect, fill: GlassCardAssets.SceneFillColor);
 
             var art = Rect("Art", inside);
-            Place(
-                art,
-                new Vector2(-CellSize.x / 2f + 18f + ArtSize / 2f, 10f),
-                Vector2.one * ArtSize
-            );
+            Place(art, new Vector2(0f, 28f), Vector2.one * ArtSize);
             cell.Art = art.gameObject.AddComponent<RawImage>();
             cell.Art.raycastTarget = false;
 
             ItemTileAssets.QualityMark(cell, inside).text = "B";
-            cell.Stars = Label(
-                inside,
-                "Stars",
-                "★",
-                20,
-                UiPalette.GoldLight,
-                TextAlignmentOptions.Left
-            );
-            Place((RectTransform)cell.Stars.transform, new Vector2(52f, 22f), new Vector2(84, 28));
-            GuideMenuAssets.Shrink(cell.Stars, 12);
-            // 数は、下端の名前の行の上の右端に置く。
-            ItemTileAssets.CountMark(cell, inside, CellSize.x - 10f, CellSize.y - 34f).text = "×1";
             cell.Name = Label(
                 inside,
                 "Name",
                 "",
-                22,
-                UiPalette.TextSub,
+                UiType.Tiny,
+                UiPalette.TextMain,
                 TextAlignmentOptions.Center
             );
             Place(
                 (RectTransform)cell.Name.transform,
-                new Vector2(0f, -42f),
-                new Vector2(CellSize.x - 16f, 30f)
+                new Vector2(0f, -16f),
+                new Vector2(CellSize.x - 16f, 28f)
             );
-            GuideMenuAssets.Shrink(cell.Name, 14);
+            cell.Stars = Label(
+                inside,
+                "Stars",
+                "★",
+                UiType.Tiny,
+                UiPalette.Gold,
+                TextAlignmentOptions.Center
+            );
+            Place((RectTransform)cell.Stars.transform, new Vector2(0f, -44f), new Vector2(110f, 26f));
+            // 数は右下の隅に置く。
+            ItemTileAssets.CountMark(cell, inside, CellSize.x - 10f, CellSize.y - 6f).text = "×1";
 
             rect.gameObject.SetActive(false);
             return cell;
         }
 
-        // ダイアログの選択肢と同じ、すりガラスのカードのボタン。
+        // 先へ進む「ホームへ」は、決めるボタン（doc/rules/ui-design.md#決めるボタン）。
         private static void BuildHome(RectTransform window, AdventureResultPanel panel)
         {
             var row = Rect("Home", window);
             Place(row, new Vector2(0, HomeY), HomeSize);
-            var (button, _, card) = GlassCardAssets.Choice(row, pattern: false);
-            var label = Label(
-                card,
-                "Label",
-                AdventureTexts.HomeChoice,
-                44,
-                UiPalette.TextMain,
-                TextAlignmentOptions.Center
-            );
-            Stretch((RectTransform)label.transform);
-            panel.Home = button;
+            panel.Home = ActionButtonAssets
+                .Build(row, AdventureTexts.HomeChoice, ButtonRole.Primary, 44)
+                .Button;
         }
     }
 }

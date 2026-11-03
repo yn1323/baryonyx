@@ -2,6 +2,7 @@ using Baryonyx.Editor.Art;
 using Baryonyx.Editor.UI;
 using Baryonyx.UI;
 using Baryonyx.UI.Editor;
+using Baryonyx.UI.GuideMenu.Editor;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -28,7 +29,7 @@ namespace Baryonyx.WorldMap.Editor
         private static readonly Color Box = new(0.95f, 0.91f, 0.82f, 1f);
 
         // 確認の窓は、文と選ぶところの間を広く取る。イベントの窓（1600×860）よりは小さくする。
-        private static readonly Vector2 ConfirmSize = new(1100f, 500f);
+        private static readonly Vector2 ConfirmSize = new(UiSpace.WindowSmall, 500f);
 
         public static WorldAtlasToll Build(RectTransform root, WorldMapView view)
         {
@@ -122,8 +123,8 @@ namespace Baryonyx.WorldMap.Editor
             toll.TagTemplate = tag;
         }
 
-        // 地図を幕で覆い、画面の中央に「合計○ルーンかかります。よろしいですか？」・「次回起動まで確認しない」・
-        // やめる・OK を出す。道は幕の下でも光って見える。
+        // 地図を幕で覆い、画面の中央の確かめる窓（小）に「合計○ルーンかかります。よろしいですか？」・
+        // 「次回起動まで確認しない」・やめる・OK を出す（doc/rules/ui-design.md#窓）。道は幕の下でも光って見える。
         private static void BuildConfirm(RectTransform root, WorldAtlasToll toll)
         {
             var rect = Rect("Confirm", root);
@@ -131,14 +132,15 @@ namespace Baryonyx.WorldMap.Editor
             toll.Confirm = rect.gameObject.AddComponent<CanvasGroup>();
             var veil = Rect("Veil", rect);
             Stretch(veil);
-            AddImage(veil, new Color(0.01f, 0.02f, 0.05f, 0.35f), true);
+            AddImage(veil, UiPalette.Veil, true);
 
             var safe = Rect("SafeArea", rect);
             Stretch(safe);
             safe.gameObject.AddComponent<SafeAreaFollower>();
             var window = Rect("Window", safe);
             Place(window, Vector2.zero, ConfirmSize);
-            var inside = GlassCardAssets.Plaque(window, pattern: false, fill: GlassCardAssets.SceneFillColor);
+            GuideFrameAssets.WindowFrame(window);
+            var inside = window;
             toll.Message = Label(inside, "Message", "", 46, UiPalette.TextMain, TextAlignmentOptions.Center);
             toll.Message.lineSpacing = 18f;
             Place((RectTransform)toll.Message.transform, new Vector2(0f, 110f), new Vector2(960f, 150f));
@@ -170,15 +172,9 @@ namespace Baryonyx.WorldMap.Editor
             );
             Place((RectTransform)label.transform, new Vector2(90f, 0f), new Vector2(500f, 48f));
 
-            toll.Cancel = TextButton(
-                inside,
-                "Cancel",
-                new Vector2(-180f, -160f),
-                "やめる",
-                primary: false
-            );
-            // 決める「OK」は、窓のボタンの決める方と同じく、地を塗らずに金の縁と光だけを灯す（2026-11-02）。
-            toll.Go = TextButton(inside, "Go", new Vector2(180f, -160f), "OK", primary: true);
+            // 左に取り消しの「やめる」、右に決めるボタンの「OK」（doc/rules/ui-design.md#決めるボタン）。
+            toll.Cancel = TextButton(inside, "Cancel", new Vector2(-180f, -160f), "やめる", ButtonRole.Secondary);
+            toll.Go = TextButton(inside, "Go", new Vector2(180f, -160f), "OK", ButtonRole.Primary);
         }
 
         // 歩いている間だけ、左下の隅に出す。文字を置かず、止まる印（角の丸い四角）だけにする。
@@ -203,27 +199,12 @@ namespace Baryonyx.WorldMap.Editor
             string name,
             Vector2 center,
             string text,
-            bool primary
+            ButtonRole role
         )
         {
             var rect = Rect(name, parent);
             Place(rect, center, new Vector2(300f, 96f));
-            var (button, rim, content) = GlassCardAssets.Choice(
-                rect,
-                pattern: false,
-                fill: GlassCardAssets.SceneFillColor
-            );
-            rim.SetActive(primary);
-            var label = Label(
-                content,
-                "Label",
-                text,
-                40,
-                UiPalette.TextMain,
-                TextAlignmentOptions.Center
-            );
-            Stretch((RectTransform)label.transform);
-            return button;
+            return ActionButtonAssets.Build(rect, text, role, 40).Button;
         }
 
         private static void Icon(RectTransform parent, Vector2 center, float size)

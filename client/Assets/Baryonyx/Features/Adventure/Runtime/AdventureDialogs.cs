@@ -53,7 +53,6 @@ namespace Baryonyx.Adventure
 
         public const string OpenChoice = "開ける";
         public const string PassChoice = "通り過ぎる";
-        public const string BackChoice = "もどる";
 
         // 手に入れた物は、ダイアログの前にドロップの演出の札で1つずつ見せるため、本文には書かない。
         // 冒険が終わった勝利（最奥の主を倒した）は、これを挟まずに冒険の結果へ移る。
@@ -112,6 +111,7 @@ namespace Baryonyx.Adventure
             );
 
         // 確かめる窓と同じく、左に「つづける」、右に決める「冒険をやめる」を横に並べ、×でメニューへ戻る。
+        // やめると取り返せないため、決める方は危険のボタン（doc/rules/ui-design.md#決めるボタン）。
         public static void ConfirmQuit(GameDialog dialog, Action back, Action quit, Action goOn) =>
             dialog.Show(
                 AdventureTexts.QuitTitle,
@@ -120,7 +120,7 @@ namespace Baryonyx.Adventure
                 back,
                 DialogStyle.Row | DialogStyle.Cross,
                 new DialogChoice(AdventureTexts.GoOnChoice, goOn),
-                new DialogChoice(AdventureTexts.QuitChoice, quit)
+                new DialogChoice(AdventureTexts.QuitChoice, quit, role: ButtonRole.Danger)
             );
     }
 }

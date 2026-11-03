@@ -76,6 +76,9 @@ namespace Baryonyx.WorldMap
         public GameDialog Dialog;
         public ItemArt ItemArt;
 
+        // 宝箱の札を押すと開く詳しい窓の中身を引く図鑑（doc/rules/ui-design.md の装備の見せ方）。
+        public Library.LibraryData DropLibrary;
+
         [Tooltip("宝箱の中身をまとめて見せる札。冒険の宝箱と同じ部品。")]
         public RewardReveal Reveal;
 
@@ -745,7 +748,7 @@ namespace Baryonyx.WorldMap
             IReadOnlyList<AdventureDrop> chest
         )
         {
-            var items = AdventureDropItems.All(chest, ItemArt);
+            var items = AdventureDropItems.All(chest, ItemArt, DropLibrary);
             items.Sort(
                 (a, b) =>
                     (b.Graded ? Quality.Grade(b.Quality) : -1)
@@ -762,6 +765,9 @@ namespace Baryonyx.WorldMap
                         + ExplorationFlow.ExtraReadSeconds * Mathf.Max(0, items.Count - 1),
                     destroyCancellationToken
                 );
+                // 札を押して詳しい窓を開いている間は、閉じるまで待つ。
+                while (Reveal.Reading)
+                    await Awaitable.NextFrameAsync(destroyCancellationToken);
             }
             catch (OperationCanceledException)
             {

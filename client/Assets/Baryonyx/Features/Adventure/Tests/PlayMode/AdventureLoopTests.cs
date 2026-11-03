@@ -4,6 +4,7 @@ using System.Threading;
 using Baryonyx.Adventure;
 using Baryonyx.App;
 using Baryonyx.Combat.Presentation;
+using Baryonyx.UI;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -553,7 +554,8 @@ namespace Baryonyx.Tests.PlayMode
             );
         }
 
-        // 行商人のマスに着くと出来事の窓に品物を並べ、押すと買って売り切れになる。×で立ち去ると先へ進める。
+        // 行商人のマスに着くと出来事の窓に品物を並べ、押して選び「買う」で買うと売り切れになる。ルーンが足りない
+        // 品は「買う」を押せず、足りないルーンを出す。×で立ち去ると先へ進める。
         [UnityTest]
         public IEnumerator TheMerchantSellsAndTheWayGoesOnOnceLeft()
         {
@@ -575,7 +577,16 @@ namespace Baryonyx.Tests.PlayMode
                 Is.EqualTo(wares.Count)
             );
             long before = AdventureSession.Current.Runes;
+            Assert.That(view.Peddler.Buy.interactable, Is.False);
             view.Peddler.Goods[0].onClick.Invoke();
+            Assert.That(view.Peddler.Picked, Is.Zero);
+            Assert.That(view.Peddler.Picks[0].activeSelf, Is.True);
+            // 選んでいる品の詳しい面を、行商人の上に出す。
+            Assert.That(view.Peddler.DetailRoot.activeSelf, Is.True);
+            Assert.That(view.Peddler.Detail.Name.text, Is.Not.Empty);
+            Assert.That(AdventureSession.Current.Run.Contents.Wares[0].Sold, Is.False);
+            Assert.That(view.Peddler.Buy.interactable, Is.True);
+            view.Peddler.Buy.onClick.Invoke();
             yield return SceneTests.WaitUntil(
                 () =>
                     AdventureSession.Current.Run.Contents.Wares[0].Sold
@@ -587,6 +598,13 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(AdventureSession.Current.Runes, Is.EqualTo(before - wares[0].Price));
             Assert.That(view.Peddler.Balance, Is.EqualTo(before - wares[0].Price));
             Assert.That(view.Peddler.Goods[0].interactable, Is.False);
+            Assert.That(view.Peddler.Picked, Is.EqualTo(-1));
+            Assert.That(view.Peddler.DetailRoot.activeSelf, Is.False);
+            // ルーンが足りない品は、選べても「買う」を押せない。
+            view.Peddler.MarkSold(-1, 0);
+            view.Peddler.Goods[1].onClick.Invoke();
+            Assert.That(view.Peddler.Buy.interactable, Is.False);
+            Assert.That(view.Peddler.Short.text, Is.EqualTo(UiText.RunesShort(wares[1].Price)));
             // ×で立ち去ると、行商人のマスを終える。
             view.Events.Close.onClick.Invoke();
             yield return SceneTests.WaitUntil(

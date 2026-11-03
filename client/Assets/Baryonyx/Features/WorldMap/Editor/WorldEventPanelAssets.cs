@@ -411,7 +411,8 @@ namespace Baryonyx.WorldMap.Editor
                 "Play",
                 new Vector2(0f, BetRowY),
                 new Vector2(560f, 110f),
-                WorldEventSamples.BetPlay
+                WorldEventSamples.BetPlay,
+                ButtonRole.Primary
             );
             var guess = Rect("Guess", root);
             Bottom(guess, new Vector2(0f, BetRowY), new Vector2(1600f, 110f));
@@ -532,7 +533,8 @@ namespace Baryonyx.WorldMap.Editor
                 "Play",
                 new Vector2(0f, BetRowY),
                 new Vector2(560f, 110f),
-                WorldEventSamples.BetPlay
+                WorldEventSamples.BetPlay,
+                ButtonRole.Primary
             );
             (panel.StopGroup, panel.Stop) = TextChoice(
                 root,
@@ -586,21 +588,14 @@ namespace Baryonyx.WorldMap.Editor
                 (RectTransform)wolf.GetChild(0),
             };
 
-            var (fightGroup, fight, content) = Faded(
+            var (fightGroup, fight) = TextChoice(
                 root,
                 "Fight",
                 new Vector2(0f, 70f),
-                new Vector2(440f, 100f)
-            );
-            var label = Label(
-                content,
-                "Label",
+                new Vector2(440f, 100f),
                 WorldEventSamples.BattleFight,
-                46,
-                UiPalette.TextMain,
-                TextAlignmentOptions.Center
+                ButtonRole.Primary
             );
-            Stretch((RectTransform)label.transform);
             panel.Fight = fight;
             panel.FightGroup = fightGroup;
             return panel;
@@ -903,15 +898,22 @@ namespace Baryonyx.WorldMap.Editor
             return (pill, text);
         }
 
-        // 文字だけの押せるカード。
+        // 文字だけのボタン。前に進める操作（開ける・買う）は決めるボタン（doc/rules/ui-design.md#決めるボタン）にする。
         internal static Button TextButton(
             RectTransform parent,
             string name,
             Vector2 center,
             Vector2 size,
-            string text
+            string text,
+            ButtonRole role = ButtonRole.Secondary
         )
         {
+            if (role != ButtonRole.Secondary)
+            {
+                var rect = Rect(name, parent);
+                Place(rect, center, size);
+                return ActionButtonAssets.Build(rect, text, role, 44).Button;
+            }
             var (button, content) = Glass(parent, name, center, size, false);
             var label = Label(
                 content,
@@ -925,15 +927,25 @@ namespace Baryonyx.WorldMap.Editor
             return button;
         }
 
-        // 現れたり消えたりする、文字だけの押せるカード。
+        // 現れたり消えたりする、文字だけのボタン。前に進める操作（遊ぶ・たたかう）は決めるボタンにする。
         private static (CanvasGroup Group, Button Button) TextChoice(
             RectTransform parent,
             string name,
             Vector2 center,
             Vector2 size,
-            string text
+            string text,
+            ButtonRole role = ButtonRole.Secondary
         )
         {
+            if (role != ButtonRole.Secondary)
+            {
+                var holder = Rect(name, parent);
+                Bottom(holder, center, size);
+                var faded = holder.gameObject.AddComponent<CanvasGroup>();
+                var rect = Rect("Button", holder);
+                Place(rect, Vector2.zero, size);
+                return (faded, ActionButtonAssets.Build(rect, text, role, 46).Button);
+            }
             var (group, button, content) = Faded(parent, name, center, size);
             var label = Label(
                 content,

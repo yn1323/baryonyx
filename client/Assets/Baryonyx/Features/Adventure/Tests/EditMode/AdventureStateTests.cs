@@ -320,7 +320,7 @@ namespace Baryonyx.Tests.EditMode
             );
             Assert.That(
                 AdventureTexts.ReviveBody(200, 150),
-                Does.EndWith("所持ルーン 150（50 足りません）")
+                Does.EndWith("所持ルーン 150\nルーンが 50 足りません")
             );
         }
 

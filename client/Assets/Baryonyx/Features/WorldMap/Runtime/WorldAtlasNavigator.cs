@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 namespace Baryonyx.WorldMap
 {
@@ -268,6 +269,44 @@ namespace Baryonyx.WorldMap
         {
             if (!Switching)
                 OpenDungeons?.Invoke();
+        }
+
+        private void Update()
+        {
+            // The Android back key arrives as Escape.
+            if (Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame)
+                PressBack();
+        }
+
+        /// <summary>
+        /// The device's back key (doc/rules/ui-design.md#操作の決まり): an open window first (a
+        /// dialog, the event window when it can be closed, the toll's confirmation), and a
+        /// window that cannot be closed yet or the chest's plates take it and do nothing. With
+        /// none open, it does what the button at the top left does.
+        /// </summary>
+        public void PressBack()
+        {
+            if (current == null || Switching || current.Fighting)
+                return;
+            if (current.Dialog != null && current.Dialog.HandleBack())
+                return;
+            if (current.Reveal != null && current.Reveal.DetailWindow != null && current.Reveal.DetailWindow.HandleBack())
+                return;
+            if (current.EventWindow != null && current.EventWindow.IsShown)
+            {
+                current.EventWindow.Hide();
+                return;
+            }
+            var toll = current.GetComponentInChildren<WorldAtlasToll>();
+            if (toll != null && toll.Asking)
+            {
+                toll.Hide();
+                return;
+            }
+            if (current.Reveal != null && current.Reveal.Shown)
+                return;
+            if (current.Back != null && current.Back.isActiveAndEnabled)
+                Back();
         }
 
         private void Back()

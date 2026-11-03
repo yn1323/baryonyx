@@ -92,18 +92,10 @@ namespace Baryonyx.WorldMap.Editor
 
             window.Panels = (panels ?? WorldEventPanelAssets.Build)(stage);
 
-            // 閉じるは右上の×にして、窓の中を中身に使う。×は小さく描き、押せる範囲は指の大きさにする。
-            // 明るい空の上でも見えるよう、×の下に暗い円を敷く。
+            // 閉じるは右上の×にして、窓の中を中身に使う。ほかの窓と同じ板のない×（doc/rules/ui-design.md#窓）。
             var close = Rect("Close", frame);
             Corner(close, Vector2.one, new Vector2(-8f, -4f), Vector2.one * CloseHit);
-            var button = AddTintButton(close, AddImage(close, Color.clear, true));
-            var plate = Rect("Plate", close);
-            Place(plate, Vector2.zero, Vector2.one * 88f);
-            SpriteImage(plate, UiArt.CirclePath, new Color(Ink.r, Ink.g, Ink.b, 0.55f));
-            var cross = Rect("Icon", close);
-            Place(cross, Vector2.zero, Vector2.one * 64f);
-            SpriteImage(cross, GuideMenuAssets.IconClosePath, Color.white);
-            window.Close = button;
+            window.Close = GuideFrameAssets.CloseMark(close);
             window.CloseGroup = close.gameObject.AddComponent<CanvasGroup>();
 
             // 戦闘へ切り替わるときの白。窓も含めて画面ごと覆う。

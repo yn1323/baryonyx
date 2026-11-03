@@ -456,7 +456,8 @@ namespace Baryonyx.Adventure.Editor
             );
         }
 
-        // 決めるボタン（中央）と、もどるボタン（その右）。決めるボタンは、選ぶまで押せない。
+        // 確かめる窓と同じく、左に「やめる」、右に決めるボタン（doc/rules/ui-design.md#決めるボタン）。
+        // 決めるボタンは、選ぶまで押せない。
         private static (Button Confirm, Button Back) Buttons(
             RectTransform window,
             string confirmText,
@@ -464,33 +465,16 @@ namespace Baryonyx.Adventure.Editor
         )
         {
             var confirm = Rect("Confirm", window);
-            Place(confirm, new Vector2(-150, y), new Vector2(480, 100));
-            var (confirmButton, _, confirmContent) = GlassCardAssets.Choice(
-                confirm,
-                pattern: false
-            );
-            var confirmLabel = Label(
-                confirmContent,
-                "Label",
-                confirmText,
-                46,
-                UiPalette.TextMain,
-                TextAlignmentOptions.Center
-            );
-            Stretch((RectTransform)confirmLabel.transform);
+            Place(confirm, new Vector2(150, y), new Vector2(480, 100));
+            var confirmButton = ActionButtonAssets
+                .Build(confirm, confirmText, ButtonRole.Primary, 46)
+                .Button;
             confirmButton.interactable = false;
             var back = Rect("Back", window);
-            Place(back, new Vector2(270, y), new Vector2(280, 100));
-            var (backButton, _, backContent) = GlassCardAssets.Choice(back, pattern: false);
-            var backLabel = Label(
-                backContent,
-                "Label",
-                AdventureDialogs.BackChoice,
-                40,
-                UiPalette.TextMain,
-                TextAlignmentOptions.Center
-            );
-            Stretch((RectTransform)backLabel.transform);
+            Place(back, new Vector2(-270, y), new Vector2(280, 100));
+            var backButton = ActionButtonAssets
+                .Build(back, AdventureTexts.CancelChoice, ButtonRole.Secondary, 40)
+                .Button;
             return (confirmButton, backButton);
         }
     }

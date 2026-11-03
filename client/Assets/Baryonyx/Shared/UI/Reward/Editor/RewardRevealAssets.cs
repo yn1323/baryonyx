@@ -37,6 +37,9 @@ namespace Baryonyx.UI.Editor
                 pattern: false,
                 fill: GlassCardAssets.SceneFillColor
             );
+            // 中身のある札は押すと詳しい窓を開く（RewardReveal.DetailWindow）。押せるかは札ごとに替える。
+            var tap = AddButton(plate, AddImage(plate, Color.clear, true));
+            tap.transition = Selectable.Transition.None;
             reveal.Plate = plate;
             reveal.Group = group;
             reveal.Rim = GlassCardAssets.RimOf(plate);

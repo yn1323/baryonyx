@@ -102,6 +102,7 @@ namespace Baryonyx.Adventure
                 overlay.ShowNotice(AdventureTexts.TrialNotice(trial));
             overlay.MenuPressed += OpenMenu;
             overlay.BackPressed += OpenMenu;
+            overlay.BattleBack = battle.HandleBack;
             overlay.ShowMenu(true);
         }
 
@@ -275,10 +276,10 @@ namespace Baryonyx.Adventure
         {
             var reveal = overlay.Reveal;
             var items = AdventureDropItems
-                .FromClearReward(clearReward, overlay.ItemArt, overlay.RuneIcon)
+                .FromClearReward(clearReward, overlay.ItemArt, overlay.RuneIcon, overlay.DropLibrary)
                 .Concat(
                     AdventureDropItems
-                        .All(drops, overlay.ItemArt)
+                        .All(drops, overlay.ItemArt, overlay.DropLibrary)
                         .OrderByDescending(item => item.Graded ? Quality.Grade(item.Quality) : -1)
                 )
                 .ToList();
@@ -291,6 +292,10 @@ namespace Baryonyx.Adventure
                 )
             )
                 return false;
+            // 札を押して詳しい窓を開いている間は、閉じるまで待つ。
+            while (reveal != null && reveal.Reading)
+                if (!await Pause(0.1f))
+                    return false;
             if (reveal != null)
                 reveal.Hide();
             return true;
@@ -504,6 +509,7 @@ namespace Baryonyx.Adventure
             RevealedWeaknessSession.Changed -= battle.RefreshRevealedWeaknesses;
             overlay.MenuPressed -= OpenMenu;
             overlay.BackPressed -= OpenMenu;
+            overlay.BattleBack = null;
         }
     }
 }

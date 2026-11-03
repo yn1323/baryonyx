@@ -100,6 +100,7 @@ namespace Baryonyx.WorldMap
             battle.Finished += OnFinished;
             overlay.MenuPressed += OpenMenu;
             overlay.BackPressed += OpenMenu;
+            overlay.BattleBack = battle.HandleBack;
             overlay.ShowMenu(true);
         }
 
@@ -246,6 +247,7 @@ namespace Baryonyx.WorldMap
             RevealedWeaknessSession.Changed -= battle.RefreshRevealedWeaknesses;
             overlay.MenuPressed -= OpenMenu;
             overlay.BackPressed -= OpenMenu;
+            overlay.BattleBack = null;
         }
     }
 }

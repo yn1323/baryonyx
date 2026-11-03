@@ -258,6 +258,13 @@ namespace Baryonyx.Adventure.Editor
                 Baryonyx.Party.Editor.PartyAssets.DataPath
             );
 
+            // 宝箱・冒険の結果の札を押すと開く詳しい窓。札と結果の上、通知とダイアログの下に重ねる。
+            view.DropLibrary = LoadLibrary();
+            view.DetailWindow = ItemDetailAssets.Window(root);
+            view.Moments.Reveal.DetailWindow = view.DetailWindow;
+            view.Result.DetailWindow = view.DetailWindow;
+            view.Result.DropLibrary = view.DropLibrary;
+
             view.Notice = NoticeBandAssets.Build(root);
             view.Dialog = GameDialogAssets.Build(root);
             CollectTintGraphics(root);
@@ -440,10 +447,10 @@ namespace Baryonyx.Adventure.Editor
             view.ChestGroup.blocksRaycasts = false;
         }
 
-        // The menu at the top left like the guide screens' back button, or at the top right over
-        // the battle, where the turn order takes the top left.
-        private static Button BuildMenuButton(RectTransform safe, bool right = false) =>
-            BuildCornerButton(safe, "Menu", UiArt.IconCompassPath, "メニュー", right, 0f);
+        // The menu at the top left like the guide screens' back button, in the exploration and over
+        // the battle alike, where the turn order stands to its right (doc/rules/ui-design.md#操作の決まり).
+        private static Button BuildMenuButton(RectTransform safe) =>
+            BuildCornerButton(safe, "Menu", UiArt.IconCompassPath, "メニュー", false, 0f);
 
         // 上の角のボタン：アイコンと下の名前を、ぼかした影の上に置く。below は角から下へずらす量。
         private static Button BuildCornerButton(
@@ -515,6 +522,12 @@ namespace Baryonyx.Adventure.Editor
             return prompt;
         }
 
+        // 札の詳しい窓の中身を引く図鑑。
+        private static Baryonyx.Library.LibraryData LoadLibrary() =>
+            AssetDatabase.LoadAssetAtPath<Baryonyx.Library.LibraryData>(
+                Baryonyx.Library.Editor.LibraryScreenAssets.DataPath
+            );
+
         // --- Battle overlay ------------------------------------------------------------------
 
         private static void BuildOverlay()
@@ -526,12 +539,18 @@ namespace Baryonyx.Adventure.Editor
             overlay.ItemArt = Baryonyx.Inventory.Editor.ItemArtAssets.Load();
             overlay.RuneIcon = GuideMenuAssets.Icon(GuideMenuAssets.IconRunePath);
             var safe = SafeArea(root);
-            overlay.MenuButton = BuildMenuButton(safe, right: true);
+            overlay.MenuButton = BuildMenuButton(safe);
             overlay.Reveal = RewardRevealAssets.Build(safe, DropPlateCenter);
             // 戦闘後の強化は、ドロップの札の上、通知とダイアログの下に重ねる。
             overlay.Boons = AdventureBoonPickerAssets.Build(root);
             // 冒険の結果は、戦闘とドロップの札の上、通知とダイアログの下に重ねる。
             overlay.Result = AdventureResultAssets.Build(root);
+            // ドロップ・結果の札を押すと開く詳しい窓。札と結果の上、通知とダイアログの下に重ねる。
+            overlay.DropLibrary = LoadLibrary();
+            overlay.DetailWindow = ItemDetailAssets.Window(root);
+            overlay.Reveal.DetailWindow = overlay.DetailWindow;
+            overlay.Result.DetailWindow = overlay.DetailWindow;
+            overlay.Result.DropLibrary = overlay.DropLibrary;
             overlay.Notice = NoticeBandAssets.Build(root);
             overlay.Dialog = GameDialogAssets.Build(root);
             CollectTintGraphics(root);

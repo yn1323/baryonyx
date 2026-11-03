@@ -42,6 +42,17 @@ namespace Baryonyx.Adventure.Editor
         private static readonly float[] GoodColumns = { 175f, 575f };
         private static readonly float[] GoodRows = { 560f, 375f, 190f };
 
+        // 詳しい面の板：行商人と吹き出しの所（格子の左）を覆う。
+        private static readonly Vector2 DetailSize = new(760f, 800f);
+        private static readonly Vector2 DetailCenter = new(-410f, 420f);
+        private const float DetailPad = 40f;
+        private const float DetailArt = 200f;
+
+        // 「買う」の段：格子の右の列の右端にそろえ、格子の下に置く。
+        private static readonly Vector2 BuySize = new(220f, 80f);
+        private const float BuyX = 765f - 110f;
+        private const float BuyY = 52f;
+
         // 仲間の札（編成の冒険者の札と同じ形）を、窓の下に横一列に並べる。
         private static readonly Vector2 MemberSize = new(360f, 176f);
         private static readonly float[] MemberColumns = { -570f, -190f, 190f, 570f };
@@ -154,10 +165,11 @@ namespace Baryonyx.Adventure.Editor
             var faces = new List<CanvasGroup>();
             var icons = new List<Image>();
             var names = new List<TMP_Text>();
-            var kinds = new List<TMP_Text>();
+            var stars = new List<TMP_Text>();
             var grades = new List<TMP_Text>();
             var prices = new List<TMP_Text>();
             var marks = new List<RectTransform>();
+            var picks = new List<GameObject>();
             for (int i = 0; i < GoodColumns.Length * GoodRows.Length; i++)
             {
                 var center = new Vector2(GoodColumns[i % 2], GoodRows[i / 2]);
@@ -201,17 +213,17 @@ namespace Baryonyx.Adventure.Editor
                 GuideMenuAssets.Shrink(name, 22);
                 names.Add(name);
 
-                var kind = Label(
+                var star = Label(
                     face,
-                    "Kind",
+                    "Stars",
                     "",
                     24,
-                    UiPalette.TextSub,
+                    UiPalette.Gold,
                     TextAlignmentOptions.MidlineLeft
                 );
-                Place((RectTransform)kind.transform, new Vector2(72f, 4f), new Vector2(228f, 34f));
-                GuideMenuAssets.Shrink(kind, 18);
-                kinds.Add(kind);
+                Place((RectTransform)star.transform, new Vector2(72f, 4f), new Vector2(228f, 34f));
+                GuideMenuAssets.Shrink(star, 18);
+                stars.Add(star);
 
                 var rune = Rect("Rune", face);
                 Place(rune, new Vector2(-22f, -44f), Vector2.one * 40f);
@@ -251,16 +263,92 @@ namespace Baryonyx.Adventure.Editor
 
                 goods.Add(button);
                 marks.Add(mark);
+                // 選んだ品の金の縁（すりガラスのカードの選んだ印）。
+                picks.Add(button.transform.Find("Selection").gameObject);
             }
             panel.Goods = goods.ToArray();
             panel.Faces = faces.ToArray();
             panel.Icons = icons.ToArray();
             panel.Names = names.ToArray();
-            panel.Kinds = kinds.ToArray();
+            panel.Stars = stars.ToArray();
             panel.Grades = grades.ToArray();
             panel.Prices = prices.ToArray();
             panel.SoldMarks = marks.ToArray();
+            panel.Picks = picks.ToArray();
+            BuildDetail(root, panel);
+            BuildBuy(root, panel);
             return panel;
+        }
+
+        // 選んでいる品の詳しい面：行商人と吹き出しを覆う濃い板に、商会と同じ詳しい面を載せる
+        // （2026-11-03、ユーザーが案Bを選んだ。doc/rules/ui-design.md の装備の見せ方）。
+        private static void BuildDetail(RectTransform root, AdventurePeddlerPanel panel)
+        {
+            var holder = Rect("Detail", root);
+            Panels.Bottom(holder, DetailCenter, DetailSize);
+            GlassCardAssets.Plaque(holder, pattern: false, fill: UiPalette.WindowFill);
+            float inner = DetailSize.x - DetailPad * 2f;
+            var column = ItemDetailAssets.Column(
+                holder,
+                "Face",
+                DetailPad,
+                DetailPad,
+                inner,
+                DetailSize.y - DetailPad * 2f
+            );
+            panel.Detail = ItemDetailAssets.Face(column, inner, DetailArt);
+            panel.DetailRoot = holder.gameObject;
+            // 吹き出しは板からはみ出すため、詳しい面を出す間は透かして隠す。
+            panel.TalkGroups = panel
+                .Talk.Bubbles.Select(bubble => bubble.gameObject.AddComponent<CanvasGroup>())
+                .ToArray();
+            panel.DropLibrary = AssetDatabase.LoadAssetAtPath<Baryonyx.Library.LibraryData>(
+                Baryonyx.Library.Editor.LibraryScreenAssets.DataPath
+            );
+            holder.gameObject.SetActive(false);
+        }
+
+        // 品物の格子の下の段：右に決めるボタン「買う」、その左に選んだ品の値段、さらに左に足りないルーン
+        // （商会の「買う」と同じ並び。doc/rules/ui-design.md#操作の決まり）。
+        private static void BuildBuy(RectTransform root, AdventurePeddlerPanel panel)
+        {
+            var buy = Rect("Buy", root);
+            Panels.Bottom(buy, new Vector2(BuyX, BuyY), BuySize);
+            panel.Buy = ActionButtonAssets
+                .Build(buy, AdventureTexts.BuyChoice, ButtonRole.Primary, 40)
+                .Button;
+            panel.Buy.interactable = false;
+
+            var cost = Rect("Cost", root);
+            Panels.Bottom(cost, new Vector2(BuyX - BuySize.x * 0.5f - 110f, BuyY), new Vector2(200f, BuySize.y));
+            var rune = Rect("Rune", cost);
+            Place(rune, new Vector2(-70f, 0f), Vector2.one * 40f);
+            Panels.Pixel(rune, Panels.RunePath);
+            panel.CostLabel = Label(
+                cost,
+                "Price",
+                "",
+                40,
+                UiPalette.GoldLight,
+                TextAlignmentOptions.MidlineLeft
+            );
+            Place((RectTransform)panel.CostLabel.transform, new Vector2(30f, 0f), new Vector2(150f, 52f));
+            panel.Cost = cost.gameObject;
+            cost.gameObject.SetActive(false);
+
+            panel.Short = Label(
+                root,
+                "Short",
+                "",
+                30,
+                UiPalette.Fall,
+                TextAlignmentOptions.MidlineRight
+            );
+            Panels.Bottom(
+                (RectTransform)panel.Short.transform,
+                new Vector2(BuyX - BuySize.x * 0.5f - 220f - 180f, BuyY),
+                new Vector2(360f, BuySize.y)
+            );
         }
 
         // --- 怪しい宝箱 ----------------------------------------------------------------------
@@ -305,7 +393,8 @@ namespace Baryonyx.Adventure.Editor
                 "Open",
                 new Vector2(230f, 0f),
                 new Vector2(400f, 112f),
-                AdventureDialogs.OpenChoice
+                AdventureDialogs.OpenChoice,
+                ButtonRole.Primary
             );
             return panel;
         }

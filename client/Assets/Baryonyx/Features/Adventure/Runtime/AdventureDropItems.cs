@@ -14,19 +14,29 @@ namespace Baryonyx.Adventure
     /// </summary>
     public static class AdventureDropItems
     {
-        public static RewardItem From(AdventureDrop drop, ItemArt art = null)
+        /// <summary>
+        /// The plate of <paramref name="drop"/>. With <paramref name="library"/>, a tap on the plate
+        /// opens its detail (<see cref="AdventureDropFaces"/>).
+        /// </summary>
+        public static RewardItem From(
+            AdventureDrop drop,
+            ItemArt art = null,
+            Library.LibraryData library = null
+        )
         {
             if (drop == null)
                 return null;
-            string stars = EquipmentCatalog.Stars(drop.Stars);
+            // 名前の上には☆だけを金で出し、「武器」のような分類の文字は書かない
+            // （2026-11-03、doc/rules/ui-design.md の装備の見せ方）。
             return new RewardItem
             {
-                Kind = $"{AdventureDrops.NameOf(drop.Category)}　{stars}".TrimEnd(),
+                Kind = ItemText.GoldStars(drop.Stars),
                 Name = AdventureTexts.DropName(drop),
                 Icon = AdventureTexts.DropIcon(drop, art),
                 Quality = drop.Quality ?? ItemQuality.C,
                 Graded = drop.Quality.HasValue,
                 FoilStyle = FoilStyleOf(drop),
+                Face = AdventureDropFaces.Of(library, drop),
             };
         }
 
@@ -34,7 +44,11 @@ namespace Baryonyx.Adventure
         /// The drops as plates, in their order, with the same material (the polishing stones
         /// that fall several at once) on one plate whose name ends in its count ("磨き石 ×3").
         /// </summary>
-        public static List<RewardItem> All(IEnumerable<AdventureDrop> drops, ItemArt art = null)
+        public static List<RewardItem> All(
+            IEnumerable<AdventureDrop> drops,
+            ItemArt art = null,
+            Library.LibraryData library = null
+        )
         {
             var items = new List<RewardItem>();
             var materials = new Dictionary<string, (RewardItem Item, int Count)>();
@@ -47,12 +61,12 @@ namespace Baryonyx.Adventure
                         materials[drop.Id] = (held.Item, held.Count + 1);
                         continue;
                     }
-                    var plate = From(drop, art);
+                    var plate = From(drop, art, library);
                     materials[drop.Id] = (plate, 1);
                     items.Add(plate);
                     continue;
                 }
-                var item = From(drop, art);
+                var item = From(drop, art, library);
                 if (item != null)
                     items.Add(item);
             }
@@ -70,13 +84,14 @@ namespace Baryonyx.Adventure
         public static IReadOnlyList<RewardItem> FromClearReward(
             AdventureClearReward reward,
             ItemArt art,
-            Sprite runeIcon
+            Sprite runeIcon,
+            Library.LibraryData library = null
         )
         {
             if (reward == null)
                 return System.Array.Empty<RewardItem>();
             string tag = ClearRewardTag(reward.Clears);
-            var thing = From(reward.Drop, art);
+            var thing = From(reward.Drop, art, library);
             if (reward.Count > 1)
                 thing.Name += $" ×{reward.Count}";
             thing.Tag = tag;

@@ -16,7 +16,8 @@ namespace Baryonyx.Adventure
         public const string MenuTitle = "冒険のメニュー";
         public const string SuspendChoice = "中断してホームへ";
         public const string QuitChoice = "冒険をやめる";
-        public const string CloseChoice = "閉じる";
+        // 取り消すだけのボタン（doc/rules/ui-design.md#操作の決まり）。
+        public const string CancelChoice = "やめる";
         public const string GoOnChoice = "つづける";
         public const string NextChoice = "先へ進む";
         public const string HomeChoice = "ホームへ";
@@ -59,6 +60,7 @@ namespace Baryonyx.Adventure
 
         public const string PassedChest = "怪しい宝箱を通り過ぎた";
         public const string BuyFailed = "買えませんでした";
+        public const string BuyChoice = "買う";
         public const string TrialMet = "試練を達成した！";
         public const string TrialMissed = "試練の条件は満たせなかった";
 
@@ -105,7 +107,7 @@ namespace Baryonyx.Adventure
             + "復活すると、味方が全快して戦闘を続けます。\n"
             + "敵の傷はそのまま残ります。\n"
             + $"所持ルーン {runes:N0}"
-            + (runes < cost ? $"（{cost - runes:N0} 足りません）" : "");
+            + (runes < cost ? "\n" + UI.UiText.RunesShort(cost - runes) : "");
 
         /// <summary>The name of a dropped kind, from its definition (the id when it has none).</summary>
         public static string DropName(AdventureDrop drop)
