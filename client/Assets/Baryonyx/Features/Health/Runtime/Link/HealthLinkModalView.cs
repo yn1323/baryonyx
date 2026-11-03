@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Baryonyx.UI.EditModePreview;
 using TMPro;
 using UnityEngine;
+using UnityEngine.InputSystem;
 using UnityEngine.UI;
 
 namespace Baryonyx.Health
@@ -73,6 +74,18 @@ namespace Baryonyx.Health
         private void OnAction() => ActionPressed?.Invoke();
 
         private void OnLater() => LaterPressed?.Invoke();
+
+        // 端末の戻るキー（Androidの戻るはEscapeで届く）は「あとで」と同じ（doc/rules/ui-design.md#操作の決まり）。
+        private void Update()
+        {
+            if (
+                Keyboard.current != null
+                && Keyboard.current.escapeKey.wasPressedThisFrame
+                && LaterButton != null
+                && LaterButton.IsInteractable()
+            )
+                OnLater();
+        }
 
         private static void Set(TMP_Text label, string text)
         {

@@ -237,12 +237,23 @@ namespace Baryonyx.Home
 
         private void Update()
         {
+            // 端末の戻るキー（Androidの戻るはEscapeで届く）：開いている窓を閉じ、窓がなければ何もしない
+            // （doc/rules/ui-design.md#操作の決まり）。
+            if (Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame)
+                PressBack();
             if (claimPulses && ClaimGroup != null)
                 ClaimGroup.alpha = PulseAlpha(
                     Time.unscaledTime,
                     ClaimPulseSeconds,
                     ClaimPulseMinimumAlpha
                 );
+        }
+
+        /// <summary>The device's back key: closes the dialog when one is open, and does nothing otherwise.</summary>
+        public void PressBack()
+        {
+            if (Dialog != null)
+                Dialog.HandleBack();
         }
 
         // 周期の始めと終わりで1、半周期で最小値になる。
