@@ -31,6 +31,9 @@ namespace Baryonyx.UI.GuideMenu.Editor
         public const string ArrowPath = ArtFolder + "/GuideArrow.png";
         public const string IconBackPath = ArtFolder + "/IconBack.png";
         public const string IconClosePath = ArtFolder + "/IconClose.png";
+
+        // 右上のホームへ戻るボタンの家の形。世界地図の左上と同じ形（家＝ホームへ、×＝窓を閉じる、←＝1つ前へ）。
+        public const string IconHomePath = ArtFolder + "/IconHome.png";
         public const string IconRunePath =
             "Assets/Baryonyx/Shared/Art/GameResources/IconRune.aseprite";
         public const string TextShadowPath = Folder + "/GuideTextShadow.mat";
@@ -370,7 +373,7 @@ namespace Baryonyx.UI.GuideMenu.Editor
             frameParts.Add(GuideFrameAssets.Separator(close, 0f, -HeaderGap / 4f));
             var icon = Rect("Icon", close);
             Place(icon, Vector2.zero, new Vector2(IconSize, IconSize));
-            SpriteImage(icon, IconClosePath, Color.white);
+            SpriteImage(icon, IconHomePath, Color.white);
         }
 
         // ×の左の所持ルーン。Homeと同じく、四方へ薄くなる暗い下地に、2倍のアイコンと数を並べる。
@@ -638,13 +641,13 @@ namespace Baryonyx.UI.GuideMenu.Editor
             );
 
         // The button at the bottom right that applies the chosen row; off until one is chosen.
-        // 編成の「レベルアップ」と同じすりガラスのカード。金の縁と光（選んだ印）は出さず、模様も付けない。
+        // 決めるボタンの青い板（プライマリー。doc/rules/ui-design.md の決めるボタン）。
         public static (Button Button, TMP_Text Label) ConfirmButton(
             RectTransform layer,
             string text
         )
         {
-            var (button, _, confirm) = GlassCardAssets.Choice(
+            var (button, label, _) = ActionButtonAssets.Build(
                 Layout.Box(
                     layer,
                     "Confirm",
@@ -653,17 +656,9 @@ namespace Baryonyx.UI.GuideMenu.Editor
                     ConfirmWidth,
                     ConfirmHeight
                 ),
-                pattern: false
-            );
-            var label = Label(
-                confirm,
-                "Label",
                 text,
-                44,
-                UiPalette.TextMain,
-                TextAlignmentOptions.Center
+                ButtonRole.Primary
             );
-            Stretch((RectTransform)label.transform);
             button.interactable = false;
             return (button, label);
         }
@@ -764,6 +759,7 @@ namespace Baryonyx.UI.GuideMenu.Editor
             ArtAssets.ImportSprite(SoftSpotPath, Vector4.zero, FilterMode.Bilinear);
             WriteBackIcon(IconBackPath);
             WriteCloseIcon(IconClosePath);
+            WriteHomeIcon(IconHomePath);
             ArtAssets.ImportTexture(ShadeHorizontalPath, FilterMode.Bilinear);
         }
 
@@ -777,6 +773,14 @@ namespace Baryonyx.UI.GuideMenu.Editor
         private static void WriteCloseIcon(string path) =>
             new VectorIcon()
                 .Stroke(IconShape.Path("M15 15 L49 49 M49 15 L15 49"), 7f)
+                .Save(path, SmoothIconTextureSize, UiPalette.TextMain);
+
+        // The house of the world map's button back to Home (WorldMapScreenAssets.WriteHomeIcon).
+        private static void WriteHomeIcon(string path) =>
+            new VectorIcon()
+                .Stroke(IconShape.Path("M8 31 L32 10 L56 31"), 7f)
+                .Fill(IconShape.Path("M15 32 L32 17 L49 32 L49 56 L15 56Z"), 3.5f)
+                .Cut(IconShape.Rect(27f, 40f, 10f, 16f))
                 .Save(path, SmoothIconTextureSize, UiPalette.TextMain);
 
         // Clear on the left, dark on the right.
