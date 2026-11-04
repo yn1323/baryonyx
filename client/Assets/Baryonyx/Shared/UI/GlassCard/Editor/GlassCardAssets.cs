@@ -1,6 +1,7 @@
 using System;
 using Baryonyx.Editor;
 using Baryonyx.Editor.Art;
+using Baryonyx.Editor.UI;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.UI;
@@ -44,6 +45,9 @@ namespace Baryonyx.UI.Editor
         // 裏面の内側の線と、左右の線と玉の古金色。
         public static readonly Color BackRingColor = new(0.87f, 0.77f, 0.54f, 0.22f);
         public static readonly Color BackLineColor = new(0.77f, 0.66f, 0.44f, 1f);
+
+        // 線のない形の裏面の飾りと左右の線の濃さ。表の薄い板の上で、読み込み中と分かる程度に見せる。
+        private const float SheerBackAlpha = 0.4f;
 
         // 案内人の画面の透ける面を通さず、景色や絵の上に直に置くカードの板の色。面と同じ紺を濃く敷き、
         // 下の景色に負けずに文字が読めるようにする（探索の札・ダイアログの外の画面・デバッグルーム）。
@@ -187,31 +191,39 @@ namespace Baryonyx.UI.Editor
         /// gold line inside the edge, the gold-tooled ornament in the middle, and on a wide card
         /// gold lines threaded with beads to either side. Its parts follow the card's size, so the
         /// same back fits every list. A <paramref name="vertical"/> back turns up and down
-        /// (<see cref="GlassCardBack.Vertical"/>).
+        /// (<see cref="GlassCardBack.Vertical"/>). On a lineless screen the back lays no leather,
+        /// ring or rim: the face's faint plate shows through with the ornament and side lines
+        /// faded on it, and the contents hide while it lies face down (<see cref="GlassCardBack.Sheer"/>),
+        /// so the card keeps its tone as it turns up (doc/rules/ui-design.md の線のない形).
         /// </summary>
         public static GlassCardBack AddBack(GlassCard card, bool vertical = false)
         {
             EnsureBackArt();
+            bool sheer = UiLook.Lineless;
             var face = Rect("Back", card.Body);
             Stretch(face);
 
-            var leather = face.gameObject.AddComponent<Image>();
-            leather.sprite = ArtAssets.LoadSprite(BackLeatherPath);
-            leather.type = Image.Type.Tiled;
-            leather.raycastTarget = false;
+            if (!sheer)
+            {
+                var leather = face.gameObject.AddComponent<Image>();
+                leather.sprite = ArtAssets.LoadSprite(BackLeatherPath);
+                leather.type = Image.Type.Tiled;
+                leather.raycastTarget = false;
 
-            var ring = Rect("Ring", face);
-            Stretch(ring);
-            ring.offsetMin = Vector2.one * BackRingInset;
-            ring.offsetMax = -Vector2.one * BackRingInset;
-            var line = Plate(ring, BackRingPath, BackRingColor);
-            line.pixelsPerUnitMultiplier = BackRingScale;
+                var ring = Rect("Ring", face);
+                Stretch(ring);
+                ring.offsetMin = Vector2.one * BackRingInset;
+                ring.offsetMax = -Vector2.one * BackRingInset;
+                var line = Plate(ring, BackRingPath, BackRingColor);
+                line.pixelsPerUnitMultiplier = BackRingScale;
+            }
+            var faded = new Color(1f, 1f, 1f, sheer ? SheerBackAlpha : 1f);
 
             var emblemSprite = ArtAssets.LoadSprite(BackEmblemPath);
             var lines = Rect("Lines", face);
             Stretch(lines);
             var graphic = lines.gameObject.AddComponent<GlassCardBackLine>();
-            graphic.color = BackLineColor;
+            graphic.color = BackLineColor * faded;
             graphic.raycastTarget = false;
             graphic.BeadTexture = ArtAssets.LoadSprite(BackBeadPath).texture;
             graphic.EmblemAspect = emblemSprite.rect.width / emblemSprite.rect.height;
@@ -223,16 +235,19 @@ namespace Baryonyx.UI.Editor
             var picture = emblem.gameObject.AddComponent<Image>();
             picture.sprite = emblemSprite;
             picture.preserveAspect = true;
+            picture.color = faded;
             picture.raycastTarget = false;
 
             // 革の上にも、すりガラスと同じ左上から照らした縁を重ねる。
-            Plate(Stretched("Rim", face), RimPath, Color.white);
+            if (!sheer)
+                Plate(Stretched("Rim", face), RimPath, Color.white);
             face.gameObject.SetActive(false);
 
             var back = card.gameObject.AddComponent<GlassCardBack>();
             back.Card = card;
             back.Face = face.gameObject;
             back.Vertical = vertical;
+            back.Sheer = sheer;
             return back;
         }
 

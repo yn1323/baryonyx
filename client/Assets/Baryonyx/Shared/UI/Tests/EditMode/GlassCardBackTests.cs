@@ -224,6 +224,25 @@ namespace Baryonyx.Tests.EditMode
             );
         }
 
+        [Test]
+        public void ASheerBackHidesTheContentsOnlyWhileFaceDown()
+        {
+            var cards = Cards(2);
+            BackOf(cards[0]).Sheer = true;
+            var contents = cards.Select(card => card.Body.Find("Content").gameObject).ToList();
+
+            foreach (var card in cards)
+                BackOf(card).ShowFaceDown();
+
+            // 表の板を透かす裏面は中身を隠し、革の裏面は上に重ねるだけにする。
+            Assert.That(contents[0].activeSelf, Is.False);
+            Assert.That(contents[1].activeSelf, Is.True);
+
+            BackOf(cards[0]).ShowFaceUp();
+
+            Assert.That(contents[0].activeSelf, Is.True);
+        }
+
         private static GlassCardBack BackOf(GlassCard card) => card.GetComponent<GlassCardBack>();
 
         // 板と裏面だけの、最小のカード。

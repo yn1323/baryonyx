@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Baryonyx.Editor.UI;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -10,7 +11,8 @@ namespace Baryonyx.UI.Editor
     /// <summary>
     /// Builds the showcase's sample of the card back (<see cref="GlassCardBackPreview"/>): a
     /// canvas with one glass card of each list that lays its cards face down while it reads, at
-    /// that list's size, turning over and over (doc/features/screens/guide.md#カードの裏面).
+    /// that list's size, turning over and over (doc/features/screens/guide.md#カードの裏面). The
+    /// lists of the lineless screens (the shop's and the tavern's) show the sheer back.
     /// </summary>
     public static class GlassCardBackAssets
     {
@@ -18,24 +20,25 @@ namespace Baryonyx.UI.Editor
             "Assets/Baryonyx/Shared/UI/GlassCard/GlassCardBackPreview.prefab";
 
         // 一覧ごとのカードの大きさ（設計座標）と、見本での左上の位置。Empty は出す物がない場所の見本、
-        // Vertical は上下にめくる見本（カードスキルの行）。
+        // Vertical は上下にめくる見本（カードスキルの行）、Lineless は線のない形の画面（商会・酒場）の透ける裏面。
         private static readonly (
             string Name,
             Vector2 Position,
             Vector2 Size,
             bool Empty,
-            bool Vertical
+            bool Vertical,
+            bool Lineless
         )[] Cards =
         {
-            ("CardSkill", new Vector2(64, 96), new Vector2(812, 140), false, true),
-            ("CardSkillEmpty", new Vector2(64, 252), new Vector2(812, 140), true, true),
-            ("Adventurer", new Vector2(940, 84), new Vector2(588, 168), false, false),
-            ("AdventurerEmpty", new Vector2(940, 268), new Vector2(588, 168), true, false),
-            ("Picker", new Vector2(64, 470), new Vector2(597, 291), false, false),
-            ("Buy", new Vector2(725, 470), new Vector2(256, 272), false, false),
-            ("Sell", new Vector2(1045, 470), new Vector2(200, 200), false, false),
-            ("SellEmpty", new Vector2(1045, 692), new Vector2(200, 200), true, false),
-            ("Library", new Vector2(1309, 470), new Vector2(265, 300), false, false),
+            ("CardSkill", new Vector2(64, 96), new Vector2(812, 140), false, true, true),
+            ("CardSkillEmpty", new Vector2(64, 252), new Vector2(812, 140), true, true, true),
+            ("Adventurer", new Vector2(940, 84), new Vector2(588, 168), false, false, true),
+            ("AdventurerEmpty", new Vector2(940, 268), new Vector2(588, 168), true, false, true),
+            ("Picker", new Vector2(64, 470), new Vector2(597, 291), false, false, true),
+            ("Buy", new Vector2(725, 470), new Vector2(256, 272), false, false, true),
+            ("Sell", new Vector2(1045, 470), new Vector2(200, 200), false, false, true),
+            ("SellEmpty", new Vector2(1045, 692), new Vector2(200, 200), true, false, true),
+            ("Library", new Vector2(1309, 470), new Vector2(265, 300), false, false, false),
         };
 
         // 案内人の画面の面に近い、暗い紺の背景。
@@ -69,7 +72,7 @@ namespace Baryonyx.UI.Editor
                 stage.sizeDelta = new Vector2(1920, 1080);
                 var cards = new List<GameObject>();
                 var empty = new List<GameObject>();
-                foreach (var (name, position, size, isEmpty, vertical) in Cards)
+                foreach (var (name, position, size, isEmpty, vertical, lineless) in Cards)
                 {
                     var rect = Child(name, stage);
                     rect.anchorMin = rect.anchorMax = new Vector2(0f, 1f);
@@ -79,8 +82,13 @@ namespace Baryonyx.UI.Editor
                         position.x + size.x / 2f,
                         -position.y - size.y / 2f
                     );
-                    var (card, _) = GlassCardAssets.Build(rect);
-                    GlassCardAssets.AddBack(card, vertical);
+                    if (lineless)
+                    {
+                        using var look = UiLook.BeginLineless();
+                        Card(rect, vertical);
+                    }
+                    else
+                        Card(rect, vertical);
                     (isEmpty ? empty : cards).Add(rect.gameObject);
                 }
                 var preview = root.AddComponent<GlassCardBackPreview>();
@@ -93,6 +101,12 @@ namespace Baryonyx.UI.Editor
                 Object.DestroyImmediate(root);
                 EditorSceneManager.ClosePreviewScene(scene);
             }
+        }
+
+        private static void Card(RectTransform rect, bool vertical)
+        {
+            var (card, _) = GlassCardAssets.Build(rect, bare: UiLook.Lineless);
+            GlassCardAssets.AddBack(card, vertical);
         }
 
         private static RectTransform Child(string name, Transform parent)

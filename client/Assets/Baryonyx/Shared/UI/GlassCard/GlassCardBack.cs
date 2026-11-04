@@ -33,6 +33,9 @@ namespace Baryonyx.UI
         // 横の軸で回し、高さを縮めて上下にめくる。カードスキルの横長の行だけ（ユーザーの指定、2026-10-30）。
         public bool Vertical;
 
+        // 地を敷かず、表の板を透かす裏面（線のない形の画面）。伏せている間は中身を隠し、表と同じ板に飾りだけを見せる。
+        public bool Sheer;
+
         private float delay;
         private float elapsed = float.PositiveInfinity;
         private float fading = float.PositiveInfinity;
@@ -142,8 +145,8 @@ namespace Baryonyx.UI
             if (Face != null && Face.activeSelf != faceDown)
             {
                 Face.SetActive(faceDown);
-                if (leaving)
-                    ShowContents(false);
+                if (leaving || Sheer)
+                    ShowContents(!faceDown && !leaving);
             }
             Narrow(width, LiftAt(elapsed));
         }
@@ -160,11 +163,9 @@ namespace Baryonyx.UI
             elapsed = float.PositiveInfinity;
             fading = float.PositiveInfinity;
             delay = 0f;
-            if (leaving)
-            {
-                leaving = false;
-                ShowContents(true);
-            }
+            if (leaving || Sheer)
+                ShowContents(!(Sheer && faceDown));
+            leaving = false;
             if (Face != null)
                 Face.SetActive(faceDown);
             Narrow(1f, 1f);
