@@ -12,7 +12,7 @@ namespace Baryonyx.UI.Editor
     /// Builds the showcase's sample of the card back (<see cref="GlassCardBackPreview"/>): a
     /// canvas with one glass card of each list that lays its cards face down while it reads, at
     /// that list's size, turning over and over (doc/features/screens/guide.md#カードの裏面). The
-    /// lists of the lineless screens (the shop's and the tavern's) show the sheer back.
+    /// lists of the lineless screens (the shop's, the tavern's and the library's) show the sheer back.
     /// </summary>
     public static class GlassCardBackAssets
     {
@@ -20,7 +20,7 @@ namespace Baryonyx.UI.Editor
             "Assets/Baryonyx/Shared/UI/GlassCard/GlassCardBackPreview.prefab";
 
         // 一覧ごとのカードの大きさ（設計座標）と、見本での左上の位置。Empty は出す物がない場所の見本、
-        // Vertical は上下にめくる見本（カードスキルの行）、Lineless は線のない形の画面（商会・酒場）の透ける裏面。
+        // Vertical は上下にめくる見本（カードスキルの行）、Lineless は線のない形の画面（商会・酒場・ライブラリ）の透ける裏面。
         private static readonly (
             string Name,
             Vector2 Position,
@@ -38,7 +38,7 @@ namespace Baryonyx.UI.Editor
             ("Buy", new Vector2(725, 470), new Vector2(256, 272), false, false, true),
             ("Sell", new Vector2(1045, 470), new Vector2(200, 200), false, false, true),
             ("SellEmpty", new Vector2(1045, 692), new Vector2(200, 200), true, false, true),
-            ("Library", new Vector2(1309, 470), new Vector2(265, 300), false, false, false),
+            ("Library", new Vector2(1309, 470), new Vector2(265, 300), false, false, true),
         };
 
         // 案内人の画面の面に近い、暗い紺の背景。

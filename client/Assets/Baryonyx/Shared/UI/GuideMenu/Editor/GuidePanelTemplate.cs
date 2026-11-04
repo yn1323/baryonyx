@@ -165,7 +165,7 @@ namespace Baryonyx.UI.GuideMenu.Editor
                 ListRight = right,
                 Top = TopOfList(),
             };
-            if (!UiLook.Lineless)
+            if (HasHeadingRow)
                 HeadingRow(panel, title);
             var list = Layout.Box(
                 layer,
@@ -189,8 +189,11 @@ namespace Baryonyx.UI.GuideMenu.Editor
 
         // 一覧の始まり。線のない形は見出しの段を置かず、ヘッダーのすぐ下から始める
         // （選んでいる分類が、一覧が何かを示すため。doc/rules/ui-design.md の線のない形）。
+        // 見つけた数を見出しの段に出すライブラリは、段を残す（UiLook.ListHeading）。
+        private static bool HasHeadingRow => !UiLook.Lineless || UiLook.ListHeading;
+
         private static float TopOfList() =>
-            UiLook.Lineless ? GuideFrameAssets.HeaderHeight + UiSpace.Pad : ListTop;
+            HasHeadingRow ? ListTop : GuideFrameAssets.HeaderHeight + UiSpace.Pad;
 
         // 一覧と詳細の2つの面、左の縦の分類、見出しの段、状態の文字。
         private static (T View, ListPanel Panel) Begin<T>(
@@ -219,7 +222,7 @@ namespace Baryonyx.UI.GuideMenu.Editor
             // 縦の分類の右は区切りの線のため24、画面の端の側は48空ける。
             panel.ListLeft = rail + (tabs != null ? UiSpace.Pad : UiSpace.Edge);
             panel.ListRight = Split - UiSpace.Pad;
-            if (!UiLook.Lineless)
+            if (HasHeadingRow)
                 HeadingRow(panel, title);
             panel.Status = GuideFrameAssets.ListStatus(
                 layer,

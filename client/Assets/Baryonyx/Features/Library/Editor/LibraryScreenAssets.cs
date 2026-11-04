@@ -5,6 +5,7 @@ using Baryonyx.Adventure;
 using Baryonyx.Combat;
 using Baryonyx.Editor;
 using Baryonyx.Editor.Art;
+using Baryonyx.Editor.UI;
 using Baryonyx.Equipment;
 using Baryonyx.Equipment.Editor;
 using Baryonyx.Items;
@@ -92,6 +93,9 @@ namespace Baryonyx.Library.Editor
             var data = CreateData();
             var training = TrainingAssets.CreateData();
             WriteMenuIcons();
+            // ライブラリも線のない形で組み立てる。見つけた数を出すため、一覧の上の見出しの段は残す
+            // （doc/rules/ui-design.md の線のない形）。
+            using var look = UiLook.BeginLineless(listHeading: true);
             CreateScreen(
                 DefinitionPath,
                 PrefabPath,
@@ -468,7 +472,7 @@ namespace Baryonyx.Library.Editor
         )
         {
             var rect = Rect("Entry_" + entry.Id, content);
-            var (widget, inside) = ItemTileAssets.Build(rect, pattern: true);
+            var (widget, inside) = ItemTileAssets.Build(rect, pattern: true, bare: UiLook.Lineless);
             widget.Id = entry.Id;
 
             // 札の形（doc/rules/ui-design.md の装備の見せ方）：左上に番号（品質の位置。図鑑の物は品質を持たない）、
@@ -951,7 +955,7 @@ namespace Baryonyx.Library.Editor
             view.List = panel.Scroll;
 
             var row = Layout.ListItem(rows, "Template", StepRowHeight);
-            GlassCardAssets.Plaque(row, pattern: false);
+            GlassCardAssets.Plaque(row, pattern: false, bare: UiLook.Lineless);
             var template = new LibraryStepRow { Root = row.gameObject };
             template.Day = Layout.Text(
                 row,
