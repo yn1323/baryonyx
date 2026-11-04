@@ -174,9 +174,11 @@ namespace Baryonyx.CardLoadout.Editor
         private const float StatValueSize = 34f;
         private static readonly Color StatsBackdrop = new(0f, 0f, 0f, 0.28f);
 
-        // 右上の印（「E」「所持 3」）の札：カードの中の大きさ（戦闘のカードの設計座標）。
-        private static readonly Vector2 MarkSize = new(64f, 26f);
-        private const float MarkFont = 17f;
+        // 右下の印（「E」「所持 3」）の札：カードの中の大きさ（戦闘のカードの設計座標）。
+        // 右上の属性の下に置いていたときは、挿絵に溶けて見えにくかった（2026-11-04、ユーザーの指摘）。
+        // 効果の欄の暗い所に置き、少し大きくした。
+        private static readonly Vector2 MarkSize = new(72f, 30f);
+        private const float MarkFont = 21f;
 
         // 空いた枠の点線のカードの板（暗いすりガラス）と「＋」の大きさ（×印の絵を45度回す）。
         // 白い板では明るい灰色になって目立ったため、暗くして「＋」を小さくした（2026-11-03）。
@@ -350,7 +352,7 @@ namespace Baryonyx.CardLoadout.Editor
         /// One battle card that takes a tap: the battle's card prefab scaled by
         /// <paramref name="scale"/> into <paramref name="rect"/>, as the body of a
         /// <see cref="GlassCard"/> (it sinks when pressed and turns over when its slot changes),
-        /// with the gold rim of the card chosen, the mark at the top right, the text in place of
+        /// with the gold rim of the card chosen, the mark at the bottom right, the text in place of
         /// the effect and the seal of a stage not acquired.
         /// </summary>
         private static CardLoadoutCard BuildCard(RectTransform rect, float scale)
@@ -390,10 +392,10 @@ namespace Baryonyx.CardLoadout.Editor
             card.Note.color = UiPalette.GoldLight;
             note.SetActive(false);
 
-            // 右上の印：属性の絵の下に、濃い札と金の文字。
+            // 右下の印：効果の欄の右下の角に、濃い札と金の太い文字。
             var plate = Rect("Mark", face);
-            plate.anchorMin = plate.anchorMax = plate.pivot = Vector2.one;
-            plate.anchoredPosition = new Vector2(-8f, -40f);
+            plate.anchorMin = plate.anchorMax = plate.pivot = new Vector2(1f, 0f);
+            plate.anchoredPosition = new Vector2(-6f, 6f);
             plate.sizeDelta = MarkSize;
             AddImage(plate, new Color(0f, 0f, 0f, 0.65f), false);
             card.Mark = Label(
@@ -404,6 +406,7 @@ namespace Baryonyx.CardLoadout.Editor
                 UiPalette.Gold,
                 TextAlignmentOptions.Center
             );
+            card.Mark.fontStyle = FontStyles.Bold;
             Stretch((RectTransform)card.Mark.transform);
             card.MarkPlate = plate.gameObject;
             plate.gameObject.SetActive(false);
@@ -475,9 +478,10 @@ namespace Baryonyx.CardLoadout.Editor
             return card;
         }
 
-        // 選ぶ画面：候補は戦闘の手札の約1.8倍で1行4枚（2026-11-03、ユーザーの指示。2倍は「でかすぎる」）。
-        // ツリーは同じ大きさで、1段目の真ん中に最初の段階、その下の段に枝1〜3の1段目、さらに下の段に
-        // 2段目を並べる（右へ伸ばすと見づらいため、下へ伸ばす。同日、ユーザーの指示）。どちらも縦にスクロールする。
+        // 選ぶ画面：候補は戦闘の手札の約1.45倍で1行5枚（2026-11-04、ユーザーの指示。それまでは約1.8倍で1行4枚）。
+        // ツリーは約1.8倍のまま、1段目の真ん中に最初の段階、その下の段に枝1〜3の1段目、さらに下の段に
+        // 2段目を並べる（右へ伸ばすと見づらいため、下へ伸ばす。2026-11-03、ユーザーの指示）。どちらも縦にスクロールする。
+        private const float ChoiceScale = 1.45f;
         private const float PickerScale = 1.8f;
         private const float TreePad = 48f;
 
@@ -532,10 +536,10 @@ namespace Baryonyx.CardLoadout.Editor
             content.sizeDelta = Vector2.zero;
             picker.Content = content;
             picker.Scroll = Layout.Scroll(choices, viewport, content);
-            var size = BattleCardSize * PickerScale;
+            var size = BattleCardSize * ChoiceScale;
             var first = BuildCard(
                 Layout.Box(content, "Choice0", 0f, 0f, size.x, size.y),
-                PickerScale
+                ChoiceScale
             );
             picker.Cards = new[] { first };
             var line = Layout.Box(content, "Line0", 0f, 0f, 100f, 2f);

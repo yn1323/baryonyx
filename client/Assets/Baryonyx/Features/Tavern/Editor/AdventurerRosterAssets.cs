@@ -32,6 +32,9 @@ namespace Baryonyx.Tavern.Editor
     {
         // 左（パーティ）と右（一覧）の境目と、見出し・カードの位置。設計座標、左上から。
         private const float Split = 660f;
+
+        // 右の見出し。メニューの「一覧」（全員の人選び）と分けるため、パーティーにいない人を「控え」と呼ぶ（2026-11-04）。
+        public const string BenchTitle = "控え";
         private const float Gap = 24f;
         private const float HeadingHeight = 76f;
         private const float CardGap = Card.CardGap;
@@ -51,10 +54,8 @@ namespace Baryonyx.Tavern.Editor
 
         private const float FigureCenter = Card.FigureCenter;
 
-        // 名前とLvの行の左端と右の余白。人選びのカードより立ち姿へ寄せ、
-        // 「Lv」・2桁のLv・属性のアイコン3つが縮まずに入るようにする。
-        private const float TextLeft = 232f;
-        private const float TextGap = 24f;
+        // 名前とLvの行の左端（一覧の人選びのカードと同じ）。
+        private const float TextLeft = Card.NameLeft;
 
         // 帯の「装備・スキル」の幅と、その中の金の矢印（5×9ドットを4倍）。
         private const float DetailWidth = 420f;
@@ -78,7 +79,7 @@ namespace Baryonyx.Tavern.Editor
             Frame.Heading(
                 layer,
                 "PartyTitle",
-                "パーティ",
+                AdventurerPickerView.PartyLabel,
                 PartyLeft,
                 Frame.HeaderHeight,
                 300f,
@@ -87,7 +88,7 @@ namespace Baryonyx.Tavern.Editor
             Frame.Heading(
                 layer,
                 "ListTitle",
-                "一覧",
+                BenchTitle,
                 ListLeft,
                 Frame.HeaderHeight,
                 300f,
@@ -350,24 +351,13 @@ namespace Baryonyx.Tavern.Editor
         /// <summary>The band's button that opens the person's tabs.</summary>
         public const string DetailLabel = "装備・スキル";
 
-        // 名前と、その下の「Lv」・Lv・属性のアイコン（12×12を3倍）。
+        // 名前と、その下の「Lv」・Lv・属性のアイコン（一覧の人選びのカードと共通）。
         private static (
             TMP_Text Name,
             GameObject Line,
             TMP_Text Level,
             Image[] Elements
-        ) BuildNameLines(RectTransform card, float width)
-        {
-            float middle = CardHeight / 2f;
-            float textWidth = width - TextLeft - TextGap;
-            var name = Card.Name(card, "", middle - 66f, textWidth, TextLeft);
-            var line = Layout.Row(card, "LevelLine", TextLeft, middle + 4f, textWidth, 56f, 10f);
-            var level = Card.Level(line, "");
-            var elements = Enumerable
-                .Range(0, 3)
-                .Select(i => Layout.RowIcon(line, "Element" + i, 12f * 3f))
-                .ToArray();
-            return (name, line.gameObject, level, elements);
-        }
+        ) BuildNameLines(RectTransform card, float width) =>
+            Card.NameLines(card, width, CardHeight, TextLeft);
     }
 }

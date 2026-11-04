@@ -42,10 +42,10 @@ namespace Baryonyx.Party
     /// </summary>
     public sealed class PartyRosterPresenter : IDisposable
     {
-        public const string KeepOneMessage = "パーティには1人以上必要です";
+        public const string KeepOneMessage = "パーティーには1人以上必要です";
         public const string SaveFailedMessage = "編成を保存できませんでした";
-        public const string ChooseLeaverMessage = "外す人をパーティから選んでください";
-        public const string RemoveLabel = "パーティから外す";
+        public const string ChooseLeaverMessage = "外す人をパーティーから選んでください";
+        public const string RemoveLabel = "パーティーから外す";
 
         private readonly IPartyRosterView view;
 

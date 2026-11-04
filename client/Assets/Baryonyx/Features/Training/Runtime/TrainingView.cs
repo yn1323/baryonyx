@@ -143,9 +143,14 @@ namespace Baryonyx.Training
         public GuideSwipe Swipe;
         public TMP_Text Name;
         public TMP_Text Level;
-        public Image[] Elements = Array.Empty<Image>();
 
-        // 名前・Lv・属性の行と、その行に使える幅。長い名前で「絆」に届くときは、行ごと縮めて収める。
+        // ステータスの下の「属性」の段：使える属性のアイコンと名前、属性の合うスキル・装備を付けられるという1行。
+        // 名前の横に小さく並べていたときは、何の印か分からなかった（2026-11-04、ユーザーの指摘）。
+        public Image[] Elements = Array.Empty<Image>();
+        public TMP_Text[] ElementNames = Array.Empty<TMP_Text>();
+        public TMP_Text ElementNote;
+
+        // 名前・Lvの行と、その行に使える幅。長い名前で「絆」に届くときは、行ごと縮めて収める。
         public RectTransform Header;
         public float HeaderWidth;
 
@@ -328,9 +333,7 @@ namespace Baryonyx.Training
         {
             Set(Name, LoadingText);
             Set(Level, "");
-            foreach (var icon in Elements)
-                if (icon != null)
-                    icon.gameObject.SetActive(false);
+            ShowElements(Array.Empty<Sprite>(), Array.Empty<CardElement>(), false);
             if (Illustration != null)
                 Illustration.enabled = false;
             if (Figure != null)
@@ -465,12 +468,7 @@ namespace Baryonyx.Training
                 Level,
                 state.Member != null ? state.Level.ToString(CultureInfo.InvariantCulture) : ""
             );
-            for (int i = 0; i < Elements.Length; i++)
-            {
-                var icon = i < state.Elements.Count ? state.Elements[i] : null;
-                Elements[i].sprite = icon;
-                Elements[i].gameObject.SetActive(icon != null);
-            }
+            ShowElements(state.Elements, state.ElementKinds, state.Member != null);
             FitHeader();
             if (Illustration != null)
                 PartyArt.Cover(Illustration, state.Member?.Illustration);
@@ -496,6 +494,39 @@ namespace Baryonyx.Training
                 var (people, partyCount) = PartySession.Formation(Party).TabOrder();
                 Sheet.Show(people, partyCount, state.Member?.Id);
             }
+        }
+
+        /// <summary>The note beside the elements: what they decide.</summary>
+        public const string ElementNoteText = "この属性のスキル・装備を付けられる";
+
+        /// <summary>Written instead of the elements while the person has no card with one.</summary>
+        public const string NoElementText = "なし";
+
+        private void ShowElements(
+            IReadOnlyList<Sprite> icons,
+            IReadOnlyList<CardElement> kinds,
+            bool known
+        )
+        {
+            for (int i = 0; i < Elements.Length; i++)
+            {
+                var icon = i < icons.Count ? icons[i] : null;
+                if (Elements[i] != null)
+                {
+                    Elements[i].sprite = icon;
+                    Elements[i].gameObject.SetActive(icon != null);
+                }
+                if (i < ElementNames.Length && ElementNames[i] != null)
+                {
+                    string name = i < kinds.Count ? CardElementNames.Of(kinds[i]) : "";
+                    if (i == 0 && known && icons.Count == 0)
+                        name = NoElementText;
+                    ElementNames[i].text = name;
+                    ElementNames[i].gameObject.SetActive(name.Length > 0);
+                }
+            }
+            if (ElementNote != null)
+                ElementNote.gameObject.SetActive(icons.Count > 0);
         }
 
         private void FitHeader()

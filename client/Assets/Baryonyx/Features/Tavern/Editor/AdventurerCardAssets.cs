@@ -1,3 +1,4 @@
+using System.Linq;
 using Baryonyx.Party;
 using Baryonyx.UI;
 using TMPro;
@@ -22,6 +23,9 @@ namespace Baryonyx.Tavern.Editor
         // カードの中：立ち姿（余白を切って4倍）の中心、文字の左端。
         public const float FigureCenter = 120f;
         public const float TextLeft = 262f;
+
+        // 名前・Lv・属性の行の左端。立ち姿へ寄せ、「Lv」・2桁のLv・属性のアイコン3つが縮まずに入るようにする。
+        public const float NameLeft = 232f;
 
         private const float Dot = Guide.DotScale;
 
@@ -104,6 +108,34 @@ namespace Baryonyx.Tavern.Editor
             Guide.Shrink(name, 28);
             return name;
         }
+
+        /// <summary>
+        /// The name and, under it, "Lv", the level and the icons of the elements the person can
+        /// use (12x12 at 3x), centred down a card <paramref name="cardHeight"/> tall and
+        /// <paramref name="width"/> wide, from <paramref name="left"/>. The party's cards and the
+        /// list's cards share it, so the two read the same.
+        /// </summary>
+        public static (TMP_Text Name, GameObject Line, TMP_Text Level, Image[] Elements) NameLines(
+            RectTransform card,
+            float width,
+            float cardHeight,
+            float left
+        )
+        {
+            float middle = cardHeight / 2f;
+            float textWidth = width - left - NameGap;
+            var name = Name(card, "", middle - 66f, textWidth, left);
+            var line = Layout.Row(card, "LevelLine", left, middle + 4f, textWidth, 56f, 10f);
+            var level = Level(line, "");
+            var elements = Enumerable
+                .Range(0, 3)
+                .Select(i => Layout.RowIcon(line, "Element" + i, 12f * 3f))
+                .ToArray();
+            return (name, line.gameObject, level, elements);
+        }
+
+        // 名前とLvの行の右の余白。
+        private const float NameGap = 24f;
 
         /// <summary>"Lv" and the level at the start of a row (<see cref="Layout.Row"/>).</summary>
         public static TMP_Text Level(RectTransform row, string text)

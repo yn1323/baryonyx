@@ -36,7 +36,7 @@ namespace Baryonyx.Tests.PlayMode
             yield return SceneTests.UnloadAll(nameof(TavernGearPickerTests));
         }
 
-        // 編成のメニューの「育成」は、冒険者の次に並び、全員のカード（パーティが先）を開く。
+        // 編成のメニューの「一覧」は、パーティーの次に並び、全員のカード（パーティが先）を開く。
         // 1人を押すとその人の冒険者のタブへ進み、タブの「もどる」で人選びへ戻る。
         [UnityTest]
         public IEnumerator GearOpensThePageOfTheChosenAdventurer()
@@ -47,7 +47,7 @@ namespace Baryonyx.Tests.PlayMode
             var items = view.Definition.Items;
             int item = ItemOf(view, AdventurerPickerView.GuideItemKey);
             Assert.That(item, Is.EqualTo(ItemOf(view, PartySession.GuideItemKey) + 1));
-            Assert.That(items[item].Label, Is.EqualTo("育成"));
+            Assert.That(items[item].Label, Is.EqualTo("一覧"));
             Assert.That(items[item].Hidden, Is.False);
             Assert.That(view.MenuItems[item], Is.Not.Null);
 
@@ -57,9 +57,9 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(view.GuideArt.activeSelf, Is.False);
             yield return SceneTests.WaitForTask(picker.LoadTask);
             yield return null;
-            Assert.That(view.Breadcrumb.text, Is.EqualTo(Trail("編成", "育成")));
+            Assert.That(view.Breadcrumb.text, Is.EqualTo(Trail("編成", "一覧")));
 
-            // パーティを枠の順に、続けて控えを並べる。パーティの人だけ「パーティ」の札を出す。
+            // パーティーを枠の順に、続けて控えを並べる。パーティーの人だけ「パーティー」の札を出す。
             var formation = PartySession.Formation(picker.Party);
             var order = AdventurerPickerView.Order(formation);
             Assert.That(order.Count, Is.EqualTo(formation.Roster.Count));
@@ -68,7 +68,6 @@ namespace Baryonyx.Tests.PlayMode
                 .OrderBy(card => card.Card.transform.GetSiblingIndex())
                 .ToArray();
             Assert.That(shown.Select(card => card.Id), Is.EqualTo(order));
-            var equipment = EquipmentLocalSource.Starter();
             foreach (var card in shown)
             {
                 SceneTests.AssertTouchSize(card.Card.transform);
@@ -77,27 +76,20 @@ namespace Baryonyx.Tests.PlayMode
                     card.Level.text,
                     Is.EqualTo(PartySession.LevelOf(picker.Party, card.Id).ToString())
                 );
+                // 装備は出さず、パーティーの冒険者のカードと同じく使える属性を出す。
+                var elements = PartySession.ElementIconsOf(picker.Party, card.Id);
                 Assert.That(
-                    card.Weapon.text,
-                    Is.EqualTo(
-                        AdventurerPickerView.GearName(equipment, card.Id, EquipmentSlot.Weapon)
-                    )
-                );
-                Assert.That(
-                    card.Armor.text,
-                    Is.EqualTo(
-                        AdventurerPickerView.GearName(equipment, card.Id, EquipmentSlot.Armor)
-                    )
+                    card.Elements.Where(icon => icon.gameObject.activeSelf)
+                        .Select(icon => icon.sprite),
+                    Is.EqualTo(elements)
                 );
             }
-            // 仮データでは、パーティの人は武器を付けていて、控えには付けていない人がいる。
-            Assert.That(shown[0].Weapon.text, Is.Not.EqualTo(AdventurerPickerView.EmptyText));
             Assert.That(
-                shown.Any(card => card.Weapon.text == AdventurerPickerView.EmptyText),
+                shown.Any(card => card.Elements.Any(icon => icon.gameObject.activeSelf)),
                 Is.True
             );
 
-            // 控えの1人を押すと、その人の冒険者のタブ（ステータス）を開く。パンくずは「編成 › 育成 › 名前」。
+            // 控えの1人を押すと、その人の冒険者のタブ（ステータス）を開く。パンくずは「編成 › 一覧 › 名前」。
             var chosen = shown.Last();
             chosen.Card.Click();
             var page = view.PanelFor(ItemOf(view, TrainingSession.GuideItemKey))
@@ -107,12 +99,12 @@ namespace Baryonyx.Tests.PlayMode
             yield return SceneTests.WaitForTask(page.LoadTask);
             string name = formation.Name(chosen.Id);
             Assert.That(page.Name.text, Is.EqualTo(name));
-            Assert.That(view.Breadcrumb.text, Is.EqualTo(Trail("編成", "育成", name)));
+            Assert.That(view.Breadcrumb.text, Is.EqualTo(Trail("編成", "一覧", name)));
 
             // タブの「もどる」で人選びへ、もう一度でメニューへ戻る。
             view.Back.onClick.Invoke();
             Assert.That(picker.gameObject.activeInHierarchy, Is.True);
-            Assert.That(view.Breadcrumb.text, Is.EqualTo(Trail("編成", "育成")));
+            Assert.That(view.Breadcrumb.text, Is.EqualTo(Trail("編成", "一覧")));
             view.Back.onClick.Invoke();
             Assert.That(view.MenuPanel.activeSelf, Is.True);
             Assert.That(guide.Presenter.Left, Is.False);
@@ -126,7 +118,7 @@ namespace Baryonyx.Tests.PlayMode
             list.Chosen.Detail.onClick.Invoke();
             yield return SceneTests.WaitForTask(page.LoadTask);
             string first = formation.Name(formation.Member(0));
-            Assert.That(view.Breadcrumb.text, Is.EqualTo(Trail("編成", "冒険者", first)));
+            Assert.That(view.Breadcrumb.text, Is.EqualTo(Trail("編成", "パーティー", first)));
             view.Back.onClick.Invoke();
             Assert.That(list.gameObject.activeInHierarchy, Is.True);
         }

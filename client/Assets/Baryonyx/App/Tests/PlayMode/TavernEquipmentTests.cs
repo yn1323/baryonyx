@@ -83,7 +83,7 @@ namespace Baryonyx.Tests.PlayMode
                     string.Join(
                         Baryonyx.UI.GuideMenu.GuideMenuView.TrailSeparator,
                         "編成",
-                        "冒険者",
+                        "パーティー",
                         person.Name
                     )
                 )
@@ -180,7 +180,41 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(Row(panel, "炎のダガー").Mark.text, Is.EqualTo("装備中"));
             // 左の枠にも、付けている装備の効果を一覧の行と同じ文で出す。
             Assert.That(panel.Slots[0].Detail.text, Is.Not.Empty);
-            Assert.That(panel.Slots[0].Detail.text, Is.EqualTo(Row(panel, "炎のダガー").Detail.text));
+            Assert.That(
+                panel.Slots[0].Detail.text,
+                Is.EqualTo(Row(panel, "炎のダガー").Detail.text)
+            );
+
+            // ほかの人が付けている武器を押すと、付け替える前に確かめる。やめると何も変えない。
+            var others = Rows(panel)
+                .First(row =>
+                    row.Mark.gameObject.activeSelf
+                    && row.Mark.text.EndsWith("が装備中")
+                    && row.Mark.text != "装備中"
+                );
+            string holder = others.Mark.text.Substring(
+                0,
+                others.Mark.text.Length - "が装備中".Length
+            );
+            others.Button.onClick.Invoke();
+            Assert.That(panel.Dialog.IsShown, Is.True);
+            Assert.That(panel.Dialog.TitleText, Is.EqualTo(HeldByOtherDialog.Question(holder)));
+            Assert.That(
+                panel.Dialog.ChoiceLabels,
+                Is.EqualTo(new[] { HeldByOtherDialog.CancelChoice, HeldByOtherDialog.ChangeChoice })
+            );
+            panel.Dialog.RowButtons[0].onClick.Invoke();
+            Assert.That(panel.Dialog.IsShown, Is.False);
+            Assert.That(panel.Slots[0].Name.text, Does.StartWith("炎のダガー"));
+            // 変更すると付け替える。自分が付けている物を押したときは確かめない。
+            others.Button.onClick.Invoke();
+            panel.Dialog.RowButtons[1].onClick.Invoke();
+            yield return SceneTests.WaitForTask(panel.Presenter.ChangeTask);
+            Assert.That(panel.Slots[0].Name.text, Does.Not.StartWith("炎のダガー"));
+            Row(panel, "炎のダガー").Button.onClick.Invoke();
+            Assert.That(panel.Dialog.IsShown, Is.False);
+            yield return SceneTests.WaitForTask(panel.Presenter.ChangeTask);
+            Assert.That(panel.Slots[0].Name.text, Does.StartWith("炎のダガー"));
 
             // 防具を外すと、外すボタンは押せなくなる。
             panel.Slots[1].Button.onClick.Invoke();
@@ -204,10 +238,10 @@ namespace Baryonyx.Tests.PlayMode
         // 左の列で光っている人のID。
         private static string Chosen(PartySheet sheet) =>
             sheet.People.Single(person => person.Selected.activeSelf).Id;
+
         // 付け替えたカードに重ねた、前の中身の写しの数。
         private static int Ghosts(GlassCard card) =>
             card.GetComponentsInChildren<Transform>(true).Count(child => child.name == "TurnGhost");
-
 
         private static PartySheetPersonWidget Person(PartySheet sheet, string id) =>
             sheet.People.Single(person => person.Id == id);

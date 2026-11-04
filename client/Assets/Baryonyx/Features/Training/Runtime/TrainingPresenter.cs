@@ -7,6 +7,7 @@ using Baryonyx.Combat;
 using Baryonyx.Equipment;
 using Baryonyx.Inventory;
 using Baryonyx.Party;
+using Baryonyx.SkillEvolution;
 using Baryonyx.UI.Cards;
 using UnityEngine;
 
@@ -116,8 +117,10 @@ namespace Baryonyx.Training
         public bool Maxed { get; internal set; }
         public bool CanSwitch { get; internal set; }
 
-        // 使えるカードの属性のアイコン（重ねずに、カードの順）。
+        // 使えるカードの属性のアイコン（重ねずに、カードの順）と、同じ順の属性。
         public IReadOnlyList<Sprite> Elements { get; internal set; }
+        public IReadOnlyList<CardElement> ElementKinds { get; internal set; } =
+            Array.Empty<CardElement>();
         public CharacterStats Stats { get; internal set; }
 
         // パッシブ2つ、続けて固有スキル2つ。
@@ -475,6 +478,14 @@ namespace Baryonyx.Training
                 Maxed = maxed,
                 CanSwitch = roster.Count > 1 && !open && celebrated == 0,
                 Elements = cards.Select(iconOf).Where(icon => icon != null).Distinct().ToArray(),
+                ElementKinds = cards
+                    .Select(card =>
+                        (CardSkills.Find(card) ?? UniqueSkillTrees.FindStage(card)?.Card)?.Element
+                        ?? CardElement.None
+                    )
+                    .Where(element => element != CardElement.None)
+                    .Distinct()
+                    .ToArray(),
                 Stats = wear(current.Id, current.Growth.StatsAt(level, stage)),
                 Skills = skills,
                 Passives = skills.Where(skill => skill.Type == PassiveType).ToArray(),

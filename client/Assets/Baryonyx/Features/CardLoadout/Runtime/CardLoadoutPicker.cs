@@ -11,7 +11,7 @@ namespace Baryonyx.CardLoadout
     /// <summary>
     /// The cards to choose from, over the whole screen under a dark veil, opened by pressing one
     /// of the six cards (doc/features/screens/loadout.md#スキル). For a custom skill's slot it lays
-    /// out large, four to a row, the skills the person can set, then the items, then the skills of
+    /// out five to a row, the skills the person can set, then the items, then the skills of
     /// other elements (dark and not pressable), each group from a new row with a gold line
     /// between; for a unique skill, the seven stages of its tree, baked in place by the generator.
     /// It opens with the card in the slot (the stage set) chosen and scrolled to; pressing a card
@@ -22,7 +22,7 @@ namespace Baryonyx.CardLoadout
     public sealed class CardLoadoutPicker : MonoBehaviour
     {
         // 一覧の1行のカードの数と、カードの間・まとまりの間・上下の余白（設計座標）。
-        public int Columns = 4;
+        public int Columns = 5;
         public float Gap = 36f;
         public float GroupGap = 72f;
         public float Pad = 48f;

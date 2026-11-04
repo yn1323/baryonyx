@@ -208,6 +208,10 @@ namespace Baryonyx.Tests.EditMode
             var scout = view.Last.Choices.Single(card => card.Id == "card:scout");
             Assert.That(scout.Mark, Is.EqualTo(CardLoadoutPresenter.EquippedMark));
             Assert.That(scout.HeldByOther, Is.True);
+            // 付け替える前に確かめる窓に出す名前。自分の枠の物とアイテムは確かめない。
+            Assert.That(presenter.HolderName("card:scout"), Is.EqualTo("ルカ"));
+            Assert.That(presenter.HolderName(TomaIce), Is.Null);
+            Assert.That(presenter.HolderName("acorn"), Is.Null);
 
             view.Card("card:scout");
             Assert.That(store.CardsOf("toma"), Is.EqualTo(new[] { "card:scout", TomaIce, null }));

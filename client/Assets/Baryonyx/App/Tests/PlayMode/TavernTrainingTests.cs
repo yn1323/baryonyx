@@ -93,8 +93,22 @@ namespace Baryonyx.Tests.PlayMode
             var growth = training.Data.Find(first.Id);
             Assert.That(training.Name.text, Is.EqualTo(first.Name));
             Assert.That(training.Level.text, Is.EqualTo(first.Level.ToString()));
-            // 上の段のパンくずは「編成 › 冒険者 › 名前」、所持ルーンはこの画面で読んだ残高。
-            Assert.That(view.Breadcrumb.text, Is.EqualTo(Trail("編成", "冒険者", first.Name)));
+            // ステータスの下に、使える属性のアイコンと名前、何が決まるかの1行を出す。
+            var kinds = training.Presenter.State.ElementKinds;
+            Assert.That(kinds.Count, Is.GreaterThan(0));
+            Assert.That(
+                training
+                    .ElementNames.Where(name => name.gameObject.activeSelf)
+                    .Select(name => name.text),
+                Is.EqualTo(kinds.Select(Baryonyx.Combat.CardElementNames.Of))
+            );
+            Assert.That(
+                training.Elements.Count(icon => icon.gameObject.activeSelf),
+                Is.EqualTo(kinds.Count)
+            );
+            Assert.That(training.ElementNote.gameObject.activeSelf, Is.True);
+            // 上の段のパンくずは「編成 › パーティー › 名前」、所持ルーンはこの画面で読んだ残高。
+            Assert.That(view.Breadcrumb.text, Is.EqualTo(Trail("編成", "パーティー", first.Name)));
             Assert.That(
                 view.Runes.text,
                 Is.EqualTo(Baryonyx.Economy.RuneBalance.Text(training.Presenter.State.Runes))
@@ -123,7 +137,7 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(training.Name.text, Is.EqualTo(party.Name(party.Member(1))));
             Assert.That(
                 view.Breadcrumb.text,
-                Is.EqualTo(Trail("編成", "冒険者", party.Name(party.Member(1))))
+                Is.EqualTo(Trail("編成", "パーティー", party.Name(party.Member(1))))
             );
             Flick(training, 1);
             Assert.That(training.Name.text, Is.EqualTo(first.Name));
@@ -319,7 +333,10 @@ namespace Baryonyx.Tests.PlayMode
                 Assert.That(page.gameObject.activeSelf, Is.False);
                 Assert.That(training.Sheet.Tabs[3].Chosen, Is.True);
                 Assert.That(training.Sheet.Tabs[3].Label.text, Is.EqualTo("突破"));
-                Assert.That(view.Breadcrumb.text, Is.EqualTo(Trail("編成", "冒険者", first.Name)));
+                Assert.That(
+                    view.Breadcrumb.text,
+                    Is.EqualTo(Trail("編成", "パーティー", first.Name))
+                );
                 yield return null;
 
                 // 突破した段は石を灯して「突破済み」、次の段は金の縁、まだの段は薄い。「限界突破」は右下に1つ。

@@ -22,6 +22,9 @@ namespace Baryonyx.CardLoadout
         public CardLoadoutCard[] SlotCards = Array.Empty<CardLoadoutCard>();
         public CardLoadoutPicker Picker;
 
+        // ほかの人が付けている物を選んだときに確かめる窓（画面全体に重ねる。生成は TavernScreenAssets）。
+        public GameDialog Dialog;
+
         // 左の縦の欄のステータス8つの数字（CharacterStats の順）。カードの効果はステータスの割合で書くので、
         // 見比べるときに実際の数字を読めるようにする（2026-11-03、ユーザーが4案から選んだ）。
         public TMP_Text[] Stats = Array.Empty<TMP_Text>();
@@ -159,10 +162,18 @@ namespace Baryonyx.CardLoadout
         }
 
         // 選んだら、幕を閉じてから付け替える。6枚の画面で変わったカードが回る。
+        // ほかの人が付けているスキルは、付け替える前に確かめる（2026-11-04、ユーザーの指示）。
         private void ChooseInPicker(string key)
         {
-            Picker.Close();
-            CardPressed?.Invoke(key);
+            HeldByOtherDialog.Ask(
+                Dialog,
+                presenter?.HolderName(key),
+                () =>
+                {
+                    Picker.Close();
+                    CardPressed?.Invoke(key);
+                }
+            );
         }
 
         private void ChooseStageInPicker(int stage)

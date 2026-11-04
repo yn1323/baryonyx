@@ -19,6 +19,22 @@ namespace Baryonyx.Combat
         Pierce,
     }
 
+    /// <summary>The one-letter names of the elements, as the screens write them.</summary>
+    public static class CardElementNames
+    {
+        public static string Of(CardElement element) =>
+            element switch
+            {
+                CardElement.Slash => "斬",
+                CardElement.Fire => "炎",
+                CardElement.Ice => "氷",
+                CardElement.Thunder => "雷",
+                CardElement.Blunt => "打",
+                CardElement.Pierce => "貫",
+                _ => "",
+            };
+    }
+
     /// <summary>What a card is for, shown first on its kind line.</summary>
     public enum CardKind
     {

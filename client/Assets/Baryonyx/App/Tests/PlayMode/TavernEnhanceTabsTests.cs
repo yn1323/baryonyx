@@ -100,7 +100,7 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(enhance.Sheet.Tabs[4].Chosen, Is.True);
             Assert.That(enhance.Person, Is.EqualTo(person));
             var member = enhance.Party.Find(person);
-            Assert.That(view.Breadcrumb.text, Is.EqualTo(Trail("編成", "冒険者", member.Name)));
+            Assert.That(view.Breadcrumb.text, Is.EqualTo(Trail("編成", "パーティー", member.Name)));
 
             // 装備のタブで選んでいた防具を選んでおく。
             Assert.That(enhance.Personal[enhance.Selected].Place, Is.EqualTo("armor"));
@@ -168,7 +168,7 @@ namespace Baryonyx.Tests.PlayMode
             var next = people[(at + 1) % people.Count];
             enhance.Swipes[0].Flick(1);
             Assert.That(enhance.Person, Is.EqualTo(next.Id));
-            Assert.That(view.Breadcrumb.text, Is.EqualTo(Trail("編成", "冒険者", next.Name)));
+            Assert.That(view.Breadcrumb.text, Is.EqualTo(Trail("編成", "パーティー", next.Name)));
             if (enhance.Personal.Any(entry => entry.Place == EnhancementTargets.SlotPlace(0)))
                 Assert.That(
                     enhance.Personal[enhance.Selected].Place,

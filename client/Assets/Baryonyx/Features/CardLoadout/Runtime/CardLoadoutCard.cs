@@ -105,7 +105,7 @@ namespace Baryonyx.CardLoadout
             SetNote(null);
         }
 
-        /// <summary>The mark at the top right: gold, or grey when another person holds the card.</summary>
+        /// <summary>The mark at the bottom right: gold, or grey when another person holds the card.</summary>
         public void SetMark(string text, bool other)
         {
             bool on = !string.IsNullOrEmpty(text);

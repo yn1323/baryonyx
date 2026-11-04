@@ -221,6 +221,16 @@ namespace Baryonyx.Equipment
         // 選んでいる枠に、押した装備を付ける。
         public void Choose(string itemId) => ChangeTask = ChooseAsync(itemId);
 
+        /// <summary>
+        /// The name of someone other than the person shown who wears <paramref name="itemId"/>,
+        /// or null (no one, or the person themselves in another slot).
+        /// </summary>
+        public string WearerName(string itemId)
+        {
+            string wearer = state?.WornBy(itemId);
+            return wearer == null || wearer == Current?.Id ? null : NameOf(wearer);
+        }
+
         // 選んでいる枠の装備を外す。
         public void Remove() => ChangeTask = RemoveAsync();
 

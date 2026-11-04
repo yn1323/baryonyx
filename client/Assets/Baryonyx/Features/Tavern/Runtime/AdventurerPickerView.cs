@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Baryonyx.Equipment;
 using Baryonyx.Party;
 using Baryonyx.Training;
 using Baryonyx.UI;
@@ -24,35 +23,34 @@ namespace Baryonyx.Tavern
         public GlassCard Card;
         public TMP_Text Level;
 
-        // パーティにいる人だけに出す「パーティ」の札。
+        // パーティーにいる人だけに出す「パーティー」の札。
         public GameObject PartyTag;
 
-        // 付けている武器・防具の名前。空いていれば「なし」と書き、アイコンを薄くする。
-        public Image WeaponIcon;
-        public TMP_Text Weapon;
-        public Image ArmorIcon;
-        public TMP_Text Armor;
+        // 使える属性のアイコン（パーティーの冒険者のカードと同じ）。
+        public Image[] Elements = Array.Empty<Image>();
     }
 
     /// <summary>
-    /// The formation's growth item (育成): every owned character as a card (the party first, then
-    /// the bench), with the weapon and armour they wear. Tapping one opens their page (the
-    /// training item: levels, skills and equipment); back on the page returns here.
-    /// AdventurerPickerAssets bakes the cards into the formation prefab, so they read in the
-    /// editor; this view orders them and fills in the levels and equipment. With a server
-    /// (<see cref="PartySession.Source"/>) it reads the party on opening; otherwise it uses the
-    /// mock data and the equipment kept while the app runs.
+    /// The formation's list item (一覧): every owned character as a card (the party first, then
+    /// the bench), drawn as the party's cards are: the figure, the name, the level and the
+    /// elements they can use. Tapping one opens their page (the training item: levels, skills
+    /// and equipment); back on the page returns here. AdventurerPickerAssets bakes the cards
+    /// into the formation prefab, so they read in the editor; this view orders them and fills
+    /// in the levels and elements. With a server (<see cref="PartySession.Source"/>) it reads the
+    /// party on opening; otherwise it uses the mock data.
     /// </summary>
     public sealed class AdventurerPickerView : GuidePanel, IEditModePreview
     {
-        // 編成のメニューの「育成」の項目のキー。リストの代わりにこの人選びを開く（冒険中の探索からも開く）。
+        // 編成のメニューの「一覧」の項目のキー。リストの代わりにこの人選びを開く（冒険中の探索からも開く）。
         public const string GuideItemKey = "gear";
 
-        public const string LoadFailedMessage = "編成を取得できませんでした";
-        public const string EmptyText = "なし";
+        /// <summary>The menu item's label (it was 育成 until 2026-11-04).</summary>
+        public const string MenuLabel = "一覧";
 
-        // 付けていない枠のアイコンの濃さ。
-        private const float EmptyAlpha = 0.3f;
+        /// <summary>The gold tag on the cards of the people in the party.</summary>
+        public const string PartyLabel = "パーティー";
+
+        public const string LoadFailedMessage = "編成を取得できませんでした";
 
         // 読み込む間に伏せて並べるカードの数（3列×2段で一覧の見える所を埋める）。
         public const int CoverCards = 6;
@@ -79,30 +77,29 @@ namespace Baryonyx.Tavern
                 bindings.Add((widget.Card, pressed));
             }
 
-            // 開くたびに、サーバーの編成と装備（なければアプリを動かしている間のもの）を読み直す。
+            // 開くたびに、サーバーの編成（なければ仮データ）を読み直す。
             ready = false;
             if (List != null)
                 List.verticalNormalizedPosition = 1f;
             if (Party == null)
                 return;
             var source = PartySession.Source;
-            // 前に読んだ編成と装備があれば、すぐ出して裏で読み直す。なければ読み終えるまで仮データを隠す。
+            // 前に読んだ編成があれば、すぐ出して裏で読み直す。なければ読み終えるまで仮データを隠す。
             var knownParty = PartySession.Known;
-            var knownGear = EquipmentSession.Known;
-            bool shown = knownParty != null && knownGear != null;
+            bool shown = knownParty != null;
             if (shown)
             {
-                Render(knownParty, knownGear);
+                Render(knownParty);
                 ready = true;
             }
-            else if (source != null || EquipmentSession.Source != null)
+            else if (source != null)
                 ShowLoading();
             StartLoad(
-                token => LoadAsync(source, EquipmentSession.SourceOrLocal, shown, token),
+                token => LoadAsync(source, shown, token),
                 LoadFailedMessage,
                 () =>
                 {
-                    // 前の編成と装備を出しているときは、そのまま残して通知だけにする。
+                    // 前の編成を出しているときは、そのまま残して通知だけにする。
                     if (!shown)
                         ShowLoadFailed();
                 },
@@ -118,28 +115,15 @@ namespace Baryonyx.Tavern
             bindings.Clear();
         }
 
-        private async Task LoadAsync(
-            IPartySource source,
-            IEquipmentSource gear,
-            bool shown,
-            CancellationToken token
-        )
+        private async Task LoadAsync(IPartySource source, bool shown, CancellationToken token)
         {
             string shownParty = PartySession.ReadVersion;
-            string shownGear = EquipmentSession.ReadVersion;
-            // 編成と装備は同時に読む。ログインは AccountSessionRunner が1回にまとめる。
-            var reading = PartySession.LoadAsync(Party, source, token);
-            var wearing = gear.LoadAsync(token);
-            await Task.WhenAll(reading, wearing);
+            var formation = await PartySession.LoadAsync(Party, source, token);
             if (token.IsCancellationRequested)
                 return;
-            if (
-                shown
-                && Unchanged(shownParty, PartySession.ReadVersion)
-                && Unchanged(shownGear, EquipmentSession.ReadVersion)
-            )
+            if (shown && Unchanged(shownParty, PartySession.ReadVersion))
                 return;
-            Render(await reading, await wearing);
+            Render(formation);
             ready = true;
         }
 
@@ -152,7 +136,7 @@ namespace Baryonyx.Tavern
             Set(Status, LoadFailedText);
         }
 
-        // 読み込むまで、仮データの編成と装備を本当のものとして見せない。一覧の見える所はカードの裏で埋める。
+        // 読み込むまで、仮データの編成を本当のものとして見せない。一覧の見える所はカードの裏で埋める。
         private void ShowLoading()
         {
             Set(Status, "");
@@ -179,10 +163,11 @@ namespace Baryonyx.Tavern
         }
 
         /// <summary>
-        /// Shows the party first, in slot order, then the bench, each with their level and what
-        /// they wear. The generator calls it too, with the mock data, so the prefab reads.
+        /// Shows the party first, in slot order, then the bench, each with their level and the
+        /// elements they can use. The generator calls it too, with the mock data, so the prefab
+        /// reads.
         /// </summary>
-        public void Render(PartyFormation formation, EquipmentState equipment)
+        public void Render(PartyFormation formation)
         {
             Set(Status, "");
             var order = Order(formation);
@@ -202,14 +187,10 @@ namespace Baryonyx.Tavern
                 if (widget.PartyTag != null)
                     widget.PartyTag.SetActive(formation.SlotOf(widget.Id) >= 0);
                 Set(widget.Level, PartySession.LevelOf(Party, widget.Id).ToString());
-                ShowGear(
-                    widget.WeaponIcon,
-                    widget.Weapon,
-                    equipment,
-                    widget.Id,
-                    EquipmentSlot.Weapon
+                AdventurerRosterView.ShowElements(
+                    widget.Elements,
+                    PartySession.ElementIconsOf(Party, widget.Id)
                 );
-                ShowGear(widget.ArmorIcon, widget.Armor, equipment, widget.Id, EquipmentSlot.Armor);
             }
             // 読み込みを待っていたら、並べた順にめくる。人のいない場所の伏せたカードも、めくってから消す。
             var shownCards = Cards
@@ -237,27 +218,6 @@ namespace Baryonyx.Tavern
                 .Where(id => id != null)
                 .Concat(formation.Bench.Select(member => member.Id))
                 .ToArray();
-
-        /// <summary>The name of what the character wears in the slot, or <see cref="EmptyText"/>.</summary>
-        public static string GearName(EquipmentState equipment, string id, EquipmentSlot slot)
-        {
-            var item = equipment?.Find(equipment.ItemIn(id, slot));
-            return EquipmentCatalog.Find(item?.EquipmentId)?.Name ?? EmptyText;
-        }
-
-        private static void ShowGear(
-            Image icon,
-            TMP_Text label,
-            EquipmentState equipment,
-            string id,
-            EquipmentSlot slot
-        )
-        {
-            string name = GearName(equipment, id, slot);
-            Set(label, name);
-            if (icon != null)
-                icon.color = new Color(1f, 1f, 1f, name == EmptyText ? EmptyAlpha : 1f);
-        }
 
         /// <summary>Opens the character's page; back on the page returns to this picker.</summary>
         public void Pick(string id)

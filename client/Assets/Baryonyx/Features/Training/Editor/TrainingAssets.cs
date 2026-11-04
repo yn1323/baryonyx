@@ -65,9 +65,11 @@ namespace Baryonyx.Training.Editor
         // 右の面の中（左上から）：名前の行とその右端の「レベルアップ」、ステータス（2列4行）、パッシブ。
         // スキル・装備・突破は、それぞれのタブで出す（2026-10-26）。空いた分、ステータスの行間を広げて
         // 読みやすくし、パッシブは文字を大きくしたまま、行の高さを中身に合わせる。
-        private const float StatsTop = 150f;
-        private const float StatRow = 76f;
-        private static readonly Rect Passives = new(16, 480, 916, 442);
+        // 2026-11-04に、ステータスとパッシブの間へ「属性」の段を足し、ステータスの行を詰めた。
+        private const float StatsTop = 140f;
+        private const float StatRow = 66f;
+        private static readonly Rect ElementBox = new(16, 414, 916, 108);
+        private static readonly Rect Passives = new(16, 530, 916, 412);
         private const float PassiveRow = 168f;
         private const float PassiveGap = 16f;
         private const float LevelUpWidth = 240f;
@@ -427,12 +429,8 @@ namespace Baryonyx.Training.Editor
                 TextAlignmentOptions.MidlineLeft
             );
             Layout.Fit(view.Level, 0);
-            view.Elements = Enumerable
-                .Range(0, 3)
-                .Select(i => Layout.RowIcon(header, "Element" + i, 12f * Dot))
-                .ToArray();
 
-            // キャラ自身：ステータス（2列4行）と、その下にパッシブ2つ。
+            // キャラ自身：ステータス（2列4行）、その下に使える属性、パッシブ2つ。
             view.Stats = StatGridAssets.Build(
                 panel,
                 PanelPad,
@@ -444,8 +442,52 @@ namespace Baryonyx.Training.Editor
                 valueSize: 40,
                 centerValue: true
             );
+            BuildElements(panel, view);
             view.Passives = BuildPassives(panel);
             BuildLevelUp(panel, view);
+        }
+
+        // 使える属性：見出しの下に、属性のアイコン（12×12を4倍）と名前を並べ、右に何が決まるかの1行。
+        private static void BuildElements(RectTransform panel, TrainingView view)
+        {
+            var box = Layout.Box(
+                panel,
+                "Elements",
+                ElementBox.x,
+                ElementBox.y,
+                ElementBox.width,
+                ElementBox.height
+            );
+            GuideFrameAssets.Heading(box, "Title", "属性", 14, 6, 300, 40, 26);
+            const float rowTop = 54f;
+            const float rowHeight = 52f;
+            var row = Layout.Row(box, "Row", 18, rowTop, 420, rowHeight, 14);
+            view.Elements = new Image[3];
+            view.ElementNames = new TMP_Text[3];
+            for (int i = 0; i < 3; i++)
+            {
+                view.Elements[i] = Layout.RowIcon(row, "Element" + i, 12f * Dot);
+                var name = Label(
+                    row,
+                    "Name" + i,
+                    "",
+                    34,
+                    UiPalette.TextMain,
+                    TextAlignmentOptions.MidlineLeft
+                );
+                Layout.Fit(name, 0);
+                view.ElementNames[i] = name;
+            }
+            view.ElementNote = Label(
+                box,
+                "Note",
+                TrainingView.ElementNoteText,
+                26,
+                UiPalette.TextSub,
+                TextAlignmentOptions.MidlineRight
+            );
+            Layout.At(view.ElementNote, 440, rowTop, ElementBox.width - 440 - 18, rowHeight);
+            Guide.Shrink(view.ElementNote, 20);
         }
 
         // 名前の行の右端の「レベルアップ」（模様のない小さなすりガラスのカード）。1段目に「レベルアップ」、

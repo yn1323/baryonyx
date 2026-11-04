@@ -9,9 +9,11 @@ using Baryonyx.Party.Editor;
 using Baryonyx.Training;
 using Baryonyx.Training.Editor;
 using Baryonyx.UI;
+using Baryonyx.UI.Editor;
 using Baryonyx.UI.GuideMenu;
 using Baryonyx.Workshop.Editor;
 using UnityEditor;
+using UnityEngine;
 using static Baryonyx.UI.GuideMenu.Editor.GuideMenuAssets;
 
 namespace Baryonyx.Tavern.Editor
@@ -84,8 +86,20 @@ namespace Baryonyx.Tavern.Editor
                             view
                         ),
                         _ => null,
-                    }
+                    },
+                overlay: BuildDialog
             );
+        }
+
+        // ほかの人が付けている物を付け替える前に確かめる窓。画面全体を覆うため、パネルの外に置く。
+        private static GameObject BuildDialog(RectTransform root, GuideMenuView guide)
+        {
+            var dialog = GameDialogAssets.Build(root);
+            foreach (var equipment in root.GetComponentsInChildren<EquipmentView>(true))
+                equipment.Dialog = dialog;
+            foreach (var cards in root.GetComponentsInChildren<CardLoadoutView>(true))
+                cards.Dialog = dialog;
+            return null;
         }
 
         private static void Fill(GuideMenuDefinition d)
@@ -105,17 +119,17 @@ namespace Baryonyx.Tavern.Editor
             };
         }
 
-        // The adventurers open the list of every character (the party first) instead of a list:
-        // choose one to see them, change the party, or open their page.
+        // The party item opens the party and the bench instead of a list: choose one to see them,
+        // change the party, or open their page. 2026-11-04に「冒険者」から改めた（ユーザーの指示）。
         private static GuideMenuItem Adventurers()
         {
-            var item = Item("冒険者", "編成する", Icon(IconFormationPath));
+            var item = Item(PartyLabel, "編成する", Icon(IconFormationPath));
             item.Key = PartySession.GuideItemKey;
             return item;
         }
 
-        // 育成は、全員のカードを並べた人選びを開く。1人を押すと、Lv上げ・スキル・装備をまとめた
-        // その人の冒険者のタブへ進む（2026-10-26、「装備」から改めた。開く先の中身に名前を合わせる）。
+        // 一覧は、全員のカードを並べた人選びを開く。1人を押すと、Lv上げ・スキル・装備をまとめた
+        // その人の冒険者のタブへ進む（2026-10-26に「装備」から「育成」へ、2026-11-04に「一覧」へ改めた）。
         private static GuideMenuItem Growth()
         {
             var item = Item(GrowthLabel, "選ぶ", Icon(IconGrowthPath));
@@ -123,8 +137,11 @@ namespace Baryonyx.Tavern.Editor
             return item;
         }
 
-        /// <summary>The growth item's name, also the breadcrumb of the picker and the pages it opens.</summary>
-        public const string GrowthLabel = "育成";
+        /// <summary>The list item's name, also the breadcrumb of the picker and the pages it opens.</summary>
+        public const string GrowthLabel = AdventurerPickerView.MenuLabel;
+
+        /// <summary>The party item's name, also the breadcrumb of the party and the bench.</summary>
+        public const string PartyLabel = AdventurerPickerView.PartyLabel;
 
         private static void WriteMenuIcons()
         {

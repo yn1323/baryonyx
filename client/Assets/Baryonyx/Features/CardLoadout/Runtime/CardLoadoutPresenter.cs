@@ -424,6 +424,18 @@ namespace Baryonyx.CardLoadout
                 .FirstOrDefault(person => person.Id != except && CardsOf(person.Id).Contains(key))
                 ?.Name;
 
+        /// <summary>
+        /// The name of someone other than the person shown who has set the skill
+        /// <paramref name="key"/>, or null (also for an item, which several may hold).
+        /// </summary>
+        public string HolderName(string key) =>
+            string.IsNullOrEmpty(key)
+            || PartyCardKey.IsItem(key)
+            || store.OwnedSkills == null
+            || State == null
+                ? null
+                : HolderOf(key, State.PersonId);
+
         // store にあるその人の枠の中身。なければ空。
         private IReadOnlyList<string> CardsOf(string id) =>
             store.CardsOf(id) ?? Array.Empty<string>();

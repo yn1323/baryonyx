@@ -111,6 +111,9 @@ namespace Baryonyx.Equipment
         public TMP_Text Status;
         public EquipmentRow[] Rows = Array.Empty<EquipmentRow>();
 
+        // ほかの人が付けている物を押したときに確かめる窓（画面全体に重ねる。生成は TavernScreenAssets）。
+        public GameDialog Dialog;
+
         // リストの最後の「外す」。選んでいる枠が空いている間は押せない。
         public Button Remove;
         public TMP_Text RemoveLabel;
@@ -627,7 +630,16 @@ namespace Baryonyx.Equipment
         {
             if (row == null)
                 return;
-            bindings.Bind(row.Button, () => ItemPressed?.Invoke(row.ItemId));
+            // ほかの人が付けている物は、付け替える前に確かめる（2026-11-04、ユーザーの指示）。
+            bindings.Bind(
+                row.Button,
+                () =>
+                    HeldByOtherDialog.Ask(
+                        Dialog,
+                        presenter?.WearerName(row.ItemId),
+                        () => ItemPressed?.Invoke(row.ItemId)
+                    )
+            );
         }
     }
 }
