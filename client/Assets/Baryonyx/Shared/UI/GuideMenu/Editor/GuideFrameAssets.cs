@@ -477,7 +477,8 @@ namespace Baryonyx.UI.GuideMenu.Editor
         /// A list window in the middle of the screen (the treasures, the summon's results and
         /// rates): the shared veil over the whole screen (a tap closes), the window
         /// (<see cref="WindowFrame"/>), the heading with its diamond at the top left, × at the top
-        /// right and the gold line under the heading. Lay the body out from
+        /// right and the gold line under the heading (on a lineless screen, the heading's gold
+        /// letters alone, without the diamond and the line). Lay the body out from
         /// <see cref="WindowHeadHeight"/> down and a bottom-right button with
         /// <see cref="WindowButton"/>. The root is left shown.
         /// </summary>
@@ -511,18 +512,20 @@ namespace Baryonyx.UI.GuideMenu.Editor
                 UiType.Title
             );
             var close = CloseButton(window, width - Layout.HitSize - 8f, 4f);
-            AddImage(
-                Layout.Box(
-                    window,
-                    "HeadLine",
-                    WindowPad,
-                    WindowHeadHeight - 4f,
-                    width - WindowPad * 2f,
-                    2f
-                ),
-                LineColor,
-                false
-            );
+            // 線のない形では、見出しの下の金の線を引かない（doc/rules/ui-design.md の線のない形）。
+            if (!UiLook.Lineless)
+                AddImage(
+                    Layout.Box(
+                        window,
+                        "HeadLine",
+                        WindowPad,
+                        WindowHeadHeight - 4f,
+                        width - WindowPad * 2f,
+                        2f
+                    ),
+                    LineColor,
+                    false
+                );
             return new ListWindowParts(root, veilButton, window, heading, close);
         }
 

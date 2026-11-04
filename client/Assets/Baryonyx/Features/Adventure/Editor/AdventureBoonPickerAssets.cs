@@ -74,7 +74,8 @@ namespace Baryonyx.Adventure.Editor
                 var lane = Rect($"Lane{column + 1}", safe);
                 Place(lane, new Vector2(x, LaneY), LaneSize);
                 lanes.Add(lane.gameObject.AddComponent<CanvasGroup>());
-                GlassCardAssets.Plaque(lane, pattern: false, fill: LaneFill);
+                // 列は縁のない濃い板にする。強化の札の枠は、カードと同じ作りで格を見せるため残す。
+                GlassCardAssets.Plaque(lane, pattern: false, fill: LaneFill, bare: UiLook.Lineless);
 
                 var floor = Rect("Floor", lane);
                 Place(floor, new Vector2(0, FloorY), new Vector2(300, 80));

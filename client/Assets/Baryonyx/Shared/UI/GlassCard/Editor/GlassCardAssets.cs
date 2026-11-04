@@ -112,9 +112,9 @@ namespace Baryonyx.UI.Editor
         /// A <paramref name="dashed"/> card (an empty place, or an action such as "remove") has a
         /// dashed rim and no pattern; small cards (equipment slots) leave the pattern out.
         /// A card straight over the scene passes <see cref="SceneFillColor"/> as <paramref name="fill"/>.
-        /// A <paramref name="bare"/> card (a row of a lineless panel) keeps only the faint plate:
-        /// no rim, pattern, dashes or shadow. Chosen, it shows the gold rim and glow like any card
-        /// (doc/rules/ui-design.md の線のない形).
+        /// A <paramref name="bare"/> card (a row of a lineless panel) keeps only the plate (the faint
+        /// one, or <paramref name="fill"/> over the scene): no rim, pattern, dashes or shadow.
+        /// Chosen, it shows the gold rim and glow like any card (doc/rules/ui-design.md の線のない形).
         /// </summary>
         public static (GlassCard Card, RectTransform Content) Build(
             RectTransform rect,
@@ -302,7 +302,7 @@ namespace Baryonyx.UI.Editor
         ) Visuals(RectTransform rect, bool dashed, bool pattern, Color? plate, bool bare = false)
         {
             if (bare)
-                return BareVisuals(rect);
+                return BareVisuals(rect, plate ?? FillColor);
             RectTransform shadow = null;
             if (!dashed)
             {
@@ -372,11 +372,11 @@ namespace Baryonyx.UI.Editor
             Image Fill,
             RectTransform Content,
             GameObject Selection
-        ) BareVisuals(RectTransform rect)
+        ) BareVisuals(RectTransform rect, Color plate)
         {
             var body = Rect("Body", rect);
             Stretch(body);
-            var fill = Plate(Stretched("Fill", body), FillPath, FillColor);
+            var fill = Plate(Stretched("Fill", body), FillPath, plate);
             var tint = Stretched("SelectedTint", body);
             Plate(tint, FillPath, new Color(GoldColor.r, GoldColor.g, GoldColor.b, 0.1f));
             tint.gameObject.SetActive(false);

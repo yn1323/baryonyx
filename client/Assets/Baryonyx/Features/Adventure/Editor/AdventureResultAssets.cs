@@ -242,7 +242,11 @@ namespace Baryonyx.Adventure.Editor
         private static ItemTile Cell(RectTransform content)
         {
             var rect = Rect("CellTemplate", content);
-            var (cell, inside) = ItemTileAssets.Build(rect, fill: GlassCardAssets.SceneFillColor);
+            var (cell, inside) = ItemTileAssets.Build(
+                rect,
+                fill: GlassCardAssets.SceneFillColor,
+                bare: UiLook.Lineless
+            );
 
             var art = Rect("Art", inside);
             Place(art, new Vector2(0f, 28f), Vector2.one * ArtSize);

@@ -107,6 +107,8 @@ namespace Baryonyx.Adventure.Editor
             var grounds = ImportGrounds();
             var font = GameFontAssets.GetOrCreate();
             var shadowText = UiArt.EnsureTextShadow(font);
+            // 窓の中の札は、商会・酒場と同じ線のない形にする（doc/rules/ui-design.md の線のない形）。
+            using (UiLook.BeginLineless())
             using (Begin(font, shadowText))
             {
                 BuildExploration(grounds);

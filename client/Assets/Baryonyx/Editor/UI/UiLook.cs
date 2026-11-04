@@ -12,7 +12,7 @@ namespace Baryonyx.Editor.UI
         // 線のない形でも、一覧の上の見出しの段を残す（ライブラリの見つけた数）。見出しの菱形は付けない。
         public static bool ListHeading { get; private set; }
 
-        // 商会・酒場・ライブラリの画面を組み立てる間に開く。Dispose で前の見た目に戻す。
+        // 商会・酒場・ライブラリ・旅の案内所・神殿・冒険の画面を組み立てる間に開く。Dispose で前の見た目に戻す。
         public static Scope BeginLineless(bool listHeading = false)
         {
             var scope = new Scope(Lineless, ListHeading);

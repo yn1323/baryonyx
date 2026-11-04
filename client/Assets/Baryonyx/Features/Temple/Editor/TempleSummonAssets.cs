@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using Baryonyx.Editor.UI;
 using Baryonyx.Inventory;
 using Baryonyx.Library;
 using Baryonyx.Library.Editor;
@@ -138,7 +139,8 @@ namespace Baryonyx.Temple.Editor
                     RatesButtonSize.y
                 ),
                 pattern: false,
-                fill: GlassCardAssets.SceneFillColor
+                fill: GlassCardAssets.SceneFillColor,
+                bare: UiLook.Lineless
             );
             var ratesLabel = Label(
                 ratesInside,
@@ -296,7 +298,7 @@ namespace Baryonyx.Temple.Editor
                     tile,
                     TileHeight
                 );
-                var inside = GlassCardAssets.Plaque(box, pattern: false);
+                var inside = GlassCardAssets.Plaque(box, pattern: false, bare: UiLook.Lineless);
                 var labelText = Label(
                     inside,
                     "Label",
@@ -365,7 +367,11 @@ namespace Baryonyx.Temple.Editor
                         cell,
                         EntryHeight
                     );
-                    var inside = GlassCardAssets.Plaque(box, pattern: false);
+                    var inside = GlassCardAssets.Plaque(
+                        box,
+                        pattern: false,
+                        bare: UiLook.Lineless
+                    );
                     string stars =
                         entry.Stars > 0
                             ? $" <color=#{ColorUtility.ToHtmlStringRGB(UiPalette.Gold)}>{new string('★', entry.Stars)}</color>"
@@ -457,7 +463,7 @@ namespace Baryonyx.Temple.Editor
         internal static ItemTile BuildCard(RectTransform grid, string name, Color? fill = null)
         {
             var rect = Rect(name, grid);
-            var (tile, inside) = ItemTileAssets.Build(rect, fill: fill);
+            var (tile, inside) = ItemTileAssets.Build(rect, fill: fill, bare: UiLook.Lineless);
             var art = Rect("Art", inside);
             Place(
                 art,

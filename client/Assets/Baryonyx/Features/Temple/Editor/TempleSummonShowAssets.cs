@@ -52,6 +52,8 @@ namespace Baryonyx.Temple.Editor
         public static void CreateAssets()
         {
             EditorGuard.RequireEditMode();
+            // 札は、神殿の画面と同じ線のない形にする（doc/rules/ui-design.md の線のない形）。
+            using var look = UiLook.BeginLineless();
             var keyArt = ImportArt("key-art/key-art.png", KeyArtPath);
             ImportArt("window/window.png", WindowArtPath);
             ImportArt("ten-wall/ten-wall.png", WallArtPath);

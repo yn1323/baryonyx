@@ -83,7 +83,10 @@ namespace Baryonyx.TravelOffice.Editor
         private static readonly Color UnknownColor = ItemTileAssets.UnknownColor;
 
         [MenuItem("Baryonyx/Travel Office/Create Screen Assets")]
-        public static void CreateAssets() =>
+        public static void CreateAssets()
+        {
+            // 商会・酒場と同じ線のない形で組み立てる（doc/rules/ui-design.md の線のない形）。
+            using var look = UiLook.BeginLineless();
             CreateScreen(
                 DefinitionPath,
                 PrefabPath,
@@ -92,6 +95,7 @@ namespace Baryonyx.TravelOffice.Editor
                 Fill,
                 overlay: BuildTreasures
             );
+        }
 
         private static void Fill(GuideMenuDefinition d)
         {
@@ -279,7 +283,7 @@ namespace Baryonyx.TravelOffice.Editor
             Stretch(plate);
             plate.offsetMin = Vector2.one * TreasureInset;
             plate.offsetMax = -Vector2.one * TreasureInset;
-            var inside = GlassCardAssets.Plaque(plate, pattern: false);
+            var inside = GlassCardAssets.Plaque(plate, pattern: false, bare: UiLook.Lineless);
             var button = UiBuild.AddButton(hit, GlassCardAssets.FillOf(plate));
 
             var icon = Rect("Icon", inside);
@@ -341,15 +345,18 @@ namespace Baryonyx.TravelOffice.Editor
             );
 
             float viewportHeight = WindowHeight - HeadHeight - InfoHeight;
-            var divider = Layout.Box(
-                window,
-                "Divider",
-                TreasuresLeft - 24f,
-                HeadHeight + 24f,
-                2f,
-                viewportHeight - 48f
-            );
-            AddImage(divider, Frame.LineColor, false);
+            if (!UiLook.Lineless)
+            {
+                var divider = Layout.Box(
+                    window,
+                    "Divider",
+                    TreasuresLeft - 24f,
+                    HeadHeight + 24f,
+                    2f,
+                    viewportHeight - 48f
+                );
+                AddImage(divider, Frame.LineColor, false);
+            }
             var viewport = Layout.Box(
                 window,
                 "Viewport",
@@ -486,7 +493,7 @@ namespace Baryonyx.TravelOffice.Editor
                 width,
                 RewardRowHeight
             );
-            var (card, inside) = GlassCardAssets.Build(rect, pattern: false);
+            var (card, inside) = GlassCardAssets.Build(rect, pattern: false, bare: UiLook.Lineless);
             // 受け取った回だけ押せ、詳しい窓を出す（ビューが押せる回を決める）。
             card.Interactable = false;
             row.Card = card.Group;
@@ -651,7 +658,7 @@ namespace Baryonyx.TravelOffice.Editor
         {
             var rect = Rect("Treasure_" + treasure.Id, grid);
             // 小さな札のため、左上の模様は付けない。
-            var (face, inside) = ItemTileAssets.Build(rect);
+            var (face, inside) = ItemTileAssets.Build(rect, bare: UiLook.Lineless);
             var art = Rect("Art", inside);
             Place(art, new Vector2(0f, 12f), Vector2.one * TileArtBox);
             var image = art.gameObject.AddComponent<RawImage>();
@@ -708,9 +715,11 @@ namespace Baryonyx.TravelOffice.Editor
             return tile;
         }
 
-        // 窓の中の、左右に余白を空けた金の細い線。
+        // 窓の中の、左右に余白を空けた金の細い線。線のない形では引かない。
         private static void Rule(RectTransform window, string name, float y)
         {
+            if (UiLook.Lineless)
+                return;
             var line = Layout.Box(window, name, Pad, y, WindowWidth - Pad * 2f, 2f);
             AddImage(line, Frame.LineColor, false);
         }

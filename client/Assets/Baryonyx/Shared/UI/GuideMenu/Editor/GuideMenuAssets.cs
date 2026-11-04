@@ -705,7 +705,11 @@ namespace Baryonyx.UI.GuideMenu.Editor
             // 冒険者の一覧と同じすりガラスのカード。選んだ行は金の縁と光（「Selected」）を出す。
             // 文字が左上から始まるため、左上の模様は入れない。
             var card = Layout.ListItem(content, name, EntryHeight);
-            var (button, selected, row) = GlassCardAssets.Choice(card, pattern: false);
+            var (button, selected, row) = GlassCardAssets.Choice(
+                card,
+                pattern: false,
+                bare: UiLook.Lineless
+            );
             selected.name = "Selected";
             var label = Label(
                 row,

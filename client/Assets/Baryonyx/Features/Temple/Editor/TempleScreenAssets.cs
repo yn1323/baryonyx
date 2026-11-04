@@ -1,3 +1,4 @@
+using Baryonyx.Editor.UI;
 using Baryonyx.Home.Editor;
 using Baryonyx.UI.GuideMenu;
 using UnityEditor;
@@ -25,6 +26,8 @@ namespace Baryonyx.Temple.Editor
         [MenuItem("Baryonyx/Temple/Create Screen Assets")]
         public static void CreateAssets()
         {
+            // 商会・酒場と同じ線のない形で組み立てる（doc/rules/ui-design.md の線のない形）。
+            using var look = UiLook.BeginLineless();
             TempleSummonShowAssets.CreateAssets();
             TempleSummonTenShowAssets.CreateAssets();
             CreateScreen(
