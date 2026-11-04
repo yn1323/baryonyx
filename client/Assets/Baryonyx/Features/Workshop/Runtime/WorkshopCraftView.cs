@@ -26,8 +26,12 @@ namespace Baryonyx.Workshop
     /// piece's quality and opens <see cref="Picker"/> to change it) and the runes. Press "craft" to
     /// make it: the made thing shows at once with the quality the same rule as the server's gives
     /// (optimistic, doc/rules/data-storage.md), and the screen reads things again if the save fails.
+    /// Pressing a material's tile opens its page of the library, which tells where it is found
+    /// (doc/features/synthesis.md の材料の入手先); back from it returns here with the same thing
+    /// chosen. When a special material is held in more than one quality, pressing "craft" first
+    /// asks which to use (<see cref="Picker"/>).
     /// </summary>
-    public sealed class WorkshopCraftView : GuidePanel, IEditModePreview
+    public sealed class WorkshopCraftView : GuidePanel, IEditModePreview, IGuideEntryTarget
     {
         public const string LoadFailedMessage = "合成できる物を取得できませんでした";
         public const string FailedMessage = "合成できませんでした";
@@ -92,6 +96,9 @@ namespace Baryonyx.Workshop
         private int selected = -1;
         private int crafts;
 
+        // ライブラリから戻ってきたときに選び直す物（KeyOf の形）。読み終えたら選ぶ。
+        private string requested;
+
         public IReadOnlyList<WorkshopRecipe> Recipes => recipes;
         public IReadOnlyList<WorkshopRecipe> Shown => shown;
         public IReadOnlyList<WorkshopOwned> Owned => owned;
@@ -135,14 +142,14 @@ namespace Baryonyx.Workshop
                 item.Button.onClick.AddListener(() => ShowTab(index));
             }
             if (Confirm != null && bound.Add(Confirm))
-                Confirm.onClick.AddListener(Craft);
+                Confirm.onClick.AddListener(PressCraft);
             for (int i = 0; i < MaterialRows.Count; i++)
             {
                 var row = MaterialRows[i];
                 if (row == null || row.Card == null || !bound.Add(row))
                     continue;
                 int index = i;
-                row.Card.Clicked += () => OpenPicker(index);
+                row.Card.Clicked += () => PressMaterial(index);
             }
         }
 
@@ -166,6 +173,39 @@ namespace Baryonyx.Workshop
             owned = nextOwned ?? Array.Empty<WorkshopOwned>();
             records = nextRecords ?? LibraryRecords.Empty;
             ShowTab(tab);
+            if (requested != null)
+                ShowEntry(requested);
+        }
+
+        /// <summary>The chosen thing as "kind key/id", to choose it again on coming back.</summary>
+        public string CurrentEntry =>
+            SelectedRecipe is { } recipe ? KeyOf(recipe.Kind, recipe.Id) : null;
+
+        public static string KeyOf(LibraryKind kind, string id) =>
+            $"{LibraryKinds.GuideItemKey(kind)}/{id}";
+
+        /// <summary>
+        /// Chooses the thing <paramref name="entry"/> (<see cref="KeyOf"/>) on its tab, as when
+        /// coming back from a material's page of the library; before the things are read, once
+        /// they are.
+        /// </summary>
+        public void ShowEntry(string entry)
+        {
+            requested = entry;
+            for (int t = 0; t < WorkshopCraft.Kinds.Count; t++)
+            {
+                var kind = WorkshopCraft.Kinds[t];
+                var recipe = recipes.FirstOrDefault(r =>
+                    r.Kind == kind && KeyOf(r.Kind, r.Id) == entry
+                );
+                if (recipe == null)
+                    continue;
+                requested = null;
+                if (t != tab)
+                    ShowTab(t);
+                Select(shown.ToList().IndexOf(recipe));
+                return;
+            }
         }
 
         public void ShowTab(int index)
@@ -204,6 +244,68 @@ namespace Baryonyx.Workshop
                     Rows[i].Card.Selected = i == index;
             ShowMaterials(shown[index]);
         }
+
+        /// <summary>
+        /// Presses the material tile <paramref name="index"/>: opens the material's page of the
+        /// library, which tells where it is found; back from it returns here.
+        /// </summary>
+        public void PressMaterial(int index)
+        {
+            var recipe = SelectedRecipe;
+            if (recipe == null || index < 0 || index >= recipe.Materials.Count || Guide == null)
+                return;
+            var material = recipe.Materials[index];
+            if (Guide.ShowInLibrary != null)
+                Guide.ShowInLibrary(LibraryKinds.GuideItemKey(material.Kind), material.Id);
+        }
+
+        /// <summary>
+        /// Presses "craft": a special material held in more than one quality is asked for first,
+        /// one by one in the recipe's order (the picker's dark part cancels), then it crafts.
+        /// </summary>
+        public void PressCraft()
+        {
+            if (CanCraft())
+                AskThenCraft(0);
+        }
+
+        private void AskThenCraft(int from)
+        {
+            var recipe = SelectedRecipe;
+            if (recipe == null)
+                return;
+            for (int i = from; i < recipe.Materials.Count; i++)
+            {
+                var material = recipe.Materials[i];
+                if (material.IsItem || !NeedsChoice(material, owned) || Picker == null)
+                    continue;
+                int slot = SpecialIndex(recipe, i);
+                int next = i + 1;
+                Picker.Open(
+                    WorkshopCraft.PiecesOf(material, owned),
+                    special[slot],
+                    EntryOf(material.Kind, material.Id),
+                    piece =>
+                    {
+                        ChoosePiece(slot, piece);
+                        AskThenCraft(next);
+                    }
+                );
+                return;
+            }
+            Craft();
+        }
+
+        /// <summary>
+        /// Whether the special material is held unused in more than one quality, so the person
+        /// chooses which to use; with one, or all of one quality, the worst is used as it is.
+        /// </summary>
+        public static bool NeedsChoice(RecipeMaterial material, IEnumerable<WorkshopOwned> owned) =>
+            WorkshopCraft
+                .ChoicesOf(material, owned)
+                .Select(piece => Quality.Of(piece.Multiplier, piece.MaxMultiplier))
+                .Distinct()
+                .Count() > 1;
 
         /// <summary>
         /// Opens the picker for the material tile <paramref name="index"/> when it is a special

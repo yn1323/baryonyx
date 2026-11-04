@@ -37,6 +37,22 @@ namespace Baryonyx.Workshop
         public const string FailedMessage = "覚醒できませんでした";
         public const string EmptyText = "覚醒できるスキルがありません";
 
+        /// <summary>
+        /// The categories down the left: the unique skills, and the custom skills (the cards).
+        /// 2026-11-04に、1本の一覧から2つの分類に分けた（ユーザーの指示「左のタブで固有とカスタムに分けて」）。
+        /// </summary>
+        public enum Tab
+        {
+            Uniques,
+            Customs,
+        }
+
+        public static readonly string[] TabLabels = { "固有スキル", "カスタムスキル" };
+
+        public GuideTab[] Tabs = Array.Empty<GuideTab>();
+        public TMP_Text ListTitle;
+        public TMP_Text ListCount;
+
         // 読み込む間に伏せて並べる行の数（一覧の見える所を埋める）。
         public const int CoverRows = 7;
 
@@ -85,7 +101,11 @@ namespace Baryonyx.Workshop
 
         private readonly HashSet<Component> bound = new();
         private readonly GlassCardCover cover = new();
+
+        // 覚醒できる行のすべてと、選んでいる分類の行。
+        private IReadOnlyList<AwakeningRow> all = Array.Empty<AwakeningRow>();
         private IReadOnlyList<AwakeningRow> rows = Array.Empty<AwakeningRow>();
+        private Tab tab;
         private IReadOnlyList<PartyMember> people = Array.Empty<PartyMember>();
         private List<PartySkillCard> ownedCards = new();
         private PartyState party;
@@ -97,8 +117,13 @@ namespace Baryonyx.Workshop
         // 持っている素材を読んだか。読むまでは、足りない行の名前を赤くしない。
         private bool counted;
 
-        /// <summary>The rows listed, in order.</summary>
+        /// <summary>The rows listed under the category chosen, in order.</summary>
         public IReadOnlyList<AwakeningRow> Entries => rows;
+
+        /// <summary>Every row that can awaken, of both categories.</summary>
+        public IReadOnlyList<AwakeningRow> All => all;
+
+        public Tab Current => tab;
 
         /// <summary>The row whose awakening scene is open, or null.</summary>
         public AwakeningRow Opened => opened;
@@ -111,6 +136,14 @@ namespace Baryonyx.Workshop
         private void OnEnable()
         {
             BindRows();
+            for (int i = 0; i < Tabs.Length && i < TabLabels.Length; i++)
+            {
+                var item = Tabs[i];
+                if (item == null || item.Button == null || !bound.Add(item))
+                    continue;
+                var next = (Tab)i;
+                item.Button.onClick.AddListener(() => ShowTab(next));
+            }
             if (SceneBack != null && bound.Add(SceneBack))
                 SceneBack.onClick.AddListener(CloseScene);
             RuneBalance.Changed += RefreshShards;
@@ -146,7 +179,28 @@ namespace Baryonyx.Workshop
             party = state;
             people = formation != null ? formation.TabOrder().People : Array.Empty<PartyMember>();
             ownedCards = (state?.SkillCards ?? MockCards(formation)).ToList();
-            rows = AwakeningRows.Of(people, Training, ProgressOf, ownedCards, CardsOf);
+            all = AwakeningRows.Of(people, Training, ProgressOf, ownedCards, CardsOf);
+            rows = Of(tab);
+        }
+
+        // 分類の行：固有スキルは固有スキルの行、カスタムスキルはスキルの1枚の行。並びは全体の順のまま。
+        private IReadOnlyList<AwakeningRow> Of(Tab kind) =>
+            all.Where(row => row.IsSkillCard == (kind == Tab.Customs)).ToArray();
+
+        /// <summary>
+        /// Shows the rows of <paramref name="next"/> and lights its tab; the generator bakes the
+        /// first without drawing the rows (<paramref name="render"/>), as it draws them itself.
+        /// </summary>
+        public void ShowTab(Tab next, bool render = true)
+        {
+            tab = next;
+            rows = Of(tab);
+            for (int i = 0; i < Tabs.Length; i++)
+                if (Tabs[i] != null)
+                    Tabs[i].Chosen = i == (int)tab;
+            Set(ListTitle, TabLabels[(int)tab]);
+            if (render)
+                Render();
         }
 
         // サーバーがないときは、仮データの4人のカードをその人の枠に×1.00で入れ、誰にも付けていない
@@ -203,6 +257,7 @@ namespace Baryonyx.Workshop
                     Paint(Rows[i], rows[i], i > 0 && rows[i].Character != rows[i - 1].Character);
             }
             Set(Status, rows.Count == 0 ? EmptyText : "");
+            Set(ListCount, rows.Count == 0 ? "" : UiText.Count(rows.Count));
             // 覚醒できる物のない場所の伏せた行も、めくってから静かに消す。
             cover.Reveal(
                 Rows.Take(rows.Count).Select(row => row.Card),
@@ -300,6 +355,7 @@ namespace Baryonyx.Workshop
                 Rows[i].gameObject.SetActive(i < CoverRows);
             cover.Cover(Rows.Take(CoverRows).Select(row => row.Card));
             Set(Status, "");
+            Set(ListCount, "-");
         }
 
         private void ShowLoadFailed()
@@ -309,6 +365,7 @@ namespace Baryonyx.Workshop
                 if (row != null)
                     row.gameObject.SetActive(false);
             Set(Status, LoadFailedText);
+            Set(ListCount, "-");
         }
 
         // --- The awakening scene ------------------------------------------------------------
@@ -390,12 +447,7 @@ namespace Baryonyx.Workshop
             ShowCard(Origin, row.Card, row.Character, row.Quality);
             // 枝の2段目へ進むときは、戦闘と同じく深い演出にする。
             bool deep = !row.IsSkillCard && row.Options.All(option => Step(option) == 2);
-            yield return Vfx.EvolutionOmen(
-                card,
-                caster,
-                deep,
-                ArtColor(row.Card)
-            );
+            yield return Vfx.EvolutionOmen(card, caster, deep, ArtColor(row.Card));
             yield return Vfx.EvolutionPresent();
 
             const int none = -1;
@@ -601,24 +653,26 @@ namespace Baryonyx.Workshop
 
         // --- Previews in the editor ---------------------------------------------------------
 
-        // 停止中の表示の切り替え：仮データの一覧、先頭の行の覚醒の場面、欠片が足りない一覧、読み込む間、読めなかったとき。
+        // 停止中の表示の切り替え：仮データの固有スキルとカスタムスキルの一覧、先頭の行の覚醒の場面、
+        // 欠片が足りない一覧、読み込む間、読めなかったとき。
         public IReadOnlyList<string> PreviewStates =>
-            new[] { "一覧", "覚醒の場面", "欠片が足りない" }
+            new[] { "一覧", "カスタムスキル", "覚醒の場面", "欠片が足りない" }
                 .Concat(GuidePanelLoad.PreviewStates)
                 .ToArray();
 
         public void ShowPreviewState(int index)
         {
             StopScene();
-            if (index <= 2)
+            if (index <= 3)
             {
                 cover.Clear();
                 // 停止中は素材を読まないため欠片は0個で、「欠片が足りない」では名前が赤くなる。
-                counted = index == 2;
+                counted = index == 3;
                 Use(PartyFormation.From(Party), null);
+                ShowTab(index == 1 ? Tab.Customs : Tab.Uniques, render: false);
                 Render();
                 RefreshShards();
-                if (index == 1 && rows.Count > 0)
+                if (index == 2 && rows.Count > 0)
                 {
                     Open(0);
                     if (Choice != null)
@@ -630,7 +684,7 @@ namespace Baryonyx.Workshop
                 return;
             }
             ShowLoading();
-            if (index == 4)
+            if (index == 5)
                 ShowLoadFailed();
         }
     }

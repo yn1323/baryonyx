@@ -12,6 +12,7 @@ using Baryonyx.UI;
 using Baryonyx.UI.GuideMenu;
 using Baryonyx.Workshop;
 using NUnit.Framework;
+using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
 
 namespace Baryonyx.Tests.PlayMode
@@ -115,7 +116,8 @@ namespace Baryonyx.Tests.PlayMode
                 craft.MaterialRows[0].Quality.transform.parent.gameObject.activeSelf,
                 Is.True
             );
-            craft.MaterialRows[0].Card.Click();
+            // 使う物を選ぶ画面（合成を押したときに開く。ここでは直に開いて確かめる）。
+            craft.OpenPicker(0);
             var picker = craft.Picker;
             Assert.That(picker.IsOpen, Is.True);
             // 持っている3つを並べ、付けている物は選べない。
@@ -132,14 +134,11 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(craft.Special.Single().RowId, Is.EqualTo("mock-w10"));
             Assert.That(craft.DetailQuality.text, Is.Not.EqualTo(before));
             // 暗い所を押すと、替えずに閉じる。
-            craft.MaterialRows[0].Card.Click();
+            craft.OpenPicker(0);
             picker.Rows[0].Card.Click();
             picker.Dim.onClick.Invoke();
             Assert.That(picker.IsOpen, Is.False);
             Assert.That(craft.Special.Single().RowId, Is.EqualTo("mock-w10"));
-            // アイテムの札は押しても開かない。
-            craft.MaterialRows[1].Card.Click();
-            Assert.That(picker.IsOpen, Is.False);
 
             // 鉄の剣：アイテムだけのレシピ。材料がそろうと押せ、品質Cで出来上がる。
             int sword = craft.Shown.ToList().FindIndex(recipe => recipe.Id == "iron-sword");
@@ -331,6 +330,135 @@ namespace Baryonyx.Tests.PlayMode
         }
 
         // 合成した物・売った物を覚える商会の代役。Fail のあいだは失敗する。
+        // 材料の入手先（doc/features/synthesis.md）：材料の札を押すと、ライブラリのその物のページを開き、
+        // 入手先のダンジョンを見せる。「もどる」で合成へ戻り、同じ物を選んだままにする。
+        [UnityTest]
+        public IEnumerator MaterialTilesOpenTheirLibraryPageAndBackReturnsToTheThing()
+        {
+            var guide = default(GuideSceneBootstrap);
+            yield return SceneTests.LoadGuide(SceneNames.Shop, value => guide = value);
+            var craft = OpenCraft(guide);
+            yield return SceneTests.WaitForTask(craft.LoadTask);
+            craft.ShowTab(Array.IndexOf(WorkshopCraft.TabLabels, "防具"));
+            int helm = craft.Shown.ToList().FindIndex(recipe => recipe.Id == "iron-helm");
+            craft.Select(helm);
+            int acorn = craft
+                .Shown[helm]
+                .Materials.ToList()
+                .FindIndex(material => material.Id == "acorn");
+            craft.MaterialRows[acorn].Card.Click();
+
+            yield return SceneTests.WaitUntil(
+                () => SceneManager.GetActiveScene().name == SceneNames.Library,
+                10f,
+                "The library did not open."
+            );
+            var library = default(GuideSceneBootstrap);
+            yield return SceneTests.WaitUntil(
+                () =>
+                    (library = UnityEngine.Object.FindAnyObjectByType<GuideSceneBootstrap>())
+                        != null
+                    && SceneTests.GuideReady(library),
+                10f,
+                "The library was not ready."
+            );
+            int items = library.View.IndexOfItem(LibraryKinds.GuideItemKey(LibraryKind.Item));
+            var page = library.View.PanelFor(items).GetComponent<LibraryCatalogView>();
+            Assert.That(page.gameObject.activeInHierarchy, Is.True);
+            yield return SceneTests.WaitForTask(page.LoadTask);
+            Assert.That(page.Selected, Is.EqualTo("acorn"));
+            Assert.That(page.Sources.gameObject.activeSelf, Is.True);
+            Assert.That(page.SourcePlaceName.text, Is.EqualTo("ミストラ遺跡"));
+
+            // 「もどる」で合成へ戻り、鉄の兜を選んだままにする。
+            library.View.Back.onClick.Invoke();
+            yield return SceneTests.WaitUntil(
+                () => SceneManager.GetActiveScene().name == SceneNames.Shop,
+                10f,
+                "The craft did not come back."
+            );
+            yield return SceneTests.WaitUntil(
+                () =>
+                    (guide = UnityEngine.Object.FindAnyObjectByType<GuideSceneBootstrap>()) != null
+                    && SceneTests.GuideReady(guide),
+                10f,
+                "The shop was not ready."
+            );
+            int item = guide.View.IndexOfItem(WorkshopSession.CraftItemKey);
+            craft = guide.View.PanelFor(item).GetComponent<WorkshopCraftView>();
+            Assert.That(craft.gameObject.activeInHierarchy, Is.True);
+            yield return SceneTests.WaitForTask(craft.LoadTask);
+            Assert.That(craft.Shown[craft.Selected].Id, Is.EqualTo("iron-helm"));
+            // 戻ってきた合成の「もどる」は、ふだんどおり商会のメニューへ戻る。
+            guide.View.Back.onClick.Invoke();
+            Assert.That(guide.View.MenuPanel.activeSelf, Is.True);
+        }
+
+        // 品質の違う装備を材料にするレシピは、「合成」を押したときに使う物を選ばせる。暗い所で取りやめ、
+        // チェックで選んだ物を使って合成する。品質が1つだけなら選ばせない。
+        [UnityTest]
+        public IEnumerator CraftAsksWhichQualityToUseWhenThereAreSeveral()
+        {
+            var guide = default(GuideSceneBootstrap);
+            yield return SceneTests.LoadGuide(SceneNames.Shop, value => guide = value);
+            yield return SceneTests.WaitForTask(guide.RunesTask);
+            RuneBalance.Set(10000);
+            var craft = OpenCraft(guide);
+            yield return SceneTests.WaitForTask(craft.LoadTask);
+            // 炎のダガーの足りない海賊のラム酒を足し、作れるようにする。
+            var rum = new WorkshopOwned
+            {
+                Kind = LibraryKind.Item,
+                RowId = "test-rum",
+                KindId = "pirate-rum",
+                Count = 1,
+            };
+            craft.Render(
+                craft.Recipes,
+                craft.Owned.Append(rum).ToArray(),
+                LibraryMemorySource.Mock()
+            );
+            int dagger = craft.Shown.ToList().FindIndex(recipe => recipe.Id == "flame-dagger");
+            craft.Select(dagger);
+            var sword = craft.Shown[dagger].Materials.First(material => !material.IsItem);
+            Assert.That(WorkshopCraftView.NeedsChoice(sword, craft.Owned), Is.True);
+            Assert.That(craft.Confirm.interactable, Is.True);
+
+            // 押すと選ぶ画面を開く。暗い所を押すと、合成しない。
+            craft.Confirm.onClick.Invoke();
+            var picker = craft.Picker;
+            Assert.That(picker.IsOpen, Is.True);
+            picker.Dim.onClick.Invoke();
+            Assert.That(picker.IsOpen, Is.False);
+            Assert.That(craft.Swirl.Playing, Is.False);
+            Assert.That(shop.Crafted, Is.Empty);
+
+            // 選んでチェックを押すと、その物を使って合成する。
+            craft.Confirm.onClick.Invoke();
+            int best = picker.Pieces.ToList().FindIndex(piece => piece.RowId == "mock-w10");
+            picker.Rows[best].Card.Click();
+            picker.Confirm.onClick.Invoke();
+            Assert.That(picker.IsOpen, Is.False);
+            Assert.That(craft.Swirl.Playing, Is.True);
+            craft.Swirl.Finish();
+            yield return SceneTests.WaitForTask(craft.Work);
+            Assert.That(shop.Crafted.Single().Recipe, Is.EqualTo("flame-dagger"));
+            Assert.That(shop.Crafted.Single().Materials, Is.EqualTo(new[] { "mock-w10" }));
+
+            // 品質が1つだけなら選ばせない。
+            var one = craft.Owned.Where(thing => thing.KindId != "iron-sword" || thing.RowId == "mock-w9");
+            Assert.That(WorkshopCraftView.NeedsChoice(sword, one), Is.False);
+        }
+
+        private static WorkshopCraftView OpenCraft(GuideSceneBootstrap guide)
+        {
+            var view = guide.View;
+            int item = view.IndexOfItem(WorkshopSession.CraftItemKey);
+            var craft = view.PanelFor(item).GetComponent<WorkshopCraftView>();
+            view.MenuItems[item].onClick.Invoke();
+            return craft;
+        }
+
         private sealed class FakeWorkshop : IWorkshopSource
         {
             public readonly List<(string Recipe, string[] Materials)> Crafted = new();

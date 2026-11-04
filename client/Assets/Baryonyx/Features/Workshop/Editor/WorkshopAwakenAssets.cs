@@ -45,8 +45,7 @@ namespace Baryonyx.Workshop.Editor
         // 行の高さ（冒険者のスキルの行と同じ）と、キャラが替わる行の上に空ける間。
         private const float RowHeight = 140f;
 
-        // 一覧の上の見出し。
-        private const string ListTitle = "覚醒できる固有スキル";
+        // 一覧の上の見出しは、選んでいる分類の名前（固有スキル・カスタムスキル）にする。
         private const float GroupGap = 36f;
 
         // 行の左のキャラの所：戦闘のドット絵（64×64）を2倍で、少し暗い地の上に置き、金の細い線で区切る。
@@ -72,8 +71,12 @@ namespace Baryonyx.Workshop.Editor
             var (view, panel) = GuidePanelTemplate.FullList<WorkshopAwakenView>(
                 safe,
                 "WorkshopAwaken",
-                ListTitle
+                WorkshopAwakenView.TabLabels[0],
+                tabs: WorkshopAwakenView.TabLabels
             );
+            view.Tabs = panel.Tabs;
+            view.ListTitle = panel.Title;
+            view.ListCount = panel.Count;
             view.Guide = guide;
             view.Party = AssetDatabase.LoadAssetAtPath<PartyMockData>(PartyAssets.DataPath);
             view.Training = AssetDatabase.LoadAssetAtPath<TrainingMockData>(
@@ -101,8 +104,9 @@ namespace Baryonyx.Workshop.Editor
             view.Template.gameObject.SetActive(false);
             view.Status = panel.Status;
 
-            // 仮の編成の行を焼き込み、Prefabを開くと停止中でも一覧が読めるようにする。
+            // 仮の編成の行（初めに開く固有スキルの分類）を焼き込み、Prefabを開くと停止中でも一覧が読めるようにする。
             view.Use(PartyFormation.From(view.Party), null);
+            view.ShowTab(WorkshopAwakenView.Tab.Uniques, render: false);
             for (int i = 0; i < view.Entries.Count; i++)
             {
                 var row = BuildRow(content, "Row" + i);

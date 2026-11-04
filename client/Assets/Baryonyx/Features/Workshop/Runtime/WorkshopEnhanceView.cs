@@ -1042,38 +1042,35 @@ namespace Baryonyx.Workshop
                 _ => LibraryFaces.ElementsOf(LibraryKind.Weapon, target.KindId),
             };
 
-        // 行の右下の、使っている人（「アリアが装備中」）。固有スキルは持ち主。
+        /// <summary>
+        /// The mark at a row's bottom right for a thing someone wears or sets: a gold E. Who it is
+        /// is not written (2026-11-04、ユーザーの指示「誰が持っているかは消してよく、右下にEとだけ」).
+        /// </summary>
+        public const string EquippedMark = "E";
+
+        public static readonly string EquippedText =
+            $"<size=130%><b><color=#{ColorUtility.ToHtmlStringRGB(UiPalette.Gold)}>{EquippedMark}</color></b></size>";
+
+        // 行の右下：誰かが付けている物は金の「E」。固有スキルは持ち主の名前。
         private string OwnerOf(EnhancementTarget target)
         {
             if (target.Category == EnhancementCategory.Unique)
                 return roster.FirstOrDefault(member => member.Id == target.CharacterId)?.Name;
-            return owners.TryGetValue(target.ItemId ?? "", out string name)
-                ? name + "が装備中"
-                : "";
+            return owners.ContainsKey(target.ItemId ?? "") ? EquippedText : "";
         }
 
-        private string DetailOf(EnhancementTarget target)
-        {
-            string owner =
-                !ForPerson && owners.TryGetValue(target.ItemId ?? "", out string name)
-                    ? name
-                    : null;
-            return target.Category switch
+        // 右の面の小見出し：種類だけ（付けている人は書かない）。
+        private string DetailOf(EnhancementTarget target) =>
+            target.Category switch
             {
                 EnhancementCategory.Unique =>
                     $"{roster.FirstOrDefault(member => member.Id == target.CharacterId)?.Name}の固有スキル",
-                EnhancementCategory.Skill => Join(
-                    EntryOf(LibraryKind.Skill, target.KindId)?.KindLine,
-                    owner != null ? owner + "が装備中" : null
-                ),
-                _ => Join(
-                    EquipmentCatalog.Find(target.KindId) is { } gear
-                        ? EquipmentCatalog.NameOf(gear.Slot)
-                        : "",
-                    owner != null ? owner + "が装備中" : null
-                ),
+                EnhancementCategory.Skill => EntryOf(LibraryKind.Skill, target.KindId)?.KindLine
+                    ?? "",
+                _ => EquipmentCatalog.Find(target.KindId) is { } gear
+                    ? EquipmentCatalog.NameOf(gear.Slot)
+                    : "",
             };
-        }
 
         private LibraryEntryData EntryOf(EnhancementTarget target) =>
             target.Category switch
@@ -1091,9 +1088,6 @@ namespace Baryonyx.Workshop
                     entry != null && entry.Kind == kind && entry.Id == id
                 )
                 : null;
-
-        private static string Join(string first, string second) =>
-            string.Join("｜", new[] { first, second }.Where(text => !string.IsNullOrEmpty(text)));
 
         private void EnsureRows(int rows)
         {

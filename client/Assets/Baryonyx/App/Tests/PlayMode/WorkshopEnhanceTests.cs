@@ -194,6 +194,30 @@ namespace Baryonyx.Tests.PlayMode
                 awaken.Rows.Count(row => row.gameObject.activeSelf),
                 Is.EqualTo(awaken.Entries.Count)
             );
+            // 左の分類は固有スキルとカスタムスキルで、初めは固有スキルの行だけを出す。
+            Assert.That(
+                awaken.Tabs.Select(tab => tab.Label.text),
+                Is.EqualTo(WorkshopAwakenView.TabLabels)
+            );
+            Assert.That(awaken.Tabs[0].Chosen, Is.True);
+            Assert.That(awaken.ListTitle.text, Is.EqualTo("固有スキル"));
+            Assert.That(awaken.ListCount.text, Is.EqualTo(UiText.Count(awaken.Entries.Count)));
+            Assert.That(awaken.Entries.All(row => !row.IsSkillCard), Is.True);
+            awaken.Tabs[1].Button.onClick.Invoke();
+            Assert.That(awaken.Current, Is.EqualTo(WorkshopAwakenView.Tab.Customs));
+            Assert.That(awaken.ListTitle.text, Is.EqualTo("カスタムスキル"));
+            Assert.That(awaken.Entries, Is.Not.Empty);
+            Assert.That(awaken.Entries.All(row => row.IsSkillCard), Is.True);
+            Assert.That(
+                awaken.Rows.Count(row => row.gameObject.activeSelf),
+                Is.EqualTo(awaken.Entries.Count)
+            );
+            Assert.That(
+                awaken.Entries.Count + awaken.All.Count(row => !row.IsSkillCard),
+                Is.EqualTo(awaken.All.Count)
+            );
+            awaken.Tabs[0].Button.onClick.Invoke();
+            Assert.That(awaken.Tabs[0].Chosen, Is.True);
             // 先頭はパーティの先頭の人の固有スキル。
             var entry = awaken.Entries[0];
             Assert.That(entry.Character, Is.Not.Null);
