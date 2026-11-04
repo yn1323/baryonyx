@@ -318,16 +318,46 @@ namespace Baryonyx.WorldMap
                             role: ButtonRole.Primary
                         ),
                     };
-            dialog.Show(
-                DungeonOpenedTitle,
-                DungeonOpenedText(area.Name),
-                null,
-                dialog.Hide,
-                DialogStyle.Cross,
-                choices
-            );
+            void Tell() =>
+                dialog.Show(
+                    DungeonOpenedTitle,
+                    DungeonOpenedText(area.Name),
+                    null,
+                    dialog.Hide,
+                    DialogStyle.Cross,
+                    choices
+                );
+            // 町から花火を打ち上げ、開ききったところで窓を出す（2026-11-04、ユーザー「もっと盛り上がる演出に」）。
+            int index = current.Graph.IndexOf(id);
+            var square = index >= 0 && index < current.Nodes.Length ? current.Nodes[index] : null;
+            var show = square != null ? FireworksOf(current) : null;
+            if (show != null)
+                show.Play(square, Tell);
+            else
+                Tell();
             return true;
         }
+
+        // 今の地図の画面に重ねる、ダンジョン解放の花火。画面ごとに1つ作って使い回す。
+        private DungeonFireworks fireworks;
+
+        private DungeonFireworks FireworksOf(WorldMapView view)
+        {
+            if (fireworks != null && fireworks.transform.parent == view.transform)
+                return fireworks;
+            var prefab = Resources.Load<DungeonFireworks>(DungeonFireworks.ResourcePath);
+            if (prefab == null)
+                return null;
+            fireworks = Instantiate(prefab, view.transform, false);
+            fireworks.Attach();
+            return fireworks;
+        }
+
+        /// <summary>The fireworks of the map on screen, once a dungeon has opened on it.</summary>
+        public DungeonFireworks Fireworks =>
+            fireworks != null && current != null && fireworks.transform.parent == current.transform
+                ? fireworks
+                : null;
 
         private void PressDungeons()
         {

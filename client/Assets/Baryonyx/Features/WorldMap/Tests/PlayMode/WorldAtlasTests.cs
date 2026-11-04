@@ -712,6 +712,13 @@ namespace Baryonyx.Tests.PlayMode
             var coast = OpenBeside(navigator, "marina", "portoria");
             Assert.That(DungeonUnlocks.Reached("portoria", WorldMapProgress.Start), Is.False);
             yield return WalkTo(coast, "portoria");
+            // 着くと先に町から花火が上がり、開ききってから窓が出る。
+            yield return SceneTests.WaitUntil(
+                () => navigator.Fireworks != null && navigator.Fireworks.Playing,
+                seconds: 8f,
+                message: "No fireworks went up."
+            );
+            Assert.That(coast.Dialog.IsShown, Is.False);
             yield return SceneTests.WaitUntil(
                 () => coast.Dialog.IsShown,
                 seconds: 8f,

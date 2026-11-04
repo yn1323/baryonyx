@@ -2485,4 +2485,77 @@ half4 ShapeCutInStreaks(ShapeIn s)
     return half4(s.tint * light + stripe * on * 0.3, 1);
 }
 
+// --- Firework --------------------------------------------------------------------------------
+
+// A firework's burst seen from afar (doc/features/stage-progression/destinations.md ダンジョンの解放):
+// stars thrown out from the middle, fast and then slowing on the air's drag, dropping a little as
+// they go. The stars fly out over a ball, so seen from afar they spread over a disc rather than a
+// ring, thicker toward its rim. Each star is a white-hot head at least a pixel wide (core), a short tail of the tint
+// behind it, thinner toward its end (trail), and a soft glow round the head (halo); near the end
+// of its life it flickers out, and a glitter it shed on the way twinkles a moment behind it
+// (afterimage). A small flash at the middle as it bursts and a faint glow of the lit air under
+// all. k runs over its life (0 the burst, 1 gone), seed throws its stars differently; the
+// furthest a star flies stays inside the board.
+static const int FireworkStars = 48;
+
+float2 FireworkAt(float2 dir, float speed, float k)
+{
+    float spread = (1 - exp(-k * 5.5)) / (1 - exp(-5.5));
+    return dir * speed * spread - float2(0, 0.14 * k * k);
+}
+
+float SegmentDistance(float2 p, float2 a, float2 b, out float t)
+{
+    float2 ab = b - a;
+    t = saturate(dot(p - a, ab) / max(dot(ab, ab), 1e-6));
+    return length(p - a - ab * t);
+}
+
+half4 ShapeFirework(ShapeIn s)
+{
+    float px = max(s.aa, 1e-4);
+    float k = saturate(s.k);
+    float trail = 0;
+    float core = 0;
+    float halo = 0;
+    float glitter = 0;
+    [loop]
+    for (int n = 0; n < FireworkStars; n++)
+    {
+        float i = n;
+        float end = 0.6 + 0.32 * Hash1(i + 7.0, s.seed);
+        float life = 1 - smoothstep(end - 0.2, end, k);
+        float late = smoothstep(end - 0.32, end - 0.08, k);
+        float a = (i + (Hash1(i, s.seed) - 0.5) * 0.7) / FireworkStars * Tau + s.seed * Tau;
+        float2 dir = float2(cos(a), sin(a));
+        // A star thrown toward or away from the eye flies a shorter way across (a ball seen flat).
+        float z = Hash1(i + 23.0, s.seed) * 2 - 1;
+        float speed = (0.66 + 0.14 * Hash1(i + 41.0, s.seed)) * sqrt(1 - z * z * 0.9);
+
+        float2 head = FireworkAt(dir, speed, k);
+        float2 tail = FireworkAt(dir, speed, max(k - 0.22, 0));
+        float t;
+        float d = SegmentDistance(s.p, tail, head, t);
+        float dh = length(s.p - head);
+        float blink = step(0.38, Hash1(floor(k * 34.0) + i * 3.1, s.seed));
+        // Right at the burst every star is still at the middle: let the heads come up as they part,
+        // so their glows do not pile into a white disc.
+        float shine = life * lerp(1, blink, late) * smoothstep(0.0, 0.07, k);
+        trail += Line(d, 0.007, px) * pow(t, 1.8) * life * (1 - late * 0.7);
+        core += Line(dh, 0.009, px) * shine;
+        halo += Gauss(dh, 0.05) * shine * smoothstep(0.03, 0.12, k);
+
+        // The glitter shed a little behind the head, falling slower, twinkling on its own beat.
+        float2 shed = FireworkAt(dir, speed * 0.82, k * 0.9) - float2(0, 0.05 * k);
+        float on = smoothstep(0.3, 0.42, k) * (1 - smoothstep(0.82, 0.98, k));
+        float twinkle = step(0.55, Hash1(floor(k * 26.0) + i * 5.7, s.seed + 0.37));
+        glitter += Line(length(s.p - shed), 0.006, px) * on * twinkle;
+    }
+    float flash = Gauss(s.r, 0.03) * (1 - smoothstep(0.0, 0.08, k));
+    float air = Gauss(s.r, 0.5) * 0.07 * (1 - smoothstep(0.1, 0.85, k));
+    half3 hot = lerp(s.tint, 1, 0.85);
+    half3 col = s.tint * (trail * 0.8 + halo * 0.3 + air) + hot * (core * 1.3 + flash * 0.6 + glitter * 0.8);
+    return half4(col * BoardFade(s.p), 1);
+}
+
 #endif

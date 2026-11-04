@@ -134,6 +134,9 @@ namespace Baryonyx.Combat.Presentation
 
         /// <summary>A square mote of a crumbling body, a third of the board, never turned.</summary>
         Mote,
+
+        /// <summary>A firework's burst seen from afar: stars thrown out from the middle.</summary>
+        Firework,
     }
 
     /// <summary>
