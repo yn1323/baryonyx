@@ -118,7 +118,8 @@ namespace Baryonyx.UI.GuideMenu.Editor
         /// <summary>
         /// C: one list across the whole panel (the skills to awaken, the daily steps): one pane, the
         /// heading row and rows <paramref name="gap"/> apart, from <paramref name="left"/> to
-        /// <paramref name="right"/> (the panel's edges unless given).
+        /// <paramref name="right"/> (the panel's edges unless given). With <paramref name="tabs"/>
+        /// the categories go down the left and the list starts right of them.
         /// </summary>
         public static (T View, ListPanel Panel) FullList<T>(
             RectTransform safe,
@@ -126,7 +127,8 @@ namespace Baryonyx.UI.GuideMenu.Editor
             string title,
             float gap = CardGap * 0.75f,
             float left = UiSpace.Edge,
-            float right = 1920f - UiSpace.Edge
+            float right = 1920f - UiSpace.Edge,
+            string[] tabs = null
         )
             where T : Component
         {
@@ -141,9 +143,17 @@ namespace Baryonyx.UI.GuideMenu.Editor
                 true,
                 true
             );
+            var categories = System.Array.Empty<GuideTab>();
+            if (tabs != null)
+            {
+                categories = GuideFrameAssets.SideTabs(layer, "Tabs", tabs);
+                // 縦の分類の右は区切りの線のため24空ける。
+                left = Mathf.Max(left, GuideFrameAssets.SideRailWidth + UiSpace.Pad);
+            }
             var panel = new ListPanel
             {
                 Layer = layer,
+                Tabs = categories,
                 ListLeft = left,
                 ListRight = right,
             };

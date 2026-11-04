@@ -121,5 +121,37 @@ namespace Baryonyx.Tests.EditMode
                 Object.DestroyImmediate(targetObject);
             }
         }
+
+        [Test]
+        public void SafeAreaFollowerKeepsAWideScreenToTheCentralSixteenByNine()
+        {
+            var targetObject = new GameObject(
+                "Target",
+                typeof(RectTransform),
+                typeof(SafeAreaFollower)
+            );
+            try
+            {
+                var target = targetObject.GetComponent<RectTransform>();
+                var follower = targetObject.GetComponent<SafeAreaFollower>();
+
+                // 20:9（2400×1080）で、左のノッチは16:9の幅より外にある。
+                Assert.That(
+                    follower.ApplyViewport(new Vector2(2400, 1080), new Rect(80, 0, 2320, 1080)),
+                    Is.True
+                );
+                Assert.That(target.anchorMin.x, Is.EqualTo(240f / 2400).Within(1e-5f));
+                Assert.That(target.anchorMax.x, Is.EqualTo(2160f / 2400).Within(1e-5f));
+
+                // 16:9の幅の内側まで来るSafe Areaは、そのまま使う。
+                follower.ApplyViewport(new Vector2(2400, 1080), new Rect(300, 0, 2100, 1080));
+                Assert.That(target.anchorMin.x, Is.EqualTo(300f / 2400).Within(1e-5f));
+                Assert.That(target.anchorMax.x, Is.EqualTo(2160f / 2400).Within(1e-5f));
+            }
+            finally
+            {
+                Object.DestroyImmediate(targetObject);
+            }
+        }
     }
 }

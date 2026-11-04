@@ -535,7 +535,7 @@ namespace Baryonyx.UI.GuideMenu.Editor
             float icon = GuideMenuAssets.IconSize;
             var box = Layout.Box(inside, "Icon", iconLeft, (height - icon) / 2f, icon, icon);
             SpriteImage(box, GuideMenuAssets.IconClosePath, Color.white);
-            Layout.Text(
+            var text = Layout.Text(
                 inside,
                 "Label",
                 label,
@@ -547,6 +547,8 @@ namespace Baryonyx.UI.GuideMenu.Editor
                 textRight - textLeft,
                 height
             );
+            // 「パーティーから外す」が細い札の枠を越えないよう縮める。
+            GuideMenuAssets.Shrink(text, UiType.Lead * 0.75f);
         }
 
         /// <summary>
