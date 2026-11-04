@@ -3,7 +3,9 @@ import {
   type ApiScenario,
   createApiScenario,
 } from "../../../tests/support/api-scenario.js";
-import { squareOf } from "./catalog.js";
+import { percentRange } from "../../shared/quality.js";
+import { maxPercentOf } from "../inventory/catalog.js";
+import { chestOf, squareOf } from "./catalog.js";
 import { ATLAS_MAPS } from "./squares.js";
 
 type State = { opened: { map: string; square: string }[]; runes: number };
@@ -38,6 +40,28 @@ const far = Object.keys(world.squares).find(
     !squareOf("world", id)?.links.includes(first),
 ) as string;
 const priceOf = (id: string) => squareOf("world", id)?.price as number;
+
+// 始まりのマスから target まで1マスずつ開ける順（target を含む）。
+// 開けられるのは、始まりのマスか開けたマスを隣に持つマスなので、隣の定義をたどって探す。
+function pathTo(map: string, target: string) {
+  const { start, squares } = ATLAS_MAPS[map];
+  const from = new Map<string, string>([[start, start]]);
+  const queue = [start];
+  for (const at of queue) {
+    if (at === target) break;
+    for (const [id, [, ...links]] of Object.entries(squares)) {
+      if (!from.has(id) && links.includes(at)) {
+        from.set(id, at);
+        queue.push(id);
+      }
+    }
+  }
+  const path: string[] = [];
+  for (let at = target; at !== start; at = from.get(at) as string) {
+    path.unshift(at);
+  }
+  return path;
+}
 
 describe("入れ子の地図のマスを開くルーンのAPI", () => {
   let scenario: ApiScenario;
@@ -220,5 +244,128 @@ describe("入れ子の地図のマスを開くルーンのAPI", () => {
     const post = await open(user.token, body(first));
     expect(post.status).toBe(200);
     expect(d1Calls(post)).toBe(1);
+  });
+
+  describe("宝箱のマス", () => {
+    type Chest = Opened & {
+      chest?: {
+        category: string;
+        id: string;
+        multiplier?: number;
+        quality?: string;
+      }[];
+    };
+
+    // 持っている氷の杖と磨き石の数。
+    async function holdings(token: string) {
+      const [equipment, enhancement] = await Promise.all([
+        scenario.read<{ items: { equipmentId: string; quality: string }[] }>(
+          "/equipment",
+          token,
+        ),
+        scenario.read<{ materials: { id: string; count: number }[] }>(
+          "/enhancement",
+          token,
+        ),
+      ]);
+      return {
+        wands: equipment.items.filter(
+          (item) => item.equipmentId === "frost-wand",
+        ),
+        polish:
+          enhancement.materials.find((entry) => entry.id === "polish-white")
+            ?.count ?? 0,
+      };
+    }
+
+    // ジェーロ連峰の手前の宝箱のマスと、その手前まで開ける順。
+    const chestSquare = "world-21";
+    const approach = pathTo("world", chestSquare).slice(0, -1);
+    async function walkToChest(token: string) {
+      for (const id of approach) {
+        const step = (await opened(token, body(id))) as Chest;
+        // 宝箱でないマスは中身を添えない。
+        expect(step).not.toHaveProperty("chest");
+      }
+    }
+
+    it("宝箱のマスは地図の定義にあり、隣のマスから開けられる", () => {
+      for (const id of ["world-21", "world-79", "world-26"]) {
+        expect(squareOf("world", id)).toBeDefined();
+        expect(chestOf("world", id)?.length).toBeGreaterThan(0);
+        expect(pathTo("world", id).at(-1)).toBe(id);
+      }
+      expect(chestOf("world", first)).toBeUndefined();
+      expect(chestOf("nowhere", chestSquare)).toBeUndefined();
+    });
+
+    it("開けると決まった中身を持ち物に足し、応答に中身を添える。再送では足さない", async () => {
+      const user = await scenario.login("world-atlas-chest");
+      await scenario.setRunes(user.userId, 5000);
+      await walkToChest(user.token);
+      const before = await holdings(user.token);
+
+      const request = body(chestSquare);
+      const response = await open(user.token, request);
+      expect(response.status).toBe(200);
+      expect(d1Calls(response)).toBe(1);
+      const a = (await response.json()) as Chest;
+      expect(a.runes).toBe(priceOf(chestSquare));
+      expect(a.chest).toEqual([
+        {
+          category: "weapon",
+          id: "frost-wand",
+          // 品質Aの幅の下端の倍率。
+          multiplier:
+            percentRange("A", maxPercentOf("weapon", "frost-wand") as number)
+              .min / 100,
+          quality: "A",
+        },
+        ...Array.from({ length: 6 }, () => ({
+          category: "material",
+          id: "polish-white",
+        })),
+      ]);
+      const after = await holdings(user.token);
+      expect(after.wands.length).toBe(before.wands.length + 1);
+      expect(after.wands.at(-1)?.quality).toBe("A");
+      expect(after.polish).toBe(before.polish + 6);
+
+      // 同じ要求IDで送り直しても、中身は添えるが持ち物は増えない。
+      const resent = (await opened(user.token, request)) as Chest;
+      expect(resent).toEqual(a);
+      // 別の要求で開けたマスを送っても、払わず、持ち物も増えない。
+      const again = (await opened(user.token, body(chestSquare))) as Chest;
+      expect(again.runes).toBe(0);
+      expect(again.chest).toEqual(a.chest);
+      expect(await holdings(user.token)).toEqual(after);
+    });
+
+    it("同時に届いた同じ宝箱のマスの要求では、中身を1回だけ足す", async () => {
+      const user = await scenario.login("world-atlas-chest-race");
+      await scenario.setRunes(user.userId, 5000);
+      await walkToChest(user.token);
+      const before = await holdings(user.token);
+      await Promise.all([
+        opened(user.token, body(chestSquare)),
+        opened(user.token, body(chestSquare)),
+      ]);
+      const after = await holdings(user.token);
+      expect(after.wands.length).toBe(before.wands.length + 1);
+      expect(after.polish).toBe(before.polish + 6);
+    });
+
+    it("ルーンが足りないときは、宝箱の中身も入らない", async () => {
+      const user = await scenario.login("world-atlas-chest-poor");
+      await scenario.setRunes(user.userId, 5000);
+      await walkToChest(user.token);
+      const before = await holdings(user.token);
+      await scenario.setRunes(user.userId, priceOf(chestSquare) - 1);
+      const response = await open(user.token, body(chestSquare));
+      expect(response.status).toBe(409);
+      expect(await response.json()).toEqual({ error: "insufficient_runes" });
+      expect(await holdings(user.token)).toEqual(before);
+      expect((await read(user.token)).runes).toBe(priceOf(chestSquare) - 1);
+    });
   });
 });

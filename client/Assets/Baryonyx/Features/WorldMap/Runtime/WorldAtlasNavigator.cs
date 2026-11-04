@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Baryonyx.UI;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -205,6 +206,8 @@ namespace Baryonyx.WorldMap
                 return;
             Remember(currentKey, id);
             int index = current.Graph.IndexOf(id);
+            if (first && (RevealChest(id) || AnnounceDungeon(id)))
+                return;
             // 出来事を置いたマスに初めて止まると、地図を動かさずに、その出来事の見本の窓を開く。
             if (first && current.EventWindow != null && current.TryEventAt(index, out var kind))
             {
@@ -269,6 +272,61 @@ namespace Baryonyx.WorldMap
                 if (node.id == square)
                     return WorldAtlasBattle.Of(currentKey, node, layout.level, seed);
             return null;
+        }
+
+        /// <summary>The window's title when a town is reached and its dungeon opens.</summary>
+        public const string DungeonOpenedTitle = "ダンジョン解放";
+
+        public const string DungeonGoChoice = "旅の案内所へ";
+
+        public static string DungeonOpenedText(string dungeon) =>
+            $"「{dungeon}」に入れるようになった";
+
+        // 今の世界地図の宝箱のマスに初めて止まると、見本の窓の代わりに、払ったときにもらった物を札で見せる
+        // （2026-11-04、ユーザーの依頼「街道に報酬を獲得できるエリアを」）。
+        private bool RevealChest(string id)
+        {
+            if (currentKey != WorldAtlasLayout.WorldKey)
+                return false;
+            var drops = WorldMapChests.Of(id);
+            if (drops.Count == 0 || current.Reveal == null)
+                return false;
+            current.RevealRewards(drops);
+            return true;
+        }
+
+        // ダンジョンのある町のマスに初めて止まると、そのダンジョンに入れるようになったと知らせる。
+        // 旅の案内所へ行けるときは、そのボタンも出す（2026-11-04、ユーザーの依頼「ダンジョン解放につながることが伝わるように」）。
+        private bool AnnounceDungeon(string id)
+        {
+            var area = DungeonUnlocks.DungeonAt(id);
+            var dialog = current.Dialog;
+            if (area == null || dialog == null)
+                return false;
+            var choices =
+                OpenDungeons == null
+                    ? System.Array.Empty<DialogChoice>()
+                    : new[]
+                    {
+                        new DialogChoice(
+                            DungeonGoChoice,
+                            () =>
+                            {
+                                dialog.Hide();
+                                PressDungeons();
+                            },
+                            role: ButtonRole.Primary
+                        ),
+                    };
+            dialog.Show(
+                DungeonOpenedTitle,
+                DungeonOpenedText(area.Name),
+                null,
+                dialog.Hide,
+                DialogStyle.Cross,
+                choices
+            );
+            return true;
         }
 
         private void PressDungeons()

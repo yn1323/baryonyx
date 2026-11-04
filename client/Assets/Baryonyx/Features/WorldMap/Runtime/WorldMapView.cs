@@ -755,6 +755,18 @@ namespace Baryonyx.WorldMap
             AdventureDialogs.Treasure(Dialog, chest, CloseChest, ItemArt);
         }
 
+        /// <summary>
+        /// Shows what a treasure square gave, as the highway's chests do (the nested world map's
+        /// chests: the server gives them when the square is paid for).
+        /// </summary>
+        public void RevealRewards(IReadOnlyList<AdventureDrop> drops)
+        {
+            if (Reveal == null || drops == null || drops.Count == 0)
+                return;
+            Opening = true;
+            _ = RevealChestAsync(drops);
+        }
+
         // 冒険の宝箱と同じく、中身を良い物からすべての札でまとめて見せ、読む間をおいて閉じる。
         // 読む間は中身の数に合わせて少し延ばす（2026-10-29、ダイアログの文字から札へそろえた）。
         private async System.Threading.Tasks.Task RevealChestAsync(

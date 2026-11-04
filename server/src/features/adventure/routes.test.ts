@@ -4,6 +4,7 @@ import {
   createApiScenario,
 } from "../../../tests/support/api-scenario.js";
 import { days } from "../health/fixtures.js";
+import { ATLAS_MAPS } from "../world-atlas/squares.js";
 import { REVIVE_COST_BASE, reviveCost } from "./catalog.js";
 import { CLEAR_REWARDS } from "./clear-rewards.js";
 import { eligibleEntries } from "./drops.js";
@@ -18,6 +19,28 @@ const fixed =
 // 強化素材（material）は、ふつうのドロップとは別に抽選する（rollRoomDrops）。数や一覧の検査からは外す。
 const withoutMaterials = (drops: Drop[] = []) =>
   drops.filter((drop) => drop.category !== "material");
+
+// 入れ子の地図で、始まりのマスから target まで1マスずつ開ける順（target を含む）。
+// 開けられるのは、始まりのマスか開けたマスを隣に持つマスなので、隣の定義をたどって探す。
+function atlasPathTo(map: string, target: string) {
+  const { start, squares } = ATLAS_MAPS[map];
+  const from = new Map<string, string>([[start, start]]);
+  const queue = [start];
+  for (const at of queue) {
+    if (at === target) break;
+    for (const [id, [, ...links]] of Object.entries(squares)) {
+      if (!from.has(id) && links.includes(at)) {
+        from.set(id, at);
+        queue.push(id);
+      }
+    }
+  }
+  const path: string[] = [];
+  for (let at = target; at !== start; at = from.get(at) as string) {
+    path.unshift(at);
+  }
+  return path;
+}
 
 type Drop = {
   roomId: string;
@@ -1095,6 +1118,37 @@ describe("冒険API", () => {
     expect(arrived.status).toBe(200);
     const started = await call(user.token, "/adventure", port);
     expect(started.run?.destinationId).toBe("port-portoria");
+  });
+
+  it("ダンジョンは、入れ子の地図でその町のマスを開けると始められる", async () => {
+    const user = await scenario.login("adventure-unlock-atlas");
+    await scenario.setRunes(user.userId, 10000);
+    const port = { destinationId: "port-portoria" };
+    const openAtlas = async (squareId: string) => {
+      const response = await scenario.request(
+        "/world-atlas/open",
+        "POST",
+        { requestId: crypto.randomUUID(), map: "marina", squareId },
+        user.token,
+      );
+      expect(response.status).toBe(200);
+    };
+    const path = atlasPathTo("marina", "portoria");
+    expect(path.at(-1)).toBe("portoria");
+    // 町の手前のマスまで開けても、町のマスを開けるまでは入れない。
+    for (const squareId of path.slice(0, -1)) await openAtlas(squareId);
+    await rejects(user.token, "/adventure", port, "destination_locked");
+    await openAtlas("portoria");
+    const started = await call(user.token, "/adventure", port);
+    expect(started.run?.destinationId).toBe("port-portoria");
+    // 開けていない町の行き先は、今まで通り入れない。
+    await call(user.token, "/adventure/end", { reason: "retreat" });
+    await rejects(
+      user.token,
+      "/adventure",
+      { destinationId: "glaciera-cave" },
+      "destination_locked",
+    );
   });
 
   it("宝箱のマスに入ると、宝箱から覚醒が出るかを決めて保存し、次のマスへ進むと消す", async () => {

@@ -75,6 +75,44 @@ namespace Baryonyx.WorldMap
                 Graded(AdventureDropCategory.Skill, "HolyLight"),
                 Material("awakening-shard"),
             },
+
+            // ここからは今の世界地図（入れ子の地図の "world"）の宝箱のマス。ルーンを払って初めて開けたときに
+            // もらう（サーバーは server/src/features/world-atlas/catalog.ts が同じ中身を持つ。2026-11-04）。
+            // ジェーロ連峰（推奨Lv18）の手前。
+            ["world-21"] = new[]
+            {
+                Graded(AdventureDropCategory.Weapon, "frost-wand"),
+                Material("polish-white"),
+                Material("polish-white"),
+                Material("polish-white"),
+                Material("polish-white"),
+                Material("polish-white"),
+                Material("polish-white"),
+            },
+            // オーロ砂漠（推奨Lv24）の手前。
+            ["world-79"] = new[]
+            {
+                Graded(AdventureDropCategory.Armor, "clay-armor"),
+                Material("polish-white"),
+                Material("polish-white"),
+                Material("polish-white"),
+                Material("polish-white"),
+                Material("polish-white"),
+                Material("polish-white"),
+            },
+            // ボスコ大森林（推奨Lv30）の手前。
+            ["world-26"] = new[]
+            {
+                Graded(AdventureDropCategory.Accessory, "crystal-ring"),
+                Material("polish-white"),
+                Material("polish-white"),
+                Material("polish-white"),
+                Material("polish-white"),
+                Material("polish-white"),
+                Material("polish-white"),
+                Material("polish-white"),
+                Material("polish-white"),
+            },
         };
 
         public static IEnumerable<string> Squares => BySquare.Keys;

@@ -2,7 +2,7 @@
 id: feature-world-atlas-square-events
 type: specification
 status: 一部確定
-updated: 2026-11-02
+updated: 2026-11-04
 ---
 
 # 入れ子の地図：マスの出来事
@@ -125,6 +125,21 @@ APKとサーバーは同じcommitから出す。サーバーの表だけが新�
 出来事の窓の中は、次の見本である（2026-10-28、ユーザーが種類ごとの見え方を確かめるため）。
 一度開けたマスへ戻ったときは開かない。
 見本でもらう物や払うルーンは見せるだけで、持ち物にもサーバーにも入らない。
+ただし、[世界地図の宝箱のマス](#世界地図の宝箱のマス)は見本の窓を開かず、本当にもらえる物を見せる。
+
+### 世界地図の宝箱のマス
+
+世界地図（`world`）の街道の宝箱のマス3つは、ルーンを払って初めて開けたときに、決まった物を持ち物に入れる（2026-11-04、ユーザーの依頼「街道に報酬を獲得できるエリアを」。中身は前の街道の宝箱から写し、地域の推奨Lvに合わせてこちらで決めた。仮）。
+着いたときは見本の窓の代わりに、冒険の宝箱と同じ札で中身を見せる。
+
+| マス | 置き場所 | 中身 |
+|---|---|---|
+| `world-21` | ジェーロ連峰（推奨Lv18）の手前 | 氷晶のワンド（品質A）、磨き石6個 |
+| `world-79` | オーロ砂漠（推奨Lv24）の手前 | 古王国の鎧（`clay-armor`、品質A）、磨き石6個 |
+| `world-26` | ボスコ大森林（推奨Lv30）の手前 | 水晶の指輪（`crystal-ring`、品質A）、磨き石8個 |
+
+中身はサーバー（[world-atlas/catalog.ts](../../../server/src/features/world-atlas/catalog.ts) の `CHESTS`）が持ち、マスを開ける書き込みと同じ往復で足す。同じ要求の送り直しや、別の要求ですでに開いていたマスでは足さない。
+クライアントは同じ中身を [WorldMapChests](../../../client/Assets/Baryonyx/Features/WorldMap/Runtime/WorldMapChests.cs) に持ち、着いたときに [WorldAtlasNavigator](../../../client/Assets/Baryonyx/Features/WorldMap/Runtime/WorldAtlasNavigator.cs) の `RevealChest` で見せる。
 
 | 出来事 | 窓の中 | ×が出る時機 |
 |---|---|---|

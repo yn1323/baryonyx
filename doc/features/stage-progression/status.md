@@ -2,7 +2,7 @@
 id: feature-stage-progression-status
 type: specification
 status: 一部確定
-updated: 2026-11-02
+updated: 2026-11-04
 ---
 
 # 探索とダンジョンの進行：未決事項と実装との対応
@@ -20,7 +20,7 @@ updated: 2026-11-02
 | ダンジョン構造 | 最終深度、区間の分け方。行き先の数と敵の組み方は、2026-10-20に[行き先と敵](destinations.md#行き先と敵)のとおり仮に決めた |
 | 行き先の見た目 | 探索の地図を行き先ごとに変えるか。王墓の砂漠や白嶺の空の戦闘の背景を作るか |
 | クリア回数の報酬 | 各回の報酬の中身（[例](destinations.md#クリア回数の報酬の例)）、ダンジョンでしか手に入らないキャラ、報酬を受け取る画面、お宝の窓を画面いっぱいの大きさにするか。クリア回数と解放の状態はサーバーに置く想定（[保存先の決め方](../../rules/data-storage.md#判断の基準)） |
-| 解放 | ダンジョンを1つずつ解放する条件（2026-11-02に、新しく始めたときはミストラ遺跡だけにし、ほかは1つずつ解放すると決めた。[ダンジョンの解放](destinations.md#ダンジョンの解放)）。ランクと最深到達の関係。2026-10-23には、街道で特定の街に着くと解放すると決めていた |
+| 解放 | ランクと最深到達の関係（解放の条件は、2026-11-04に入れ子の地図で町のマスに着くことと決めた。[ダンジョンの解放](destinations.md#ダンジョンの解放)） |
 | 推奨Lvとレベルの上限 | 2026-10-23に、レベルの上限を30からLv100へ改め（[育成と強化](../progression.md#変更と判断の記録)）、どの行き先にも推奨Lvで挑めるようにした。上限より手前で行き先が終わるため、Lv40より先の行き先を増やすか、Lvの差を装備やカードの強さで埋めるかは未決（[推奨Lvより低いパーティの試し](battle-trials.md#推奨lvより低いパーティの試し)）。2026-10-23に、街道で最初の街から遠いほど推奨Lvを上げる方向にした |
 | 情報 | 地図や場所選択での開示範囲、深度・階層の表記、成長を比較する記録単位 |
 | 探索画面 | 地図のカメラの動き、2Dの絵で描くか3Dの舞台で描くか。宝箱・出来事を地図の上で開くことと、マスを押せる範囲は、2026-11-02に今の作りで確定した（[マス単位の探索と操作](run.md#マス単位の探索と操作)） |
@@ -45,7 +45,7 @@ updated: 2026-11-02
 本ページは企画上の要求・設計方針・未決事項を記す。
 2026-10-04に、冒険の1周（出発・マス単位の探索・戦闘・報酬・復活・結果・中断と再開）と、冒険の状態のサーバー保存を実装した（[実装計画](../../plans/2026-10-04-adventure-loop.md)）。
 冒険先は、2026-10-20から[行き先と敵](destinations.md#行き先と敵)の8つである（[サーバーの設定値](../../../server/src/features/adventure/catalog.ts)）。
-ダンジョンの解放は、2026-10-25の実装のまま、[前の街道](../stage-progression-world-map.md)でクリアした街のマス（`world_map_squares`）から決め、解放の記録は別に持たない。門前町ポルタはいつも解放している。旅の案内所のダンジョン一覧は、クリアした街のダンジョンだけを出し（[GuideSceneBootstrap](../../../client/Assets/Baryonyx/App/Runtime/GuideSceneBootstrap.cs)、[旅の案内所](../screens/guide.md#編成商会神殿旅の案内所の画面)）、サーバーは冒険を始めるときに、行き先の街のマスをクリアしたかを確かめ、まだなら409（`destination_locked`）で断る（[catalog](../../../server/src/features/adventure/catalog.ts) の `town`、[run.ts](../../../server/src/features/adventure/run.ts)）。前の街道は2026-10-29から開く入口がないため、今はポルタ以外の街のマスをクリアできず、新しく始めるとミストラ遺跡だけを選べる。ほかのダンジョンを解放する手段はまだなく、入れ子の地図の町（IDは同じ）に着いても解放しない。
+ダンジョンの解放は、行き先の街のマスに着いたかで決め、解放の記録は別に持たない。着いたかは、[入れ子の地図](../world-atlas.md)で開けた町のマス（`world_atlas_squares`）か、[前の街道](../stage-progression-world-map.md)でクリアした街のマス（`world_map_squares`）で見る（2026-11-04に入れ子の地図を足した）。門前町ポルタはいつも解放している。クライアントの判定は [DungeonUnlocks](../../../client/Assets/Baryonyx/Features/WorldMap/Runtime/DungeonUnlocks.cs) にまとめ、旅の案内所のダンジョン一覧（[GuideSceneBootstrap](../../../client/Assets/Baryonyx/App/Runtime/GuideSceneBootstrap.cs)、[旅の案内所](../screens/guide.md#編成商会神殿旅の案内所の画面)）と、町に着いたときの知らせ（[WorldAtlasNavigator](../../../client/Assets/Baryonyx/Features/WorldMap/Runtime/WorldAtlasNavigator.cs) の `AnnounceDungeon`）が使う。サーバーは冒険を始めるときに同じことを確かめ、まだなら409（`destination_locked`）で断る（[catalog](../../../server/src/features/adventure/catalog.ts) の `town`、[run.ts](../../../server/src/features/adventure/run.ts)）。
 最初の行き先（ミストラ遺跡）は道中のマスが8つで、最奥の間は第10層になる。
 出来事を終えたマスでは、行き先の一覧から物が落ちる（[冒険のドロップ](../drops.md#実装との対応)）。
 序盤の工夫は未実装である（装備・スキルの入手は[冒険のドロップ](../drops.md#実装との対応)、深さに応じた敵は[行き先と敵](destinations.md#行き先と敵)で実装した）。

@@ -695,5 +695,100 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(world.PartyAt, Is.EqualTo(path[2]));
             Assert.That(world.Cleared, Does.Not.Contain(last));
         }
+
+        // ダンジョンのある町のマスに初めて着くと、そのダンジョンに入れるようになったと知らせ、
+        // 旅の案内所へのボタンを出す。着く前は解放していない。
+        [UnityTest]
+        public IEnumerator ReachingADungeonTownTellsTheDungeonOpens()
+        {
+            WorldAtlasSession.Source = new WorldAtlasMemorySource(1000000, (map, square) => 0);
+            var navigator = Spawn();
+            int dungeons = 0;
+            navigator.OpenDungeons = () => dungeons++;
+            yield return SceneTests.WaitUntil(
+                () => WorldAtlasSession.Loaded && navigator.Current != null,
+                message: "The runes were not read."
+            );
+            var coast = OpenBeside(navigator, "marina", "portoria");
+            Assert.That(DungeonUnlocks.Reached("portoria", WorldMapProgress.Start), Is.False);
+            yield return WalkTo(coast, "portoria");
+            yield return SceneTests.WaitUntil(
+                () => coast.Dialog.IsShown,
+                seconds: 8f,
+                message: "The dungeon was not announced."
+            );
+            Assert.That(coast.Dialog.TitleText, Is.EqualTo(WorldAtlasNavigator.DungeonOpenedTitle));
+            Assert.That(
+                coast.Dialog.BodyText,
+                Is.EqualTo(
+                    WorldAtlasNavigator.DungeonOpenedText(DungeonUnlocks.DungeonAt("portoria").Name)
+                )
+            );
+            Assert.That(
+                coast.Dialog.ChoiceLabels,
+                Is.EqualTo(new[] { WorldAtlasNavigator.DungeonGoChoice })
+            );
+            Assert.That(coast.Dialog.CrossShown, Is.True);
+            Assert.That(DungeonUnlocks.Reached("portoria", WorldMapProgress.Start), Is.True);
+            Assert.That(dungeons, Is.Zero);
+        }
+
+        // 世界地図の宝箱のマスを開けて着くと、見本の窓の代わりに、もらった物を札で見せる。
+        [UnityTest]
+        public IEnumerator ATreasureSquareOfTheWorldShowsWhatItGives()
+        {
+            WorldAtlasSession.Source = new WorldAtlasMemorySource(1000000, (map, square) => 0);
+            var navigator = Spawn();
+            yield return SceneTests.WaitUntil(
+                () => WorldAtlasSession.Loaded && navigator.Current != null,
+                message: "The runes were not read."
+            );
+            Assert.That(WorldMapChests.Of("world-21"), Is.Not.Empty);
+            var world = OpenBeside(navigator, WorldAtlasLayout.WorldKey, "world-21");
+            yield return WalkTo(world, "world-21");
+            yield return SceneTests.WaitUntil(
+                () => world.Reveal.Shown,
+                seconds: 8f,
+                message: "The treasure was not shown."
+            );
+            Assert.That(world.Reveal.ShownCount, Is.GreaterThan(0));
+            Assert.That(world.EventWindow == null || !world.EventWindow.IsShown, Is.True);
+        }
+
+        // 地図を開き、target のほかのマスをすべて開けて、target の隣に立つ。
+        private static WorldMapView OpenBeside(
+            WorldAtlasNavigator navigator,
+            string map,
+            string target
+        )
+        {
+            Assert.That(navigator.Open(map, null), Is.True);
+            var view = navigator.Current;
+            int index = view.Graph.IndexOf(target);
+            Assert.That(index, Is.GreaterThanOrEqualTo(0), target);
+            foreach (var node in view.Graph.Nodes)
+                if (node.Id != target)
+                    WorldAtlasSession.Open(map, node.Id);
+            Assert.That(
+                navigator.Open(map, view.Graph.Nodes[view.Graph.LinksOf(index)[0]].Id),
+                Is.True
+            );
+            return navigator.Current;
+        }
+
+        // target を押し、確かめる窓が出れば払って歩く。
+        private static IEnumerator WalkTo(WorldMapView view, string target)
+        {
+            yield return null;
+            Assert.That(view.Tap(view.Graph.IndexOf(target)), Is.True);
+            var toll = view.GetComponent<WorldAtlasToll>();
+            if (toll != null && toll.Asking)
+                toll.Go.onClick.Invoke();
+            yield return SceneTests.WaitUntil(
+                () => view.Graph.Nodes[view.PartyAt].Id == target && !view.Walking,
+                seconds: 8f,
+                message: "The party did not reach " + target + "."
+            );
+        }
     }
 }

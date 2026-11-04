@@ -123,6 +123,15 @@ namespace Baryonyx.WorldMap
         public static bool IsOpened(string map, string square) =>
             opened.TryGetValue(map, out var squares) && squares.Contains(square);
 
+        /// <summary>Whether <paramref name="square"/> is paid for on any map (a town's id is one square).</summary>
+        public static bool IsOpenedAnywhere(string square)
+        {
+            foreach (var squares in opened.Values)
+                if (squares.Contains(square))
+                    return true;
+            return false;
+        }
+
         /// <summary>The squares paid for on <paramref name="map"/>.</summary>
         public static IReadOnlyCollection<string> OpenedOn(string map) =>
             opened.TryGetValue(map, out var squares) ? squares : Array.Empty<string>();
@@ -199,10 +208,9 @@ namespace Baryonyx.WorldMap
                     return states.Confirmed.With(map, square, balance);
                 },
                 exception =>
-                    told =
-                        exception is ServerApiException { Error: InsufficientRunesError }
-                            ? ShortMessage
-                            : FailedMessage
+                    told = exception is ServerApiException { Error: InsufficientRunesError }
+                        ? ShortMessage
+                        : FailedMessage
             );
             if (!saved && states == saves && !IsOpened(map, square))
                 Refused?.Invoke(map, square, told);

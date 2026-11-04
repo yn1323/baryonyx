@@ -2,6 +2,7 @@ import { and, eq, sql } from "drizzle-orm";
 import type { Database } from "../../shared/db.js";
 import type { Random } from "../../shared/random.js";
 import { enemyStatements } from "../library/discoveries.js";
+import { worldAtlasSquares } from "../world-atlas/db-schema.js";
 import { START_SQUARE } from "../world-map/catalog.js";
 import { worldMapSquares } from "../world-map/db-schema.js";
 import {
@@ -31,12 +32,13 @@ import { batchWithState, battleRoom, type EndStatus } from "./state.js";
 // 冒険を始める・次の階へ進む・終える。どれも、確かめる読み込みと、書き込みと書いたあとの読み込みの2回の往復で済ませる。
 export function createRunOperations(db: Database, random: Random) {
   // 冒険先の入口の部屋から冒険を始める。進行中の冒険があるあいだは始められない。
-  // ダンジョンは、その街のマスを街道でクリアするまで入れない（最初の街はいつもクリア済み）。
+  // ダンジョンは、その街のマスを街道でクリアするか、入れ子の地図で開けるまで入れない（最初の街はいつもクリア済み）。
+  // 入れ子の地図の町のマスのIDは、行き先の街のIDと同じ値にしている。
   async function start(userId: string, destinationId: string, now: string) {
     const destination = findDestination(destinationId);
     if (!destination) return { error: "unknown_destination" as const };
     const {
-      results: [towns],
+      results: [towns, atlasTowns],
       activeRun,
       state,
     } = await batchWithState(db, userId, [
@@ -49,8 +51,22 @@ export function createRunOperations(db: Database, random: Random) {
             eq(worldMapSquares.squareId, destination.town),
           ),
         ),
+      db
+        .select({ id: worldAtlasSquares.id })
+        .from(worldAtlasSquares)
+        .where(
+          and(
+            eq(worldAtlasSquares.userId, userId),
+            eq(worldAtlasSquares.squareId, destination.town),
+          ),
+        )
+        .limit(1),
     ]);
-    if (destination.town !== START_SQUARE && towns.length === 0) {
+    if (
+      destination.town !== START_SQUARE &&
+      towns.length === 0 &&
+      atlasTowns.length === 0
+    ) {
       return { error: "destination_locked" as const };
     }
     if (activeRun) {

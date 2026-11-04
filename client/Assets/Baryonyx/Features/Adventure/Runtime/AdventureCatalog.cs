@@ -98,6 +98,13 @@ namespace Baryonyx.Adventure
     {
         public string Id { get; set; } = "";
         public string Name { get; set; } = "";
+
+        /// <summary>
+        /// The town the destination belongs to (the world map's town square, as the server's
+        /// catalog); the destination is open once the town is cleared.
+        /// </summary>
+        public string Town { get; set; } = "";
+
         public BattleStage Stage { get; set; }
         public int RoomCount { get; set; } = 8;
 
@@ -190,6 +197,7 @@ namespace Baryonyx.Adventure
             {
                 Id = ForestRuins,
                 Name = "ミストラ遺跡",
+                Town = "porta",
                 Stage = BattleStage.MistyWoods,
                 RoomCount = 8,
                 Level = 10,
@@ -215,6 +223,7 @@ namespace Baryonyx.Adventure
             {
                 Id = "port-portoria",
                 Name = "港町ポルトリア",
+                Town = "portoria",
                 Stage = BattleStage.RockyShore,
                 RoomCount = 9,
                 Level = 14,
@@ -240,6 +249,7 @@ namespace Baryonyx.Adventure
             {
                 Id = "glaciera-cave",
                 Name = "グラシエラ氷窟",
+                Town = "fredda",
                 Stage = BattleStage.CrystalCavern,
                 RoomCount = 9,
                 Level = 18,
@@ -258,6 +268,7 @@ namespace Baryonyx.Adventure
             {
                 Id = "hush-mire",
                 Name = "しじまの沼",
+                Town = "palude",
                 Stage = BattleStage.MistySwamp,
                 RoomCount = 10,
                 Level = 22,
@@ -283,6 +294,7 @@ namespace Baryonyx.Adventure
             {
                 Id = "almaja-tomb",
                 Name = "アルマジャ王墓",
+                Town = "duna",
                 Stage = BattleStage.CastleHall,
                 RoomCount = 10,
                 Level = 26,
@@ -308,6 +320,7 @@ namespace Baryonyx.Adventure
             {
                 Id = "moonshade-graveyard",
                 Name = "月影の墓所",
+                Town = "campanella",
                 Stage = BattleStage.MoonlitGraveyard,
                 RoomCount = 11,
                 Level = 30,
@@ -333,6 +346,7 @@ namespace Baryonyx.Adventure
             {
                 Id = "volgan-volcano",
                 Name = "ヴォルガン火山",
+                Town = "forgia",
                 Stage = BattleStage.VolcanoCrater,
                 RoomCount = 11,
                 Level = 35,
@@ -358,6 +372,7 @@ namespace Baryonyx.Adventure
             {
                 Id = "neve-peaks",
                 Name = "白嶺ネーヴェ",
+                Town = "cima",
                 Stage = BattleStage.SnowField,
                 RoomCount = 12,
                 Level = 40,

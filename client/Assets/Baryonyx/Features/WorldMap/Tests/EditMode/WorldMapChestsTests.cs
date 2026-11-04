@@ -35,7 +35,11 @@ namespace Baryonyx.Tests.EditMode
                 .Select(node => node.Id)
                 .ToArray();
             Assert.That(treasures, Is.Not.Empty);
-            Assert.That(WorldMapChests.Squares, Is.EquivalentTo(treasures));
+            // 今の世界地図（入れ子の地図の "world"）の宝箱のマスは、街道の地図にはない（2026-11-04）。
+            var roadSquares = WorldMapChests.Squares.Where(id =>
+                !id.StartsWith(WorldAtlasLayout.WorldKey + "-")
+            );
+            Assert.That(roadSquares, Is.EquivalentTo(treasures));
             foreach (var id in treasures)
                 Assert.That(WorldMapChests.Of(id), Is.Not.Empty, id);
             Assert.That(WorldMapChests.Of("n10-10"), Is.Empty);
