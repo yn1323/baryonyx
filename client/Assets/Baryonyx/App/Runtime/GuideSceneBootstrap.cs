@@ -43,6 +43,9 @@ namespace Baryonyx.App
 
         // ほかの画面から1つの項目のために開いたとき（冒険の装備）の、もどる・×の戻り先。
         private string returnScene;
+
+        // 戻り先で開き直す項目と物（合成からライブラリを開いたときの、合成の作る物）。
+        private GuideSceneEntry.Request back;
         private readonly CancellationTokenSource lifetime = new();
 
         // 所持ルーンの読み込み。テストで完了を待つために公開する。
@@ -79,13 +82,10 @@ namespace Baryonyx.App
                 return;
             }
             if (departs)
-            {
-                departure = new TravelDeparture(
-                    view.ShowToast,
-                    AdventureSession.SourceOrLocal,
-                    () => SceneLoader.Load(SceneNames.Exploration, transition, this)
-                );
-            }
+                departure = NewDeparture();
+            // ほかの画面からも行き先を指して冒険に出られるようにする（ライブラリの入手先）。
+            view.SetOut = SetOut;
+            view.ShowInLibrary = ShowInLibrary;
             // 冒険の装備のように、ほかの画面から項目を指して開いたときは、その項目から始め、
             // もどる・×で元の画面へ戻る（doc/features/screens/guide.md）。
             var entry = GuideSceneEntry.Take();
@@ -94,6 +94,7 @@ namespace Baryonyx.App
             {
                 returnScene = entry.ReturnScene;
                 view.TitleOverride = entry.Title;
+                back = entry.Back;
             }
             presenter = new GuideMenuPresenter(
                 view,
@@ -103,21 +104,30 @@ namespace Baryonyx.App
                 ReturnHome
             );
             if (entryItem >= 0)
-                presenter.OpenAsRoot(entryItem);
+            {
+                // 戻り先のない頼み（ほかの画面から戻ってきたとき）は、メニューから開いたのと同じにする。
+                if (string.IsNullOrEmpty(entry.ReturnScene))
+                    view.OpenItem(entry.ItemKey);
+                else
+                    presenter.OpenAsRoot(entryItem);
+                ShowEntry(entryItem, entry.Entry);
+            }
             RunesTask = LoadRunesAsync();
             if (departs)
                 UnlockTask = ShowUnlockedAsync();
         }
 
-        // ダンジョン一覧には、街道で着いた（クリアした）街のダンジョンだけを出す
-        // （doc/features/stage-progression.md の街とダンジョン）。世界地図で読んだ進み具合を先に出し、
+        // ダンジョン一覧には、着いた街のダンジョンだけを出す（今の世界地図で町のマスを開けたか、
+        // 前の街道でクリアした街。DungeonUnlocks）。読んである進み具合を先に出し、
         // 読み直した進み具合で出し直す。読めなければ、手元の進み具合のまま出す。
         private async Task ShowUnlockedAsync()
         {
             ShowUnlocked(WorldMapSession.Known ?? WorldMapProgress.Start);
             try
             {
+                var atlas = LoadAtlasAsync();
                 var progress = await WorldMapSession.LoadAsync(lifetime.Token);
+                await atlas;
                 if (progress != null && view != null)
                     ShowUnlocked(progress);
             }
@@ -128,10 +138,26 @@ namespace Baryonyx.App
             }
         }
 
+        // 今の世界地図の開けたマス。読めなくても、街道の進み具合だけで出す。
+        private async Task LoadAtlasAsync()
+        {
+            try
+            {
+                await WorldAtlasSession.LoadAsync(lifetime.Token);
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch (Exception exception)
+            {
+                Debug.LogWarning("開けたマスを取得できませんでした。" + exception.Message);
+            }
+        }
+
         private void ShowUnlocked(WorldMapProgress progress) =>
             view.ShowDestinations(destination =>
-                string.IsNullOrEmpty(destination.Town)
-                || progress.Cleared.Contains(destination.Town)
+                DungeonUnlocks.Reached(destination.Town, progress)
             );
 
         // Homeから来たときは、Homeで読んだ残高を先に出しておき、読み直した値で描き直す。
@@ -161,6 +187,22 @@ namespace Baryonyx.App
             departure = null;
         }
 
+        private TravelDeparture NewDeparture() =>
+            new(
+                view.ShowToast,
+                AdventureSession.SourceOrLocal,
+                () => SceneLoader.Load(SceneNames.Exploration, transition, this)
+            );
+
+        // 行き先を指して冒険に出る。旅の案内所でない画面では、初めて出るときに出発を用意する。
+        private bool SetOut(string destinationId)
+        {
+            if (lifetime.IsCancellationRequested)
+                return false;
+            departure ??= NewDeparture();
+            return departure.Depart(destinationId);
+        }
+
         private bool Depart(int index)
         {
             var destinations = view.Definition.Destinations;
@@ -169,13 +211,57 @@ namespace Baryonyx.App
             return departure.Depart(destinations[index].Id);
         }
 
-        private bool ReturnHome() =>
-            SceneLoader.Load(
-                string.IsNullOrEmpty(returnScene) ? homeSceneName : returnScene,
-                transition,
-                this
-            );
+        // 開いた項目のパネルに、見せる物を渡す。
+        private void ShowEntry(int item, string shown)
+        {
+            var panel = view.PanelFor(item);
+            if (
+                panel != null
+                && !string.IsNullOrEmpty(shown)
+                && panel.TryGetComponent(out IGuideEntryTarget target)
+            )
+                target.ShowEntry(shown);
+        }
 
-        private bool GoBack() => SceneLoader.Load(BackSceneName, transition, this);
+        // ライブラリの項目を開いてその物を見せる。もどる・×で、この画面の今の項目と物へ戻る（合成の材料の札）。
+        private bool ShowInLibrary(string itemKey, string shown)
+        {
+            if (lifetime.IsCancellationRequested || presenter == null)
+                return false;
+            int item = presenter.State.Item;
+            var panel = view.PanelFor(item);
+            string current =
+                panel != null && panel.TryGetComponent(out IGuideEntryTarget target)
+                    ? target.CurrentEntry
+                    : null;
+            var here =
+                item >= 0 && item < view.Definition.Items.Length
+                    ? new GuideSceneEntry.Request(view.Definition.Items[item].Key, null, null, current)
+                    : null;
+            GuideSceneEntry.Open(
+                new GuideSceneEntry.Request(itemKey, null, gameObject.scene.name, shown, here)
+            );
+            bool left = SceneLoader.Load(SceneNames.Library, transition, this);
+            if (!left)
+                GuideSceneEntry.Clear();
+            return left;
+        }
+
+        private bool ReturnHome() =>
+            Leave(string.IsNullOrEmpty(returnScene) ? homeSceneName : returnScene);
+
+        private bool GoBack() => Leave(BackSceneName);
+
+        // 元の画面へ戻るときは、開き直す項目と物を頼んでから移る。
+        private bool Leave(string scene)
+        {
+            bool returning = back != null && scene == returnScene;
+            if (returning)
+                GuideSceneEntry.Open(back);
+            bool left = SceneLoader.Load(scene, transition, this);
+            if (!left && returning)
+                GuideSceneEntry.Clear();
+            return left;
+        }
     }
 }

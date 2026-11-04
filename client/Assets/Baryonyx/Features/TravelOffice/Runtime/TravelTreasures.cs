@@ -93,14 +93,6 @@ namespace Baryonyx.TravelOffice
 
         /// <summary>The library's kind of a drop. The enhancement materials are not in the library.</summary>
         public static LibraryKind KindOf(AdventureDropCategory category) =>
-            category switch
-            {
-                AdventureDropCategory.Item => LibraryKind.Item,
-                AdventureDropCategory.Accessory => LibraryKind.Accessory,
-                AdventureDropCategory.Weapon => LibraryKind.Weapon,
-                AdventureDropCategory.Armor => LibraryKind.Armor,
-                AdventureDropCategory.Skill => LibraryKind.Skill,
-                _ => throw new ArgumentOutOfRangeException(nameof(category)),
-            };
+            LibraryDropPlaces.KindOf(category);
     }
 }

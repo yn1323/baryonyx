@@ -61,5 +61,11 @@ MonoBehaviour:
     Hidden: 1
     ConfirmLabel: "\u898B\u308B"
     Entries: []
+  - Key: library-accessory
+    Label: "\u30A2\u30AF\u30BB\u30B5\u30EA\u30FC"
+    Icon: {fileID: 0}
+    Hidden: 1
+    ConfirmLabel: "\u898B\u308B"
+    Entries: []
   Destinations: []
   DepartLabel: "\u51FA\u767A"

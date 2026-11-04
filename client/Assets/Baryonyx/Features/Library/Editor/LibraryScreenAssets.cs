@@ -10,6 +10,7 @@ using Baryonyx.Equipment.Editor;
 using Baryonyx.Items;
 using Baryonyx.Party;
 using Baryonyx.Party.Editor;
+using Baryonyx.Training;
 using Baryonyx.Training.Editor;
 using Baryonyx.UI;
 using Baryonyx.UI.Cards;
@@ -75,7 +76,8 @@ namespace Baryonyx.Library.Editor
 
         private const string GearLabel = "装備";
 
-        // 装備のパネルの見出しに並べるタブ。定義が1つもない分類は、準備中のタブにする。
+        // 装備のパネルの左に並べる分類。武器・防具・アクセサリーのどれも開いている（アクセサリーは2026-11-04に
+        // 錠前を外した。ユーザーの指示）。
         private static readonly LibraryKind[] GearTabs =
         {
             LibraryKind.Weapon,
@@ -104,8 +106,19 @@ namespace Baryonyx.Library.Editor
                     return kind == LibraryKind.Steps
                         ? BuildStepsPanel(safe, view)
                         : BuildCatalogPanel(safe, view, kind.Value, data, training);
-                }
+                },
+                overlay: BuildDialog
             );
+        }
+
+        // 入手先のダンジョン名を押したときに、入るかを確かめる窓。画面全体を覆うため、パネルの外に1つだけ置き、
+        // 各分類から使う。端末の戻るキーは開いているパネル（LibraryCatalogView）が窓へ渡す。
+        private static GameObject BuildDialog(RectTransform root, GuideMenuView guide)
+        {
+            var dialog = GameDialogAssets.Build(root);
+            foreach (var view in root.GetComponentsInChildren<LibraryCatalogView>(true))
+                view.Dialog = dialog;
+            return null;
         }
 
         private static LibraryKind? KindOf(string key)
@@ -121,11 +134,13 @@ namespace Baryonyx.Library.Editor
             d.Title = "ライブラリ";
             d.Layout = GuideMenuLayout.List;
             // メニューに収まる6行にするため、武器・防具・アクセサリーは「装備」1行にまとめ、
-            // 装備のパネルの見出しのタブで切り替える。防具は武器のパネルから開く隠れた項目。
+            // 装備のパネルの左の分類で切り替える。防具・アクセサリーは武器のパネルから開く隠れた項目。
             var gear = Kind(LibraryKind.Weapon, IconGearPath);
             gear.Label = GearLabel;
             var armor = Kind(LibraryKind.Armor, null);
             armor.Hidden = true;
+            var accessory = Kind(LibraryKind.Accessory, null);
+            accessory.Hidden = true;
             d.Items = new[]
             {
                 Kind(LibraryKind.Character, IconCharacterPath),
@@ -135,6 +150,7 @@ namespace Baryonyx.Library.Editor
                 Kind(LibraryKind.Enemy, IconEnemyPath),
                 Kind(LibraryKind.Steps, IconStepsPath),
                 armor,
+                accessory,
             };
         }
 
@@ -256,17 +272,14 @@ namespace Baryonyx.Library.Editor
             var characters = party.Members.Select(
                 (member, index) =>
                 {
-                    var passives = training.Find(member.Id)?.Passives;
+                    // パッシブは右の面のパッシブの欄に出すため、説明には書かない（2026-11-04）。
                     return new LibraryEntryData
                     {
                         Kind = LibraryKind.Character,
                         Id = member.Id,
                         Number = index + 1,
                         Name = member.Name,
-                        Description =
-                            passives != null && passives.Length > 0
-                                ? "パッシブ　" + string.Join("・", passives.Select(p => p.Name))
-                                : "",
+                        Description = "",
                         Art = member.Art,
                         ArtUv = FigureUv(member),
                         ArtTint = member.Tint,
@@ -404,8 +417,7 @@ namespace Baryonyx.Library.Editor
                 LibraryKinds.Label(kind),
                 gear ? GearColumns : Columns,
                 CardHeight,
-                gear ? GearTabs.Select(LibraryKinds.Label).ToArray() : null,
-                Array.IndexOf(GearTabs, LibraryKind.Accessory)
+                gear ? GearTabs.Select(LibraryKinds.Label).ToArray() : null
             );
             var layer = panel.Layer;
             view.Guide = guide;
@@ -530,6 +542,133 @@ namespace Baryonyx.Library.Editor
             return image;
         }
 
+        // キャラクターの固有スキルのカード（戦闘のカードを効果の文まで3倍）と、パッシブの行。
+        private const float UniqueDot = 3f;
+        private const float PassiveRow = 100f;
+        private const float PassiveIcon = 72f;
+
+        // キャラクターの右の面の名前の下：見出し「固有スキル」の下に今セットしている3枚のカードと覚醒の進み具合、
+        // 見出し「パッシブ」の下にアイコン・名前・解放するLv・効果の行（ステータスのタブのパッシブと同じ並び）。
+        // カードを効果の文まで読める大きさにするため、この欄は縦にスクロールする（2026-11-04、ユーザーの指示）。
+        private static void BuildCharacterSkills(
+            RectTransform detail,
+            LibraryCatalogView view,
+            float x,
+            float top
+        )
+        {
+            var area = Layout.Box(detail, "CharacterSkills", x, top, DetailWidth, 1080f - top);
+            view.CharacterSkills = area.gameObject;
+            var viewport = Layout.Viewport(area);
+            var card = DeckCardAssets.Size(UniqueDot, small: false);
+            float cardsTop = 48f;
+            float passivesTop = cardsTop + card.y + 44f;
+            var root = Layout.Box(
+                viewport,
+                "Content",
+                0f,
+                0f,
+                DetailWidth,
+                passivesTop + 44f + 2f * PassiveRow + UiSpace.Edge
+            );
+            view.CharacterScroll = Layout.Scroll(area, viewport, root);
+            view.Party = PartyAssets.CreateData();
+            view.CardFrames = Workshop.Editor.WorkshopPanelAssets.DeckCardFrames();
+            view.ElementIcons = Workshop.Editor.WorkshopPanelAssets.ElementIcons();
+
+            Frame.Heading(root, "UniqueTitle", "固有スキル", 0f, 0f, 300f, 40f, 26f);
+            float gap = (DetailWidth - card.x * 3f) / 2f;
+            view.UniqueCards = new TrainingCardWidget[3];
+            view.UniqueSteps = new TMP_Text[3];
+            for (int i = 0; i < 3; i++)
+            {
+                float left = i * (card.x + gap);
+                view.UniqueCards[i] = DeckCardAssets.Build(
+                    root,
+                    "Unique" + i,
+                    left,
+                    cardsTop,
+                    UniqueDot,
+                    button: false
+                );
+                view.UniqueSteps[i] = Layout.Text(
+                    root,
+                    "UniqueSteps" + i,
+                    "",
+                    UiType.Caption,
+                    UiPalette.GoldLight,
+                    TextAlignmentOptions.Top,
+                    left,
+                    cardsTop + card.y + 4f,
+                    card.x,
+                    32f
+                );
+            }
+
+            Frame.Heading(root, "PassiveTitle", "パッシブ", 0f, passivesTop, 300f, 40f, 26f);
+            view.PassiveRows = Enumerable
+                .Range(0, 2)
+                .Select(i =>
+                {
+                    var row = Layout.Box(
+                        root,
+                        "Passive" + i,
+                        0f,
+                        passivesTop + 44f + i * PassiveRow,
+                        DetailWidth,
+                        PassiveRow
+                    );
+                    var widget = new TrainingSkillWidget();
+                    var icon = Layout.Box(row, "Icon", 4f, 4f, PassiveIcon, PassiveIcon);
+                    widget.Icon = icon.gameObject.AddComponent<RawImage>();
+                    widget.Icon.raycastTarget = false;
+                    const float textX = PassiveIcon + 20f;
+                    const float whenWidth = 200f;
+                    widget.Name = Layout.Text(
+                        row,
+                        "Name",
+                        "",
+                        UiType.Body,
+                        UiPalette.TextMain,
+                        TextAlignmentOptions.TopLeft,
+                        textX,
+                        0f,
+                        DetailWidth - textX - whenWidth,
+                        40f
+                    );
+                    Shrink(widget.Name, 22);
+                    widget.When = Layout.Text(
+                        row,
+                        "When",
+                        "",
+                        UiType.Caption,
+                        UiPalette.Gold,
+                        TextAlignmentOptions.TopRight,
+                        DetailWidth - whenWidth,
+                        4f,
+                        whenWidth,
+                        32f
+                    );
+                    widget.Description = Layout.Text(
+                        row,
+                        "Description",
+                        "",
+                        UiType.Caption,
+                        UiPalette.TextSub,
+                        TextAlignmentOptions.TopLeft,
+                        textX,
+                        42f,
+                        DetailWidth - textX,
+                        PassiveRow - 46f
+                    );
+                    widget.Description.textWrappingMode = TextWrappingModes.Normal;
+                    Shrink(widget.Description, 18);
+                    return widget;
+                })
+                .ToArray();
+            area.gameObject.SetActive(false);
+        }
+
         private static void BuildDetail(RectTransform layer, LibraryCatalogView view)
         {
             var detail = Layout.Box(layer, "Detail", 0f, 0f, Layout.Design.x, Layout.Design.y);
@@ -548,14 +687,38 @@ namespace Baryonyx.Library.Editor
             );
             view.DetailArt = Art(box);
             y += DetailArtBox + 12f;
-            view.DetailNumber = Centered(detail, "Number", UiType.Caption, UiPalette.Gold, x, y, 32f);
+            view.DetailNumber = Centered(
+                detail,
+                "Number",
+                UiType.Caption,
+                UiPalette.Gold,
+                x,
+                y,
+                32f
+            );
             y += 32f;
-            view.DetailName = Centered(detail, "Name", UiType.Heading, UiPalette.TextMain, x, y, 60f);
+            view.DetailName = Centered(
+                detail,
+                "Name",
+                UiType.Heading,
+                UiPalette.TextMain,
+                x,
+                y,
+                60f
+            );
             Shrink(view.DetailName, 28);
             y += 60f;
             view.DetailRarity = Centered(detail, "Rarity", UiType.Body, UiPalette.Gold, x, y, 44f);
             y += 44f;
-            view.DetailKind = Centered(detail, "Kind", UiType.Caption, UiPalette.TextSub, x, y, 36f);
+            view.DetailKind = Centered(
+                detail,
+                "Kind",
+                UiType.Caption,
+                UiPalette.TextSub,
+                x,
+                y,
+                36f
+            );
             view.DetailKind.richText = true;
             y += 40f;
             view.DetailBody = Layout.Text(
@@ -603,6 +766,60 @@ namespace Baryonyx.Library.Editor
             view.DetailExtra.richText = true;
             view.DetailExtra.textWrappingMode = TextWrappingModes.Normal;
             BuildRecipe(detail, view, x, y);
+            if (view.Kind == LibraryKind.Character)
+                BuildCharacterSkills(
+                    detail,
+                    view,
+                    x,
+                    ListTop + 8f + DetailArtBox + 12f + 32f + 60f + 8f
+                );
+
+            // 入手先：金の「入手先」と、押すとそのダンジョンへ入るかを確かめるダンジョン名の札。
+            // 合成のレシピを出す物では、実行時にレシピの下へ動かす。
+            var sources = Layout.Row(
+                detail,
+                "Sources",
+                x,
+                y,
+                DetailWidth,
+                SourcesTouch,
+                16f,
+                TextAnchor.MiddleCenter
+            );
+            Layout.Fit(
+                Label(
+                    sources,
+                    "SourcesLabel",
+                    "入手先",
+                    UiType.Caption,
+                    UiPalette.Gold,
+                    TextAlignmentOptions.Midline
+                ),
+                0
+            );
+            var (place, placeName, _) = ActionButtonAssets.InLayout(
+                sources,
+                "Place",
+                "",
+                ButtonRole.Secondary,
+                SourcePlaceWidth,
+                SourcesTouch,
+                UiType.Small
+            );
+            Shrink(placeName, 20);
+            // 札は細く描き、押せる範囲（見えない板）だけを上下に広げる。
+            const float inset = (SourcesTouch - SourcesHeight) / 2f;
+            foreach (RectTransform part in place.transform)
+            {
+                part.offsetMin += new Vector2(0f, inset);
+                part.offsetMax -= new Vector2(0f, inset);
+            }
+            view.Sources = sources;
+            view.SourcePlace = place;
+            view.SourcePlaceName = placeName;
+            sources.gameObject.SetActive(false);
+            view.SourcesTop = y - (SourcesTouch - SourcesHeight) / 2f;
+            view.SourcesUnderRecipe = view.SourcesTop + RecipeHeight + SourcesGap;
 
             // 敵の開示した弱点。倒した数の下に、「弱点」と属性のアイコン（12×12を4倍）。
             var row = Layout.Row(
@@ -654,13 +871,38 @@ namespace Baryonyx.Library.Editor
             float y,
             float height
         ) =>
-            Layout.Text(detail, name, "", size, color, TextAlignmentOptions.Center, x, y, DetailWidth, height);
+            Layout.Text(
+                detail,
+                name,
+                "",
+                size,
+                color,
+                TextAlignmentOptions.Center,
+                x,
+                y,
+                DetailWidth,
+                height
+            );
 
         // 合成のレシピ：見出しと、材料の札（絵と要る数、下に名前）を横に並べる。武器・防具・アクセサリー・スキルの
         // 説明の下に出し、キャラ・敵の「倒した数」などの欄と同じ場所を使う（その分類では空いている）。
         private const int RecipeSlots = 4;
         private const float RecipeTile = 120f;
         private const float RecipeArt = 64f;
+
+        // 合成のレシピの欄の高さ（見出しと材料の札）と、その下に置く入手先の行の高さ（押せる札の高さ）。
+        private const float RecipeHeight =
+            56f + RecipeTile + Workshop.Editor.WorkshopPanelAssets.TileNameHeight + 4f;
+        private const float SourcesHeight = 64f;
+
+        // 札の押せる範囲の高さ（doc/rules/ui-design.md のタップ領域）。
+        private const float SourcesTouch = 128f;
+
+        // ダンジョン名の札の幅。いちばん長い「グラシエラ氷窟の最奥」が収まる幅。
+        private const float SourcePlaceWidth = 400f;
+
+        // 材料の名前と入手先の行がくっつかないよう、その間を空ける。
+        private const float SourcesGap = 12f;
 
         private static void BuildRecipe(
             RectTransform detail,

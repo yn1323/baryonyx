@@ -66,6 +66,14 @@ namespace Baryonyx.UI.GuideMenu
         // 画面の上に重ねる、機能の部品（旅の案内所のお宝の窓など）。戻る操作では、開いた窓を先に閉じる。
         public GameObject Overlay;
 
+        // 行き先（ダンジョン）を指して冒険に出る。画面を動かす側（GuideSceneBootstrap）が渡す。
+        // ライブラリの入手先から入るときに使い、出発できなければfalse。
+        public Func<string, bool> SetOut;
+
+        // ライブラリの項目（第1引数）を開き、その物（第2引数）を見せる。「もどる」でこの画面の今の項目と物へ
+        // 戻る。画面を動かす側（GuideSceneBootstrap）が渡し、移れなければfalse（合成の材料の札）。
+        public Func<string, string, bool> ShowInLibrary;
+
         // 操作を求めない通知（共通の通知の帯）。
         public NoticeBand Notice;
 
