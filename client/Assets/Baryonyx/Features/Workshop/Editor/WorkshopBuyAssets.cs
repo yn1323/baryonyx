@@ -30,6 +30,7 @@ namespace Baryonyx.Workshop.Editor
         private const int Columns = 4;
         private const float CardHeight = 272f;
         private const float CardArt = 128f;
+
         private const float DetailArt = 256f;
 
         // 足りないルーンの行の高さ。
@@ -55,8 +56,6 @@ namespace Baryonyx.Workshop.Editor
             buy.ArtBox = CardArt;
             buy.DetailArtBox = DetailArt;
             buy.Tabs = panel.Tabs;
-            buy.ListTitle = panel.Title;
-            buy.ListCount = panel.Count;
             var content = panel.Content;
             var cell = panel.Cell;
             buy.Content = content;
@@ -78,7 +77,6 @@ namespace Baryonyx.Workshop.Editor
                 buy.Rows.Add(row);
             }
             buy.Status = panel.Status;
-            buy.ListCount.text = UiText.Count(goods.Length);
 
             float left = GuidePanelTemplate.DetailLeft;
             float right = GuidePanelTemplate.DetailRight;

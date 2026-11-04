@@ -27,15 +27,22 @@ namespace Baryonyx.UI.Editor
 
         /// <summary>
         /// The card on <paramref name="rect"/> (already placed by the caller) with the item card's
-        /// component; returns the component and the card's inside for the parts.
+        /// component; returns the component and the card's inside for the parts. A
+        /// <paramref name="bare"/> card has no plate (<see cref="GlassCardAssets.Build"/>).
         /// </summary>
         public static (ItemTile Tile, RectTransform Inside) Build(
             RectTransform rect,
             bool pattern = false,
-            Color? fill = null
+            Color? fill = null,
+            bool bare = false
         )
         {
-            var (card, inside) = GlassCardAssets.Build(rect, pattern: pattern, fill: fill);
+            var (card, inside) = GlassCardAssets.Build(
+                rect,
+                pattern: pattern,
+                fill: fill,
+                bare: bare
+            );
             var tile = rect.gameObject.AddComponent<ItemTile>();
             tile.Card = card;
             tile.Group = card.Group;

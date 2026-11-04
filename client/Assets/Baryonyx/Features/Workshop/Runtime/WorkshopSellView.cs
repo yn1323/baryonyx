@@ -52,10 +52,6 @@ namespace Baryonyx.Workshop
         public List<ItemTile> Rows = new();
         public TMP_Text Status;
 
-        // 一覧の上の見出し（選んだ分類の名前）と、並べた持ち物の数。
-        public TMP_Text ListTitle;
-        public TMP_Text ListCount;
-
         // 右の面：選んだ物の行と、合計。
         public RectTransform ChosenContent;
         public ItemTile ChosenTemplate;
@@ -149,8 +145,6 @@ namespace Baryonyx.Workshop
                     Paint(Rows[i], shown[i], EntryOf(shown[i]), ArtBox);
             }
             Set(Status, shown.Count == 0 ? EmptyText(WorkshopStock.TabLabels[tab]) : "");
-            Set(ListTitle, WorkshopStock.TabLabels[tab]);
-            Set(ListCount, shown.Count == 0 ? "" : UiText.Count(shown.Count));
             // 持ち物のない場所の伏せたカードも、めくってから静かに消す。
             cover.Reveal(
                 Rows.Take(shown.Count).Select(row => row.gameObject),
@@ -443,8 +437,6 @@ namespace Baryonyx.Workshop
                 Rows[i].gameObject.SetActive(i < CoverCards);
             cover.Cover(Rows.Take(CoverCards).Select(row => row.gameObject));
             Set(Status, "");
-            // 数が読めないうちは「-」を出す。
-            Set(ListCount, "-");
             RefreshChosen();
         }
 
@@ -455,7 +447,6 @@ namespace Baryonyx.Workshop
                 if (row != null)
                     row.gameObject.SetActive(false);
             Set(Status, LoadFailedText);
-            Set(ListCount, "-");
         }
 
         private static void Set(TMP_Text label, string text)

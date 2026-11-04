@@ -58,10 +58,6 @@ namespace Baryonyx.Workshop
         public List<ItemTile> Rows = new();
         public TMP_Text Status;
 
-        // 一覧の上の見出し（選んだ分類の名前）と、並べた物の数。
-        public TMP_Text ListTitle;
-        public TMP_Text ListCount;
-
         // 右の面（詳しい面）：上から出来上がる品質と倍率、絵・名前・☆・効果（出来上がる倍率を掛けた値）・属性。
         public TMP_Text DetailQuality;
         public RawImage DetailArt;
@@ -214,12 +210,10 @@ namespace Baryonyx.Workshop
             for (int i = 0; i < Tabs.Length; i++)
                 if (Tabs[i] != null)
                     Tabs[i].Chosen = i == tab;
-            Set(ListTitle, WorkshopCraft.TabLabels[tab]);
             shown = recipes.Where(recipe => recipe.Kind == WorkshopCraft.Kinds[tab]).ToArray();
             selected = -1;
             PaintRows();
             Set(Status, shown.Count == 0 ? EmptyText(WorkshopCraft.TabLabels[tab]) : "");
-            Set(ListCount, shown.Count == 0 ? "" : UiText.Count(shown.Count));
             // 作れる物のない場所の伏せた行も、めくってから静かに消す。
             cover.Reveal(
                 Rows.Take(shown.Count).Select(row => row.gameObject),
@@ -834,8 +828,6 @@ namespace Baryonyx.Workshop
                 Rows[i].gameObject.SetActive(i < CoverRows);
             cover.Cover(Rows.Take(CoverRows).Select(row => row.gameObject));
             Set(Status, "");
-            // 数が読めないうちは「-」を出す。
-            Set(ListCount, "-");
             ShowMaterials(null);
         }
 
@@ -846,7 +838,6 @@ namespace Baryonyx.Workshop
                 if (row != null)
                     row.gameObject.SetActive(false);
             Set(Status, LoadFailedText);
-            Set(ListCount, "-");
         }
 
         private static void Set(TMP_Text label, string text)

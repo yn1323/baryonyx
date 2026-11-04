@@ -1,3 +1,4 @@
+using Baryonyx.Editor.UI;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -254,6 +255,9 @@ namespace Baryonyx.UI.GuideMenu.Editor
             float height
         )
         {
+            // 線のない形の画面では引かない（doc/rules/ui-design.md の線のない形）。
+            if (UiLook.Lineless)
+                return;
             var line = Box(parent, name, x, y, width, height);
             AddImage(line, new Color(0.27f, 0.32f, 0.48f, 0.55f), false);
         }

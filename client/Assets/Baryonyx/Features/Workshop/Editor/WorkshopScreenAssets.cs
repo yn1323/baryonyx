@@ -1,4 +1,5 @@
 using Baryonyx.Editor.Art;
+using Baryonyx.Editor.UI;
 using Baryonyx.Enhancement;
 using Baryonyx.UI;
 using Baryonyx.UI.GuideMenu;
@@ -44,6 +45,8 @@ namespace Baryonyx.Workshop.Editor
         public static void CreateAssets()
         {
             WriteMenuIcons();
+            // 商会は線のない形で組み立てる（doc/rules/ui-design.md の線のない形）。
+            using var look = UiLook.BeginLineless();
             CreateScreen(
                 DefinitionPath,
                 PrefabPath,

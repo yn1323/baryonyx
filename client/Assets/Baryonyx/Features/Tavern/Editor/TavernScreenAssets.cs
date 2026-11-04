@@ -1,6 +1,7 @@
 using Baryonyx.CardLoadout;
 using Baryonyx.CardLoadout.Editor;
 using Baryonyx.Editor.Art;
+using Baryonyx.Editor.UI;
 using Baryonyx.Enhancement;
 using Baryonyx.Equipment;
 using Baryonyx.Equipment.Editor;
@@ -55,6 +56,8 @@ namespace Baryonyx.Tavern.Editor
             EquipmentSession.Reset();
             CardLoadoutSession.Reset();
             WriteMenuIcons();
+            // 酒場は線のない形で組み立てる（doc/rules/ui-design.md の線のない形）。
+            using var look = UiLook.BeginLineless();
             CreateScreen(
                 DefinitionPath,
                 PrefabPath,

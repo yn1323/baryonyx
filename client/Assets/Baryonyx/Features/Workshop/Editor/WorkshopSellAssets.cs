@@ -54,8 +54,6 @@ namespace Baryonyx.Workshop.Editor
             sell.ArtBox = CardArt;
             sell.ChosenArtBox = ChosenArt;
             sell.Tabs = panel.Tabs;
-            sell.ListTitle = panel.Title;
-            sell.ListCount = panel.Count;
             var content = panel.Content;
             var cell = panel.Cell;
             sell.Content = content;
@@ -74,7 +72,6 @@ namespace Baryonyx.Workshop.Editor
                 sell.Rows.Add(row);
             }
             sell.Status = panel.Status;
-            sell.ListCount.text = UiText.Count(first.Count);
 
             float left = GuidePanelTemplate.DetailLeft;
             float right = GuidePanelTemplate.DetailRight;

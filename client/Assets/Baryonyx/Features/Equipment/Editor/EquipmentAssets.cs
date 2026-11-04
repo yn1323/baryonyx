@@ -125,7 +125,8 @@ namespace Baryonyx.Equipment.Editor
             int index = (int)slot;
             var (button, selected, row) = GlassCardAssets.Choice(
                 SlotBox(panel, "Slot_" + slot, index),
-                pattern: false
+                pattern: false,
+                bare: UiLook.Lineless
             );
             var widget = new EquipmentSlotWidget { Button = button, Selected = selected };
 
@@ -148,7 +149,8 @@ namespace Baryonyx.Equipment.Editor
             var (button, selected, row) = GlassCardAssets.Choice(
                 SlotBox(panel, "Accessory" + index, 2 + index),
                 dashed: true,
-                pattern: false
+                pattern: false,
+                bare: UiLook.Lineless
             );
             var widget = new EquipmentAccessoryWidget { Button = button, Selected = selected };
             var icon = Layout.Box(row, "Icon", 18, (SlotHeight - 72) / 2f, 72, 72);
@@ -242,7 +244,7 @@ namespace Baryonyx.Equipment.Editor
         {
             var rect = Layout.ListItem(content, "Item" + index, RowHeight);
             var row = rect.gameObject.AddComponent<EquipmentRow>();
-            var (button, _, card) = GlassCardAssets.Choice(rect, pattern: false);
+            var (button, _, card) = GlassCardAssets.Choice(rect, pattern: false, bare: UiLook.Lineless);
             row.Button = button;
 
             var icon = Rect("Icon", card);
@@ -319,7 +321,7 @@ namespace Baryonyx.Equipment.Editor
         private static (Button Button, TMP_Text Label) BuildRemove(RectTransform content)
         {
             var rect = Layout.ListItem(content, "Remove", RowHeight);
-            var (button, _, card) = GlassCardAssets.Choice(rect, dashed: true);
+            var (button, _, card) = GlassCardAssets.Choice(rect, dashed: true, bare: UiLook.Lineless);
             var label = Label(
                 card,
                 "Label",

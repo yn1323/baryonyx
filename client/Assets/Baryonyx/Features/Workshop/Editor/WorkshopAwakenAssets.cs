@@ -75,8 +75,6 @@ namespace Baryonyx.Workshop.Editor
                 tabs: WorkshopAwakenView.TabLabels
             );
             view.Tabs = panel.Tabs;
-            view.ListTitle = panel.Title;
-            view.ListCount = panel.Count;
             view.Guide = guide;
             view.Party = AssetDatabase.LoadAssetAtPath<PartyMockData>(PartyAssets.DataPath);
             view.Training = AssetDatabase.LoadAssetAtPath<TrainingMockData>(
@@ -135,7 +133,11 @@ namespace Baryonyx.Workshop.Editor
             body.pivot = new Vector2(0.5f, 0f);
             body.anchoredPosition = Vector2.zero;
             body.sizeDelta = new Vector2(0f, RowHeight);
-            var (button, _, inside) = GlassCardAssets.Choice(body, pattern: false);
+            var (button, _, inside) = GlassCardAssets.Choice(
+                body,
+                pattern: false,
+                bare: UiLook.Lineless
+            );
             row.Button = button;
             row.Card = body.gameObject;
             // 読み込む間は、この行を伏せて一覧を埋める（GlassCardCover）。

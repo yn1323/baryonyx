@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using Baryonyx.Editor.UI;
 using Baryonyx.UI;
 using Baryonyx.UI.Editor;
 using Baryonyx.UI.GuideMenu;
@@ -109,7 +110,8 @@ namespace Baryonyx.Party.Editor
             );
             sheet.People = party.Members.Select(member => BuildPerson(content, member)).ToArray();
             var divider = Layout.ListItem(content, "Divider", 2f);
-            AddImage(divider, Frame.LineColor, false);
+            // パーティと控えの間。線のない形では線を見せず、間だけを残す（doc/rules/ui-design.md の線のない形）。
+            AddImage(divider, UiLook.Lineless ? Color.clear : Frame.LineColor, false);
             sheet.Divider = divider;
             sheet.List = Layout.Scroll(list, viewport, content);
         }

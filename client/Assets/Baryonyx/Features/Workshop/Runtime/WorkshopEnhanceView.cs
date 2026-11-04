@@ -76,10 +76,6 @@ namespace Baryonyx.Workshop
         public List<ItemTile> Rows = new();
         public TMP_Text Status;
 
-        // 一覧の上の見出し（選んだ分類の名前）と、並べた物の数。
-        public TMP_Text ListTitle;
-        public TMP_Text ListCount;
-
         // 一覧の下：磨き石の札（1枚）。押すたびに1段階ずつ上げる数が増え、右上の×でやめる。
         public WorkshopMaterialChip[] Chips = Array.Empty<WorkshopMaterialChip>();
 
@@ -328,7 +324,6 @@ namespace Baryonyx.Workshop
             for (int i = 0; i < Tabs.Length; i++)
                 if (Tabs[i] != null)
                     Tabs[i].Chosen = i < TabOrder.Length && TabOrder[i] == tab;
-            Set(ListTitle, TabLabels[(int)tab]);
             ShowRows(EmptyText(tab));
         }
 
@@ -481,7 +476,6 @@ namespace Baryonyx.Workshop
                     Rows[i].Card.Selected = false;
             }
             Set(Status, RowCount == 0 ? empty : "");
-            Set(ListCount, RowCount == 0 ? "" : UiText.Count(RowCount));
             // 強化できる物のない場所の伏せた行も、めくってから静かに消す。
             cover.Reveal(
                 Rows.Take(RowCount).Select(row => row.gameObject),
@@ -1131,8 +1125,6 @@ namespace Baryonyx.Workshop
             cover.Cover(Rows.Take(CoverRows).Select(row => row.gameObject));
             HideHeadings();
             Set(Status, "");
-            // 数が読めないうちは「-」を出す。
-            Set(ListCount, "-");
             RefreshMaterials();
             RefreshInfo();
         }
@@ -1145,7 +1137,6 @@ namespace Baryonyx.Workshop
                     row.gameObject.SetActive(false);
             HideHeadings();
             Set(Status, LoadFailedText);
-            Set(ListCount, "-");
         }
 
         private static void Set(TMP_Text label, string text)

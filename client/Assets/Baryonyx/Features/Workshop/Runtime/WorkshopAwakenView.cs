@@ -50,8 +50,6 @@ namespace Baryonyx.Workshop
         public static readonly string[] TabLabels = { "固有スキル", "カスタムスキル" };
 
         public GuideTab[] Tabs = Array.Empty<GuideTab>();
-        public TMP_Text ListTitle;
-        public TMP_Text ListCount;
 
         // 読み込む間に伏せて並べる行の数（一覧の見える所を埋める）。
         public const int CoverRows = 7;
@@ -198,7 +196,6 @@ namespace Baryonyx.Workshop
             for (int i = 0; i < Tabs.Length; i++)
                 if (Tabs[i] != null)
                     Tabs[i].Chosen = i == (int)tab;
-            Set(ListTitle, TabLabels[(int)tab]);
             if (render)
                 Render();
         }
@@ -257,7 +254,6 @@ namespace Baryonyx.Workshop
                     Paint(Rows[i], rows[i], i > 0 && rows[i].Character != rows[i - 1].Character);
             }
             Set(Status, rows.Count == 0 ? EmptyText : "");
-            Set(ListCount, rows.Count == 0 ? "" : UiText.Count(rows.Count));
             // 覚醒できる物のない場所の伏せた行も、めくってから静かに消す。
             cover.Reveal(
                 Rows.Take(rows.Count).Select(row => row.Card),
@@ -355,7 +351,6 @@ namespace Baryonyx.Workshop
                 Rows[i].gameObject.SetActive(i < CoverRows);
             cover.Cover(Rows.Take(CoverRows).Select(row => row.Card));
             Set(Status, "");
-            Set(ListCount, "-");
         }
 
         private void ShowLoadFailed()
@@ -365,7 +360,6 @@ namespace Baryonyx.Workshop
                 if (row != null)
                     row.gameObject.SetActive(false);
             Set(Status, LoadFailedText);
-            Set(ListCount, "-");
         }
 
         // --- The awakening scene ------------------------------------------------------------

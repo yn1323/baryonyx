@@ -179,7 +179,7 @@ namespace Baryonyx.Training.Editor
         )
         {
             var rect = Layout.Box(panel, "Stage" + (index + 1), x, y, width, StageHeight);
-            var (card, inside) = GlassCardAssets.Build(rect, pattern: false);
+            var (card, inside) = GlassCardAssets.Build(rect, pattern: false, bare: UiLook.Lineless);
             var widget = new TrainingStageWidget { Card = card };
 
             // 段の石（11×11ドットを6倍）と、その上の段の番号。

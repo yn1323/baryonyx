@@ -68,10 +68,6 @@ namespace Baryonyx.Workshop
         // 読み込み中・読めなかったとき・品物がないときだけ一覧に出す文字。
         public TMP_Text Status;
 
-        // 一覧の上の見出し（選んだ分類の名前）と、並べた品物の数。
-        public TMP_Text ListTitle;
-        public TMP_Text ListCount;
-
         // 右の面：上から品質、選んだ品物の絵・名前・☆・効果・持っている数。品物がないときは何も出さない。
         public TMP_Text DetailQuality;
         public RawImage DetailArt;
@@ -238,8 +234,6 @@ namespace Baryonyx.Workshop
                     Rows[0].Card.Selected = true;
             }
             Set(Status, goods.Count == 0 ? EmptyText : "");
-            Set(ListTitle, TabLabels[tab]);
-            Set(ListCount, goods.Count == 0 ? "" : UiText.Count(shown.Count));
             // 品物のない場所の伏せたカードも、めくってから静かに消す。
             cover.Reveal(
                 Rows.Take(shown.Count).Select(row => row.gameObject),
@@ -465,8 +459,6 @@ namespace Baryonyx.Workshop
             }
             cover.Cover(Rows.Take(CoverCards).Select(row => row.gameObject));
             Set(Status, "");
-            // 数が読めないうちは「-」を出す。
-            Set(ListCount, "-");
             RefreshConfirm();
         }
 
@@ -477,7 +469,6 @@ namespace Baryonyx.Workshop
                 if (row != null)
                     row.gameObject.SetActive(false);
             Set(Status, LoadFailedText);
-            Set(ListCount, "-");
         }
 
         public static string PriceText(int price) => $"{price:N0} ルーン";

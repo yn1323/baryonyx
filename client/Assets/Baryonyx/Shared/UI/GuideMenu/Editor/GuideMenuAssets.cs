@@ -96,6 +96,9 @@ namespace Baryonyx.UI.GuideMenu.Editor
 
         // 組み立て中の画面の、枠つきのパネルを開いたときだけ出す部品と、透明にするタブ。
         private static readonly List<GameObject> frameParts = new();
+
+        // そのうちの金の線（ヘッダーの下の線と、ヘッダーの区切りの線）。線のないパネルを開いたときは隠す。
+        private static readonly List<GameObject> frameLines = new();
         private static readonly List<Graphic> tabBackdrops = new();
 
         [MenuItem("Baryonyx/Guide Menu/Create Shared Art")]
@@ -236,6 +239,7 @@ namespace Baryonyx.UI.GuideMenu.Editor
                 var view = root.gameObject.AddComponent<GuideMenuView>();
                 view.Definition = definition;
                 frameParts.Clear();
+                frameLines.Clear();
                 tabBackdrops.Clear();
 
                 BuildBackground(root, definition);
@@ -255,8 +259,9 @@ namespace Baryonyx.UI.GuideMenu.Editor
                     BuildItemPanels(safe, view, definition, itemPanel);
                 }
                 // ヘッダーの下の線は、パネルの上に重ねる。
-                frameParts.Add(GuideFrameAssets.BuildHeaderLine(safe));
+                FrameLine(GuideFrameAssets.BuildHeaderLine(safe));
                 view.FrameParts = frameParts.ToArray();
+                view.FrameLines = frameLines.ToArray();
                 view.TabBackdrops = tabBackdrops.ToArray();
                 if (overlay != null)
                     view.Overlay = overlay(root, view);
@@ -331,7 +336,7 @@ namespace Baryonyx.UI.GuideMenu.Editor
             tabBackdrops.Add(backTab);
             view.Back = AddTintButton(back, backTab);
             // 枠つきの画面では、タブの代わりに「もどる」とパンくずの間に細い線を引く。
-            frameParts.Add(GuideFrameAssets.Separator(back, 1f, HeaderGap / 2f));
+            FrameLine(GuideFrameAssets.Separator(back, 1f, HeaderGap / 2f));
             var icon = Rect("Icon", back);
             Place(icon, Vector2.zero, new Vector2(IconSize, IconSize));
             SpriteImage(icon, IconBackPath, Color.white);
@@ -370,10 +375,16 @@ namespace Baryonyx.UI.GuideMenu.Editor
             var closeTab = AddImage(tab, GuideFrameAssets.HeaderColor, true);
             tabBackdrops.Add(closeTab);
             view.Home = AddTintButton(close, closeTab);
-            frameParts.Add(GuideFrameAssets.Separator(close, 0f, -HeaderGap / 4f));
+            FrameLine(GuideFrameAssets.Separator(close, 0f, -HeaderGap / 4f));
             var icon = Rect("Icon", close);
             Place(icon, Vector2.zero, new Vector2(IconSize, IconSize));
             SpriteImage(icon, IconHomePath, Color.white);
+        }
+
+        private static void FrameLine(GameObject line)
+        {
+            frameParts.Add(line);
+            frameLines.Add(line);
         }
 
         // ×の左の所持ルーン。Homeと同じく、四方へ薄くなる暗い下地に、2倍のアイコンと数を並べる。
@@ -395,7 +406,7 @@ namespace Baryonyx.UI.GuideMenu.Editor
             shade.pixelsPerUnitMultiplier = 0.5f;
             shade.raycastTarget = false;
             tabBackdrops.Add(shade);
-            frameParts.Add(GuideFrameAssets.Separator(pill, 0f, -HeaderGap / 4f));
+            FrameLine(GuideFrameAssets.Separator(pill, 0f, -HeaderGap / 4f));
             var row = pill.gameObject.AddComponent<HorizontalLayoutGroup>();
             row.padding = new RectOffset(36, 36, 0, 0);
             row.spacing = 12;

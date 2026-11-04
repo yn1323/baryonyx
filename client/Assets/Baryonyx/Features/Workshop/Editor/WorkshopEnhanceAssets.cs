@@ -44,6 +44,7 @@ namespace Baryonyx.Workshop.Editor
         private const float CardDot = 4f;
         private const float CardsTop = 232f;
         private const float ArrowWidth = 96f;
+
         private const float GearArt = 128f;
 
         // 行の右端の品質・費用の幅。
@@ -163,11 +164,12 @@ namespace Baryonyx.Workshop.Editor
         )
         {
             var rect = Layout.Box(layer, name, x, CardsTop, size.x, size.y);
-            var inside = GlassCardAssets.Plaque(rect, pattern: false);
+            var inside = GlassCardAssets.Plaque(rect, pattern: false, bare: UiLook.Lineless);
+            // 線のない形の札は縁を描かないため、品質の色の縁も付けない（品質は札の中の文字で示す）。
             var card = new WorkshopGearCard
             {
                 Root = rect.gameObject,
-                Rim = GlassCardAssets.RimOf(rect),
+                Rim = UiLook.Lineless ? null : GlassCardAssets.RimOf(rect),
             };
             var box = Layout.Box(inside, "ArtBox", (size.x - GearArt) / 2f, 36f, GearArt, GearArt);
             var art = Rect("Art", box);
@@ -254,8 +256,6 @@ namespace Baryonyx.Workshop.Editor
             enhance.CardFrames = DeckCardFrames();
             enhance.ElementIcons = ElementIcons();
             enhance.Tabs = panel.Tabs;
-            enhance.ListTitle = panel.Title;
-            enhance.ListCount = panel.Count;
             var content = panel.Content;
             enhance.Content = content;
             enhance.List = panel.Scroll;
@@ -291,7 +291,6 @@ namespace Baryonyx.Workshop.Editor
                 enhance.Rows.Add(row);
             }
             enhance.Status = panel.Status;
-            enhance.ListCount.text = UiText.Count(mock.Count);
 
             BuildDetail(
                 layer,
@@ -736,7 +735,11 @@ namespace Baryonyx.Workshop.Editor
                     width,
                     BarHeight
                 );
-                var (card, inside) = GlassCardAssets.Build(rect, pattern: false);
+                var (card, inside) = GlassCardAssets.Build(
+                    rect,
+                    pattern: false,
+                    bare: UiLook.Lineless
+                );
                 var chip = rect.gameObject.AddComponent<WorkshopMaterialChip>();
                 chip.Card = card;
                 // 絵を上に、持っている数をその下に置く。

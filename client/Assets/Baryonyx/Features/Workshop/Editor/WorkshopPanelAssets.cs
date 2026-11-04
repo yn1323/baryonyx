@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using Baryonyx.Combat;
 using Baryonyx.Combat.Editor;
+using Baryonyx.Editor.UI;
 using Baryonyx.Party.Editor;
 using Baryonyx.Training.Editor;
 using Baryonyx.UI;
@@ -90,7 +91,7 @@ namespace Baryonyx.Workshop.Editor
             bool held = false
         )
         {
-            var (row, inside) = ItemTileAssets.Build(Rect(name, content));
+            var (row, inside) = ItemTileAssets.Build(Rect(name, content), bare: UiLook.Lineless);
             row.Art = ArtBox(inside, (cell.x - artBox) / 2f, 18f, artBox);
             float y = 18f + artBox + 6f;
             row.Name = Layout.Text(
@@ -151,7 +152,7 @@ namespace Baryonyx.Workshop.Editor
             var tile = Layout.Box(parent, name, x, y, size, size + TileNameHeight);
             var row = tile.gameObject.AddComponent<ItemTile>();
             var face = Layout.Box(tile, "Card", 0f, 0f, size, size);
-            var (card, inside) = GlassCardAssets.Build(face, pattern: false);
+            var (card, inside) = GlassCardAssets.Build(face, pattern: false, bare: UiLook.Lineless);
             row.Card = card;
             row.Art = ArtBox(inside, (size - artBox) / 2f, (size - artBox) / 2f - 6f, artBox);
             ItemTileAssets.QualityMark(row, inside);

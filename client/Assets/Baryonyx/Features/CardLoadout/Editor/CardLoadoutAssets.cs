@@ -4,6 +4,7 @@ using System.Linq;
 using Baryonyx.Combat;
 using Baryonyx.Combat.Editor;
 using Baryonyx.Editor.Art;
+using Baryonyx.Editor.UI;
 using Baryonyx.Party;
 using Baryonyx.Party.Editor;
 using Baryonyx.SkillEvolution;
@@ -345,7 +346,9 @@ namespace Baryonyx.CardLoadout.Editor
             line.pivot = new Vector2(0.5f, 0.5f);
             line.offsetMin = new Vector2(GridLineGap - 12f, -1f);
             line.offsetMax = new Vector2(0f, 1f);
-            AddImage(line, UiPalette.LineDivider, false);
+            // 見出しの右へ伸ばす金の線は、線のない形では引かない（doc/rules/ui-design.md の線のない形）。
+            if (!UiLook.Lineless)
+                AddImage(line, UiPalette.LineDivider, false);
         }
 
         /// <summary>
@@ -763,7 +766,7 @@ namespace Baryonyx.CardLoadout.Editor
                 Guide.ConfirmHeight
             );
             awakening.CostCard = plaque.gameObject;
-            var inside = GlassCardAssets.Plaque(plaque, pattern: false);
+            var inside = GlassCardAssets.Plaque(plaque, pattern: false, bare: UiLook.Lineless);
             var shard = Rect("Shard", inside);
             Corner(shard, new Vector2(0f, 0.5f), new Vector2(20f, 0f), Vector2.one * ShardArt);
             var image = shard.gameObject.AddComponent<RawImage>();
@@ -898,7 +901,8 @@ namespace Baryonyx.CardLoadout.Editor
         {
             var (button, selected, row) = GlassCardAssets.Choice(
                 Layout.Box(left, name, 0, y, Left.width, DeckRowHeight),
-                pattern: false
+                pattern: false,
+                bare: UiLook.Lineless
             );
             var widget = new CardLoadoutDeckRowWidget();
             var card = widget.Card;
@@ -1139,7 +1143,11 @@ namespace Baryonyx.CardLoadout.Editor
         /// </summary>
         private static CardLoadoutStageWidget BuildStage(RectTransform rect)
         {
-            var (button, selected, row) = GlassCardAssets.Choice(rect, pattern: false);
+            var (button, selected, row) = GlassCardAssets.Choice(
+                rect,
+                pattern: false,
+                bare: UiLook.Lineless
+            );
             var widget = new CardLoadoutStageWidget();
             var card = widget.Card;
             card.Button = button;

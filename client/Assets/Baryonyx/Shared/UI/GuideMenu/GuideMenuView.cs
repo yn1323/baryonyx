@@ -81,6 +81,9 @@ namespace Baryonyx.UI.GuideMenu
         // ヘッダーの帯と区切りの線、ヘッダーの下の線。
         public GameObject[] FrameParts = Array.Empty<GameObject>();
 
+        // そのうちの金の線。線のないパネル（GuideFramedPanel.Lineless）を開いている間は隠す。
+        public GameObject[] FrameLines = Array.Empty<GameObject>();
+
         // 枠を出している間は透明にする、「もどる」と×のタブ、所持ルーンの下地（押せる範囲は残す）。
         public Graphic[] TabBackdrops = Array.Empty<Graphic>();
 
@@ -240,11 +243,10 @@ namespace Baryonyx.UI.GuideMenu
             if (GuideArt != null)
                 GuideArt.SetActive(custom == null || besideGuide);
             // 枠は、画面いっぱいの項目のパネルと、案内人の右に出す一覧・行き先のリストで出す。
+            var framedPanel = custom != null ? custom.GetComponent<GuideFramedPanel>() : null;
             ShowFrame(
-                list
-                    || besideGuide
-                    || destinations
-                    || (custom != null && custom.GetComponent<GuideFramedPanel>() != null)
+                list || besideGuide || destinations || framedPanel != null,
+                framedPanel == null || !framedPanel.Lineless
             );
             if (MenuPanel != null)
                 MenuPanel.SetActive(!destinations && !open);
@@ -406,12 +408,16 @@ namespace Baryonyx.UI.GuideMenu
         /// <summary>Whether the frame of a full-screen panel is showing.</summary>
         public bool Framed { get; private set; }
 
-        private void ShowFrame(bool framed)
+        private void ShowFrame(bool framed, bool lines = true)
         {
             Framed = framed;
             foreach (var part in FrameParts)
                 if (part != null)
                     part.SetActive(framed);
+            if (!lines)
+                foreach (var line in FrameLines)
+                    if (line != null)
+                        line.SetActive(false);
             for (int i = 0; i < TabBackdrops.Length; i++)
             {
                 var graphic = TabBackdrops[i];

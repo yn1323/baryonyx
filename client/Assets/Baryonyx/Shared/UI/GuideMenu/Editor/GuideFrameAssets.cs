@@ -1,6 +1,7 @@
 using System.IO;
 using Baryonyx.Editor;
 using Baryonyx.Editor.Art;
+using Baryonyx.Editor.UI;
 using Baryonyx.UI.Editor;
 using TMPro;
 using UnityEditor;
@@ -28,6 +29,9 @@ namespace Baryonyx.UI.GuideMenu.Editor
 
         // 未解放のスキル・枠と準備中のタブに重ねる、9×10ドットの錠前。
         public const string LockPath = GuideMenuAssets.ArtFolder + "/GuideLock.png";
+
+        // 線のない形のヘッダーの帯の下端を、中身へなじませるぼかし（上が帯の濃さ、下が透明）。
+        public const string HeaderFadePath = GuideMenuAssets.ArtFolder + "/FrameHeaderFade.png";
 
         private const float Dot = GuideMenuAssets.DotScale;
 
@@ -91,6 +95,13 @@ namespace Baryonyx.UI.GuideMenu.Editor
             ArtAssets.WritePattern(DiamondPath, DiamondDots, Gold);
             ArtAssets.WritePattern(DiamondLargePath, DiamondLargeDots, Gold);
             ArtAssets.WritePattern(LockPath, LockDots, Steel);
+            ArtAssets.WriteSmooth(
+                HeaderFadePath,
+                4,
+                64,
+                Vector4.zero,
+                (u, v) => new Color(1f, 1f, 1f, Mathf.SmoothStep(0f, 1f, v))
+            );
         }
 
         private static Color Gold(char dot) =>
@@ -129,18 +140,41 @@ namespace Baryonyx.UI.GuideMenu.Editor
             return rect.gameObject;
         }
 
-        /// <summary>The translucent band behind the header, reaching past the safe area's top.</summary>
+        /// <summary>
+        /// The translucent band behind the header, reaching past the safe area's top. While
+        /// <see cref="UiLook.Lineless"/>, its lower edge fades into the contents instead of ending
+        /// on a line (doc/rules/ui-design.md の線のない形).
+        /// </summary>
         public static GameObject BuildHeaderBand(RectTransform safe)
         {
             var band = Rect("FrameHeader", safe);
             band.anchorMin = new Vector2(0, 1);
             band.anchorMax = Vector2.one;
-            band.offsetMin = new Vector2(-Bleed, -HeaderHeight);
+            float solid = UiLook.Lineless ? HeaderHeight - HeaderFadeAbove : HeaderHeight;
+            band.offsetMin = new Vector2(-Bleed, -solid);
             band.offsetMax = new Vector2(Bleed, Bleed);
             AddImage(band, HeaderColor, false);
+            if (UiLook.Lineless)
+            {
+                // 帯の下端から、帯の濃さを下へ薄くしていく。帯の中で始め、中身の上で消える。
+                var fade = Rect("Fade", band);
+                fade.anchorMin = Vector2.zero;
+                fade.anchorMax = new Vector2(1, 0);
+                fade.pivot = new Vector2(0.5f, 1f);
+                fade.offsetMin = new Vector2(0, -HeaderFadeHeight);
+                fade.offsetMax = Vector2.zero;
+                var image = fade.gameObject.AddComponent<RawImage>();
+                image.texture = AssetDatabase.LoadAssetAtPath<Texture2D>(HeaderFadePath);
+                image.color = HeaderColor;
+                image.raycastTarget = false;
+            }
             band.gameObject.SetActive(false);
             return band.gameObject;
         }
+
+        // 線のない形のヘッダーで、帯の濃さを薄くし始める位置（ヘッダーの下端から上へ）と、薄くする長さ。
+        private const float HeaderFadeAbove = 24f;
+        private const float HeaderFadeHeight = 88f;
 
         /// <summary>The gold line under the header with a diamond at each end, over the panels.</summary>
         public static GameObject BuildHeaderLine(RectTransform safe)
@@ -199,7 +233,8 @@ namespace Baryonyx.UI.GuideMenu.Editor
             var root = Rect(name, safe);
             Stretch(root);
             var view = root.gameObject.AddComponent<T>();
-            root.gameObject.AddComponent<GuideFramedPanel>();
+            // 線のない形で組み立てる画面は、開いている間ヘッダーの線も隠す。
+            root.gameObject.AddComponent<GuideFramedPanel>().Lineless = UiLook.Lineless;
             return (view, Layout.LayerBelow(root, "Layout", HeaderHeight));
         }
 
@@ -257,6 +292,8 @@ namespace Baryonyx.UI.GuideMenu.Editor
         /// </summary>
         public static void Divider(RectTransform layer, float x, float top)
         {
+            if (UiLook.Lineless)
+                return;
             float height = Layout.Design.y - top + Bleed;
             foreach (float offset in new[] { -4f, 2f })
                 AddImage(
@@ -768,16 +805,22 @@ namespace Baryonyx.UI.GuideMenu.Editor
             float size = 34f
         )
         {
-            float diamond = DiamondSize(size);
-            var mark = Layout.Box(
-                layer,
-                name + "Diamond",
-                x + 4f,
-                y + (height - diamond) / 2f,
-                diamond,
-                diamond
-            );
-            SpriteImage(mark, DiamondLargePath, Color.white);
+            // 線のない形では、ひし形の飾りを置かず、金の文字だけにする（doc/rules/ui-design.md の線のない形）。
+            float lead = 0f;
+            if (!UiLook.Lineless)
+            {
+                float diamond = DiamondSize(size);
+                var mark = Layout.Box(
+                    layer,
+                    name + "Diamond",
+                    x + 4f,
+                    y + (height - diamond) / 2f,
+                    diamond,
+                    diamond
+                );
+                SpriteImage(mark, DiamondLargePath, Color.white);
+                lead = diamond + size * 0.4f;
+            }
             return Layout.Text(
                 layer,
                 name,
@@ -785,9 +828,9 @@ namespace Baryonyx.UI.GuideMenu.Editor
                 size,
                 UiPalette.GoldLight,
                 TextAlignmentOptions.MidlineLeft,
-                x + 4f + diamond + size * 0.4f,
+                x + 4f + lead,
                 y,
-                width - diamond - size * 0.4f - 4f,
+                width - lead - 4f,
                 height
             );
         }
@@ -801,6 +844,8 @@ namespace Baryonyx.UI.GuideMenu.Editor
             var title = row.GetComponentInChildren<TMP_Text>();
             if (title != null)
                 title.color = UiPalette.GoldLight;
+            if (UiLook.Lineless)
+                return;
             var mark = Rect("Diamond", row);
             mark.SetSiblingIndex(0);
             var element = mark.gameObject.AddComponent<LayoutElement>();

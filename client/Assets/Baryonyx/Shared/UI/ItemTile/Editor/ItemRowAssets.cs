@@ -2,6 +2,7 @@ using Baryonyx.UI.GuideMenu.Editor;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using Baryonyx.Editor.UI;
 using static Baryonyx.Editor.UI.UiBuild;
 
 namespace Baryonyx.UI.Editor
@@ -24,7 +25,8 @@ namespace Baryonyx.UI.Editor
         /// A row <paramref name="height"/> high in <paramref name="content"/> (a vertical layout),
         /// with the art <paramref name="artBox"/> square and a value
         /// <paramref name="valueWidth"/> wide at the bottom right (0 for none). With
-        /// <paramref name="runeValue"/> the value is a price with the rune icon.
+        /// <paramref name="runeValue"/> the value is a price with the rune icon. A row built
+        /// while <see cref="UiLook.Lineless"/> has no plate (doc/rules/ui-design.md の線のない形).
         /// </summary>
         public static ItemTile Row(
             RectTransform content,
@@ -38,7 +40,7 @@ namespace Baryonyx.UI.Editor
         )
         {
             var rect = GuidePanelLayout.ListItem(content, name, height);
-            var (row, inside) = ItemTileAssets.Build(rect);
+            var (row, inside) = ItemTileAssets.Build(rect, bare: UiLook.Lineless);
             var box = Rect("ArtBox", inside);
             Corner(box, new Vector2(0, 0.5f), new Vector2(Inset, 0), Vector2.one * artBox);
             var art = Rect("Art", box);

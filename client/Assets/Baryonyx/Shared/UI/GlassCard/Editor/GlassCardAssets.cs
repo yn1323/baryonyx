@@ -108,12 +108,16 @@ namespace Baryonyx.UI.Editor
         /// A <paramref name="dashed"/> card (an empty place, or an action such as "remove") has a
         /// dashed rim and no pattern; small cards (equipment slots) leave the pattern out.
         /// A card straight over the scene passes <see cref="SceneFillColor"/> as <paramref name="fill"/>.
+        /// A <paramref name="bare"/> card (a row of a lineless panel) keeps only the faint plate:
+        /// no rim, pattern, dashes or shadow. Chosen, it shows the gold rim and glow like any card
+        /// (doc/rules/ui-design.md の線のない形).
         /// </summary>
         public static (GlassCard Card, RectTransform Content) Build(
             RectTransform rect,
             bool dashed = false,
             bool pattern = true,
-            Color? fill = null
+            Color? fill = null,
+            bool bare = false
         )
         {
             EnsureArt();
@@ -121,7 +125,7 @@ namespace Baryonyx.UI.Editor
             // カード全体で押せるようにする（見えない板）。
             AddImage(rect, Color.clear, true);
             card.Group = rect.gameObject.AddComponent<CanvasGroup>();
-            var (body, shadow, _, content, selection) = Visuals(rect, dashed, pattern, fill);
+            var (body, shadow, _, content, selection) = Visuals(rect, dashed, pattern, fill, bare);
             card.Body = body;
             card.Shadow = shadow;
             card.Selection = selection;
@@ -137,10 +141,11 @@ namespace Baryonyx.UI.Editor
             RectTransform rect,
             bool dashed = false,
             bool pattern = true,
-            Color? fill = null
+            Color? fill = null,
+            bool bare = false
         )
         {
-            var (card, content) = Build(rect, dashed, pattern, fill);
+            var (card, content) = Build(rect, dashed, pattern, fill, bare);
             var plate = card.Body.Find("Fill").GetComponent<Image>();
             var button = ConfigureButton(rect.gameObject.AddComponent<Button>(), plate);
             var colors = button.colors;
@@ -157,11 +162,12 @@ namespace Baryonyx.UI.Editor
             RectTransform rect,
             bool dashed = false,
             bool pattern = true,
-            Color? fill = null
+            Color? fill = null,
+            bool bare = false
         )
         {
             EnsureArt();
-            return Visuals(rect, dashed, pattern, fill).Content;
+            return Visuals(rect, dashed, pattern, fill, bare).Content;
         }
 
         /// <summary>
@@ -278,8 +284,10 @@ namespace Baryonyx.UI.Editor
             Image Fill,
             RectTransform Content,
             GameObject Selection
-        ) Visuals(RectTransform rect, bool dashed, bool pattern, Color? plate)
+        ) Visuals(RectTransform rect, bool dashed, bool pattern, Color? plate, bool bare = false)
         {
+            if (bare)
+                return BareVisuals(rect);
             RectTransform shadow = null;
             if (!dashed)
             {
@@ -324,7 +332,12 @@ namespace Baryonyx.UI.Editor
 
             var content = Stretched("Content", body);
 
-            // 選んだときの金の縁と、外へにじむ光。中身の上に重ねる。
+            return (body, shadow, fill, content, Selection(rect, tint));
+        }
+
+        // 選んだときの金の縁と、外へにじむ光。中身の上に重ねる。
+        private static GameObject Selection(RectTransform rect, RectTransform tint)
+        {
             var selection = Rect("Selection", rect);
             Stretch(selection);
             var glow = Rect("Glow", selection);
@@ -333,7 +346,27 @@ namespace Baryonyx.UI.Editor
             Plate(Stretched("Rim", selection), SelectedRimPath, GoldColor);
             selection.gameObject.AddComponent<GlassCardSelection>().Tint = tint.gameObject;
             selection.gameObject.SetActive(false);
-            return (body, shadow, fill, content, selection.gameObject);
+            return selection.gameObject;
+        }
+
+        // 線のない行：うっすら明るい板だけを残し、縁・模様・破線・影を描かない（doc/rules/ui-design.md の線のない形）。
+        // 選んだときの金の縁と光は、ほかのカードと同じにする。
+        private static (
+            RectTransform Body,
+            RectTransform Shadow,
+            Image Fill,
+            RectTransform Content,
+            GameObject Selection
+        ) BareVisuals(RectTransform rect)
+        {
+            var body = Rect("Body", rect);
+            Stretch(body);
+            var fill = Plate(Stretched("Fill", body), FillPath, FillColor);
+            var tint = Stretched("SelectedTint", body);
+            Plate(tint, FillPath, new Color(GoldColor.r, GoldColor.g, GoldColor.b, 0.1f));
+            tint.gameObject.SetActive(false);
+            var content = Stretched("Content", body);
+            return (body, null, fill, content, Selection(rect, tint));
         }
 
         private static RectTransform Stretched(string name, RectTransform parent)

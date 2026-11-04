@@ -51,9 +51,14 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(roster.gameObject.activeInHierarchy, Is.True);
             Assert.That(view.ListPanel.activeSelf, Is.False);
             Assert.That(view.GuideArt.activeSelf, Is.False);
-            // 画面いっぱいの枠：ぼかした背景・ヘッダーの帯と区切り・四隅の飾りを出す。
+            // 画面いっぱいの枠：ぼかした背景とヘッダーの帯を出す。酒場は線のない形のため、金の線は隠す。
             Assert.That(view.Framed, Is.True);
-            Assert.That(view.FrameParts.All(part => part.activeSelf), Is.True);
+            Assert.That(
+                view.FrameParts.Except(view.FrameLines).All(part => part.activeSelf),
+                Is.True
+            );
+            Assert.That(view.FrameLines, Is.Not.Empty);
+            Assert.That(view.FrameLines.Any(line => line.activeSelf), Is.False);
             yield return null;
 
             // カードは「もどる」と重ならず、パーティの4枚は一覧の左にある。どれも指で押せる大きさ。

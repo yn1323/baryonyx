@@ -70,8 +70,6 @@ namespace Baryonyx.Workshop.Editor
             craft.DetailArtBox = DetailArt;
             craft.MaterialArtBox = MaterialArt;
             craft.Tabs = panel.Tabs;
-            craft.ListTitle = panel.Title;
-            craft.ListCount = panel.Count;
 
             var content = panel.Content;
             craft.Content = content;
@@ -99,7 +97,6 @@ namespace Baryonyx.Workshop.Editor
                 craft.Rows.Add(row);
             }
             craft.Status = panel.Status;
-            craft.ListCount.text = UiText.Count(recipes.Length);
 
             // 右の面は、買うの詳細と同じ詳しい面（品質と倍率・絵・名前・☆・効果・属性）。
             // その下に材料の札と値段を置く（doc/rules/ui-design.md の装備の見せ方）。

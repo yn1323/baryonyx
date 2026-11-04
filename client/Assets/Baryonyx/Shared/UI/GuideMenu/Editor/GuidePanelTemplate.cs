@@ -1,3 +1,4 @@
+using Baryonyx.Editor.UI;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -39,9 +40,15 @@ namespace Baryonyx.UI.GuideMenu.Editor
             /// <summary>The categories down the left edge; empty when the panel has none.</summary>
             public GuideTab[] Tabs = System.Array.Empty<GuideTab>();
 
-            /// <summary>The heading over the list ("◆武器") and the count at its right end.</summary>
+            /// <summary>
+            /// The heading over the list ("◆武器") and the count at its right end; null on a
+            /// lineless panel, where the chosen category says what the list holds.
+            /// </summary>
             public TMP_Text Title;
             public TMP_Text Count;
+
+            /// <summary>Where the list starts, under the heading row (or the header without it).</summary>
+            public float Top = ListTop;
 
             /// <summary>The text in the list's top row while it reads, fails or is empty.</summary>
             public TMP_Text Status;
@@ -156,15 +163,17 @@ namespace Baryonyx.UI.GuideMenu.Editor
                 Tabs = categories,
                 ListLeft = left,
                 ListRight = right,
+                Top = TopOfList(),
             };
-            HeadingRow(panel, title);
+            if (!UiLook.Lineless)
+                HeadingRow(panel, title);
             var list = Layout.Box(
                 layer,
                 "List",
                 left,
-                ListTop,
+                panel.Top,
                 right - left,
-                Layout.Design.y - ListTop
+                Layout.Design.y - panel.Top
             );
             var viewport = Layout.Viewport(list);
             panel.Content = Layout.Column(
@@ -174,9 +183,14 @@ namespace Baryonyx.UI.GuideMenu.Editor
                 new RectOffset(0, 0, (int)CardGap, (int)(CardGap + UiSpace.Edge))
             );
             panel.Scroll = Layout.Scroll(list, viewport, panel.Content);
-            panel.Status = GuideFrameAssets.ListStatus(layer, left, right, ListTop);
+            panel.Status = GuideFrameAssets.ListStatus(layer, left, right, panel.Top);
             return (view, panel);
         }
+
+        // 一覧の始まり。線のない形は見出しの段を置かず、ヘッダーのすぐ下から始める
+        // （選んでいる分類が、一覧が何かを示すため。doc/rules/ui-design.md の線のない形）。
+        private static float TopOfList() =>
+            UiLook.Lineless ? GuideFrameAssets.HeaderHeight + UiSpace.Pad : ListTop;
 
         // 一覧と詳細の2つの面、左の縦の分類、見出しの段、状態の文字。
         private static (T View, ListPanel Panel) Begin<T>(
@@ -190,7 +204,7 @@ namespace Baryonyx.UI.GuideMenu.Editor
         {
             var (view, layer) = GuideFrameAssets.FramedPanel<T>(safe, name);
             GuideFrameAssets.SplitPanes(layer, Split, "ListPane", "DetailPane");
-            var panel = new ListPanel { Layer = layer };
+            var panel = new ListPanel { Layer = layer, Top = TopOfList() };
             float rail = 0f;
             if (tabs != null)
             {
@@ -205,12 +219,13 @@ namespace Baryonyx.UI.GuideMenu.Editor
             // 縦の分類の右は区切りの線のため24、画面の端の側は48空ける。
             panel.ListLeft = rail + (tabs != null ? UiSpace.Pad : UiSpace.Edge);
             panel.ListRight = Split - UiSpace.Pad;
-            HeadingRow(panel, title);
+            if (!UiLook.Lineless)
+                HeadingRow(panel, title);
             panel.Status = GuideFrameAssets.ListStatus(
                 layer,
                 panel.ListLeft,
                 panel.ListRight,
-                ListTop
+                panel.Top
             );
             return (view, panel);
         }
@@ -248,9 +263,9 @@ namespace Baryonyx.UI.GuideMenu.Editor
                 panel.Layer,
                 "List",
                 rail,
-                ListTop,
+                panel.Top,
                 Split - rail,
-                Layout.Design.y - ListTop
+                Layout.Design.y - panel.Top
             );
             return Layout.Viewport(list);
         }

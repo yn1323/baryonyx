@@ -99,11 +99,18 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(craft.Shown.All(recipe => recipe.Kind == LibraryKind.Weapon), Is.True);
             Assert.That(craft.Selected, Is.EqualTo(0));
             SceneTests.AssertTouchSize(craft.Confirm.transform, 0.7f);
+            // 商会は線のない形：ヘッダーの金の線を隠し、行は縁のない板にする。選んだ行は金の縁で示す。
+            Assert.That(view.FrameLines, Is.Not.Empty);
+            Assert.That(view.FrameLines.Any(line => line.activeSelf), Is.False);
+            Assert.That(craft.Rows[0].Card.Body.Find("Rim"), Is.Null);
+            Assert.That(craft.Rows[0].Card.Selected, Is.True);
 
             // 炎のダガー：鉄の剣（特別）と、海賊のラム酒が足りない。
             int dagger = craft.Shown.ToList().FindIndex(recipe => recipe.Id == "flame-dagger");
             Assert.That(dagger, Is.GreaterThanOrEqualTo(0));
             craft.Rows[dagger].Card.Click();
+            Assert.That(craft.Rows[dagger].Card.Selected, Is.True);
+            Assert.That(craft.Rows[0].Card.Selected, Is.False);
             Assert.That(
                 craft.MaterialRows.Count(row => row.gameObject.activeSelf),
                 Is.EqualTo(craft.Shown[dagger].Materials.Count)

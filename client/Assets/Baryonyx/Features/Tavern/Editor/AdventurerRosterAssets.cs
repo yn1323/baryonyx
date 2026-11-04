@@ -125,7 +125,7 @@ namespace Baryonyx.Tavern.Editor
                         PartyWidth,
                         CardHeight
                     );
-                    var (card, content) = GlassCardAssets.Build(rect);
+                    var (card, content) = GlassCardAssets.Build(rect, bare: UiLook.Lineless);
                     GlassCardAssets.AddBack(card);
                     var widget = new AdventurerSlotWidget { Card = card };
                     (widget.Figure, widget.Shadow) = Card.Figure(
@@ -201,7 +201,7 @@ namespace Baryonyx.Tavern.Editor
         )
         {
             var rect = Rect("Member_" + member.Id, content);
-            var (card, inside) = GlassCardAssets.Build(rect);
+            var (card, inside) = GlassCardAssets.Build(rect, bare: UiLook.Lineless);
             GlassCardAssets.AddBack(card);
             var widget = new AdventurerTileWidget { Id = member.Id, Card = card };
             var (figure, _) = Card.Figure(inside, member, shadow, CardHeight);
@@ -219,7 +219,7 @@ namespace Baryonyx.Tavern.Editor
         private static GlassCard BuildRemove(RectTransform content)
         {
             var rect = Rect("Remove", content);
-            var (card, inside) = GlassCardAssets.Build(rect, dashed: true);
+            var (card, inside) = GlassCardAssets.Build(rect, dashed: true, bare: UiLook.Lineless);
             Frame.RemoveFace(
                 inside,
                 PartyRosterPresenter.RemoveLabel,
@@ -252,11 +252,13 @@ namespace Baryonyx.Tavern.Editor
             );
             var dark = Frame.PaneDark;
             AddImage(back, new Color(dark.r, dark.g, dark.b, 1f), true);
-            AddImage(
-                Layout.Box(back, "Line", 0, 0, Layout.Design.x + Frame.Bleed * 2f, 2f),
-                Frame.LineColor,
-                false
-            );
+            // 帯の上端の金の線は、線のない形では引かない（帯の濃さで分かる）。
+            if (!UiLook.Lineless)
+                AddImage(
+                    Layout.Box(back, "Line", 0, 0, Layout.Design.x + Frame.Bleed * 2f, 2f),
+                    Frame.LineColor,
+                    false
+                );
             var band = Layout.Box(layer, "Band", 0, BandTop, Layout.Design.x, BandHeight);
             var widget = view.Chosen;
 

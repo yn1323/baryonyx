@@ -200,12 +200,11 @@ namespace Baryonyx.Tests.PlayMode
                 Is.EqualTo(WorkshopAwakenView.TabLabels)
             );
             Assert.That(awaken.Tabs[0].Chosen, Is.True);
-            Assert.That(awaken.ListTitle.text, Is.EqualTo("固有スキル"));
-            Assert.That(awaken.ListCount.text, Is.EqualTo(UiText.Count(awaken.Entries.Count)));
+            Assert.That(awaken.Tabs[1].Chosen, Is.False);
             Assert.That(awaken.Entries.All(row => !row.IsSkillCard), Is.True);
             awaken.Tabs[1].Button.onClick.Invoke();
             Assert.That(awaken.Current, Is.EqualTo(WorkshopAwakenView.Tab.Customs));
-            Assert.That(awaken.ListTitle.text, Is.EqualTo("カスタムスキル"));
+            Assert.That(awaken.Tabs[1].Chosen, Is.True);
             Assert.That(awaken.Entries, Is.Not.Empty);
             Assert.That(awaken.Entries.All(row => row.IsSkillCard), Is.True);
             Assert.That(
