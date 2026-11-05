@@ -35,7 +35,7 @@ export const worldAtlasSquares = sqliteTable(
       table.mapKey,
       table.squareId,
     ),
-    check("world_atlas_squares_runes_check", sql`${table.runes} > 0`),
+    check("world_atlas_squares_runes_check", sql`${table.runes} >= 0`),
     check(
       "world_atlas_squares_balance_after_check",
       sql`${table.balanceAfter} >= 0`,

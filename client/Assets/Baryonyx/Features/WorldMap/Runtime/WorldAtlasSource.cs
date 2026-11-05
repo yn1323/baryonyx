@@ -36,7 +36,14 @@ namespace Baryonyx.WorldMap
 
         // マスを1つ、ルーンを払って開け、払ったあとの残高を返す。値段はサーバーが決める。
         // 開けたマスを送り直しても払わない。足りない・つながっていないときは例外になる。
-        Task<int> OpenAsync(string requestId, string map, string square, CancellationToken token);
+        // free は消費を止めているとき（開発用）で、払わずに開けた記録だけを残す。
+        Task<int> OpenAsync(
+            string requestId,
+            string map,
+            string square,
+            bool free,
+            CancellationToken token
+        );
     }
 
     /// <summary>Keeps the squares on the game server with the shared session.</summary>
@@ -68,11 +75,12 @@ namespace Baryonyx.WorldMap
             string requestId,
             string map,
             string square,
+            bool free,
             CancellationToken token
         ) =>
             (
                 await sessions.WithSessionAsync(
-                    session => api.OpenAsync(session, requestId, map, square, token),
+                    session => api.OpenAsync(session, requestId, map, square, free, token),
                     token
                 )
             ).balanceAfter;
@@ -102,12 +110,13 @@ namespace Baryonyx.WorldMap
             string requestId,
             string map,
             string square,
+            bool free,
             CancellationToken token
         )
         {
             if (opened.Contains((map, square)))
                 return Task.FromResult(Runes);
-            int price = priceOf(map, square);
+            int price = free ? 0 : priceOf(map, square);
             if (price > Runes)
                 throw new ServerApiException(409, WorldAtlasSession.InsufficientRunesError);
             Runes -= price;

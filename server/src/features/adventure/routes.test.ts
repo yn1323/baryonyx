@@ -1151,6 +1151,23 @@ describe("冒険API", () => {
     );
   });
 
+  it("ルーンの消費を止めた端末が払わずに町のマスまで開けても、ダンジョンを始められる", async () => {
+    const user = await scenario.login("adventure-unlock-atlas-free");
+    await scenario.setRunes(user.userId, 0);
+    const port = { destinationId: "port-portoria" };
+    for (const squareId of atlasPathTo("marina", "portoria")) {
+      const response = await scenario.request(
+        "/world-atlas/open",
+        "POST",
+        { requestId: crypto.randomUUID(), map: "marina", squareId, free: true },
+        user.token,
+      );
+      expect(response.status).toBe(200);
+    }
+    const started = await call(user.token, "/adventure", port);
+    expect(started.run?.destinationId).toBe("port-portoria");
+  });
+
   it("宝箱のマスに入ると、宝箱から覚醒が出るかを決めて保存し、次のマスへ進むと消す", async () => {
     const user = await scenario.login("adventure-chest-awakening");
     const now = new Date().toISOString();

@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import { createDatabase } from "../../shared/db.js";
 import { invalidRequest, parseJson, respond } from "../../shared/http.js";
 import { requireSession, type SessionEnv } from "../accounts/session.js";
+import { debugToolsEnabled } from "../debug/routes.js";
 import { createWorldAtlasRepository } from "./repository.js";
 import { openSchema } from "./schema.js";
 
@@ -22,6 +23,9 @@ export function createWorldAtlasApi() {
   api.post("/world-atlas/open", async (c) => {
     const body = await parseJson(c, openSchema);
     if (!body.success) return invalidRequest(c);
+    if (body.data.free && !debugToolsEnabled(c.env)) {
+      return c.json({ error: "free_not_allowed" }, 409);
+    }
     const result = await createWorldAtlasRepository(
       createDatabase(c.env.DB),
     ).open(c.get("userId"), body.data, new Date().toISOString());

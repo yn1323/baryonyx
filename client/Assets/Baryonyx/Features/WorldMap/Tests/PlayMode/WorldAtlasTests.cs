@@ -740,6 +740,30 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(dungeons, Is.Zero);
         }
 
+        // ルーンの消費を止めて歩いても、町のマスに着けばダンジョンが解放される（2026-11-05）。
+        [UnityTest]
+        public IEnumerator ReachingADungeonTownWhileChargingIsOffStillOpensTheDungeon()
+        {
+            var source = new WorldAtlasMemorySource(0, (map, square) => 100);
+            WorldAtlasSession.Source = source;
+            WorldAtlasSession.Charging = false;
+            var navigator = Spawn();
+            yield return SceneTests.WaitUntil(
+                () => WorldAtlasSession.Loaded && navigator.Current != null,
+                message: "The squares were not read."
+            );
+            var coast = OpenBeside(navigator, "marina", "portoria");
+            Assert.That(DungeonUnlocks.Reached("portoria", WorldMapProgress.Start), Is.False);
+            yield return WalkTo(coast, "portoria");
+            yield return SceneTests.WaitUntil(
+                () => coast.Dialog.IsShown,
+                seconds: 16f,
+                message: "The dungeon was not announced."
+            );
+            Assert.That(DungeonUnlocks.Reached("portoria", WorldMapProgress.Start), Is.True);
+            Assert.That(source.Runes, Is.Zero, "Nothing is paid.");
+        }
+
         // 世界地図の宝箱のマスを開けて着くと、見本の窓の代わりに、もらった物を札で見せる。
         [UnityTest]
         public IEnumerator ATreasureSquareOfTheWorldShowsWhatItGives()

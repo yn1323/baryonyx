@@ -321,9 +321,13 @@ namespace Baryonyx.WorldMap
         /// The runes that entering the square <paramref name="index"/> costs now: 0 when it was
         /// entered or paid for before, or while charging is off.
         /// </summary>
-        public int PriceOf(int index)
+        public int PriceOf(int index) => Charging ? OpeningPriceOf(index) : 0;
+
+        // 開けていないマスの、地図の定義の値段。開けたマス・値段のないマスは0。消費を止めていても、
+        // 0でないマスは跳ぶ直前に開けた記録を送る（町のマスでダンジョンが解放されるため）。
+        private int OpeningPriceOf(int index)
         {
-            if (!Charging || index < 0 || index >= prices.Length)
+            if (!InAtlas || Pay == null || index < 0 || index >= prices.Length)
                 return 0;
             string id = graph.Nodes[index].Id;
             return cleared.Contains(id) || (IsPaid?.Invoke(id) ?? false) ? 0 : prices[index];
@@ -477,7 +481,7 @@ namespace Baryonyx.WorldMap
         // 払うマスがあれば、MoveAsked で確かめてもらってから歩く。
         private bool TapAtlas(int index)
         {
-            if (Charging && !WorldAtlasSession.Loaded)
+            if (InAtlas && Pay != null && !WorldAtlasSession.Loaded)
             {
                 LoadNeeded?.Invoke();
                 return false;
@@ -627,14 +631,15 @@ namespace Baryonyx.WorldMap
                     : SaveAsync(id, clear);
         }
 
-        // 次のマスへ跳んでよいか。開けていないマスは、跳ぶ直前に払う。支払いはサーバーを待たずに決まるため、
-        // そのまま跳ぶ。払えなければ、そこで止まる。止めたときに入っていないマスを払わないよう、前もっては払わない。
+        // 次のマスへ跳んでよいか。開けていないマスは、跳ぶ直前に払う（消費を止めているときは無料で開ける）。
+        // 支払いはサーバーを待たずに決まるため、そのまま跳ぶ。払えなければ、そこで止まる。止めたときに入っていない
+        // マスを払わないよう、前もっては払わない。
         private bool ReadyToHop()
         {
             if (held)
                 return false;
             int next = walkSquares[0];
-            if (PriceOf(next) == 0)
+            if (OpeningPriceOf(next) == 0)
                 return true;
             var result = Pay(graph.Nodes[next].Id);
             if (result.Paid)

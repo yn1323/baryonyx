@@ -219,6 +219,54 @@ describe("入れ子の地図のマスを開くルーンのAPI", () => {
     expect((await read(user.token)).runes).toBe(5000);
   });
 
+  it("消費を止めた端末の free の要求は、払わずに開け、残高を変えない", async () => {
+    const user = await scenario.login("world-atlas-free");
+    await scenario.setRunes(user.userId, 0);
+    const a = await opened(user.token, { ...body(first), free: true });
+    expect(a).toEqual({
+      map: "world",
+      squareId: first,
+      runes: 0,
+      balanceAfter: 0,
+    });
+    const b = await opened(user.token, { ...body(second), free: true });
+    expect(b.runes).toBe(0);
+    // 消費を止めて歩いた位置はサーバーとずれうるため、隣のマスでなくても開ける。
+    expect((await opened(user.token, { ...body(far), free: true })).runes).toBe(
+      0,
+    );
+    expect(await read(user.token)).toEqual({
+      opened: [
+        { map: "world", square: first },
+        { map: "world", square: second },
+        { map: "world", square: far },
+      ],
+      runes: 0,
+    });
+  });
+
+  it("DEBUG_TOOLS を切った環境（Prod）では、free の要求を開けずに拒否する", async () => {
+    const prod = await createApiScenario({ debugTools: false });
+    try {
+      const user = await prod.login("world-atlas-free-prod");
+      await prod.setRunes(user.userId, 5000);
+      const response = await prod.request(
+        "/world-atlas/open",
+        "POST",
+        { ...body(first), free: true },
+        user.token,
+      );
+      expect(response.status).toBe(409);
+      expect(await response.json()).toEqual({ error: "free_not_allowed" });
+      expect(await prod.read<State>("/world-atlas", user.token)).toEqual({
+        opened: [],
+        runes: 5000,
+      });
+    } finally {
+      await prod.dispose();
+    }
+  });
+
   it("開けたマスはユーザーごとに分かれる", async () => {
     const a = await scenario.login("world-atlas-user-a");
     const b = await scenario.login("world-atlas-user-b");

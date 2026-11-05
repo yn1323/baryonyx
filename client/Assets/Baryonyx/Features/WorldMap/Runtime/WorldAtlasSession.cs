@@ -171,8 +171,9 @@ namespace Baryonyx.WorldMap
         /// Pays for the square <paramref name="square"/> of <paramref name="map"/> at once, from
         /// the balance as shown and the square's price on the layout: it opens and the price
         /// comes off before the server answers (<see cref="Refused"/> tells when it does not take
-        /// it). A square already paid for costs nothing. Fails without a word to the server when
-        /// the runes shown are short or the squares have not been read.
+        /// it). A square already paid for costs nothing, and while <see cref="Charging"/> is off
+        /// every square opens free, so a town still opens its dungeon. Fails without a word to
+        /// the server when the runes shown are short or the squares have not been read.
         /// </summary>
         public static WorldAtlasPayment Open(string map, string square)
         {
@@ -180,10 +181,11 @@ namespace Baryonyx.WorldMap
                 return WorldAtlasPayment.Done;
             if (saves == null)
                 return WorldAtlasPayment.Failed(LoadFailedMessage);
-            int price = PriceOf(map, square);
+            bool free = !Charging;
+            int price = free ? 0 : PriceOf(map, square);
             if (price > Runes)
                 return WorldAtlasPayment.Failed(ShortMessage);
-            _ = PayAsync(saves, map, square, price);
+            _ = PayAsync(saves, map, square, price, free);
             if (price > 0)
                 Spent?.Invoke(price);
             return WorldAtlasPayment.Done;
@@ -195,7 +197,8 @@ namespace Baryonyx.WorldMap
             OptimisticState<WorldAtlasState> states,
             string map,
             string square,
-            int price
+            int price,
+            bool free
         )
         {
             string requestId = Guid.NewGuid().ToString();
@@ -204,7 +207,13 @@ namespace Baryonyx.WorldMap
                 state => state.With(map, square, state.Runes - price),
                 async token =>
                 {
-                    int balance = await SourceOrLocal.OpenAsync(requestId, map, square, token);
+                    int balance = await SourceOrLocal.OpenAsync(
+                        requestId,
+                        map,
+                        square,
+                        free,
+                        token
+                    );
                     return states.Confirmed.With(map, square, balance);
                 },
                 exception =>

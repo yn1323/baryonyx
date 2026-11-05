@@ -65,15 +65,19 @@ export function createWorldAtlasRepository(db: Database) {
     const square = squareOf(request.map, request.squareId);
     if (!square) return { error: "square_not_found" as const };
     const chest = chestOf(request.map, request.squareId);
+    // 消費を止めた開発用の端末からは、払わずに開ける（受け付けるかはルートで確かめる）。
+    const price = request.free ? 0 : square.price;
 
     const neighbours = and(
       eq(worldAtlasSquares.userId, userId),
       eq(worldAtlasSquares.mapKey, request.map),
       inArray(worldAtlasSquares.squareId, square.links),
     );
-    const reachable = square.touchesStart
-      ? sql`1`
-      : sql`EXISTS (SELECT 1 FROM ${worldAtlasSquares} WHERE ${neighbours})`;
+    // 消費を止めた開発用の端末は、つながりを確かめずに開ける（止めて歩いた位置がサーバーとずれていても進めるように）。
+    const reachable =
+      square.touchesStart || request.free
+        ? sql`1`
+        : sql`EXISTS (SELECT 1 FROM ${worldAtlasSquares} WHERE ${neighbours})`;
     const pay = runeRecord(db, userId, worldAtlasSquares, now);
     const {
       reads: [records, squares, opened, balanceRows],
@@ -90,16 +94,18 @@ export function createWorldAtlasRepository(db: Database) {
                 requestId: sql<string>`${request.requestId}`.as("request_id"),
                 mapKey: sql<string>`${request.map}`.as("map_key"),
                 squareId: sql<string>`${request.squareId}`.as("square_id"),
-                runes: sql<number>`${square.price}`.as("runes"),
+                runes: sql<number>`${price}`.as("runes"),
                 balanceAfter: sql<number>`0`.as("balance_after"),
                 createdAt: sql<string>`${now}`.as("created_at"),
               })
               .from(sql`(SELECT 1)`)
-              .where(and(pay.affords(square.price), reachable)),
+              .where(
+                and(request.free ? sql`1` : pay.affords(price), reachable),
+              ),
           )
           // 同じ要求IDの再送と、別の要求で開いたマスでは書かない。
           .onConflictDoNothing(),
-        pay.debit(square.price),
+        pay.debit(price),
         pay.settle,
         // 宝箱の中身は、この呼び出しで入れた記録の行があるときだけ足す。
         ...inventoryGrants(

@@ -26,6 +26,7 @@ namespace Baryonyx.WorldMap
             string requestId,
             string map,
             string squareId,
+            bool free,
             CancellationToken token
         ) =>
             server.SendAsync<Opened>(
@@ -36,6 +37,7 @@ namespace Baryonyx.WorldMap
                     requestId = requestId,
                     map = map,
                     squareId = squareId,
+                    free = free,
                 },
                 session.Token,
                 token
@@ -47,6 +49,9 @@ namespace Baryonyx.WorldMap
             public string requestId;
             public string map;
             public string squareId;
+
+            // 消費を止めているとき（開発用）に、払わずに開ける。サーバーはDEBUG_TOOLSの環境でだけ受け付ける。
+            public bool free;
         }
 
         [Serializable]

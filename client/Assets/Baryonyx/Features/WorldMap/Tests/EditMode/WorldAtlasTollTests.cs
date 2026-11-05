@@ -40,18 +40,26 @@ namespace Baryonyx.Tests.EditMode
             private readonly WorldAtlasMemorySource memory;
             public string Refuse;
             public readonly List<string> Sent = new();
+            public readonly List<bool> Free = new();
 
             public SlowSource(int runes) => memory = new WorldAtlasMemorySource(runes, (map, square) => 300);
 
             public Task<WorldAtlasState> LoadAsync(CancellationToken token) => memory.LoadAsync(token);
 
-            public async Task<int> OpenAsync(string requestId, string map, string square, CancellationToken token)
+            public async Task<int> OpenAsync(
+                string requestId,
+                string map,
+                string square,
+                bool free,
+                CancellationToken token
+            )
             {
                 await Task.Delay(20, token);
                 Sent.Add(square);
+                Free.Add(free);
                 if (square == Refuse)
                     throw new ServerApiException(500, "server_error");
-                return await memory.OpenAsync(requestId, map, square, token);
+                return await memory.OpenAsync(requestId, map, square, free, token);
             }
         }
 
@@ -124,6 +132,35 @@ namespace Baryonyx.Tests.EditMode
             Assert.That(server.Sent, Is.EqualTo(new[] { "world-18" }));
             Assert.That(WorldAtlasSession.Runes, Is.EqualTo(200), "The server's balance is the one shown.");
             Assert.That(WorldAtlasSession.IsOpened("world", "world-18"), Is.True);
+        }
+
+        // 消費を止めていても、開けたマスは無料でサーバーへ記録し、町のマスでダンジョンが解放される（2026-11-05）。
+        [Test]
+        public async Task WhileChargingIsOffASquareOpensFreeSoATownStillOpensItsDungeon()
+        {
+            Prices();
+            var server = new SlowSource(500);
+            WorldAtlasSession.Source = server;
+            await WorldAtlasSession.LoadAsync(default);
+            bool charging = WorldAtlasSession.Charging;
+            WorldAtlasSession.Charging = false;
+            try
+            {
+                Assert.That(DungeonUnlocks.Reached("portoria", WorldMapProgress.Start), Is.False);
+                Assert.That(WorldAtlasSession.Open("world", "world-18").Paid, Is.True);
+                Assert.That(WorldAtlasSession.Open("marina", "portoria").Paid, Is.True);
+                Assert.That(WorldAtlasSession.Runes, Is.EqualTo(500), "Nothing is paid.");
+
+                await SaveQueue.IdleAsync(default);
+                Assert.That(server.Sent, Is.EqualTo(new[] { "world-18", "portoria" }));
+                Assert.That(server.Free, Is.EqualTo(new[] { true, true }));
+                Assert.That(WorldAtlasSession.Runes, Is.EqualTo(500));
+                Assert.That(DungeonUnlocks.Reached("portoria", WorldMapProgress.Start), Is.True);
+            }
+            finally
+            {
+                WorldAtlasSession.Charging = charging;
+            }
         }
 
         [Test]

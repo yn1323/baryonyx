@@ -225,6 +225,13 @@
       "when": 1793429897647,
       "tag": "0031_enhancement_combine",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "6",
+      "when": 1793849484790,
+      "tag": "0032_world_atlas_free_open",
+      "breakpoints": true
     }
   ]
 }

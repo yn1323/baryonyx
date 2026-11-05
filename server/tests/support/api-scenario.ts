@@ -6,7 +6,10 @@ import type { SessionEnv } from "../../src/features/accounts/session.js";
 
 export type ApiScenario = Awaited<ReturnType<typeof createApiScenario>>;
 
-export async function createApiScenario() {
+// debugTools: false で、Prodと同じく DEBUG_TOOLS を切った環境にする。
+export async function createApiScenario(
+  options: { debugTools?: boolean } = {},
+) {
   // 永続化先を指定せず、呼び出しごとにMiniflare専用の一時DBを作る。
   const mf = new Miniflare(
     convertV4MiniflareOptions({
@@ -35,7 +38,7 @@ export async function createApiScenario() {
       DB: db,
       BUILD_SHA: "local",
       GOOGLE_CLIENT_ID: "test-audience",
-      DEBUG_TOOLS: "on",
+      DEBUG_TOOLS: options.debugTools === false ? "off" : "on",
     } as unknown as SessionEnv["Bindings"];
     const api = createApi(async (token) => {
       if (token === "invalid") throw new Error();
