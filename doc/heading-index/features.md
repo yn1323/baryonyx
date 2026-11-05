@@ -557,7 +557,7 @@
 
 ## [features/screens/battle-effects.md](../features/screens/battle-effects.md)
 
-40KB・262行
+40KB・263行
 
 - 8: # 画面一覧：戦闘のスキルの演出と背景
 - 12: ## スキルの演出と背景
@@ -568,7 +568,7 @@
 - 186: ### 変更と判断の記録
 - 197: ## 手札が捨て札へ流れる演出
 - 226: ### 変更と判断の記録
-- 238: ## カメラの中心のゆっくりした円運動
+- 239: ## カメラの中心のゆっくりした円運動
 
 ## [features/screens/battle.md](../features/screens/battle.md)
 

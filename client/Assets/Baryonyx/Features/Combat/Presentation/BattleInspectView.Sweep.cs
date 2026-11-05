@@ -31,15 +31,15 @@ namespace Baryonyx.Combat.Presentation
         private const float SweepGlow = 1.5f;
 
         // A spark falls off the ball this often (s), and lives this long.
-        private const float SweepSparkEvery = 0.025f;
-        private const float SweepSparkLife = 0.3f;
+        private const float SweepSparkEvery = 0.017f;
+        private const float SweepSparkLife = 0.2f;
 
         // The landing: the ring's spread and time, the twinkle's size and time, and how much the
         // pile swells.
         private const float SweepRing = 150f;
-        private const float SweepRingTime = 0.32f;
+        private const float SweepRingTime = 0.213f;
         private const float SweepTwinkle = 120f;
-        private const float SweepTwinkleTime = 0.24f;
+        private const float SweepTwinkleTime = 0.16f;
         private const float SweepSwell = 0.18f;
 
         // The colour when the art has none vivid enough: the gold of the light.
@@ -297,7 +297,7 @@ namespace Baryonyx.Combat.Presentation
         // The pile swells at once as a card lands and settles back.
         private IEnumerator SwellPile()
         {
-            const float settle = 0.22f;
+            const float settle = 0.147f;
             for (float t = 0f; t < settle; t += Time.unscaledDeltaTime)
             {
                 float k = 1f - t / settle;

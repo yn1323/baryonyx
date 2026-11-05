@@ -101,21 +101,21 @@ namespace Baryonyx.Combat.Presentation
         [Header("ターンの終わりに手札を流す")]
         [Tooltip("残った手札のカードが、縁を光らせて浮く時間（秒）。")]
         [Min(0f)]
-        public float SweepHold = 0.12f;
+        public float SweepHold = 0.08f;
 
         [Tooltip("カードが光の玉へ縮む時間（秒）。")]
         [Min(0.01f)]
-        public float SweepShrink = 0.12f;
+        public float SweepShrink = 0.08f;
 
         [Tooltip("光の玉が捨て札の山へ弧を描いて飛ぶ時間（秒）。")]
         [Min(0.01f)]
-        public float SweepFlight = 0.34f;
+        public float SweepFlight = 0.227f;
 
         [Tooltip(
             "右のカードから順に飛び出す間隔（秒）。どのカードも同じ時間で飛ぶため、捨て札に着いて数が増える間隔もこれになる。"
         )]
         [Min(0f)]
-        public float SweepStagger = 0.14f;
+        public float SweepStagger = 0.093f;
 
         [Tooltip("弧の頂点を、出発点と捨て札の高い方からさらに持ち上げる高さ（px）。")]
         public float SweepArc = 60f;
