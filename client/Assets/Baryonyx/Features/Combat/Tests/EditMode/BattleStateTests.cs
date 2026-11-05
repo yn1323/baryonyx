@@ -168,6 +168,32 @@ namespace Baryonyx.Tests.EditMode
             Assert.That(1000 - boosted.Enemies[0].Hp, Is.GreaterThan(alone * 3 / 2));
         }
 
+        // 連撃の1発目で倒れた敵には、同じカードの状態（出血・毒・防御ダウン）を付けない（2026-11-05）。
+        [Test]
+        public void AnEnemyBeatenByTheFirstBlowTakesNoStatusFromTheRestOfTheCard()
+        {
+            var card = CardSkills.Find("SerpentFang");
+            var standing = Battle();
+            standing.PlayCard(card, 0, 0);
+            Assert.That(standing.Enemies[0].Hp, Is.GreaterThan(0));
+            Assert.That(
+                standing.Enemies[0].Statuses,
+                Has.Count.EqualTo(3),
+                "Standing, it takes all three."
+            );
+
+            var beaten = Battle();
+            beaten.Enemies[0].Hp = 1;
+            beaten.PlayCard(card, 0, 0);
+            Assert.That(beaten.Enemies[0].Hp, Is.Zero);
+            Assert.That(beaten.Enemies[0].Statuses, Is.Empty);
+            Assert.That(
+                beaten.Enemies[1].Hp,
+                Is.EqualTo(1000),
+                "The other enemy is not hit instead."
+            );
+        }
+
         private static EnemyMove MoveNamed(string name)
         {
             foreach (var behavior in CombatEnemyBehaviors.All)

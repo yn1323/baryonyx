@@ -278,6 +278,10 @@ namespace Baryonyx.Combat.Presentation
         // has landed, and only then crumbles away (2026-10-29).
         private int holdingDefeats;
 
+        // The enemies the card being played has beaten: its later blows on them still show their
+        // numbers, without HP, statuses or effects (2026-11-05).
+        private readonly HashSet<int> beatenByCard = new();
+
         private IEnumerator Victory(bool boss)
         {
             // The battle is over: the hand and its counters go away at once, and stay away

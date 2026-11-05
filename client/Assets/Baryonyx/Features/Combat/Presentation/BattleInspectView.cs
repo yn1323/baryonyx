@@ -2673,8 +2673,10 @@ namespace Baryonyx.Combat.Presentation
         )
         {
             var enemy = Enemies[index];
-            // An earlier card of the queue may have beaten it already.
-            if (!enemy.Alive)
+            // An earlier card of the queue may have beaten it already. The blows after the one
+            // that beat it in the same card show their numbers only (beatenByCard).
+            bool beaten = !enemy.Alive;
+            if (beaten && !beatenByCard.Contains(index))
                 return BattleHitWeight.Normal;
 
             var weakness =
@@ -2685,7 +2687,7 @@ namespace Baryonyx.Combat.Presentation
                 weakness = Array.Find(enemy.Weaknesses, entry => entry.Element == extra);
             bool weak = weakness != null;
             // A weakness found by this blow glints as it turns from ? into its icon.
-            if (weak && !weakness.Revealed)
+            if (weak && !weakness.Revealed && !beaten)
             {
                 StartCoroutine(Later(showDelay, weakness.Reveal(Vfx, () => enemy.Alive)));
                 OnWeaknessRevealed(enemy, weakness);
@@ -2702,12 +2704,17 @@ namespace Baryonyx.Combat.Presentation
                     {
                         Target = EnemyAt(index),
                         Element = BattleCardText.ElementOf(element),
-                    }
+                    },
+                    apply: !beaten
                 );
-                damage = AbsorbEnemy(index, damage);
+                if (!beaten)
+                    damage = AbsorbEnemy(index, damage);
             }
-            enemy.Hp = Mathf.Max(0, enemy.Hp - damage);
-            RefreshEnemy(enemy);
+            if (!beaten)
+            {
+                enemy.Hp = Mathf.Max(0, enemy.Hp - damage);
+                RefreshEnemy(enemy);
+            }
 
             // A weakness and a critical hit show in the number's colour and size, without words;
             // a critical hit on a weakness shows as critical.
@@ -2719,6 +2726,10 @@ namespace Baryonyx.Combat.Presentation
                 enemy.TargetArea,
                 damage.ToString()
             );
+            if (beaten)
+                return BattleHitWeight.Normal;
+            if (!enemy.Alive && cardPlay != null)
+                beatenByCard.Add(index);
             StartCoroutine(
                 HitReaction(
                     index,

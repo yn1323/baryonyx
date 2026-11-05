@@ -1460,6 +1460,32 @@ namespace Baryonyx.Tests.PlayMode
             );
         }
 
+        // 連撃の1発目で倒れた敵にも、2発目以降の数字は出す。HPは0のまま、状態は付けない（2026-11-05）。
+        [UnityTest]
+        public IEnumerator BlowsAfterTheOneThatBeatsAnEnemyStillShowTheirNumbers()
+        {
+            var view = default(BattleInspectView);
+            yield return Load(value => view = value);
+            var wolf = view.Enemies[1];
+            int serpent = DealInto(view, "SerpentFang");
+            wolf.Hp = 1;
+
+            Play(view, serpent, wolf.TargetArea);
+            // 倒れた敵が崩れて消えるまでに数字も消えるため、打っている間に数える。
+            var numbers = new HashSet<TMP_Text>();
+            for (float t = 0f; view.Acting && t < 5f; t += Time.unscaledDeltaTime)
+            {
+                numbers.UnionWith(RisingLabels(view.DamageNumber));
+                numbers.UnionWith(RisingLabels(view.WeakNumber));
+                yield return null;
+            }
+            Assert.That(view.Acting, Is.False, "The actions end.");
+            Assert.That(wolf.Alive, Is.False);
+            Assert.That(wolf.Hp, Is.EqualTo(0));
+            Assert.That(numbers, Has.Count.EqualTo(2), "Both blows of ×2 show a number.");
+            Assert.That(Shown(wolf.StatusIcons), Is.Empty, "A beaten enemy takes no status.");
+        }
+
         [UnityTest]
         public IEnumerator ABurnLeftByACardHurtsAtThePartysNextTurn()
         {

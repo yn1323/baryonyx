@@ -80,6 +80,7 @@ namespace Baryonyx.Combat.Presentation
         {
             var (play, played) = CardPlays.Begin(this, effects, skill, AllyAt(caster));
             cardPlay = play;
+            beatenByCard.Clear();
             return played;
         }
 
@@ -90,6 +91,7 @@ namespace Baryonyx.Combat.Presentation
                 return;
             CardPlays.End(this, effects, cardPlay);
             cardPlay = null;
+            beatenByCard.Clear();
             Refresh();
         }
 
