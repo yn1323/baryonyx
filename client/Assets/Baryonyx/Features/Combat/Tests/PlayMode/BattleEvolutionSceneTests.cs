@@ -259,6 +259,44 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(view.HasEvolved(deck), Is.True);
         }
 
+        // 勝って戦闘が終わったときに光ったまま残ったカードは、ドロップの前に覚醒する。技は出さず、
+        // 片付けた手札も戻さない（2026-11-05）。
+        [UnityTest]
+        public IEnumerator ACardStillLitWhenTheBattleIsWonAwakensWithoutBeingPlayed()
+        {
+            var view = default(BattleInspectView);
+            yield return Load(value => view = value);
+            UseOwnedCard(view, "Fire", "card-7");
+            var awakened = new List<(string Card, int Branch)>();
+            view.Evolution = new BattleEvolution
+            {
+                AwakenChance = level => 1f,
+                Draw = () => 0f,
+                Awakened = (card, branch) => awakened.Add((card, branch)),
+            };
+            int deck = DeckOf(view, "Fire");
+            int dealt = DealInto(view, deck);
+            Assert.That(view.Glints(dealt), Is.True);
+            int energy = view.Energy;
+
+            view.PlayVictory(false);
+            yield return WaitUntil(() => view.Choice.IsOpen, "The card left lit awakens.");
+            Assert.That(awakened, Is.Empty, "Nothing awakens before the pick.");
+            view.Choice.Select(0);
+            view.Choice.Confirm();
+            yield return WaitActions(view);
+            Assert.That(awakened, Is.EqualTo(new[] { ("card-7", 1) }));
+            Assert.That(view.Deck[deck].Skill, Is.EqualTo("Fire.1"));
+            Assert.That(view.HasEvolved(deck), Is.True);
+            Assert.That(view.HasOmen(deck), Is.False);
+            Assert.That(view.Energy, Is.EqualTo(energy), "The card is not played.");
+            Assert.That(
+                view.Hand.GetComponent<CanvasGroup>().alpha,
+                Is.Zero,
+                "The hand put away after the win stays away."
+            );
+        }
+
         // The battle's own party, the first ally bringing the owned card of a card skill.
         private static void UseOwnedCard(BattleInspectView view, string skill, string card)
         {

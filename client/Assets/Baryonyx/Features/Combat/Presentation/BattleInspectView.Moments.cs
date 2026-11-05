@@ -328,6 +328,7 @@ namespace Baryonyx.Combat.Presentation
                     boss
                 );
             yield return Wait(BandTime(hold));
+            yield return AwakenLeft();
         }
 
         /// <summary>An ally hops twice for joy, after <paramref name="delay"/>, in whole dots.</summary>

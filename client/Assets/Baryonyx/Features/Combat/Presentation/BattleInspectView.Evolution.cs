@@ -153,6 +153,36 @@ namespace Baryonyx.Combat.Presentation
         // Cards put away to start over lose their light; what has evolved stays so.
         private void ClearOmens() => omenCards.Clear();
 
+        /// <summary>
+        /// The cards still lit when the battle is won (in the deck, the hand or the discard
+        /// pile) awaken one after another as when used, before the drops, but are not played:
+        /// the battle is over (2026-11-05, ユーザーの依頼).
+        /// </summary>
+        private IEnumerator AwakenLeft()
+        {
+            if (Evolution == null || Vfx == null || Choice == null)
+                yield break;
+            var left = new List<int>();
+            for (int deckIndex = 0; deckIndex < Deck.Length; deckIndex++)
+                if (HasOmen(deckIndex) && !Contains(drawPile.Exhausted, deckIndex))
+                    left.Add(deckIndex);
+            foreach (int deckIndex in left)
+            {
+                if (!TakeOmen(deckIndex))
+                    continue;
+                var data = Deck[deckIndex];
+                yield return Evolve(deckIndex, data, data.Caster, _ => { });
+            }
+        }
+
+        private static bool Contains(IReadOnlyList<int> cards, int deckIndex)
+        {
+            foreach (int card in cards)
+                if (card == deckIndex)
+                    return true;
+            return false;
+        }
+
         // The light of the card on screen at index, made the first time it is lit.
         private void ShowGlint(int index, bool lit)
         {
@@ -377,14 +407,16 @@ namespace Baryonyx.Combat.Presentation
         }
 
         // While the stage is picked, the hand and its counters step aside for the stages offered,
-        // and the end of the turn for the check that confirms in its place.
+        // and the end of the turn for the check that confirms in its place. Put away after a win,
+        // they stay away.
         private void SetHandAside(bool aside)
         {
+            bool hidden = aside || handAway;
             foreach (var group in ControlGroups())
                 if (group != null)
                 {
-                    group.alpha = aside ? 0f : 1f;
-                    group.blocksRaycasts = !aside;
+                    group.alpha = hidden ? 0f : 1f;
+                    group.blocksRaycasts = !hidden;
                 }
         }
     }

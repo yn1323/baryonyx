@@ -203,6 +203,8 @@ namespace Baryonyx.Adventure
             var clearing = ClearAsync();
             if (!await Play(battle.PlayVictory))
                 return;
+            // 勝利の演出の中で、光ったまま残ったカードが覚醒する。それも残す。
+            evolution.Keep();
             await RewardAsync(clearing);
         }
 

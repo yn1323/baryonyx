@@ -1257,8 +1257,18 @@ namespace Baryonyx.Tests.PlayMode
             foreach (var enemy in battle.Enemies)
                 enemy.Hp = 0;
             battle.EndTurn();
-            // 最奥の主を倒したら、「勝利！」を挟まずに結果へ移る。
+            // 最奥の主の戦闘は覚醒しやすい。光ったまま残ったカードは勝ったときに覚醒するため、選んで進める。
             var result = bootstrap.Overlay.Result;
+            for (float t = 0f; !result.IsOpen && t < VictorySeconds; t += Time.unscaledDeltaTime)
+            {
+                if (battle.Choice != null && battle.Choice.IsOpen)
+                {
+                    battle.Choice.Select(0);
+                    battle.Choice.Confirm();
+                }
+                yield return null;
+            }
+            // 最奥の主を倒したら、「勝利！」を挟まずに結果へ移る。
             yield return WaitForResult(result, "クリア！", VictorySeconds);
             Assert.That(bootstrap.Overlay.Dialog.IsShown, Is.False);
             Assert.That(result.PlaceText, Is.EqualTo(Forest));
