@@ -987,7 +987,6 @@ namespace Baryonyx.Combat.Editor
                 // 敵の技のブロック（doc/features/combat.md）も、味方と同じ黄色の帯で出す。
                 gauge.Block = BlockStrip((RectTransform)gauge.transform, gauge.InnerDots);
                 gauge.Number.rectTransform.SetAsLastSibling();
-                gauge.DefeatTag = DefeatTag((RectTransform)gauge.transform);
                 // Lined up on the left like the weaknesses over the bar.
                 var statusIcons = StatusIconRow(
                     (RectTransform)gauge.transform,
@@ -2328,29 +2327,6 @@ namespace Baryonyx.Combat.Editor
             gauge.InnerDots = dots;
             gauge.DotSize = dot;
             return gauge;
-        }
-
-        /// <summary>
-        /// "撃破" just right of an enemy's bar, shown while the raised card would beat it: the
-        /// forecast's vermilion on the game's text shadow, with nothing behind it.
-        /// </summary>
-        private static GameObject DefeatTag(RectTransform bar)
-        {
-            var label = Label(
-                bar,
-                "Defeat",
-                "撃破",
-                26,
-                ForecastLoss,
-                TextAlignmentOptions.MidlineLeft
-            );
-            var rect = label.rectTransform;
-            rect.anchorMin = rect.anchorMax = new Vector2(1, 0.5f);
-            rect.pivot = new Vector2(0, 0.5f);
-            rect.anchoredPosition = new Vector2(8, 0);
-            rect.sizeDelta = new Vector2(80, 36);
-            label.gameObject.SetActive(false);
-            return label.gameObject;
         }
 
         /// <summary>

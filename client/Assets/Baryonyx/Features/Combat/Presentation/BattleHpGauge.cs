@@ -39,9 +39,6 @@ namespace Baryonyx.Combat.Presentation
         /// <summary>The block a card would leave, behind <see cref="Block"/>; null without block.</summary>
         public RectTransform BlockForecast;
 
-        /// <summary>Shown beside the bar when the card would beat the enemy; null on an ally's gauge.</summary>
-        public GameObject DefeatTag;
-
         /// <summary>The band's colour for HP taken, and for HP given back.</summary>
         public Color LossColor = new(1f, 0.62f, 0.45f);
         public Color GainColor = new(0.55f, 1f, 0.78f);
@@ -152,16 +149,14 @@ namespace Baryonyx.Combat.Presentation
         /// <summary>
         /// Forecasts a card: the HP going from <paramref name="hp"/> to <paramref name="hpAfter"/>
         /// (out of <paramref name="max"/>) and the block from <paramref name="block"/> to
-        /// <paramref name="blockAfter"/>, with the defeat tag when <paramref name="defeat"/>. The
-        /// number keeps the HP now. A change too small for a dot still lights the dot at the end.
+        /// <paramref name="blockAfter"/>. The number keeps the HP now. A change too small for a
+        /// dot still lights the dot at the end.
         /// </summary>
-        public void Forecast(int hp, int hpAfter, int max, int block, int blockAfter, bool defeat)
+        public void Forecast(int hp, int hpAfter, int max, int block, int blockAfter)
         {
             forecasting = true;
             ShowBand(hp, hpAfter, max);
             ShowBlockForecast(block, blockAfter, max);
-            if (DefeatTag != null)
-                DefeatTag.SetActive(defeat);
             Blink();
         }
 
@@ -175,8 +170,6 @@ namespace Baryonyx.Combat.Presentation
                 ForecastEdge.gameObject.SetActive(false);
             if (BlockForecast != null)
                 BlockForecast.gameObject.SetActive(false);
-            if (DefeatTag != null)
-                DefeatTag.SetActive(false);
         }
 
         private void ShowBand(int hp, int hpAfter, int max)

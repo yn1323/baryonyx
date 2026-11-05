@@ -1653,7 +1653,6 @@ namespace Baryonyx.Tests.PlayMode
                 var enemy = view.Enemies[i];
                 Assert.That(view.EnemyForecasts[i].Shown, Is.True, $"Enemy {i} shows the blow.");
                 Assert.That(view.EnemyForecasts[i].Hp, Is.LessThan(enemy.Hp));
-                Assert.That(view.EnemyForecasts[i].Defeat, Is.False);
                 Assert.That(enemy.Gauge.ForecastBand.gameObject.activeSelf, Is.True);
                 Assert.That(enemy.Gauge.Number.text, Is.EqualTo(enemy.Hp.ToString()));
             }
@@ -1715,7 +1714,7 @@ namespace Baryonyx.Tests.PlayMode
         }
 
         [UnityTest]
-        public IEnumerator TheForecastPromisesADefeatButKeepsAHiddenWeaknessHidden()
+        public IEnumerator TheForecastKeepsAHiddenWeaknessHidden()
         {
             var view = default(BattleInspectView);
             yield return Load(value => view = value);
@@ -1741,15 +1740,6 @@ namespace Baryonyx.Tests.PlayMode
                 Is.EqualTo(Mathf.RoundToInt(hidden * 1.5f)),
                 "Only a revealed weakness grows the forecast."
             );
-
-            enemy.Hp = 1;
-            view.PressCard(thunder, CardPoint(card));
-            yield return null;
-            Assert.That(view.EnemyForecasts[weak].Defeat, Is.True);
-            Assert.That(enemy.Gauge.DefeatTag.activeSelf, Is.True);
-            for (int i = 0; i < view.Enemies.Length; i++)
-                if (i != weak)
-                    Assert.That(view.Enemies[i].Gauge.DefeatTag.activeSelf, Is.False);
         }
 
         [UnityTest]

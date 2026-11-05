@@ -543,17 +543,17 @@
 
 ## [features/screens/battle-deck.md](../features/screens/battle-deck.md)
 
-22KB・158行
+22KB・157行
 
 - 8: # 画面一覧：戦闘のスキルの山札と手札
 - 12: ## スキルの山札
 - 34: ### HPバーとブロック
 - 50: ### 予告
-- 67: ### 状態のアイコン
-- 91: ### 状態の一覧
-- 101: ### 状態と浮かぶ文字
-- 116: ## カードと手札を見ながら調整する
-- 133: ### 絵とダメージの数字
+- 66: ### 状態のアイコン
+- 90: ### 状態の一覧
+- 100: ### 状態と浮かぶ文字
+- 115: ## カードと手札を見ながら調整する
+- 132: ### 絵とダメージの数字
 
 ## [features/screens/battle-effects.md](../features/screens/battle-effects.md)
 
@@ -786,7 +786,7 @@
 
 ## [features/skill-evolution/rules.md](../features/skill-evolution/rules.md)
 
-27KB・236行
+27KB・237行
 
 - 8: # 固有スキルの覚醒：決まり
 - 12: ## 確定している方針
@@ -798,11 +798,11 @@
 - 98: ### 取得した段階とセット
 - 113: ### 編成での見せ方
 - 119: ### 覚醒の保存
-- 136: ## 設計方針
-- 150: ### 確率の仮設定
-- 186: ## 未決事項
-- 200: ## 関連する仕様とデータ
-- 204: ## 実装との対応
+- 137: ## 設計方針
+- 151: ### 確率の仮設定
+- 187: ## 未決事項
+- 201: ## 関連する仕様とデータ
+- 205: ## 実装との対応
 
 ## [features/skill-evolution/trees.md](../features/skill-evolution/trees.md)
 
@@ -1028,7 +1028,7 @@
 
 ## [features/world-atlas/maps.md](../features/world-atlas/maps.md)
 
-27KB・209行
+28KB・209行
 
 - 8: # 入れ子の地図：地図と進み方
 - 12: ## 確定している方針

@@ -14,8 +14,7 @@ namespace Baryonyx.Combat.Presentation
     /// block and statuses (<see cref="ForecastWorld"/>). Some of it cannot be known before the
     /// card plays, and the forecast leaves that out: a weakness not yet revealed (the forecast
     /// must not give it away), a critical hit, the effects that roll a chance, and where random
-    /// hits land. A card that hits at random forecasts a single hit on each enemy and never
-    /// promises a defeat.
+    /// hits land. A card that hits at random forecasts a single hit on each enemy.
     /// </remarks>
     public sealed partial class BattleInspectView
     {
@@ -25,7 +24,6 @@ namespace Baryonyx.Combat.Presentation
             public bool Shown;
             public int Hp;
             public int Block;
-            public bool Defeat;
         }
 
         /// <summary>The forecasts shown now, by enemy and by ally (empty without a raised card).</summary>
@@ -49,8 +47,7 @@ namespace Baryonyx.Combat.Presentation
                         forecast.Hp,
                         enemy.MaxHp,
                         enemy.Block,
-                        enemy.Block,
-                        forecast.Defeat
+                        enemy.Block
                     );
                 else
                     enemy.Gauge.ClearForecast();
@@ -65,8 +62,7 @@ namespace Baryonyx.Combat.Presentation
                         forecast.Hp,
                         ally.MaxHp,
                         BlockOf(i),
-                        forecast.Block,
-                        false
+                        forecast.Block
                     );
                 else
                     ally.Gauge.ClearForecast();
@@ -222,7 +218,6 @@ namespace Baryonyx.Combat.Presentation
                     Shown = world.EnemyHit[i] && world.EnemyHp[i] != Enemies[i].Hp,
                     Hp = world.EnemyHp[i],
                     Block = world.EnemyBlock[i],
-                    Defeat = !random && world.EnemyHp[i] <= 0,
                 };
             var allies = new BattleForecast[Allies.Length];
             for (int i = 0; i < allies.Length; i++)
