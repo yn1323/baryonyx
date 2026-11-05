@@ -1028,7 +1028,7 @@
 
 ## [features/world-atlas/maps.md](../features/world-atlas/maps.md)
 
-28KB・209行
+29KB・215行
 
 - 8: # 入れ子の地図：地図と進み方
 - 12: ## 確定している方針
@@ -1037,9 +1037,9 @@
 - 55: ### 切り替えの演出
 - 69: ### マスを開くルーン
 - 121: ### 見た目の数値（仮）
-- 141: ### 地図とマス（仮）
-- 163: ### 背景の作り方
-- 189: ### Unityでの置き場所
+- 147: ### 地図とマス（仮）
+- 169: ### 背景の作り方
+- 195: ### Unityでの置き場所
 
 ## [features/world-atlas/square-events.md](../features/world-atlas/square-events.md)
 
