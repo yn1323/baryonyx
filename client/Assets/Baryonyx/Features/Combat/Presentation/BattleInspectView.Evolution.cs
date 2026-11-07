@@ -36,9 +36,10 @@ namespace Baryonyx.Combat.Presentation
     }
 
     /// <summary>
-    /// A card awakening in battle: when a card of a character's unique skill, or an owned skill
-    /// card that has not awakened, comes into the hand and the draw comes under its chance, it
-    /// lights up in the hand (<see cref="BattleEvolutionGlint"/>) and awakens when used. Before
+    /// A card awakening in battle: as the battle's cards are dealt, each card of a character's
+    /// unique skill, or owned skill card that has not awakened, is drawn once; one whose draw
+    /// comes under its chance lights up in the hand (<see cref="BattleEvolutionGlint"/>) and
+    /// awakens when used. Before
     /// its effect the card rises and cracks (<see cref="BattleSkillVfx.EvolutionOmen"/>), the
     /// stage it becomes is picked from those it can (<see cref="Choice"/>; with one, it is
     /// picked too), and it shatters into that stage, which is then played. An owned skill card
@@ -61,10 +62,14 @@ namespace Baryonyx.Combat.Presentation
 
         // この戦闘で覚醒が当たり、使えば覚醒するカード（Deck の番号）。手札では光る。
         private readonly HashSet<int> omenCards = new();
+
+        // 覚醒の抽選を済ませたデッキ。戦闘の初めに1回だけ抽選する（2026-11-07、ユーザーの依頼）。
+        private BattleInspectCardData[] omensDrawnFor;
         private BattleInspectCardData[] evolvedDeck;
         private BattleInspectCardView evolvingFace;
         private BattleEvolutionGlint[] glints = Array.Empty<BattleEvolutionGlint>();
         private BattlePileSparkle deckSparkle;
+        private BattlePileSparkle discardSparkle;
         private CanvasGroup handGroup;
 
         /// <summary>True from the omen of an evolution until the evolved card has gone into its user.</summary>
@@ -76,13 +81,16 @@ namespace Baryonyx.Combat.Presentation
 
         /// <summary>
         /// Whether the card of the deck at <paramref name="deckIndex"/> evolves when used: its
-        /// draw came under the chance as it came into the hand, and it lights up there.
+        /// draw came under the chance as the battle began, and it lights up in the hand.
         /// </summary>
         public bool HasOmen(int deckIndex) =>
             ReferenceEquals(evolvedDeck, Deck) && omenCards.Contains(deckIndex);
 
         /// <summary>Whether the deck's counter twinkles: the deck holds a card that awakens when used.</summary>
         public bool DeckSparkles => deckSparkle != null && deckSparkle.Lit;
+
+        /// <summary>Whether the discard pile's picture twinkles: a card that awakens when used has landed on it.</summary>
+        public bool DiscardSparkles => discardSparkle != null && discardSparkle.Lit;
 
         /// <summary>Whether the card on screen at <paramref name="index"/> shows its light.</summary>
         public bool Glints(int index) =>
@@ -97,8 +105,26 @@ namespace Baryonyx.Combat.Presentation
             data != null && !string.IsNullOrEmpty(data.Person) && data.Unique >= 0;
 
         /// <summary>
-        /// Draws, as the card of the deck at <paramref name="deckIndex"/> comes into the hand,
-        /// whether it awakens when used: a unique skill's stage that can evolve, or an owned skill
+        /// Draws once a battle, as its cards are first dealt, which cards awaken when used
+        /// (<see cref="DrawOmen"/> for each card in play). A card unlit then stays so for the
+        /// battle, however often it comes back into the hand (2026-11-07, ユーザーの依頼: 捨て札から
+        /// 山札へ戻った同じカードが、引き直しで光ることがあった).
+        /// </summary>
+        private void DrawOmens()
+        {
+            if (Evolution == null || Vfx == null || Choice == null)
+                return;
+            if (ReferenceEquals(omensDrawnFor, Deck))
+                return;
+            omensDrawnFor = Deck;
+            for (int deckIndex = 0; deckIndex < Deck.Length; deckIndex++)
+                if (!Benched(deckIndex))
+                    DrawOmen(deckIndex);
+        }
+
+        /// <summary>
+        /// Draws whether the card of the deck at <paramref name="deckIndex"/> awakens when used:
+        /// a unique skill's stage that can evolve, or an owned skill
         /// card not awakened yet, not awakened (nor left) in this battle nor lit already, whose
         /// draw comes under the chance of its kind for its user's level.
         /// </summary>
@@ -150,8 +176,13 @@ namespace Baryonyx.Combat.Presentation
             return true;
         }
 
-        // Cards put away to start over lose their light; what has evolved stays so.
-        private void ClearOmens() => omenCards.Clear();
+        // Cards put away to start over lose their light, to be drawn anew as they are dealt;
+        // what has evolved stays so.
+        private void ClearOmens()
+        {
+            omenCards.Clear();
+            omensDrawnFor = null;
+        }
 
         /// <summary>
         /// The cards still lit when the battle is won (in the deck, the hand or the discard
@@ -164,7 +195,11 @@ namespace Baryonyx.Combat.Presentation
                 yield break;
             var left = new List<int>();
             for (int deckIndex = 0; deckIndex < Deck.Length; deckIndex++)
-                if (HasOmen(deckIndex) && !Contains(drawPile.Exhausted, deckIndex))
+                if (
+                    HasOmen(deckIndex)
+                    && !Contains(drawPile.Exhausted, deckIndex)
+                    && !Benched(deckIndex)
+                )
                     left.Add(deckIndex);
             foreach (int deckIndex in left)
             {
@@ -200,24 +235,54 @@ namespace Baryonyx.Combat.Presentation
 
         private BattleEvolutionGlint MakeGlint(int index) => MakeGlint(Cards[index].Body);
 
-        // The deck's counter twinkles while a card lit in the hand and put away unused is back in
-        // the deck (the discard pile does not twinkle); its stars are made the first time.
-        private void RefreshDeckSparkle()
+        // The deck's counter and the discard pile's picture twinkle while a card that awakens when
+        // used is in them (2026-11-07, ユーザーの依頼で捨て札にも); a card still flying to the
+        // discard pile (the last ones of it) twinkles there once it lands. Their stars are made
+        // the first time.
+        private void RefreshPileSparkles()
         {
-            bool lit = false;
-            foreach (int deckIndex in drawPile.Pile)
-                if (HasOmen(deckIndex))
-                {
-                    lit = true;
-                    break;
-                }
-            if (deckSparkle == null && (!lit || (deckSparkle = MakeDeckSparkle()) == null))
-                return;
-            deckSparkle.SetLit(lit);
+            bool deckLit = AnyOmen(drawPile.Pile, drawPile.Pile.Count);
+            if (deckSparkle != null || (deckLit && (deckSparkle = MakeDeckSparkle()) != null))
+                deckSparkle.SetLit(deckLit);
+            bool discardLit = AnyOmen(drawPile.DiscardPile, ShownDiscards);
+            if (
+                discardSparkle != null
+                || (discardLit && (discardSparkle = MakeDiscardSparkle()) != null)
+            )
+                discardSparkle.SetLit(discardLit);
+        }
+
+        // Whether one of the first count cards of the pile awakens when used.
+        private bool AnyOmen(IReadOnlyList<int> pile, int count)
+        {
+            for (int i = 0; i < count && i < pile.Count; i++)
+                if (HasOmen(pile[i]))
+                    return true;
+            return false;
         }
 
         private BattlePileSparkle MakeDeckSparkle() =>
             Vfx == null ? null : BattlePileSparkle.Make(DeckAnchor, Vfx.MaterialOf(BattleVfxShape.Sparkle));
+
+        // On the discard pile's picture (the two cards), right on its corners and a size smaller
+        // than the deck's, as the picture is smaller than the pill.
+        private BattlePileSparkle MakeDiscardSparkle()
+        {
+            if (Vfx == null || DiscardAnchor == null)
+                return null;
+            var picture = DiscardAnchor.Find("Pile") as RectTransform;
+            return BattlePileSparkle.Make(
+                picture != null ? picture : DiscardAnchor,
+                Vfx.MaterialOf(BattleVfxShape.Sparkle),
+                DiscardBigInset,
+                DiscardSmallInset,
+                DiscardStarScale
+            );
+        }
+
+        private static readonly Vector2 DiscardBigInset = new(6f, 6f);
+        private static readonly Vector2 DiscardSmallInset = new(8f, 10f);
+        private const float DiscardStarScale = 0.8f;
 
         // The card's light is the haze behind the stage picked in the choice (its material).
         private BattleEvolutionGlint MakeGlint(RectTransform card) =>

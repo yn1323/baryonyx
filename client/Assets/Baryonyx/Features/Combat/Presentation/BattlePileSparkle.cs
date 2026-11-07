@@ -3,11 +3,11 @@ using UnityEngine;
 namespace Baryonyx.Combat.Presentation
 {
     /// <summary>
-    /// The twinkle on the deck's counter while the deck holds a card that awakens when used
-    /// (doc/features/screens/battle.md#戦闘画面の見た目モック): every so often a star flashes on
-    /// its upper right and, a moment later, a smaller one on its lower left, turning as they
-    /// grow and fade, as the weakness's glint does. Made on the counter by <see cref="Make"/>,
-    /// hidden until lit.
+    /// The twinkle on the deck's counter, or on the discard pile's picture, while the pile holds a
+    /// card that awakens when used (doc/features/screens/battle.md#戦闘画面の見た目モック): every
+    /// so often a star flashes on its upper right and, a moment later, a smaller one on its lower
+    /// left, turning as they grow and fade, as the weakness's glint does. Made on the counter by
+    /// <see cref="Make"/>, hidden until lit.
     /// </summary>
     public sealed class BattlePileSparkle : MonoBehaviour
     {
@@ -23,6 +23,10 @@ namespace Baryonyx.Combat.Presentation
         private const float BigStar = 88f;
         private const float SmallStar = 48f;
 
+        /// <summary>Where the stars flash on the deck's pill: in from its upper right and lower left corners.</summary>
+        public static readonly Vector2 PillBigInset = new(22f, 6f);
+        public static readonly Vector2 PillSmallInset = new(30f, 10f);
+
         private static readonly Color Gold = new(1f, 0.84f, 0.42f);
 
         [SerializeField]
@@ -34,6 +38,15 @@ namespace Baryonyx.Combat.Presentation
         [SerializeField]
         private BattleVfxImage small;
 
+        [SerializeField]
+        private Vector2 bigInset = PillBigInset;
+
+        [SerializeField]
+        private Vector2 smallInset = PillSmallInset;
+
+        [SerializeField]
+        private float starScale = 1f;
+
         private float age;
         private bool lit;
 
@@ -43,8 +56,17 @@ namespace Baryonyx.Combat.Presentation
         /// <summary>
         /// The twinkle on <paramref name="counter"/>, over it and hidden until lit, its stars
         /// drawn with the effects' material <paramref name="sparkle"/>. Null when it is missing.
+        /// The large star flashes <paramref name="bigInset"/> in from the upper right corner, the
+        /// small one <paramref name="smallInset"/> in from the lower left (the pill's when not
+        /// given), both <paramref name="starScale"/> times their size.
         /// </summary>
-        public static BattlePileSparkle Make(RectTransform counter, Material sparkle)
+        public static BattlePileSparkle Make(
+            RectTransform counter,
+            Material sparkle,
+            Vector2? bigInset = null,
+            Vector2? smallInset = null,
+            float starScale = 1f
+        )
         {
             if (counter == null || sparkle == null)
                 return null;
@@ -58,6 +80,9 @@ namespace Baryonyx.Combat.Presentation
             twinkle.counter = counter;
             twinkle.big = Star("Big", root, sparkle);
             twinkle.small = Star("Small", root, sparkle);
+            twinkle.bigInset = bigInset ?? PillBigInset;
+            twinkle.smallInset = smallInset ?? PillSmallInset;
+            twinkle.starScale = starScale;
             root.gameObject.SetActive(false);
             return twinkle;
         }
@@ -96,8 +121,8 @@ namespace Baryonyx.Combat.Presentation
             if (counter == null)
                 return;
             var half = counter.rect.size * 0.5f;
-            Twinkle(big, age, new Vector2(half.x - 22f, half.y - 6f), BigStar);
-            Twinkle(small, age - SmallDelay, new Vector2(-half.x + 30f, -half.y + 10f), SmallStar);
+            Twinkle(big, age, half - bigInset, BigStar * starScale);
+            Twinkle(small, age - SmallDelay, smallInset - half, SmallStar * starScale);
         }
 
         // A star that grows quickly, turning, and fades more slowly, once a period.

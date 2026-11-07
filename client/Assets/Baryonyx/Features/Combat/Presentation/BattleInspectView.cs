@@ -1937,6 +1937,8 @@ namespace Baryonyx.Combat.Presentation
             ClearTable();
             if (order != null)
                 drawPile.Stack(order, Benched);
+            // Which cards awaken when used is drawn once, as the battle's cards are dealt.
+            DrawOmens();
             RefreshDeck();
             // Every 初手 card is dealt, past the usual opening when there are more.
             int opening = Mathf.Min(Settings.HandLimit, Mathf.Max(OpeningDraw(), InnateCount()));
@@ -2054,8 +2056,9 @@ namespace Baryonyx.Combat.Presentation
         private void PutInHand(int index, int top, bool fly)
         {
             Show(index, top);
-            // A unique skill's card may light up as it comes into the hand, to evolve when used.
-            DrawOmen(top);
+            // The draw is made as the battle's cards are dealt; made now when it was not then
+            // (the battle was given its awakenings after the deal).
+            DrawOmens();
             Cards[index].Place = BattleInspectCardPlace.Hand;
             hand.Insert(0, index);
             if (reserved > 0)
@@ -2136,7 +2139,7 @@ namespace Baryonyx.Combat.Presentation
             // Out of the battle shows only once a card has gone there.
             if (ExhaustAnchor != null)
                 ExhaustAnchor.gameObject.SetActive(drawPile.Exhausted.Count > 0);
-            RefreshDeckSparkle();
+            RefreshPileSparkles();
             RefreshPileList();
         }
 

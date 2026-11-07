@@ -12,8 +12,8 @@ using UnityEngine.TestTools;
 namespace Baryonyx.Tests.PlayMode
 {
     /// <summary>
-    /// A unique skill's card lighting up as it is drawn and evolving when used in the battle
-    /// (doc/features/skill-evolution/rules.md#戦闘中の覚醒).
+    /// A unique skill's card lighting up as drawn when the battle begins and evolving when used
+    /// in the battle (doc/features/skill-evolution/rules.md#戦闘中の覚醒).
     /// </summary>
     public sealed class BattleEvolutionSceneTests
     {
@@ -49,7 +49,7 @@ namespace Baryonyx.Tests.PlayMode
             int dealt = DealInto(view, deck);
 
             // Drawn under the chance, it lights up in the hand.
-            Assert.That(draws, Is.EqualTo(1), "The draw is made as the card comes into the hand.");
+            Assert.That(draws, Is.EqualTo(1), "The draw is made as the battle's cards are dealt.");
             Assert.That(view.HasOmen(deck), Is.True);
             Assert.That(view.Glints(dealt), Is.True, "The card lit shows its light.");
             Play(view, dealt, view.Enemies[0].TargetArea);
@@ -123,27 +123,40 @@ namespace Baryonyx.Tests.PlayMode
             int dealt = DealInto(view, deck);
             Assert.That(view.Glints(dealt), Is.True);
             Assert.That(
-                view.DeckSparkles,
+                view.DeckSparkles || view.DiscardSparkles,
                 Is.False,
-                "A lit card in the hand does not make the deck twinkle."
+                "A lit card in the hand does not make the piles twinkle."
             );
 
             // Left in the hand at the end of the turn, it is discarded still lit (in this small
             // deck the discard pile is shuffled back into the deck for the next hand).
             view.EndTurn();
+            bool discarded = false;
+            bool discardTwinkled = false;
             for (
                 float t = 0f;
                 (view.EnemyTurn || view.Dealing) && t < 15f;
                 t += Time.unscaledDeltaTime
             )
+            {
+                discarded |= view.DiscardPile.Contains(deck);
+                discardTwinkled |= view.DiscardSparkles;
                 yield return null;
+            }
             Assert.That(view.EnemyTurn || view.Dealing, Is.False, "The next turn is dealt.");
+            Assert.That(discarded, Is.True, "The lit card went to the discard pile.");
+            Assert.That(
+                discardTwinkled,
+                Is.True,
+                "The discard pile's picture twinkles once the lit card lands on it."
+            );
             Assert.That(view.Cards.Any(card => card.InHand && card.DeckIndex == deck), Is.False);
             Assert.That(view.HasOmen(deck), Is.True, "Its light stays until it is used.");
 
             var pile = view.DiscardPile.Contains(deck) ? BattlePile.Discard : BattlePile.Draw;
-            // The deck's counter twinkles while the lit card is in the deck, not in the discard pile.
+            // The pile holding the lit card twinkles: the deck's counter or the discard pile's picture.
             Assert.That(view.DeckSparkles, Is.EqualTo(pile == BattlePile.Draw));
+            Assert.That(view.DiscardSparkles, Is.EqualTo(pile == BattlePile.Discard));
             view.OpenPile(pile);
             var list = view.PileList;
             int lit = view.PileOrder(pile).ToList().IndexOf(deck);
@@ -192,7 +205,7 @@ namespace Baryonyx.Tests.PlayMode
             };
             int dealt = DealInto(view, deck);
             Assert.That(view.Glints(dealt), Is.False, "A card drawn over the chance stays unlit.");
-            // The draw was made as it came into the hand: a draw under the chance now changes nothing.
+            // The draw was made as the cards were dealt: a draw under the chance now changes nothing.
             view.Evolution.Draw = () => 0f;
             Play(view, dealt, view.Enemies[0].TargetArea);
             yield return null;
@@ -202,9 +215,56 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(
                 seen,
                 Is.EqualTo(new[] { view.Allies[0].Level }),
-                "The chance is for the user's level, drawn once as it came into the hand."
+                "The chance is for the user's level, drawn once as the cards were dealt."
             );
             Assert.That(view.HasEvolved(deck), Is.False);
+        }
+
+        // 抽選は戦闘の初めに1回だけ：外れたカードは、捨て札から山札へ戻って引き直されても
+        // 光らない（2026-11-07、ユーザーの依頼）。
+        [UnityTest]
+        public IEnumerator TheDrawIsMadeOnceAsTheBattleBegins()
+        {
+            var view = default(BattleInspectView);
+            yield return Load(value => view = value);
+            UseParty(view, "ManaBurst");
+            int draws = 0;
+            float draw = 0f;
+            view.Evolution = new BattleEvolution
+            {
+                Chance = level => 1f,
+                Draw = () =>
+                {
+                    draws++;
+                    return draw;
+                },
+            };
+            int deck = DeckOf(view, "ManaBurst");
+
+            // Drawn as the battle's cards are dealt, once for each card that can awaken.
+            DealInto(view, deck);
+            Assert.That(draws, Is.EqualTo(1), "Each card is drawn as the battle begins.");
+            Assert.That(view.HasOmen(deck), Is.True);
+
+            // Missed at the start, it is not drawn again however often it comes into the hand.
+            draw = 1f;
+            Assert.That(view.Glints(DealInto(view, deck)), Is.False);
+            Assert.That(draws, Is.EqualTo(2), "Started over, the cards are drawn anew.");
+            draw = 0f;
+            for (int turn = 0; turn < 2; turn++)
+            {
+                view.EndTurn();
+                for (
+                    float t = 0f;
+                    (view.EnemyTurn || view.Dealing) && t < 15f;
+                    t += Time.unscaledDeltaTime
+                )
+                    yield return null;
+                Assert.That(view.EnemyTurn || view.Dealing, Is.False, "The next turn is dealt.");
+            }
+            Assert.That(draws, Is.EqualTo(2), "No draw as cards come back into the hand.");
+            Assert.That(view.HasOmen(deck), Is.False);
+            Assert.That(view.DeckSparkles || view.DiscardSparkles, Is.False);
         }
 
         [UnityTest]

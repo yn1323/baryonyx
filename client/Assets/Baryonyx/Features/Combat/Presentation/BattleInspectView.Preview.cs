@@ -32,6 +32,7 @@ namespace Baryonyx.Combat.Presentation
                 "山札の一覧（カードを拡大）",
                 "山札の一覧（覚醒するカード）",
                 "山札のキラーン（覚醒するカードがある）",
+                "捨て札のキラーン（覚醒するカードがある）",
             };
 
         public void ShowPreviewState(int index)
@@ -98,6 +99,12 @@ namespace Baryonyx.Combat.Presentation
                     var sparkle = MakeDeckSparkle();
                     if (sparkle != null)
                         sparkle.ShowAt(BattlePileSparkle.Flash * 0.25f);
+                    break;
+                case 18:
+                    // 大きい星が最も大きくなったところ。
+                    var discardTwinkle = MakeDiscardSparkle();
+                    if (discardTwinkle != null)
+                        discardTwinkle.ShowAt(BattlePileSparkle.Flash * 0.25f);
                     break;
             }
         }
