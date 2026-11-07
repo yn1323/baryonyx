@@ -6,11 +6,50 @@ import {
   findDestination,
   fixedKindOf,
   MYSTERY_KINDS,
+  openDestinations,
   pickMysteryKind,
   pickTrialCondition,
   stepDoorTier,
+  TOWNS,
   TRIAL_CONDITIONS,
 } from "./catalog.js";
+
+describe("行き先の解放", () => {
+  it("最初の街の行き先だけが、町に着く前から入れる", () => {
+    expect([...openDestinations([])]).toEqual(["forest-ruins"]);
+    expect([...openDestinations(["porta"])]).toEqual(["forest-ruins"]);
+  });
+
+  it("中身のある行き先のない宿場町に着くと、推奨Lvの低い行き先が開く", () => {
+    expect([...openDestinations(["brezza"])]).toEqual([
+      "forest-ruins",
+      "port-portoria",
+    ]);
+    expect([...openDestinations(["brezza", "pino"])]).toEqual([
+      "forest-ruins",
+      "port-portoria",
+      "glaciera-cave",
+    ]);
+  });
+
+  it("着いた町の行き先を先に開け、町1つにつき1つずつ開ける", () => {
+    expect([...openDestinations(["cima"])]).toEqual([
+      "forest-ruins",
+      "neve-peaks",
+    ]);
+    // 港町の行き先が宿場町で開いていたら、港町に着くと次の行き先が開く。
+    expect([...openDestinations(["brezza", "portoria"])]).toEqual([
+      "forest-ruins",
+      "port-portoria",
+      "glaciera-cave",
+    ]);
+  });
+
+  it("町の数が行き先より多くても、作ってある行き先だけを開ける", () => {
+    const all = openDestinations(TOWNS);
+    expect(all.size).toBe(DESTINATIONS.length);
+  });
+});
 
 describe("冒険先", () => {
   it("奥の行き先ほど、マスの数が増える", () => {

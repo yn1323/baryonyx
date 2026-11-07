@@ -116,7 +116,7 @@ namespace Baryonyx.Library
         private readonly GlassCardCover cover = new();
         private LibraryRecords records = LibraryRecords.Empty;
 
-        // 街道の進み具合。入手先には、着いた街のダンジョンだけを出す（DungeonUnlocks）。
+        // 街道の進み具合。入手先には、解放したダンジョンだけを出す（DungeonUnlocks）。
         private WorldMapProgress highway = WorldMapSession.Known ?? WorldMapProgress.Start;
         private string selected;
 

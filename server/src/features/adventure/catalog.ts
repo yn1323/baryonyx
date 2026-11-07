@@ -49,6 +49,43 @@ export const DESTINATIONS: readonly Destination[] = [
   { id: "neve-peaks", roomCount: 12, town: "cima" },
 ];
 
+// 街道と入れ子の地図の町のマスのID（doc/features/stage-progression/destinations.md の街とダンジョン）。
+// 中身を作っていないダンジョンしかない宿場町も含む。
+export const TOWNS: readonly string[] = [
+  "porta",
+  "brezza",
+  "portoria",
+  "pino",
+  "fredda",
+  "palude",
+  "sabbia",
+  "duna",
+  "campanella",
+  "forgia",
+  "alba",
+  "cima",
+];
+
+// 入れる行き先（doc/features/stage-progression/destinations.md のダンジョンの解放）。
+// 最初の街の行き先はいつも入れる。ほかの町に1つ着くたびに、行き先が1つずつ入れるようになる。
+// 着いた町の行き先を先に開け、残りは推奨Lvの低い（DESTINATIONS の）順に開ける。
+// 中身のあるダンジョンがない宿場町に着いても、ほかの町の行き先が開く。
+export function openDestinations(reached: Iterable<string>) {
+  const towns = new Set(reached);
+  towns.delete(DESTINATIONS[0].town);
+  const rest = DESTINATIONS.slice(1);
+  const open = new Set(
+    rest.filter((destination) => towns.has(destination.town)),
+  );
+  for (const destination of rest) {
+    if (open.size >= towns.size) break;
+    open.add(destination);
+  }
+  return new Set(
+    [DESTINATIONS[0], ...open].map((destination) => destination.id),
+  );
+}
+
 export const DESTINATION_IDS = DESTINATIONS.map(
   (destination) => destination.id,
 ) as [string, ...string[]];

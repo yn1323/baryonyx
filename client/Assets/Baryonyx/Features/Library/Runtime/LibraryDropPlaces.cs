@@ -11,7 +11,7 @@ namespace Baryonyx.Library
     /// <summary>
     /// Where a kind can be found (doc/features/library.md の入手先): the open destinations whose
     /// drop list (<see cref="AdventureDrops.Pools"/>) has it, in the destinations' order. A
-    /// destination is open once its town is reached (<see cref="DungeonUnlocks.Reached"/>, the
+    /// destination is open once enough towns are reached (<see cref="DungeonUnlocks.IsOpen"/>, the
     /// same as the travel office and the server); the ones still closed are left out.
     /// </summary>
     public static class LibraryDropPlaces
@@ -69,9 +69,9 @@ namespace Baryonyx.Library
             return places;
         }
 
-        /// <summary>Whether the destination can be set out for: its town is reached.</summary>
+        /// <summary>Whether the destination can be set out for (DungeonUnlocks.IsOpen).</summary>
         public static bool IsOpen(AdventureArea area, WorldMapProgress highway) =>
-            area != null && DungeonUnlocks.Reached(area.Town, highway);
+            DungeonUnlocks.IsOpen(area, highway);
 
         /// <summary>
         /// Reads again what decides the open destinations: the highway's progress and the squares

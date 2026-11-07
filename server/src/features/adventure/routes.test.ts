@@ -1104,7 +1104,7 @@ describe("冒険API", () => {
     expect("stepDoor" in (await clear(user.token, "f9-0"))).toBe(false);
   });
 
-  it("ダンジョンは、その街のマスを街道でクリアするまで始められない", async () => {
+  it("ダンジョンは、街道で町のマスをクリアするまで始められない", async () => {
     const user = await scenario.login("adventure-unlock");
     const port = { destinationId: "port-portoria" };
     await rejects(user.token, "/adventure", port, "destination_locked");
@@ -1142,6 +1142,31 @@ describe("冒険API", () => {
     const started = await call(user.token, "/adventure", port);
     expect(started.run?.destinationId).toBe("port-portoria");
     // 開けていない町の行き先は、今まで通り入れない。
+    await call(user.token, "/adventure/end", { reason: "retreat" });
+    await rejects(
+      user.token,
+      "/adventure",
+      { destinationId: "glaciera-cave" },
+      "destination_locked",
+    );
+  });
+
+  it("中身のある行き先のない宿場町を開けると、推奨Lvの低い行き先に入れる", async () => {
+    const user = await scenario.login("adventure-unlock-way-station");
+    await scenario.setRunes(user.userId, 10000);
+    const port = { destinationId: "port-portoria" };
+    await rejects(user.token, "/adventure", port, "destination_locked");
+    for (const squareId of atlasPathTo("verde", "brezza")) {
+      const response = await scenario.request(
+        "/world-atlas/open",
+        "POST",
+        { requestId: crypto.randomUUID(), map: "verde", squareId },
+        user.token,
+      );
+      expect(response.status).toBe(200);
+    }
+    const started = await call(user.token, "/adventure", port);
+    expect(started.run?.destinationId).toBe("port-portoria");
     await call(user.token, "/adventure/end", { reason: "retreat" });
     await rejects(
       user.token,

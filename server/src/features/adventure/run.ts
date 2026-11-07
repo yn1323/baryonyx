@@ -1,9 +1,8 @@
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq, inArray, sql } from "drizzle-orm";
 import type { Database } from "../../shared/db.js";
 import type { Random } from "../../shared/random.js";
 import { enemyStatements } from "../library/discoveries.js";
 import { worldAtlasSquares } from "../world-atlas/db-schema.js";
-import { START_SQUARE } from "../world-map/catalog.js";
 import { worldMapSquares } from "../world-map/db-schema.js";
 import {
   bossFloor,
@@ -13,9 +12,11 @@ import {
   findDestination,
   hasEvent,
   newSeed,
+  openDestinations,
   pickMysteryKind,
   pickTrialCondition,
   rollChestAwakening,
+  TOWNS,
 } from "./catalog.js";
 import { adventureMerchantGoods, adventureRuns } from "./db-schema.js";
 import { rollMerchantGoods } from "./merchant.js";
@@ -32,8 +33,8 @@ import { batchWithState, battleRoom, type EndStatus } from "./state.js";
 // 冒険を始める・次の階へ進む・終える。どれも、確かめる読み込みと、書き込みと書いたあとの読み込みの2回の往復で済ませる。
 export function createRunOperations(db: Database, random: Random) {
   // 冒険先の入口の部屋から冒険を始める。進行中の冒険があるあいだは始められない。
-  // ダンジョンは、その街のマスを街道でクリアするか、入れ子の地図で開けるまで入れない（最初の街はいつもクリア済み）。
-  // 入れ子の地図の町のマスのIDは、行き先の街のIDと同じ値にしている。
+  // ダンジョンは、町のマスを街道でクリアするか入れ子の地図で開けた数だけ入れる（最初の街はいつも入れる。
+  // openDestinations）。入れ子の地図の町のマスのIDは、街の町のIDと同じ値にしている。
   async function start(userId: string, destinationId: string, now: string) {
     const destination = findDestination(destinationId);
     if (!destination) return { error: "unknown_destination" as const };
@@ -48,25 +49,21 @@ export function createRunOperations(db: Database, random: Random) {
         .where(
           and(
             eq(worldMapSquares.userId, userId),
-            eq(worldMapSquares.squareId, destination.town),
+            inArray(worldMapSquares.squareId, [...TOWNS]),
           ),
         ),
       db
-        .select({ id: worldAtlasSquares.id })
+        .selectDistinct({ squareId: worldAtlasSquares.squareId })
         .from(worldAtlasSquares)
         .where(
           and(
             eq(worldAtlasSquares.userId, userId),
-            eq(worldAtlasSquares.squareId, destination.town),
+            inArray(worldAtlasSquares.squareId, [...TOWNS]),
           ),
-        )
-        .limit(1),
+        ),
     ]);
-    if (
-      destination.town !== START_SQUARE &&
-      towns.length === 0 &&
-      atlasTowns.length === 0
-    ) {
+    const reached = [...towns, ...atlasTowns].map((row) => row.squareId);
+    if (!openDestinations(reached).has(destination.id)) {
       return { error: "destination_locked" as const };
     }
     if (activeRun) {

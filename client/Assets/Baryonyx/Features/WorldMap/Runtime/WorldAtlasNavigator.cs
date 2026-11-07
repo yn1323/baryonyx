@@ -159,6 +159,8 @@ namespace Baryonyx.WorldMap
             currentKey = key;
             current.Arrived += Arrive;
             current.EventReached += ReachEvent;
+            // 道の途中でも、ダンジョンが解放される町のマスに初めて着いたら止まって知らせる。
+            current.StopsAt = square => OpensDungeon(square) != null;
             current.LoadNeeded += LoadPaid;
             // 開けていないマスは、跳ぶ直前に1マスずつ払う。払ったマスは、次から払わずに通れる。
             string map = key;
@@ -238,6 +240,18 @@ namespace Baryonyx.WorldMap
         private void ReachEvent(string id)
         {
             Remember(currentKey, id);
+            var paused = current;
+            if (
+                AnnounceDungeon(
+                    id,
+                    () =>
+                    {
+                        if (paused != null)
+                            paused.Resume();
+                    }
+                )
+            )
+                return;
             int index = current.Graph.IndexOf(id);
             if (current.EventWindow == null || !current.TryEventAt(index, out var kind))
             {
@@ -295,11 +309,13 @@ namespace Baryonyx.WorldMap
             return true;
         }
 
-        // ダンジョンのある町のマスに初めて止まると、そのダンジョンに入れるようになったと知らせる。
+        // 町のマスに初めて着いて、中身のあるダンジョンが1つ解放されると、そのダンジョンに入れるようになったと知らせる。
+        // 中身のあるダンジョンがない宿場町でも、ほかの町のダンジョンが解放される（2026-11-08、ユーザー）。
         // 旅の案内所へ行けるときは、そのボタンも出す（2026-11-04、ユーザーの依頼「ダンジョン解放につながることが伝わるように」）。
-        private bool AnnounceDungeon(string id)
+        // 道の途中で止まったときは、窓を×で閉じると続きを歩く（closed）。
+        private bool AnnounceDungeon(string id, Action closed = null)
         {
-            var area = DungeonUnlocks.DungeonAt(id);
+            var area = OpensDungeon(id);
             var dialog = current.Dialog;
             if (area == null || dialog == null)
                 return false;
@@ -323,7 +339,11 @@ namespace Baryonyx.WorldMap
                     DungeonOpenedTitle,
                     DungeonOpenedText(area.Name),
                     null,
-                    dialog.Hide,
+                    () =>
+                    {
+                        dialog.Hide();
+                        closed?.Invoke();
+                    },
                     DialogStyle.Cross,
                     choices
                 );
@@ -337,6 +357,11 @@ namespace Baryonyx.WorldMap
                 Tell();
             return true;
         }
+
+        // 町のマス square に着くと解放される、中身のあるダンジョン。開けたマスは着く前に払ってあるため、
+        // その町を除いた場合と比べて決める。
+        private static Baryonyx.Adventure.AdventureArea OpensDungeon(string square) =>
+            DungeonUnlocks.OpenedBy(square, WorldMapSession.Known ?? WorldMapProgress.Start);
 
         // 今の地図の画面に重ねる、ダンジョン解放の花火。画面ごとに1つ作って使い回す。
         private DungeonFireworks fireworks;

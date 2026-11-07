@@ -174,8 +174,11 @@ namespace Baryonyx.WorldMap
         // 受け取った側が確かめてから Go を呼ぶ。受け取る先がなければ、そのまま歩く。
         public event Action<IReadOnlyList<int>, int> MoveAsked;
 
-        // 道の途中で、出来事を置いたマスに初めて着いた。窓を閉じたら Resume で続きを歩く。
+        // 道の途中で、出来事を置いたマスか StopsAt のマスに初めて着いた。窓を閉じたら Resume で続きを歩く。
         public event Action<string> EventReached;
+
+        /// <summary>Squares besides the event squares to stop at on the way when first reached (a town opening a dungeon).</summary>
+        public Func<string, bool> StopsAt { get; set; }
 
         // 開けたマスと残高をまだ読めていないのに、払うマスを押した。読み直してもらう。
         public event Action LoadNeeded;
@@ -699,7 +702,11 @@ namespace Baryonyx.WorldMap
                 Arrived?.Invoke(id, first);
                 return;
             }
-            if (first && TryEventAt(at, out _) && EventReached != null)
+            if (
+                first
+                && EventReached != null
+                && (TryEventAt(at, out _) || (StopsAt != null && StopsAt(id)))
+            )
             {
                 held = true;
                 EventReached(id);

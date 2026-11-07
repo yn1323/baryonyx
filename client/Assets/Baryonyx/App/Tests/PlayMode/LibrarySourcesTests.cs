@@ -22,24 +22,30 @@ namespace Baryonyx.Tests.PlayMode
             services = TestGameServices.Use();
             LibrarySession.Reset();
             AdventureSession.Reset();
-            // 武器は、ミストラ遺跡で落ちる短弓（☆1、レシピなし）と、まだ行けない港町の物を見つけている。
-            var harbor = AdventureDrops
-                .Pools["port-portoria"]
-                .First(entry => entry.Category == AdventureDropCategory.Weapon);
+            // 武器は、ミストラ遺跡で落ちる短弓（☆1、レシピなし）と、まだ行けないしじまの沼でしか落ちない物を
+            // 見つけている。テストの街道はブリーザ・ピーノまで進み、港町と氷窟のダンジョンまで開いている
+            // （DungeonUnlocks）。
+            string[] open = { AdventureCatalog.ForestRuins, "port-portoria", "glaciera-cave" };
+            var closed = AdventureDrops
+                .Pools["hush-mire"]
+                .First(entry =>
+                    entry.Category == AdventureDropCategory.Weapon
+                    && open.All(id => AdventureDrops.Pools[id].All(other => other.Id != entry.Id))
+                );
             LibrarySession.Source = new LibraryMemorySource(
                 new LibraryRecords(
                     new[]
                     {
                         (LibraryKind.Weapon, "short-bow", 0),
-                        (LibraryKind.Weapon, harbor.Id, 0),
+                        (LibraryKind.Weapon, closed.Id, 0),
                     },
                     Array.Empty<LibraryStepDay>()
                 )
             );
-            harborWeapon = harbor.Id;
+            closedWeapon = closed.Id;
         }
 
-        private string harborWeapon;
+        private string closedWeapon;
 
         [UnityTearDown]
         public IEnumerator RestoreServices()
@@ -66,7 +72,7 @@ namespace Baryonyx.Tests.PlayMode
             yield return SceneTests.WaitForTask(catalog.LoadTask);
 
             // まだ行けないダンジョンでしか落ちない物には、入手先を出さない。
-            catalog.Select(harborWeapon);
+            catalog.Select(closedWeapon);
             Assert.That(catalog.Sources.gameObject.activeSelf, Is.False);
 
             catalog.Select("short-bow");
@@ -103,7 +109,10 @@ namespace Baryonyx.Tests.PlayMode
                 10f,
                 "The exploration did not open."
             );
-            Assert.That(AdventureSession.Current.Run.DestinationId, Is.EqualTo(AdventureCatalog.ForestRuins));
+            Assert.That(
+                AdventureSession.Current.Run.DestinationId,
+                Is.EqualTo(AdventureCatalog.ForestRuins)
+            );
         }
     }
 }

@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using Baryonyx.Adventure;
 using Baryonyx.WorldMap;
 using NUnit.Framework;
 using UnityEngine;
@@ -728,7 +729,9 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(
                 coast.Dialog.BodyText,
                 Is.EqualTo(
-                    WorldAtlasNavigator.DungeonOpenedText(DungeonUnlocks.DungeonAt("portoria").Name)
+                    WorldAtlasNavigator.DungeonOpenedText(
+                        AdventureCatalog.Area("port-portoria").Name
+                    )
                 )
             );
             Assert.That(
@@ -762,6 +765,87 @@ namespace Baryonyx.Tests.PlayMode
             );
             Assert.That(DungeonUnlocks.Reached("portoria", WorldMapProgress.Start), Is.True);
             Assert.That(source.Runes, Is.Zero, "Nothing is paid.");
+        }
+
+        // 中身のあるダンジョンがない宿場町に着いても、まだ入れない中で推奨Lvのいちばん低いダンジョンが
+        // 解放され、花火と窓で知らせる（2026-11-08、ユーザー）。
+        [UnityTest]
+        public IEnumerator ReachingAWayStationOpensTheLowestDungeonStillClosed()
+        {
+            WorldAtlasSession.Source = new WorldAtlasMemorySource(1000000, (map, square) => 0);
+            var navigator = Spawn();
+            yield return SceneTests.WaitUntil(
+                () => WorldAtlasSession.Loaded && navigator.Current != null,
+                message: "The runes were not read."
+            );
+            var port = AdventureCatalog.Area("port-portoria");
+            var plain = OpenBeside(navigator, "verde", "brezza");
+            Assert.That(DungeonUnlocks.IsOpen(port, WorldMapProgress.Start), Is.False);
+            yield return WalkTo(plain, "brezza");
+            yield return SceneTests.WaitUntil(
+                () => navigator.Fireworks != null && navigator.Fireworks.Playing,
+                seconds: 8f,
+                message: "No fireworks went up."
+            );
+            yield return SceneTests.WaitUntil(
+                () => plain.Dialog.IsShown,
+                seconds: 8f,
+                message: "The dungeon was not announced."
+            );
+            Assert.That(
+                plain.Dialog.BodyText,
+                Is.EqualTo(WorldAtlasNavigator.DungeonOpenedText(port.Name))
+            );
+            Assert.That(DungeonUnlocks.IsOpen(port, WorldMapProgress.Start), Is.True);
+        }
+
+        // 道の途中でダンジョンが解放される町のマスを初めて通ると、止まって知らせ、×で閉じると続きを歩く。
+        [UnityTest]
+        public IEnumerator PassingATownThatOpensADungeonStopsToTellIt()
+        {
+            WorldAtlasSession.Source = new WorldAtlasMemorySource(1000000, (map, square) => 0);
+            var navigator = Spawn();
+            yield return SceneTests.WaitUntil(
+                () => WorldAtlasSession.Loaded && navigator.Current != null,
+                message: "The runes were not read."
+            );
+            // verde-1 と verde-3 は、宿場町ブリーザを挟んだ隣どうしで、ほかに2歩で行ける道がない。
+            // 消費がONだと値段のある町を避けて開けたマスだけの遠回りを選ぶため、止めてマスの少ない道にする。
+            WorldAtlasSession.Charging = false;
+            Assert.That(navigator.Open("verde", null), Is.True);
+            foreach (var node in navigator.Current.Graph.Nodes)
+                if (node.Id != "brezza")
+                    WorldAtlasSession.Open("verde", node.Id);
+            Assert.That(navigator.Open("verde", "verde-1"), Is.True);
+            var plain = navigator.Current;
+            yield return null;
+            Assert.That(plain.Tap(plain.Graph.IndexOf("verde-3")), Is.True);
+            Assert.That(
+                plain.WalkSquares,
+                Does.Contain(plain.Graph.IndexOf("brezza")),
+                "The walk does not pass the town."
+            );
+            yield return SceneTests.WaitUntil(
+                () => plain.Dialog.IsShown,
+                seconds: 16f,
+                message: "The dungeon was not announced on the way."
+            );
+            Assert.That(plain.Graph.Nodes[plain.PartyAt].Id, Is.EqualTo("brezza"));
+            Assert.That(plain.Walking, Is.True, "The walk is held, not ended.");
+            Assert.That(
+                plain.Dialog.BodyText,
+                Is.EqualTo(
+                    WorldAtlasNavigator.DungeonOpenedText(
+                        AdventureCatalog.Area("port-portoria").Name
+                    )
+                )
+            );
+            Assert.That(plain.Dialog.HandleBack(), Is.True);
+            yield return SceneTests.WaitUntil(
+                () => plain.Graph.Nodes[plain.PartyAt].Id == "verde-3" && !plain.Walking,
+                seconds: 8f,
+                message: "The party did not walk on after the window closed."
+            );
         }
 
         // 世界地図の宝箱のマスを開けて着くと、見本の窓の代わりに、もらった物を札で見せる。

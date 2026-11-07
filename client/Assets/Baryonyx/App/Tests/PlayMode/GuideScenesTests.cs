@@ -379,12 +379,21 @@ namespace Baryonyx.Tests.PlayMode
                 Is.True
             );
 
-            // 街道で着いた街のダンジョンだけを出す。テストの街道はポルタ・ブリーザ・ピーノまで進んでいる。
+            // 解放したダンジョンだけを出す。テストの街道はポルタ・ブリーザ・ピーノまで進んでいる。
+            // 中身を作っていないダンジョンは着いた街の分を、中身のあるダンジョンは、中身のない宿場町の
+            // ブリーザ・ピーノに着いた分だけ推奨Lvの低い順に出す（2026-11-08）。
             yield return SceneTests.WaitForTask(guide.UnlockTask);
             for (int i = 0; i < destinations.Length; i++)
                 Assert.That(
                     view.DestinationRows[i].gameObject.activeSelf,
-                    Is.EqualTo(destinations[i].Town is "" or "porta" or "brezza" or "pino"),
+                    Is.EqualTo(
+                        destinations[i].Id == ""
+                            ? destinations[i].Town is "" or "porta" or "brezza" or "pino"
+                            : destinations[i].Id
+                                is "forest-ruins"
+                                    or "port-portoria"
+                                    or "glaciera-cave"
+                    ),
                     destinations[i].Name
                 );
             int open = System.Array.FindIndex(

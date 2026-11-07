@@ -117,8 +117,9 @@ namespace Baryonyx.App
                 UnlockTask = ShowUnlockedAsync();
         }
 
-        // ダンジョン一覧には、着いた街のダンジョンだけを出す（今の世界地図で町のマスを開けたか、
-        // 前の街道でクリアした街。DungeonUnlocks）。読んである進み具合を先に出し、
+        // ダンジョン一覧には、解放したダンジョンだけを出す（DungeonUnlocks）。中身のあるダンジョンは
+        // 着いた町の数だけ、中身を作っていないダンジョンは着いた街のものを出す（今の世界地図で町のマスを
+        // 開けたか、前の街道でクリアした街）。読んである進み具合を先に出し、
         // 読み直した進み具合で出し直す。読めなければ、手元の進み具合のまま出す。
         private async Task ShowUnlockedAsync()
         {
@@ -157,8 +158,14 @@ namespace Baryonyx.App
 
         private void ShowUnlocked(WorldMapProgress progress) =>
             view.ShowDestinations(destination =>
-                DungeonUnlocks.Reached(destination.Town, progress)
-            );
+            {
+                var area = string.IsNullOrEmpty(destination.Id)
+                    ? null
+                    : AdventureCatalog.Area(destination.Id);
+                return area != null
+                    ? DungeonUnlocks.IsOpen(area, progress)
+                    : DungeonUnlocks.Reached(destination.Town, progress);
+            });
 
         // Homeから来たときは、Homeで読んだ残高を先に出しておき、読み直した値で描き直す。
         private async Task LoadRunesAsync()
