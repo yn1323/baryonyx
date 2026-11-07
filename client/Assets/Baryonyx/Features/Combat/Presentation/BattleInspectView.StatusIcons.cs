@@ -19,7 +19,8 @@ namespace Baryonyx.Combat.Presentation
     /// The status icons under the HP bars (doc/features/screens/battle-deck.md, 状態のアイコン):
     /// every ally standing and every enemy alive shows an icon for each kind of status it has,
     /// boosts and the rest alike, in the order of <see cref="BattleStatusIcons.Order"/>. An
-    /// enemy gathering its strength (力を溜める) shows attack up.
+    /// enemy gathering its strength (力を溜める) shows attack up, and an effect shown as a status
+    /// shows its icon while it adds something (背水: attack up).
     /// </summary>
     public sealed partial class BattleInspectView
     {
@@ -58,6 +59,14 @@ namespace Baryonyx.Combat.Presentation
                     iconsShown.Add(BattleStatusIcons.Of(active.Status));
                 if (powerUp > 0)
                     iconsShown.Add(BattleStatusIcon.AttackUp);
+                var unit = ally ? AllyAt(index) : EnemyAt(index);
+                foreach (var effect in effects.All)
+                    if (
+                        effect.Owner == unit
+                        && effect.Effect.LooksLike != CardStatus.None
+                        && effect.Adding
+                    )
+                        iconsShown.Add(BattleStatusIcons.Of(effect.Effect.LooksLike));
             }
             foreach (var icon in icons)
             {

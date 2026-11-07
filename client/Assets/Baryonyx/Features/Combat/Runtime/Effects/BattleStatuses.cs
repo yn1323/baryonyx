@@ -114,7 +114,7 @@ namespace Baryonyx.Combat
             Add(
                 CardStatus.Invincible,
                 -1,
-                e => e.On(BattleTrigger.BlowLanding, BattleAct.Cancel).When(TargetIsOwner)
+                e => e.On(BattleTrigger.BlowLanding, BattleAct.Cancel).When(TargetIsOwner).Resists()
             );
             // 反射：持ち主への敵の攻撃を1回、攻撃した敵へはね返す。敵に付いたら、味方の単体攻撃のカードを使った味方へ返す。
             Add(

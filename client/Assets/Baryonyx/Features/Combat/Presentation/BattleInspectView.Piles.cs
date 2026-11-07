@@ -174,7 +174,6 @@ namespace Baryonyx.Combat.Presentation
                 Cards[second].Place = BattleInspectCardPlace.Deck;
                 RefreshCard(second);
                 Show(first, into);
-                ShowPopup(PartyAnchor, $"合体！ {Deck[into].Name}", Gold, 46f);
                 LayoutHand();
                 SortCards();
                 Refresh();

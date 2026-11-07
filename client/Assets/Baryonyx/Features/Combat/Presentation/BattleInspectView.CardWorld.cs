@@ -30,7 +30,6 @@ namespace Baryonyx.Combat.Presentation
 
         void IFightWorld.BreakBlock(BattleUnit ally)
         {
-            ShowPopup(Allies[ally.Index].TargetArea, "ブロックを砕かれた", GuardColor, 36f);
             EnsureBlock();
             allyBlock[ally.Index] = 0;
             RefreshBlock(ally.Index);
@@ -103,15 +102,8 @@ namespace Baryonyx.Combat.Presentation
             bool first
         )
         {
-            int gained = AddBlock(target.Index, block);
-            // A block for the party shows once, over the party.
-            if (party)
-            {
-                if (first)
-                    ShowPopup(PartyAnchor, $"ブロック +{block}", GuardColor, 48f);
-            }
-            else
-                ShowPopup(Allies[target.Index].TargetArea, $"ブロック +{gained}", GuardColor, 44f);
+            // The block shows on the yellow strip over the HP bar, with no words.
+            AddBlock(target.Index, block);
         }
 
         void ICardWorld.LandCardStatus(BattleUnit user, BattleUnit target, CardAction action)
@@ -127,36 +119,26 @@ namespace Baryonyx.Combat.Presentation
             bool first
         )
         {
-            var on = AreaOf(target);
-            // 誰にも向かない働き（エネルギー・手札など）は、敵への当たりに載っていても使い手の上に知らせる。
-            var area =
-                action.Target == CardTarget.None && user.Index >= 0 && user.Index < Allies.Length
-                    ? Allies[user.Index].TargetArea
-                    : on;
+            // 働いたことは文字で知らせず、エネルギー・手札・コスト・弱点のアイコンの変わり方で見せる。
             switch (action.Kind)
             {
                 case CardActionKind.Energy:
                     Energy = Mathf.Min(MaxEnergyCap, Energy + action.Amount);
-                    ShowPopup(area, $"エネルギー +{action.Amount}", Gold, 42f);
                     break;
                 case CardActionKind.Draw:
-                    ShowPopup(area, $"{action.Amount}枚引く", SupportColor, 42f);
                     if (dealing == null)
                         dealing = StartCoroutine(Deal(action.Amount, 0f));
                     break;
                 case CardActionKind.CostDown:
                     LowerCosts(action);
-                    ShowPopup(area, $"コスト -{action.Amount}", SupportColor, 42f);
                     break;
                 case CardActionKind.NextCardFree:
                     nextCardFree = true;
                     nextFreeElements = action.Elements;
-                    ShowPopup(area, "次のカード コスト0", Gold, 42f);
                     break;
                 case CardActionKind.NextCardBoost:
                     nextBoost = action.Amount;
                     nextBoostElements = action.Elements;
-                    ShowPopup(on, $"次のカード 威力+{action.Amount}%", Gold, 42f);
                     break;
                 case CardActionKind.RevealWeakness:
                 {
@@ -164,7 +146,6 @@ namespace Baryonyx.Combat.Presentation
                     foreach (var weakness in enemy.Weaknesses)
                         if (!weakness.Revealed)
                             StartCoroutine(weakness.Reveal(Vfx, () => enemy.Alive));
-                    ShowPopup(enemy.TargetArea, "弱点を見抜いた", SupportColor, 40f);
                     break;
                 }
                 case CardActionKind.Delay:
@@ -177,16 +158,8 @@ namespace Baryonyx.Combat.Presentation
                 case CardActionKind.Cleanse:
                     StatusesOf(true, target.Index)
                         .RemoveAll(active => CardRules.IsBad(active.Status));
-                    if (first)
-                        ShowPopup(PartyAnchor, "浄化", SupportColor, 44f);
-                    break;
-                case CardActionKind.Dispel:
-                    ShowPopup(Enemies[target.Index].TargetArea, "強化を消した", SupportColor, 40f);
                     break;
             }
         }
-
-        private RectTransform AreaOf(BattleUnit unit) =>
-            unit.IsAlly ? Allies[unit.Index].TargetArea : Enemies[unit.Index].TargetArea;
     }
 }

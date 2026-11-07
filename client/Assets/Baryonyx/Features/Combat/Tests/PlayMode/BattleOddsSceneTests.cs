@@ -174,7 +174,7 @@ namespace Baryonyx.Tests.PlayMode
             view.ReleaseCard(Center(target));
         }
 
-        // カードが動き終えるまで待ち、そのあいだに出た文字・状態の帯・会心の数字を集める。
+        // カードが動き終えるまで待ち、そのあいだに出た状態の帯・会心の数字を集める。
         private static IEnumerator WaitActions(
             BattleInspectView view,
             List<string> words,
@@ -183,7 +183,6 @@ namespace Baryonyx.Tests.PlayMode
         {
             for (float t = 0f; t < 0.1f || (view.Acting && t < 8f); t += Time.deltaTime)
             {
-                words.AddRange(Rising(view.PopupTemplate));
                 words.AddRange(Notes(view));
                 crits?.AddRange(Rising(view.CritNumber));
                 yield return null;

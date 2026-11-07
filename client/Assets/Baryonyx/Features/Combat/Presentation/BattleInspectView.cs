@@ -497,19 +497,13 @@ namespace Baryonyx.Combat.Presentation
         private const float Dot = 4f;
         private const float WeakMultiplier = 1.5f;
 
-        /// <summary>The colour of the words that go with a lucky turn (2回発動).</summary>
-        public static readonly Color CriticalColor = new(1f, 0.9f, 0.3f);
-
         // Numbers start just under the top of the drawn body, above the character, not at its middle.
         private const float NumberBelowTop = 10f;
 
-        // How far a rising popup travels: the numbers only lift a little, messages further.
+        // How far a number lifts, how long it keeps rising, and how long it shows: it goes soon,
+        // so the next blows' numbers have room.
         private const float NumberRise = 36f;
-        private const float MessageRise = 90f;
-
-        // How long a popup shows, and the line it takes in a stack of popups, by its font size.
-        // The numbers go sooner, so the next blows' numbers have room.
-        private const float PopupDuration = 1.3f;
+        private const float NumberRiseTime = 0.5f;
         private const float NumberDuration = 1.0f;
 
         // How large a number pops up before it settles, and how long that takes.
@@ -522,13 +516,12 @@ namespace Baryonyx.Combat.Presentation
         // A status note: the room on each side of its name, its narrowest width.
         public const float StatusNotePadding = 30f;
         public const float StatusNoteMinWidth = 132f;
-        private const float PopupLineHeight = 1.15f;
+        // The line a number takes by its font size, kept clear of the HP bars above.
+        private const float NumberLineHeight = 1.15f;
         private const int MaxEnergyCap = 9;
 
         // How long a notice such as "エネルギー不足" stays in place of the skill name.
         private const float NoticeHold = 0.9f;
-
-        private static readonly Color GuardColor = new(0.55f, 0.75f, 1f);
 
         // The red a character reels back in once its white blink is over: light enough that
         // its picture still reads under the words over it.
@@ -605,7 +598,6 @@ namespace Baryonyx.Combat.Presentation
         public BattleInspectHandSettings Settings;
 
         public RectTransform PartyAnchor;
-        public TMP_Text PopupTemplate;
 
         /// <summary>
         /// Templates of the rising numbers, styled in the prefab (font, size, gradient and
@@ -706,7 +698,6 @@ namespace Baryonyx.Combat.Presentation
         );
         private readonly BattleDeck drawPile = new(UnityDice);
         private readonly Queue<IEnumerator> actions = new();
-        private readonly BattlePopupStack popupStack = new();
         private readonly BattleNumberScatter numberScatter = new();
 
         // The blow landing now was a critical hit (read by the card for its accent).
@@ -1063,7 +1054,6 @@ namespace Baryonyx.Combat.Presentation
             foreach (
                 var template in new[]
                 {
-                    PopupTemplate,
                     DamageNumber,
                     WeakNumber,
                     CritNumber,
@@ -1108,8 +1098,6 @@ namespace Baryonyx.Combat.Presentation
                 Destroy(flash);
             if (hitFlash != null)
                 Destroy(hitFlash);
-            if (popupMaterial != null)
-                Destroy(popupMaterial);
         }
 
         private void Update()
@@ -2273,8 +2261,6 @@ namespace Baryonyx.Combat.Presentation
                 Enqueue(PerformAgain(data, parts, bases, chosen, caster, boost));
         }
 
-        public const string TwiceText = "2回発動";
-
         /// <summary>The note over a frozen enemy that loses its action.</summary>
         public const string FrozenText = "凍結で動けない";
 
@@ -2308,7 +2294,6 @@ namespace Baryonyx.Combat.Presentation
             bool single = data.Effect == BattleInspectCardEffect.DamageOne && chosen.Count > 0;
             if (!alive || (single && !Enemies[chosen[0]].Alive))
                 yield break;
-            ShowPopup(Allies[caster].TargetArea, TwiceText, CriticalColor, 44f);
             yield return Perform(
                 data.Name,
                 parts,
@@ -2377,7 +2362,7 @@ namespace Baryonyx.Combat.Presentation
             if (Vfx == null)
             {
                 for (int i = 0; i < chosen.Count; i++)
-                    Land(card, chosen[i], onEnemies, i == 0);
+                    Land(card, chosen[i], onEnemies);
                 Refresh();
                 yield break;
             }
@@ -2392,21 +2377,16 @@ namespace Baryonyx.Combat.Presentation
                 user != null ? user.Sprite.texture : null,
                 false,
                 areas,
-                AtContact(i => Land(card, chosen[i], onEnemies, i == 0))
+                AtContact(i => Land(card, chosen[i], onEnemies))
             );
             Refresh();
         }
 
         /// <summary>
-        /// The card's effect on one target: damage, healing, or (once for the party) the block.
-        /// Tells how hard it hit, so the effect can hit as hard.
+        /// The card's effect on one target: damage or healing. Tells how hard it hit, so the
+        /// effect can hit as hard.
         /// </summary>
-        private BattleHitWeight Land(
-            BattleInspectCardData card,
-            int target,
-            bool onEnemies,
-            bool first
-        )
+        private BattleHitWeight Land(BattleInspectCardData card, int target, bool onEnemies)
         {
             BattleHitWeight weight = BattleHitWeight.Normal;
             if (onEnemies)
@@ -2418,8 +2398,6 @@ namespace Baryonyx.Combat.Presentation
                 RefreshAlly(ally);
                 ShowNumber(HealNumber, ally.TargetArea, card.Power.ToString());
             }
-            else if (first)
-                ShowPopup(PartyAnchor, $"ブロック +{card.Power}", GuardColor, 48f);
             Refresh();
             return weight;
         }
@@ -2935,27 +2913,11 @@ namespace Baryonyx.Combat.Presentation
             ally.Sprite.color = ally.Down ? DownTint * ally.Tint : ally.Tint;
         }
 
-        private void ShowPopup(RectTransform anchor, string text, Color color, float size)
-        {
-            if (PopupTemplate == null || anchor == null)
-                return;
-            var popup = Spawn(
-                PopupTemplate,
-                anchor,
-                anchor.rect.center,
-                text,
-                MessageRise,
-                size * PopupLineHeight,
-                number: false
-            );
-            popup.color = color;
-            popup.fontSize = size;
-        }
-
         /// <summary>
         /// Shows a status note over a character (<see cref="BattleStatusNotes"/>): put on, missed,
         /// or holding it back. It comes out of the character's middle a beat after the blow's
-        /// number, after the notes before it, and glides up and to the right as it fades.
+        /// number, after the notes before it, and glides up and to the right as it fades. While
+        /// the band of a turn shows, it waits until the band has gone.
         /// </summary>
         private void ShowStatusNote(RectTransform anchor, string text, Color color)
         {
@@ -2977,17 +2939,29 @@ namespace Baryonyx.Combat.Presentation
             );
             note.position = world;
             float start = statusNotes.Start(anchor, Time.unscaledTime + showDelay);
-            StartCoroutine(Glide(note, start));
+            StartCoroutine(Glide(note, anchor, start));
         }
 
-        /// <summary>A note waits for its time, then glides at one speed, fading in and out, and goes.</summary>
-        private static IEnumerator Glide(RectTransform note, float start)
+        /// <summary>
+        /// A note waits for its time, then glides at one speed, fading in and out, and goes. A note
+        /// whose time comes while the band of a turn shows waits for the band to go, then takes its
+        /// turn again among the notes over <paramref name="anchor"/>.
+        /// </summary>
+        private IEnumerator Glide(RectTransform note, RectTransform anchor, float start)
         {
             var group = note.GetComponent<CanvasGroup>();
             var from = note.anchoredPosition;
             group.alpha = 0f;
-            while (Time.unscaledTime < start)
-                yield return null;
+            while (true)
+            {
+                while (Time.unscaledTime < start)
+                    yield return null;
+                if (turnBannerShow == null)
+                    break;
+                while (turnBannerShow != null)
+                    yield return null;
+                start = statusNotes.Start(anchor, Time.unscaledTime);
+            }
             for (
                 float age = Time.unscaledTime - start;
                 age < BattleStatusNotes.Life;
@@ -3001,134 +2975,80 @@ namespace Baryonyx.Combat.Presentation
             Destroy(note.gameObject);
         }
 
+        /// <summary>
+        /// Puts a copy of a number template over <paramref name="anchor"/>, from just under the
+        /// top of its body. The characters are on the stage canvas and the numbers on the overlay
+        /// canvas over it, so the point is carried across in screen space. The numbers of blows
+        /// one after another scatter around their start (<see cref="BattleNumberScatter"/>).
+        /// </summary>
         private TMP_Text ShowNumber(TMP_Text template, RectTransform anchor, string text)
         {
             if (template == null || anchor == null)
                 return null;
             var rect = anchor.rect;
             var start = new Vector2(rect.center.x, rect.yMax - NumberBelowTop);
-            return Spawn(
-                template,
-                anchor,
-                start,
-                text,
-                NumberRise,
-                template.fontSize * PopupLineHeight,
-                number: true
-            );
-        }
-
-        /// <summary>
-        /// Puts a copy of a popup template over <paramref name="anchor"/>, starting at
-        /// <paramref name="start"/> in the anchor's space. The characters are on the stage canvas
-        /// and the popups on the overlay canvas over it, so the point is carried across in screen
-        /// space. The numbers of blows one after another scatter around their start
-        /// (<see cref="BattleNumberScatter"/>), and the messages over the same character at once
-        /// line up under them and one another where they stop, and stay apart on their way up
-        /// (<see cref="BattlePopupStack"/>).
-        /// </summary>
-        private TMP_Text Spawn(
-            TMP_Text template,
-            RectTransform anchor,
-            Vector2 start,
-            string text,
-            float rise,
-            float lineHeight,
-            bool number
-        )
-        {
-            var popup = Instantiate(template, template.transform.parent);
-            popup.gameObject.SetActive(true);
-            popup.text = text;
-            var parent = (RectTransform)popup.transform.parent;
+            var number = Instantiate(template, template.transform.parent);
+            number.gameObject.SetActive(true);
+            number.text = text;
+            var parent = (RectTransform)number.transform.parent;
             RectTransformUtility.ScreenPointToWorldPointInRectangle(
                 parent,
                 ScreenPointOf(anchor, start),
                 CameraOf(parent),
                 out var world
             );
-            popup.transform.position = world;
-            var rect = (RectTransform)popup.transform;
-            // A hit's popups show as the blow's effect reaches the character.
+            number.transform.position = world;
+            var placed = (RectTransform)number.transform;
+            // A hit's numbers show as the blow's effect reaches the character.
             float delay = showDelay;
-            float now = Time.unscaledTime + delay;
-            float duration = number ? NumberDuration : PopupDuration;
             // A larger number (a critical hit) is moved further, as it is wider.
-            if (number)
-                rect.anchoredPosition +=
-                    numberScatter.Place(anchor, now, duration)
-                    * (popup.fontSize / NormalNumberSize);
+            placed.anchoredPosition +=
+                numberScatter.Place(anchor, Time.unscaledTime + delay, NumberDuration)
+                * (number.fontSize / NormalNumberSize);
             // Off the HP bars and weakness icons of the others above (enemies stand close).
-            float lower = KeepUnderBars(
-                anchor,
-                parent,
-                parent.InverseTransformPoint(rect.position),
-                popup.GetPreferredValues(text).x * 0.5f,
-                lineHeight,
-                ref rise
-            );
-            rect.anchoredPosition += Vector2.down * lower;
-            if (number)
-                popupStack.Hold(
+            float rise = NumberRise;
+            placed.anchoredPosition +=
+                Vector2.down
+                * KeepUnderBars(
                     anchor,
-                    rect.anchoredPosition.y + rise,
-                    lineHeight,
-                    rise,
-                    now,
-                    duration
+                    parent,
+                    parent.InverseTransformPoint(placed.position),
+                    number.GetPreferredValues(text).x * 0.5f,
+                    number.fontSize * NumberLineHeight,
+                    ref rise
                 );
-            else
-                rect.anchoredPosition +=
-                    Vector2.down
-                    * popupStack.Place(
-                        anchor,
-                        rect.anchoredPosition.y + rise,
-                        lineHeight,
-                        rise,
-                        now,
-                        duration
-                    );
-            StartCoroutine(Rise(popup, rise, delay, duration, number));
-            return popup;
+            StartCoroutine(Rise(number, rise, delay));
+            return number;
         }
 
         /// <summary>
-        /// A popup bursts out large and snaps to its size (a number only a little, easing in),
-        /// jumps up, hangs and fades over <paramref name="duration"/>. It runs on real time, so it
-        /// pops even while a hit stop holds the battle. It stays hidden for
-        /// <paramref name="delay"/> s first.
+        /// A number bursts out a little large and eases to its size, jumps up, hangs and fades over
+        /// <see cref="NumberDuration"/>. It runs on real time, so it pops even while a hit stop
+        /// holds the battle. It stays hidden for <paramref name="delay"/> s first.
         /// </summary>
-        private static IEnumerator Rise(
-            TMP_Text popup,
-            float distance,
-            float delay,
-            float duration,
-            bool number
-        )
+        private static IEnumerator Rise(TMP_Text number, float distance, float delay)
         {
-            var rect = (RectTransform)popup.transform;
+            var rect = (RectTransform)number.transform;
             var start = rect.anchoredPosition;
             // Hidden by turning the text off: its colour is still set after this starts.
             if (delay > 0f)
             {
-                popup.enabled = false;
+                number.enabled = false;
                 for (float t = 0f; t < delay; t += Time.unscaledDeltaTime)
                     yield return null;
-                popup.enabled = true;
+                number.enabled = true;
             }
-            const float pop = 0.16f;
-            for (float t = 0f; t < duration; t += Time.unscaledDeltaTime)
+            for (float t = 0f; t < NumberDuration; t += Time.unscaledDeltaTime)
             {
-                float k = t / duration;
-                float rise = Mathf.Min(1f, t / BattlePopupStack.RiseTime);
+                float k = t / NumberDuration;
+                float rise = Mathf.Min(1f, t / NumberRiseTime);
                 rect.anchoredPosition =
                     start + Vector2.up * (distance * (1f - (1f - rise) * (1f - rise)));
-                rect.localScale =
-                    Vector3.one * (number ? NumberPopScale(t / NumberPopTime) : PopScale(t / pop));
-                popup.alpha = k < 0.7f ? 1f : 1f - (k - 0.7f) / 0.3f;
+                rect.localScale = Vector3.one * NumberPopScale(t / NumberPopTime);
+                number.alpha = k < 0.7f ? 1f : 1f - (k - 0.7f) / 0.3f;
                 yield return null;
             }
-            Destroy(popup.gameObject);
+            Destroy(number.gameObject);
         }
 
         /// <summary>
@@ -3141,19 +3061,6 @@ namespace Baryonyx.Combat.Presentation
                 return 1f;
             float eased = 1f - Mathf.Pow(1f - Mathf.Max(0f, k), 3f);
             return Mathf.Lerp(NumberPop, 1f, eased);
-        }
-
-        /// <summary>
-        /// A message's size as it pops: from 1.8 times down past its size and back to it, over
-        /// <paramref name="k"/> from 0 to 1, then its size.
-        /// </summary>
-        public static float PopScale(float k)
-        {
-            if (k >= 1f)
-                return 1f;
-            if (k < 0.6f)
-                return Mathf.Lerp(1.8f, 0.9f, k / 0.6f);
-            return Mathf.Lerp(0.9f, 1f, (k - 0.6f) / 0.4f);
         }
 
         /// <summary>

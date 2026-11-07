@@ -211,9 +211,11 @@ namespace Baryonyx.Combat
                 "浄めの誓い",
                 "味方に付く[状態異常]を、1ターンに1回防ぐ。",
                 e =>
-                    e.On(BattleTrigger.StatusApplying, BattleAct.Cancel)
+                    e.Resists()
+                        .On(BattleTrigger.StatusApplying, BattleAct.Cancel)
                         .When(TargetIsAlly & StatusIsBad)
                         .OncePerTurn()
+                        .ShowsOver(BattleWho.Target)
             ),
             Pair(
                 "greta",

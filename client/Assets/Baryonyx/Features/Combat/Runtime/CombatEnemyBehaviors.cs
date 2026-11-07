@@ -173,6 +173,7 @@ namespace Baryonyx.Combat
                 BattleHoldSpan.UntilOwnerActs,
                 0,
                 Guise("すり抜け")
+                    .Resists()
                     .On(BattleTrigger.BlowLanding, BattleAct.Cancel)
                     .When(
                         BattleCondition.TargetIsOwner
@@ -188,6 +189,7 @@ namespace Baryonyx.Combat
                 BattleHoldSpan.UntilOwnerActs,
                 0,
                 Guise("身かわし")
+                    .Resists()
                     .On(BattleTrigger.BlowLanding, BattleAct.Cancel)
                     .When(
                         BattleCondition.TargetIsOwner

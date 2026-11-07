@@ -484,7 +484,7 @@ namespace Baryonyx.Combat.Editor
                 BuildEndTurn(safe, view);
                 BuildDiscard(safe, view);
                 BuildAim(safe, view);
-                BuildPopup(screen, view);
+                BuildNumbers(screen, view);
                 // 山札・捨て札・消滅を押して開く、カードの一覧（doc/features/screens/battle.md#山札と捨て札の一覧）。
                 view.PileList = BattlePileListAssets.Build(screen);
                 // 固有スキルの進化先を選ぶ画面。操作の上に重ねる（doc/features/skill-evolution.md）。
@@ -1970,21 +1970,8 @@ namespace Baryonyx.Combat.Editor
             return face;
         }
 
-        private static void BuildPopup(RectTransform root, BattleInspectView view)
+        private static void BuildNumbers(RectTransform root, BattleInspectView view)
         {
-            var popup = Label(
-                root,
-                "Popup",
-                "0",
-                60,
-                UiPalette.TextMain,
-                TextAlignmentOptions.Center
-            );
-            Place(popup.rectTransform, Vector2.zero, new Vector2(480, 90));
-            popup.outlineWidth = 0f;
-            view.PopupTemplate = popup;
-            popup.gameObject.SetActive(false);
-
             view.DamageNumber = DamageNumberAssets.Label(
                 root,
                 "DamageNumber",

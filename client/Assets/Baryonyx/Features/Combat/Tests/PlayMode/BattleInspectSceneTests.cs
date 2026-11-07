@@ -2045,11 +2045,6 @@ namespace Baryonyx.Tests.PlayMode
                     );
                 if (note != null)
                     noteAt = Time.unscaledTime;
-                Assert.That(
-                    Rising(view.PopupTemplate).Any(text => text.Contains("やけど")),
-                    Is.False,
-                    "The name does not pop up under the number."
-                );
                 yield return null;
             }
             Assert.That(numberAt, Is.GreaterThanOrEqualTo(0f), "The damage number rises.");

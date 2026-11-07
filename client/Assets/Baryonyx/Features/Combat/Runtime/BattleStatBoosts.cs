@@ -189,6 +189,9 @@ namespace Baryonyx.Combat
                 _ => !BattleCondition.Always,
             };
             return effect
+                .Looks(
+                    boost.Stats == BattleBoostStats.Speed ? CardStatus.SpeedUp : CardStatus.AttackUp
+                )
                 .Add(BattleValue.StatPercent, amount)
                 .When(BattleCondition.ActorIsOwner & BattleCondition.StatIs(stats) & when)
                 .Shows(string.IsNullOrEmpty(boost.Name) ? BattleShow.Quiet : BattleShow.WhenGrows);

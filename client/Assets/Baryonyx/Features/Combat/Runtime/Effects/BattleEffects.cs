@@ -38,6 +38,9 @@ namespace Baryonyx.Combat
         // ShowGrown が最後に見た、規則ごとの足す量。
         internal int[] Shown;
 
+        /// <summary>Whether a rule shown as it grows adds something, as <see cref="BattleEffects.ShowGrown"/> last saw it (背水 while it works).</summary>
+        public bool Adding => Shown != null && Array.Exists(Shown, amount => amount > 0);
+
         internal bool CanUse(BattleEffectRule rule) =>
             rule.Limit <= 0
             || (rule.LimitSpan == BattleLimitSpan.Turn ? turnUses : battleUses)[rule.Index]

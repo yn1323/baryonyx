@@ -272,15 +272,6 @@ namespace Baryonyx.Combat.Presentation
             }
         }
 
-        private RectTransform AreaOf(BattleCardPlan.Hit hit) =>
-            hit.Ally ? Allies[hit.Index].TargetArea : Enemies[hit.Index].TargetArea;
-
-        // 誰にも向かない働き（エネルギー・手札など）は、敵への当たりに載っていても使い手の上に知らせる。
-        private RectTransform PopupAreaOf(BattleCardPlan.Hit hit, CardAction action, int caster) =>
-            action.Target == CardTarget.None && caster >= 0 && caster < Allies.Length
-                ? Allies[caster].TargetArea
-                : AreaOf(hit);
-
         // --- Statuses ------------------------------------------------------------------------
 
         private List<BattleStatusEntry> StatusesOf(bool ally, int index)
@@ -648,8 +639,8 @@ namespace Baryonyx.Combat.Presentation
         }
 
         /// <summary>
-        /// The party's turn comes round: each ally keeps half of its block (<see cref="CardRules.BlockKept"/>)
-        /// and shows what it lost.
+        /// The party's turn comes round: each ally keeps half of its block (<see cref="CardRules.BlockKept"/>),
+        /// and the yellow strip shrinks to it.
         /// </summary>
         private void HalveBlock()
         {
@@ -657,12 +648,10 @@ namespace Baryonyx.Combat.Presentation
             for (int i = 0; i < allyBlock.Length; i++)
             {
                 int kept = CardRules.BlockKept(allyBlock[i]);
-                int lost = allyBlock[i] - kept;
-                if (lost <= 0)
+                if (kept >= allyBlock[i])
                     continue;
                 allyBlock[i] = kept;
                 RefreshBlock(i);
-                ShowPopup(Allies[i].TargetArea, $"ブロック -{lost}", GuardColor, 36f);
             }
         }
 
@@ -688,12 +677,9 @@ namespace Baryonyx.Combat.Presentation
             int absorbed = BattleBlows.Soaked(allyBlock[ally], damage);
             allyBlock[ally] -= absorbed;
             RefreshBlock(ally);
-            ShowPopup(Allies[ally].TargetArea, $"ブロック -{absorbed}", GuardColor, 36f);
             return damage - absorbed;
         }
 
-        private static readonly Color Gold = new(1f, 0.86f, 0.42f);
-        private static readonly Color SupportColor = new(0.78f, 0.86f, 0.95f);
 
         /// <summary>The colour a status's name shows in.</summary>
         public static Color StatusColor(CardStatus status) =>

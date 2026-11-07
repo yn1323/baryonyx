@@ -32,7 +32,7 @@ namespace Baryonyx.Tests.PlayMode
 
             view.RestartDeal(instant: true);
             Assert.That(view.HandCards, Has.Count.EqualTo(view.Settings.OpeningDraw + 1));
-            Assert.That(Popups(view), Does.Contain("早駆け"));
+            Assert.That(Notes(view), Has.No.Member("早駆け"), "The hand shows it; its name does not.");
         }
 
         [UnityTest]
@@ -102,7 +102,7 @@ namespace Baryonyx.Tests.PlayMode
             Play(view, card, view.Enemies[0].TargetArea);
             yield return WaitActions(view, seen);
             Assert.That(seen.Numbers, Has.Count.EqualTo(hits + 1));
-            Assert.That(seen.Texts, Does.Contain("連ね矢"));
+            Assert.That(seen.Notes, Has.No.Member("連ね矢"), "The numbers show it; its name does not.");
         }
 
         // マスの間で減ったHPで戦闘に入ると、HPの棒ははじめから減った長さで出し、満タンから減らさない。
@@ -234,7 +234,7 @@ namespace Baryonyx.Tests.PlayMode
             }
             Assert.That(view.Acting, Is.False, "The actions end.");
             Assert.That(seen.Numbers, Has.Count.EqualTo(2));
-            Assert.That(seen.Texts, Does.Contain(BattleInspectView.TwiceText));
+            Assert.That(seen.Notes, Has.No.Member("2回発動"), "The second play shows itself.");
             for (int i = 1; i < view.Enemies.Length; i++)
                 Assert.That(
                     view.Enemies[i].Hp,
@@ -317,8 +317,58 @@ namespace Baryonyx.Tests.PlayMode
             Play(view, card, view.Enemies[0].TargetArea);
             yield return WaitActions(view, seen);
             Assert.That(view.CopycatSeen, Is.EqualTo(1));
-            Assert.That(seen.Texts, Does.Contain("見よう見まね +10%"));
+            Assert.That(seen.Notes.Any(note => note.StartsWith("見よう見まね")), Is.False);
         }
+
+        // 戦闘後の強化（背水）は名前を出さず、効いている間は攻撃力アップのアイコンを出し、効き始めに状態の札を出す。
+        [UnityTest]
+        public IEnumerator BackwaterShowsAsAttackUpWhileItWorks()
+        {
+            var view = default(BattleInspectView);
+            yield return Load(value => view = value);
+            var backwater = new BattleStatBoost
+            {
+                Name = "背水",
+                Condition = BattleBoostCondition.HalfHpOrLess,
+                Stats = BattleBoostStats.Attacks,
+                Percent = 30,
+            };
+            UseParty(view, 0, new CombatPassiveKind[0], boosts: new[] { backwater });
+            view.RestartDeal(instant: true);
+            // Down to half, and too tough to fall in the enemies' turn.
+            var ally = view.Allies[0];
+            ally.MaxHp = 999999;
+            ally.Hp = ally.MaxHp / 2;
+            var attackUp = ally.StatusIcons.First(icon =>
+                icon.Kind == BattleStatusIcon.AttackUp
+            ).Icon;
+            yield return null;
+            Assert.That(attackUp.activeSelf, Is.False, "It has not been looked at yet.");
+
+            var seen = new Seen();
+            string attackUpName = CardRules.StatusName(CardStatus.AttackUp);
+            bool overBand = false;
+            view.EndTurn();
+            // Through the enemies' turn and the band of the next, until the note has come and gone.
+            for (
+                float t = 0f;
+                t < 15f
+                    && (view.EnemyTurn || !seen.Notes.Contains(attackUpName) || NoteClones(view).Any());
+                t += Time.unscaledDeltaTime
+            )
+            {
+                yield return null;
+                seen.Look(view);
+                overBand |= view.TurnBanner.gameObject.activeSelf && NoteShowing(view);
+            }
+            Assert.That(attackUp.activeSelf, Is.True, "The icon shows while it works.");
+            Assert.That(seen.Notes, Does.Contain(attackUpName));
+            Assert.That(seen.Notes, Has.No.Member("背水"));
+            Assert.That(overBand, Is.False, "A note waits for the band of the turn to go.");
+        }
+
+        private static bool NoteShowing(BattleInspectView view) =>
+            NoteClones(view).Any(note => note.GetComponent<CanvasGroup>().alpha > 0f);
 
         [UnityTest]
         public IEnumerator AFallenHoldersPassiveStopsWorking()
@@ -345,7 +395,8 @@ namespace Baryonyx.Tests.PlayMode
             IReadOnlyList<CombatPassiveKind> passives,
             CardSkill card = null,
             int cardsOf = -1,
-            int twice = 0
+            int twice = 0,
+            IReadOnlyList<BattleStatBoost> boosts = null
         )
         {
             if (cardsOf < 0)
@@ -371,6 +422,7 @@ namespace Baryonyx.Tests.PlayMode
                     Cards = cards.Select(skill => new BattlePartyCard { Skill = skill }).ToArray(),
                     Passives = place == holder ? passives : new CombatPassiveKind[0],
                     TwiceChance = place == holder ? twice : 0,
+                    Boosts = place == holder && boosts != null ? boosts : new BattleStatBoost[0],
                 };
             }
             view.UseParty(slots);
@@ -415,16 +467,21 @@ namespace Baryonyx.Tests.PlayMode
         private static Vector2 Center(RectTransform rect) =>
             BattleInspectView.ScreenPointOf(rect, rect.rect.center);
 
-        /// <summary>The popups now rising.</summary>
-        private static string[] Popups(BattleInspectView view) =>
-            Clones(view.PopupTemplate).Select(text => text.text).ToArray();
+        /// <summary>The words on the status notes now showing.</summary>
+        private static string[] Notes(BattleInspectView view) =>
+            NoteClones(view).Select(note => note.GetComponentInChildren<TMP_Text>().text).ToArray();
 
-        /// <summary>The numbers and popups that have risen while the actions played (they fade on the way).</summary>
+        private static IEnumerable<RectTransform> NoteClones(BattleInspectView view) =>
+            view
+                .StatusNote.parent.GetComponentsInChildren<RectTransform>()
+                .Where(rect => rect.name == view.StatusNote.name + "(Clone)");
+
+        /// <summary>The numbers and status notes that have shown while the actions played (they fade on the way).</summary>
         private sealed class Seen
         {
             public readonly HashSet<TMP_Text> Numbers = new();
-            public readonly List<string> Texts = new();
-            private readonly HashSet<TMP_Text> popups = new();
+            public readonly List<string> Notes = new();
+            private readonly HashSet<RectTransform> notes = new();
 
             public void Look(BattleInspectView view)
             {
@@ -432,10 +489,10 @@ namespace Baryonyx.Tests.PlayMode
                     var template in new[] { view.DamageNumber, view.WeakNumber, view.CritNumber }
                 )
                     Numbers.UnionWith(Clones(template));
-                // Read as it shows: a popup is destroyed once it fades.
-                foreach (var popup in Clones(view.PopupTemplate))
-                    if (popups.Add(popup))
-                        Texts.Add(popup.text);
+                // Read as it shows: a note is destroyed once it fades.
+                foreach (var note in NoteClones(view))
+                    if (notes.Add(note))
+                        Notes.Add(note.GetComponentInChildren<TMP_Text>().text);
             }
         }
 

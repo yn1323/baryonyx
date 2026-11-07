@@ -36,14 +36,6 @@ namespace Baryonyx.Combat.Presentation
         // Room left between a popup and the HP bar or weakness icons of another character above it.
         private const float PopupBarMargin = 6f;
 
-        // The dark outline and the shadow under the words that pop up (状態・ブロック・会心), in the
-        // units of the font's distance field, as the numbers have (DamageNumberAssets).
-        private const float PopupOutline = 0.3f;
-        private static readonly Color PopupEdge = new(0.08f, 0.06f, 0.07f, 1f);
-
-        // An outlined copy of the popups' font material, made on start.
-        private Material popupMaterial;
-
         // Where the enemy dashing now stood before it drew back.
         private Vector2 lungeHome;
 
@@ -219,32 +211,12 @@ namespace Baryonyx.Combat.Presentation
         }
 
         /// <summary>
-        /// Makes what the battle must keep readable over the effects: the popups' words get a dark
-        /// outline and shadow, and the HP bars and weakness icons are drawn over the effects in
-        /// front of the characters (a canvas of their own above it).
+        /// Makes what the battle must keep readable over the effects: the HP bars and weakness
+        /// icons are drawn over the effects in front of the characters (a canvas of their own
+        /// above it).
         /// </summary>
         private void SetUpReadability()
         {
-            if (PopupTemplate != null && PopupTemplate.fontSharedMaterial != null)
-            {
-                popupMaterial = new Material(PopupTemplate.fontSharedMaterial)
-                {
-                    name = "BattlePopup (outlined)",
-                };
-                popupMaterial.EnableKeyword("OUTLINE_ON");
-                popupMaterial.EnableKeyword("UNDERLAY_ON");
-                // The face grows by the outline's width, so the whole outline lies outside it.
-                popupMaterial.SetFloat("_FaceDilate", PopupOutline);
-                popupMaterial.SetColor("_OutlineColor", PopupEdge);
-                popupMaterial.SetFloat("_OutlineWidth", PopupOutline);
-                popupMaterial.SetColor("_UnderlayColor", new Color(0f, 0f, 0f, 0.7f));
-                popupMaterial.SetFloat("_UnderlayOffsetX", 0f);
-                popupMaterial.SetFloat("_UnderlayOffsetY", -0.3f);
-                popupMaterial.SetFloat("_UnderlayDilate", PopupOutline);
-                popupMaterial.SetFloat("_UnderlaySoftness", 0.3f);
-                PopupTemplate.fontSharedMaterial = popupMaterial;
-            }
-
             var front =
                 Vfx != null && Vfx.FrontLayer != null
                     ? Vfx.FrontLayer.GetComponent<Canvas>()

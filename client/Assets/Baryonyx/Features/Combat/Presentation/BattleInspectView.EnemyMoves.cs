@@ -23,12 +23,10 @@ namespace Baryonyx.Combat.Presentation
         // its own, which spaces them out too).
         private const float EnemyHitGap = 0.04f;
 
-        // How long the word of its enrage or of its gathering shows before it acts.
+        // How long the enemy holds after its enrage shakes it or as it gathers, before it goes on.
         private const float EnemyCryHold = 0.55f;
 
-        private static readonly Color ChargeColor = new(1f, 0.62f, 0.3f);
         private static readonly Color ChargeTint = new(1f, 0.8f, 0.55f);
-        private static readonly Color EnrageColor = new(1f, 0.42f, 0.36f);
 
         // The tint each enemy's glow put on its sprite last, so a hit's tint is not painted over.
         private Color[] chargeShown = Array.Empty<Color>();
@@ -128,7 +126,6 @@ namespace Baryonyx.Combat.Presentation
             }
             if (step.Awakens || step.Enrages)
             {
-                ShowPopup(enemy.TargetArea, "激化！", EnrageColor, 48f);
                 yield return Shake(enemy.Body, enemyBase[index], 6f, 0.3f, Vector2.right * 12f);
                 yield return Wait(EnemyCryHold);
             }
@@ -158,16 +155,13 @@ namespace Baryonyx.Combat.Presentation
             );
         }
 
-        /// <summary>The enemy gathers its strength, says how many turns are left, and glows.</summary>
+        /// <summary>The enemy gathers its strength and glows; the attack up icon shows it too.</summary>
         private IEnumerator Gather(int index, EnemyStep step, EnemyMove with)
         {
             var enemy = Enemies[index];
             if (gathering.Length != Enemies.Length)
                 Array.Resize(ref gathering, Enemies.Length);
             gathering[index] = true;
-            // Two short lines, so the words stay on screen over the big enemy at the right edge.
-            ShowPopup(enemy.TargetArea, "力を溜めている", ChargeColor, 40f);
-            ShowPopup(enemy.TargetArea, $"あと{step.ChargeLeft}ターン", ChargeColor, 40f);
             if (with != null && with.Supported)
                 Support(index, with);
             yield return Wait(EnemyCryHold);
@@ -313,10 +307,7 @@ namespace Baryonyx.Combat.Presentation
                         : enemy.PhysicalDefense;
                 int block = EnemyActs.GuardBlock(stat, move.BlockPercent, percent);
                 foreach (int target in cared)
-                {
                     SetEnemyBlock(target, Enemies[target].Block + block);
-                    ShowPopup(Enemies[target].TargetArea, $"ブロック +{block}", GuardColor, 40f);
-                }
             }
             if (move.HealPercent > 0)
                 foreach (int target in cared)
@@ -344,7 +335,12 @@ namespace Baryonyx.Combat.Presentation
             if (move.PowerUpPercent > 0)
             {
                 enemy.PowerUp = Mathf.Max(enemy.PowerUp, move.PowerUpPercent);
-                ShowPopup(enemy.TargetArea, "次の攻撃が強くなる", ChargeColor, 36f);
+                // The attack up icon shows it, with the note a status gets as it is put on.
+                ShowStatusNote(
+                    enemy.TargetArea,
+                    CardRules.StatusName(CardStatus.AttackUp),
+                    StatusColor(CardStatus.AttackUp)
+                );
             }
         }
 
@@ -403,7 +399,6 @@ namespace Baryonyx.Combat.Presentation
                 return damage;
             int absorbed = BattleBlows.Soaked(enemy.Block, damage);
             SetEnemyBlock(index, enemy.Block - absorbed);
-            ShowPopup(enemy.TargetArea, $"ブロック -{absorbed}", GuardColor, 36f);
             return damage - absorbed;
         }
 

@@ -9,13 +9,11 @@ namespace Baryonyx.Combat.Presentation
     /// effects the party brings in and a card's own while it plays. The battle tells them what
     /// happens (<see cref="Fire"/>) and asks them for its numbers (<see cref="Modify"/>), and they
     /// read and change the battle through this view as an <see cref="IBattleWorld"/>. An effect's
-    /// name pops up over its holder as it works.
+    /// name does not show as it works: what it did shows in the numbers, the bars and the hand,
+    /// and only an effect that stops what came or is shown as a status shows a note.
     /// </summary>
     public sealed partial class BattleInspectView : IBattleWorld
     {
-        // 効果（パッシブ・装備）と戦闘後の強化の名前を出す色。
-        private static readonly Color PassiveColor = new(0.92f, 0.82f, 1f);
-
         private readonly BattleEffects effects = CreateEffects();
 
         // 星図の計算などで、次の味方のターンへ持ち越すエネルギー。
@@ -473,16 +471,17 @@ namespace Baryonyx.Combat.Presentation
         {
             if (!Exists(at))
                 return;
-            string text = string.IsNullOrEmpty(detail)
-                ? effect.Effect.Name
-                : $"{effect.Effect.Name} {detail}";
+            // 名前は出さない。止めた効果は「効かなかった」、状態に見える効果はその状態の札だけを出す。
             var area = at.IsAlly ? Allies[at.Index].TargetArea : Enemies[at.Index].TargetArea;
-            // 状態の効果（無敵・反射）は状態の色で大きく、ほかは薄紫で出す。
-            var status = effect.Effect.Status;
-            if (status != CardStatus.None)
-                ShowPopup(area, text, StatusColor(status), 44f);
-            else
-                ShowPopup(area, text, PassiveColor, 36f);
+            var shown = effect.Effect;
+            if (shown.Resisting)
+                ShowStatusNote(area, ResistedText, ResistedColor);
+            else if (shown.LooksLike != CardStatus.None)
+                ShowStatusNote(
+                    area,
+                    CardRules.StatusName(shown.LooksLike),
+                    StatusColor(shown.LooksLike)
+                );
         }
 
         private bool Exists(BattleUnit unit) =>

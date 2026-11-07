@@ -121,6 +121,18 @@ namespace Baryonyx.Combat
         /// <summary>Among the statuses on one character, the effects of smaller priority are asked first (無敵 before 反射).</summary>
         public int Priority { get; private set; }
 
+        /// <summary>
+        /// The screen shows 「効かなかった」 where its name would show as it works (it stops what
+        /// came: 無敵・すり抜け・浄めの誓い). The screen shows no effect's name.
+        /// </summary>
+        public bool Resisting { get; private set; }
+
+        /// <summary>
+        /// The status the screen shows it as, or None: that status's icon while it adds
+        /// something, and its note as it starts or grows (背水: 攻撃力アップ).
+        /// </summary>
+        public CardStatus LooksLike { get; private set; }
+
         public IReadOnlyList<BattleEffectRule> Rules => rules;
 
         /// <summary>A rule that does <paramref name="acts"/> when <paramref name="trigger"/> happens; it shows the name.</summary>
@@ -218,6 +230,20 @@ namespace Baryonyx.Combat
         {
             Status = status;
             Priority = priority;
+            return this;
+        }
+
+        /// <summary>The screen shows 「効かなかった」 as it works (<see cref="Resisting"/>).</summary>
+        public BattleEffect Resists()
+        {
+            Resisting = true;
+            return this;
+        }
+
+        /// <summary>The screen shows it as <paramref name="status"/> (<see cref="LooksLike"/>).</summary>
+        public BattleEffect Looks(CardStatus status)
+        {
+            LooksLike = status;
             return this;
         }
 

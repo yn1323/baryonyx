@@ -504,12 +504,16 @@ namespace Baryonyx.Tests.EditMode
                     }
                 );
 
+            var boost = effects.All[0];
+            Assert.That(boost.Effect.LooksLike, Is.EqualTo(CardStatus.AttackUp));
             Assert.That(Attack(), Is.EqualTo(0));
             world.SetHp(Luka, 0);
             Assert.That(Attack(), Is.EqualTo(10));
+            Assert.That(boost.Adding, Is.False, "Not looked at yet.");
             effects.ShowGrown(world, BattleValue.StatPercent, BattleStatBoosts.PhysicalAttack);
             effects.ShowGrown(world, BattleValue.StatPercent, BattleStatBoosts.PhysicalAttack);
             Assert.That(world.Shown, Is.EqualTo(new[] { "弔い" }), "Once, as it starts.");
+            Assert.That(boost.Adding, Is.True, "Its icon shows while it works.");
             Assert.That(
                 effects.Modify(
                     world,
@@ -524,6 +528,28 @@ namespace Baryonyx.Tests.EditMode
                 ),
                 Is.EqualTo(0)
             );
+        }
+
+        // 名前の代わりに画面に出すもの：止める効果は「効かなかった」、速度の強化は速度アップ。
+        [Test]
+        public void TheEffectsThatStopWhatCameShowAsResistedAndASpeedBoostAsSpeedUp()
+        {
+            Assert.That(BattleStatuses.EffectOf(CardStatus.Invincible).Resisting, Is.True);
+            Assert.That(BattleStatuses.EffectOf(CardStatus.Reflect).Resisting, Is.False);
+            Assert.That(CombatPassives.Find(CombatPassiveKind.PurifyingVow).Effect.Resisting, Is.True);
+            Assert.That(CombatPassives.Find(CombatPassiveKind.ChargedShield).Effect.Resisting, Is.False);
+            var vanguard = BattleStatBoosts.EffectOf(
+                new BattleStatBoost
+                {
+                    Name = "先手",
+                    Condition = BattleBoostCondition.FirstTurns,
+                    Stats = BattleBoostStats.Speed,
+                    Percent = 25,
+                    Turns = 2,
+                }
+            );
+            Assert.That(vanguard.LooksLike, Is.EqualTo(CardStatus.SpeedUp));
+            Assert.That(vanguard.Resisting, Is.False);
         }
 
         private static void Hold(BattleEffects effects, BattleUnit unit, CombatPassiveKind kind) =>
