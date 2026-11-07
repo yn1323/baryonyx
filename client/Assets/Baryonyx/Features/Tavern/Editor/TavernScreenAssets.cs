@@ -95,15 +95,24 @@ namespace Baryonyx.Tavern.Editor
         }
 
         // ほかの人が付けている物を付け替える前に確かめる窓。画面全体を覆うため、パネルの外に置く。
+        // スキルを選ぶ一覧は自分のCanvasで手前に出るため、窓はさらにその手前の並べ順で描く
+        // （2026-11-07、ユーザーの指摘：一覧の奥に隠れていた）。
         private static GameObject BuildDialog(RectTransform root, GuideMenuView guide)
         {
             var dialog = GameDialogAssets.Build(root);
+            var canvas = dialog.gameObject.AddComponent<Canvas>();
+            canvas.overrideSorting = true;
+            canvas.sortingOrder = DialogSortingOrder;
+            dialog.gameObject.AddComponent<UnityEngine.UI.GraphicRaycaster>();
             foreach (var equipment in root.GetComponentsInChildren<EquipmentView>(true))
                 equipment.Dialog = dialog;
             foreach (var cards in root.GetComponentsInChildren<CardLoadoutView>(true))
                 cards.Dialog = dialog;
             return null;
         }
+
+        // 確かめる窓の並べ順：スキルを選ぶ一覧より手前、画面の切り替えの幕（1000）より奥。
+        private const int DialogSortingOrder = CardLoadoutAssets.PickerSortingOrder + 10;
 
         private static void Fill(GuideMenuDefinition d)
         {

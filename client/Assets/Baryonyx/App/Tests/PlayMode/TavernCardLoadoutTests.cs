@@ -66,6 +66,11 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(panel.Presenter.State.PersonId, Is.EqualTo(people[0].Id));
             Assert.That(panel.Sheet.Tabs[2].Chosen, Is.True);
             Assert.That(panel.Picker.Open, Is.False);
+            // ほかの人が付けているスキルを確かめる窓は、自分のCanvasで手前に出る一覧より、さらに手前に描く。
+            var pickerCanvas = panel.Picker.GetComponent<Canvas>();
+            var dialogCanvas = panel.Dialog.GetComponent<Canvas>();
+            Assert.That(dialogCanvas != null && dialogCanvas.overrideSorting, Is.True);
+            Assert.That(dialogCanvas.sortingOrder, Is.GreaterThan(pickerCanvas.sortingOrder));
             Assert.That(panel.UniqueCards.Length, Is.EqualTo(CardLoadoutPresenter.UniqueCount));
             Assert.That(panel.SlotCards.Length, Is.EqualTo(CardLoadoutRules.Size));
             // 6枚はスクロールせずに面に収まり、名前・種類・効果の文まで出す。

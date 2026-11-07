@@ -489,7 +489,7 @@ namespace Baryonyx.CardLoadout.Editor
         private const float TreePad = 48f;
 
         // 案内人の画面（0）より手前、画面の切り替えの幕（1000）より奥。
-        private const int PickerSortingOrder = 10;
+        public const int PickerSortingOrder = 10;
         private const float StageColumnGap = 64f;
         private const float StageRowGap = 96f;
 
