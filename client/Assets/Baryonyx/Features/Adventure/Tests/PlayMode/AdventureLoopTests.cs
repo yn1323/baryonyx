@@ -751,6 +751,11 @@ namespace Baryonyx.Tests.PlayMode
                 VictorySeconds,
                 "The drop was not shown."
             );
+            // 札の地・縁・中身は札いっぱいに広がる（シーンに残った上書きで大きさ0に潰れ、
+            // 地が消えて品質の文字が札の外へずれたことがある。2026-11-08）。
+            var plate = bootstrap.Overlay.Reveal.Plate;
+            var body = (RectTransform)plate.Find("Body");
+            Assert.That(body.rect.size, Is.EqualTo(plate.rect.size), "The plate's body fills it.");
             Assert.That(dialog.IsShown, Is.False);
             // 勝つと手札は片付き、ドロップの札と強化に重ならない。
             Assert.That(battle.HandPutAway, Is.True, "The hand is put away on the win.");
