@@ -2,7 +2,7 @@
 id: feature-stage-progression-status
 type: specification
 status: 一部確定
-updated: 2026-11-04
+updated: 2026-11-08
 ---
 
 # 探索とダンジョンの進行：未決事項と実装との対応
@@ -45,7 +45,7 @@ updated: 2026-11-04
 本ページは企画上の要求・設計方針・未決事項を記す。
 2026-10-04に、冒険の1周（出発・マス単位の探索・戦闘・報酬・復活・結果・中断と再開）と、冒険の状態のサーバー保存を実装した（[実装計画](../../plans/2026-10-04-adventure-loop.md)）。
 冒険先は、2026-10-20から[行き先と敵](destinations.md#行き先と敵)の8つである（[サーバーの設定値](../../../server/src/features/adventure/catalog.ts)）。
-ダンジョンの解放は、行き先の街のマスに着いたかで決め、解放の記録は別に持たない。着いたかは、[入れ子の地図](../world-atlas.md)で開けた町のマス（`world_atlas_squares`）か、[前の街道](../stage-progression-world-map.md)でクリアした街のマス（`world_map_squares`）で見る（2026-11-04に入れ子の地図を足した）。門前町ポルタはいつも解放している。クライアントの判定は [DungeonUnlocks](../../../client/Assets/Baryonyx/Features/WorldMap/Runtime/DungeonUnlocks.cs) にまとめ、旅の案内所のダンジョン一覧（[GuideSceneBootstrap](../../../client/Assets/Baryonyx/App/Runtime/GuideSceneBootstrap.cs)、[旅の案内所](../screens/guide.md#編成商会神殿旅の案内所の画面)）と、町に着いたときの知らせ（[WorldAtlasNavigator](../../../client/Assets/Baryonyx/Features/WorldMap/Runtime/WorldAtlasNavigator.cs) の `AnnounceDungeon`）が使う。サーバーは冒険を始めるときに同じことを確かめ、まだなら409（`destination_locked`）で断る（[catalog](../../../server/src/features/adventure/catalog.ts) の `town`、[run.ts](../../../server/src/features/adventure/run.ts)）。
+ダンジョンの解放は、着いた町のマスで決め、解放の記録は別に持たない。着いたかは、[入れ子の地図](../world-atlas.md)で開けた町のマス（`world_atlas_squares`）か、[前の街道](../stage-progression-world-map.md)でクリアした街のマス（`world_map_squares`）で見る（2026-11-04に入れ子の地図を足した）。門前町ポルタのミストラ遺跡はいつも解放している。中身のあるダンジョンは、ポルタのほかに着いた町の数だけ開け、着いた町のダンジョンを先に、残りを推奨Lvの低い順に選ぶ。中身を作っていないダンジョンは、その街に着くと一覧に出す（2026-11-08。[ダンジョンの解放](destinations.md#ダンジョンの解放)）。クライアントの判定は [DungeonUnlocks](../../../client/Assets/Baryonyx/Features/WorldMap/Runtime/DungeonUnlocks.cs) にまとめ、旅の案内所のダンジョン一覧（[GuideSceneBootstrap](../../../client/Assets/Baryonyx/App/Runtime/GuideSceneBootstrap.cs)、[旅の案内所](../screens/guide.md#編成商会神殿旅の案内所の画面)）と、町に着いたときの知らせ（[WorldAtlasNavigator](../../../client/Assets/Baryonyx/Features/WorldMap/Runtime/WorldAtlasNavigator.cs) の `AnnounceDungeon`）が使う。サーバーは冒険を始めるときに同じことを確かめ、まだなら409（`destination_locked`）で断る（[catalog](../../../server/src/features/adventure/catalog.ts) の `openDestinations`、[run.ts](../../../server/src/features/adventure/run.ts)）。
 最初の行き先（ミストラ遺跡）は道中のマスが8つで、最奥の間は第10層になる。
 出来事を終えたマスでは、行き先の一覧から物が落ちる（[冒険のドロップ](../drops.md#実装との対応)）。
 序盤の工夫は未実装である（装備・スキルの入手は[冒険のドロップ](../drops.md#実装との対応)、深さに応じた敵は[行き先と敵](destinations.md#行き先と敵)で実装した）。
