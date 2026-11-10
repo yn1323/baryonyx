@@ -247,7 +247,12 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(awakening.Branches.Stages[0].Shadow.activeSelf, Is.False);
             Assert.That(awakening.Branches.Stages[1].Shadow.activeSelf, Is.True);
             Assert.That(awakening.Branches.Stages[2].Shadow.activeSelf, Is.False);
-            Assert.That(awakening.Picked.Stage, Is.EqualTo(1));
+            // 枝は中身が見えず元に戻せないため、選んでおかない。押して決めるまで覚醒できない。
+            Assert.That(awakening.Picked, Is.Null);
+            Assert.That(awakening.CostCard.activeSelf, Is.False);
+            Assert.That(awakening.Confirm.interactable, Is.False);
+            awakening.Confirm.onClick.Invoke();
+            Assert.That(awakening.Busy, Is.False);
             awakening.Pick(2, true);
             Assert.That(awakening.Picked.Stage, Is.EqualTo(2));
             Assert.That(awakening.Branches.Stages[2].Card.Selected.activeSelf, Is.True);

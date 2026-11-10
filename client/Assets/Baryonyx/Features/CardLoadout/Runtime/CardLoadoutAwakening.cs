@@ -216,7 +216,12 @@ namespace Baryonyx.CardLoadout
             else
                 ShowTrees(false, false);
             int kept = keep != null ? Array.FindIndex(options, option => Same(option, keep)) : -1;
-            picked = kept >= 0 ? kept : Array.FindIndex(options, option => option != null);
+            // 固有スキルは先頭の覚醒できる段階を選んでおく。カスタムスキルの枝は中身を見せず、覚醒すると
+            // 元に戻せないため、選んでおかない（押して枝を決めるまで「覚醒」を押せない。2026-11-10）。
+            picked =
+                kept >= 0
+                    ? kept
+                    : Array.FindIndex(options, option => option != null && !option.IsSkillCard);
             PaintPicked();
             RefreshCost();
         }
