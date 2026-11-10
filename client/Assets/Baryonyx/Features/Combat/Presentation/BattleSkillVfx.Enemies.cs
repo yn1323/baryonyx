@@ -1,9 +1,26 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace Baryonyx.Combat.Presentation
 {
+    /// <summary>What an enemy's skill does for its own side, as its effect is drawn.</summary>
+    public enum EnemySupport
+    {
+        /// <summary>Block, or a guard put on: the dome of the party's guard.</summary>
+        Guard,
+
+        /// <summary>Healing: the light rising from the floor.</summary>
+        Heal,
+
+        /// <summary>Regen: the green buds spiralling up.</summary>
+        Regen,
+
+        /// <summary>A boost of the attack: the rings of a cry and the rising arrows.</summary>
+        Rouse,
+    }
+
     /// <summary>What an enemy's technique really is, as its blow is drawn.</summary>
     public enum EnemyBlow
     {
@@ -90,6 +107,50 @@ namespace Baryonyx.Combat.Presentation
                 EnemyBlow.Blunt
             ),
         };
+
+        /// <summary>
+        /// Shows what an enemy's skill does for its own side (block, healing, regen, a boost) with
+        /// the effect the party's same deed has, so that what was done is read at a glance and not
+        /// only from a bar or an icon that changed. <paramref name="land"/> runs once, as the
+        /// effect lands (or at its end, when it lands on no one).
+        /// </summary>
+        public IEnumerator PlayEnemySupport(
+            EnemySupport kind,
+            RectTransform caster,
+            IReadOnlyList<RectTransform> targets,
+            Action land
+        )
+        {
+            bool landed = false;
+            BattleHitWeight Land(int index)
+            {
+                if (!landed)
+                {
+                    landed = true;
+                    land?.Invoke();
+                }
+                return BattleHitWeight.Normal;
+            }
+            var hits = new List<BattleSkillHit>();
+            foreach (var target in targets)
+                hits.Add(new BattleSkillHit(target, false, 0));
+            switch (kind)
+            {
+                case EnemySupport.Guard:
+                    yield return Guard(caster, targets, Land);
+                    break;
+                case EnemySupport.Heal:
+                    yield return Heal(caster, targets, Land);
+                    break;
+                case EnemySupport.Regen:
+                    yield return Regen(caster, hits, Land);
+                    break;
+                default:
+                    yield return WarCry(caster, hits, Land);
+                    break;
+            }
+            Land(0);
+        }
 
         /// <summary>
         /// What the technique named <paramref name="skill"/> really is, read from its name; a

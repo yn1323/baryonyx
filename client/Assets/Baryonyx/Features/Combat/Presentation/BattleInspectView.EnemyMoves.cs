@@ -177,7 +177,7 @@ namespace Baryonyx.Combat.Presentation
             if (move.Strikes)
                 yield return Blows(index, move, step);
             if (enemy.Alive)
-                Support(index, move, step.Percent);
+                yield return ShowSupport(index, move, step.Percent);
             if (enemy.Alive && move.Effect != null)
                 UseMoveEffect(index, move.Effect);
             Refresh();
@@ -289,6 +289,51 @@ namespace Baryonyx.Combat.Presentation
             if (aim != EnemyAim.All && aimed.Count == 1)
                 aimed[0] = TargetOf(aimed[0], attacker);
             return aimed;
+        }
+
+        /// <summary>
+        /// The skill's block, healing and boosts with their effect: the party's effect of the same
+        /// deed plays on those it cares for, and the numbers and icons change as it lands. A
+        /// skill that does none of them, or a view without effects, changes them at once.
+        /// </summary>
+        private IEnumerator ShowSupport(int index, EnemyMove move, int percent)
+        {
+            var kind = SupportKindOf(move);
+            var cared = kind.HasValue ? Cared(index, move.Care) : null;
+            if (Vfx == null || cared == null || cared.Count == 0)
+            {
+                Support(index, move, percent);
+                yield break;
+            }
+            var areas = new List<RectTransform>();
+            foreach (int target in cared)
+                areas.Add(Enemies[target].TargetArea);
+            yield return Vfx.PlayEnemySupport(
+                kind.Value,
+                Enemies[index].TargetArea,
+                areas,
+                () => Support(index, move, percent)
+            );
+        }
+
+        /// <summary>
+        /// The effect that tells what <paramref name="move"/> does for the enemy's side: its
+        /// healing first (the HP is what the player watches), then its block or guard, its regen,
+        /// its boost. Null when it does none of them.
+        /// </summary>
+        public static EnemySupport? SupportKindOf(EnemyMove move)
+        {
+            if (move == null)
+                return null;
+            if (move.HealPercent > 0)
+                return EnemySupport.Heal;
+            if (move.BlockPercent > 0 || move.ProtectTurns > 0)
+                return EnemySupport.Guard;
+            if (move.RegenTurns > 0)
+                return EnemySupport.Regen;
+            if (move.AttackUpTurns > 0 || move.PowerUpPercent > 0)
+                return EnemySupport.Rouse;
+            return null;
         }
 
         /// <summary>
