@@ -140,6 +140,11 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(picker.IsOpen, Is.False);
             Assert.That(craft.Special.Single().RowId, Is.EqualTo("mock-w10"));
             Assert.That(craft.DetailQuality.text, Is.Not.EqualTo(before));
+            // 端末の戻るキーは、使う物を選ぶ画面だけを閉じる。合成のパネルは残る。
+            craft.OpenPicker(0);
+            view.PressBack();
+            Assert.That(picker.IsOpen, Is.False);
+            Assert.That(craft.gameObject.activeInHierarchy, Is.True);
             // 暗い所を押すと、替えずに閉じる。
             craft.OpenPicker(0);
             picker.Rows[0].Card.Click();
@@ -453,7 +458,9 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(shop.Crafted.Single().Materials, Is.EqualTo(new[] { "mock-w10" }));
 
             // 品質が1つだけなら選ばせない。
-            var one = craft.Owned.Where(thing => thing.KindId != "iron-sword" || thing.RowId == "mock-w9");
+            var one = craft.Owned.Where(thing =>
+                thing.KindId != "iron-sword" || thing.RowId == "mock-w9"
+            );
             Assert.That(WorkshopCraftView.NeedsChoice(sword, one), Is.False);
         }
 

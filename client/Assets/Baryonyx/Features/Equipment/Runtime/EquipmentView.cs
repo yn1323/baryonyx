@@ -337,8 +337,10 @@ namespace Baryonyx.Equipment
         // パンくずに出す、表示している人の名前。
         private string person;
 
-        // 戻ると、タブを開いた項目（冒険者の一覧か育成の人選び）へ戻る。
-        public bool HandleBack() => TrainingSession.LeavePage(Guide);
+        // 戻ると、タブを開いた項目（冒険者の一覧か育成の人選び）へ戻る。ほかの人の物を付け替えるかを
+        // 確かめる窓が開いていれば、窓だけを閉じる（2026-11-10までは、窓を残して後ろの画面が戻った）。
+        public bool HandleBack() =>
+            (Dialog != null && Dialog.HandleBack()) || TrainingSession.LeavePage(Guide);
 
         public void Render(EquipmentViewState state)
         {

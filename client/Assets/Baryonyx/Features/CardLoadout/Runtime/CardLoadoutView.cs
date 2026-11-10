@@ -494,8 +494,10 @@ namespace Baryonyx.CardLoadout
         private string person;
 
         // 戻ると、タブを開いた項目（冒険者の一覧か育成の人選び）へ戻る。覚醒の演出の間は戻らない。
+        // ほかの人のスキルを付け替えるかを確かめる窓が開いていれば、窓だけを閉じる（選ぶ一覧は残す）。
         public bool HandleBack() =>
             (Awakening != null && Awakening.Busy)
+            || (Dialog != null && Dialog.HandleBack())
             || ClosePicker()
             || TrainingSession.LeavePage(Guide);
 

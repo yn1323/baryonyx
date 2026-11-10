@@ -31,8 +31,24 @@ namespace Baryonyx.Workshop
     /// chosen. When a special material is held in more than one quality, pressing "craft" first
     /// asks which to use (<see cref="Picker"/>).
     /// </summary>
-    public sealed class WorkshopCraftView : GuidePanel, IEditModePreview, IGuideEntryTarget
+    public sealed class WorkshopCraftView
+        : GuidePanel,
+            IEditModePreview,
+            IGuideEntryTarget,
+            IGuideBackHandler
     {
+        /// <summary>
+        /// The device's back key and the back arrow close the screen that picks which material to
+        /// use, and leave the panel only when it is closed.
+        /// </summary>
+        public bool HandleBack()
+        {
+            if (Picker == null || !Picker.IsOpen)
+                return false;
+            Picker.Close();
+            return true;
+        }
+
         public const string LoadFailedMessage = "合成できる物を取得できませんでした";
         public const string FailedMessage = "合成できませんでした";
         public const string Hidden = "？？？";
@@ -580,7 +596,13 @@ namespace Baryonyx.Workshop
             // 名前のすぐ右に☆、2行目に効果、右上に属性。品質は作るまで決まらないため、行には出さない。
             Set(
                 row.Name,
-                ItemText.Heading(recipe.Found ? recipe.Name : Hidden, recipe.Stars, false, default, 1f)
+                ItemText.Heading(
+                    recipe.Found ? recipe.Name : Hidden,
+                    recipe.Stars,
+                    false,
+                    default,
+                    1f
+                )
             );
             Set(
                 row.Detail,
@@ -676,7 +698,9 @@ namespace Baryonyx.Workshop
                 DetailArt.transform.parent.gameObject.SetActive(recipe != null);
             // 特別な材料を選び終えるまでは、出来上がる品質を出さず、効果は×1.00の値にする。
             bool chosen = recipe != null && special.All(piece => piece != null);
-            float multiplier = chosen ? WorkshopCraft.Multiplier(recipe, special) : Quality.MinMultiplier;
+            float multiplier = chosen
+                ? WorkshopCraft.Multiplier(recipe, special)
+                : Quality.MinMultiplier;
             if (recipe != null)
                 LibraryCatalogView.PaintArt(DetailArt, recipe.Entry, recipe.Found, DetailArtBox);
             Show(DetailQuality, chosen ? QualityOf(recipe, special) : "");

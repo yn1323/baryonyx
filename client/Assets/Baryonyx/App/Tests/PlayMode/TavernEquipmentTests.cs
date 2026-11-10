@@ -206,6 +206,13 @@ namespace Baryonyx.Tests.PlayMode
             panel.Dialog.RowButtons[0].onClick.Invoke();
             Assert.That(panel.Dialog.IsShown, Is.False);
             Assert.That(panel.Slots[0].Name.text, Does.StartWith("炎のダガー"));
+            // 端末の戻るキーは、窓だけを閉じる。後ろの装備のタブはそのまま残る。
+            others.Button.onClick.Invoke();
+            Assert.That(panel.Dialog.IsShown, Is.True);
+            view.PressBack();
+            Assert.That(panel.Dialog.IsShown, Is.False);
+            Assert.That(panel.gameObject.activeInHierarchy, Is.True);
+            Assert.That(panel.Slots[0].Name.text, Does.StartWith("炎のダガー"));
             // 変更すると付け替える。自分が付けている物を押したときは確かめない。
             others.Button.onClick.Invoke();
             panel.Dialog.RowButtons[1].onClick.Invoke();
