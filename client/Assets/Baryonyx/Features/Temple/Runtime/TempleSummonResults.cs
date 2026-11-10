@@ -28,6 +28,10 @@ namespace Baryonyx.Temple
         public Button Veil;
         public Button Close;
         public Button Again;
+
+        // 「もう一度」の左の払うルーンと、足りないときの「ルーンが 〇〇 足りません」。
+        public TMP_Text AgainPrice;
+        public TMP_Text AgainMissing;
         public TMP_Text Title;
         public ItemTile[] Cards = Array.Empty<ItemTile>();
 
@@ -55,6 +59,23 @@ namespace Baryonyx.Temple
                 if (Cards[i] != null && Cards[i].Card != null)
                     Cards[i].Card.Clicked += () => ShowDetail(index);
             }
+        }
+
+        /// <summary>
+        /// Writes what "again" costs beside it. When the runes cannot pay for it, greys the button
+        /// out and tells how many are missing (doc/rules/ui-design.md#決めるボタン); while the
+        /// balance is not read, it stays pressable and the server decides.
+        /// </summary>
+        public void ShowAgainPrice(int price, long? balance)
+        {
+            bool shortOf = balance is { } runes && runes < price;
+            Set(AgainPrice, price.ToString("N0"));
+            Set(AgainMissing, shortOf ? UiText.RunesShort(price - balance.Value) : "");
+            if (Again == null)
+                return;
+            Again.interactable = !shortOf;
+            if (Again.TryGetComponent(out GlassCard card))
+                card.Interactable = !shortOf;
         }
 
         /// <summary>Opens the small detail window on the result at <paramref name="index"/>.</summary>
@@ -190,6 +211,8 @@ namespace Baryonyx.Temple
                     break;
             }
             Show(results);
+            // 停止中も「もう一度」の値段を読めるよう、引いた回数の値段を出しておく。
+            ShowAgainPrice(TempleSummon.PriceOf(count), null);
         }
     }
 }

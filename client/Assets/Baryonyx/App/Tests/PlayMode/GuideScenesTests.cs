@@ -263,6 +263,10 @@ namespace Baryonyx.Tests.PlayMode
                 ),
                 Is.True
             );
+            // 「もう一度」の横に、同じ回数の値段を出す。
+            Assert.That(results.AgainPrice.text, Is.EqualTo(TempleSummon.TenPrice.ToString("N0")));
+            Assert.That(results.Again.interactable, Is.True);
+            Assert.That(results.AgainMissing.text, Is.Empty);
             // 札を押すと詳しい窓を出す。「もどる」は詳しい窓だけを閉じ、もう一度で結果の窓を閉じる。
             results.Cards[0].Card.Click();
             Assert.That(results.DetailWindow.IsOpen, Is.True);
@@ -281,6 +285,20 @@ namespace Baryonyx.Tests.PlayMode
             yield return SceneTests.WaitForTask(summon.SummonTask);
             Assert.That(guide.Presenter.Left, Is.False);
             Assert.That(results.Shown.Count, Is.EqualTo(1));
+            Assert.That(
+                results.AgainPrice.text,
+                Is.EqualTo(TempleSummon.SinglePrice.ToString("N0"))
+            );
+            // 足りなくなったら「もう一度」を押せなくし、足りない数を出す。
+            long before = RuneBalance.Known.Value;
+            RuneBalance.Set(100);
+            Assert.That(results.Again.interactable, Is.False);
+            Assert.That(
+                results.AgainMissing.text,
+                Is.EqualTo(UiText.RunesShort(TempleSummon.SinglePrice - 100))
+            );
+            RuneBalance.Set(before);
+            Assert.That(results.Again.interactable, Is.True);
             results.Veil.onClick.Invoke();
             Assert.That(results.IsOpen, Is.False);
 

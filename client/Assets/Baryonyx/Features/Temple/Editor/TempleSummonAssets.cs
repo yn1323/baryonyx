@@ -49,6 +49,10 @@ namespace Baryonyx.Temple.Editor
         private const float CardGap = 24f;
         private const float CardArtBox = 128f;
 
+        // 「もう一度」の左の、払うルーンの幅と、ボタンとの間。
+        private const float AgainPriceWidth = 240f;
+        private const float AgainPriceGap = 24f;
+
         // 確率の窓。割合の札と、出る物の一覧を上下に流す。
         private const float RatesHeight = 960f;
         private const float HeadingHeight = 72f;
@@ -155,7 +159,12 @@ namespace Baryonyx.Temple.Editor
             return panel.gameObject;
         }
 
-        private static TMP_Text MissingLabel(RectTransform layer, string name, float x, float top) =>
+        private static TMP_Text MissingLabel(
+            RectTransform layer,
+            string name,
+            float x,
+            float top
+        ) =>
             Layout.Text(
                 layer,
                 name,
@@ -367,11 +376,7 @@ namespace Baryonyx.Temple.Editor
                         cell,
                         EntryHeight
                     );
-                    var inside = GlassCardAssets.Plaque(
-                        box,
-                        pattern: false,
-                        bare: UiLook.Lineless
-                    );
+                    var inside = GlassCardAssets.Plaque(box, pattern: false, bare: UiLook.Lineless);
                     string stars =
                         entry.Stars > 0
                             ? $" <color=#{ColorUtility.ToHtmlStringRGB(UiPalette.Gold)}>{new string('★', entry.Stars)}</color>"
@@ -444,6 +449,31 @@ namespace Baryonyx.Temple.Editor
                     primary: true
                 )
                 .Button;
+            // 「もう一度」の左に払うルーンを出す。足りないときは、その左に足りない数を赤で出す。
+            float againLeft = WindowWidth - Pad - ConfirmWidth;
+            float againTop = WindowHeight - 24f - ConfirmHeight;
+            results.AgainPrice = Frame.RuneAmount(
+                modal,
+                "AgainPrice",
+                againLeft - AgainPriceGap - AgainPriceWidth,
+                againTop,
+                AgainPriceWidth,
+                ConfirmHeight,
+                46f,
+                TextAnchor.MiddleRight
+            );
+            results.AgainMissing = Layout.Text(
+                modal,
+                "AgainMissing",
+                "",
+                UiType.Small,
+                UiPalette.Fall,
+                TextAlignmentOptions.Right,
+                Pad,
+                againTop,
+                againLeft - AgainPriceGap * 2f - AgainPriceWidth - Pad,
+                ConfirmHeight
+            );
 
             // 札を押すと出す、詳しい面と同じ中身の小さな窓。結果の窓の上に重ねる。
             foreach (var card in cards)

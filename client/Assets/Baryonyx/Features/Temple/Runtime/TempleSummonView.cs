@@ -75,9 +75,17 @@ namespace Baryonyx.Temple
         {
             var balance = RuneBalance.Known;
             ShowPrice(Single, SingleMissing, TempleSummon.PriceOf(1), balance);
-            bool tenShort = ShowPrice(Ten, TenMissing, TempleSummon.PriceOf(TempleSummon.TenCount), balance);
+            bool tenShort = ShowPrice(
+                Ten,
+                TenMissing,
+                TempleSummon.PriceOf(TempleSummon.TenCount),
+                balance
+            );
             if (Guarantee != null)
                 Guarantee.SetActive(!tenShort);
+            // 結果の窓の「もう一度」は、直前と同じ回数を引く。その値段を横に出す。
+            if (Results != null)
+                Results.ShowAgainPrice(TempleSummon.PriceOf(lastCount), balance);
         }
 
         private static bool ShowPrice(Button button, TMP_Text missing, int price, long? balance)
@@ -165,7 +173,10 @@ namespace Baryonyx.Temple
                 Results.Hide();
                 await PresentAsync(pull);
                 if (this != null && isActiveAndEnabled)
+                {
                     Results.Show(pull.Results);
+                    RefreshPrices();
+                }
             }
             catch (OperationCanceledException) { }
             catch (Exception exception)
