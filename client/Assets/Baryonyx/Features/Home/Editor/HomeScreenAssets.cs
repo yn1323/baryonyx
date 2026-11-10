@@ -825,12 +825,17 @@ namespace Baryonyx.Home.Editor
 
         // Both use the shared notice band at the top middle (doc/rules/ui-design.md): the
         // result of a tap that granted nothing, and the mock buttons' "coming soon".
+        // ホームは上端の左に歩数の板、右に所持ルーンと設定があり、いつもの高さ（104）の帯は長い文で
+        // それらに重なる（2026-11-10、「ルーンが足りないか、冒険の状態が変わりました」がACTの数字と日付に重なった）。
+        // 歩数の板の下へ下げて出す。
+        private const float NoticeTop = 384f;
+
         private static void BuildToast(RectTransform root, HomeView view)
         {
-            var notice = NoticeBandAssets.Build(root, "Notice");
+            var notice = NoticeBandAssets.Build(root, "Notice", NoticeTop);
             view.Notice = notice.Group;
             view.NoticeLabel = notice.Label;
-            var toast = NoticeBandAssets.Build(root, "Toast");
+            var toast = NoticeBandAssets.Build(root, "Toast", NoticeTop);
             view.Toast = toast.Group;
             view.ToastLabel = toast.Label;
         }

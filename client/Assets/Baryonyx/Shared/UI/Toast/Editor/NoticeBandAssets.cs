@@ -24,16 +24,22 @@ namespace Baryonyx.UI.Editor
 
         /// <summary>
         /// Adds the band under <paramref name="parent"/>, which should span the whole screen.
-        /// Call it inside a <see cref="Baryonyx.Editor.UI.UiBuild"/> session.
+        /// Call it inside a <see cref="Baryonyx.Editor.UI.UiBuild"/> session. <paramref name="top"/>
+        /// moves the band's center down from the screen's top where the usual height would cover
+        /// what the screen always shows there (home).
         /// </summary>
-        public static NoticeBand Build(RectTransform parent, string name = "Notice")
+        public static NoticeBand Build(
+            RectTransform parent,
+            string name = "Notice",
+            float top = Top
+        )
         {
             TranslucentTextPanelAssets.EnsurePrefab();
             var instance = InstantiatePrefab(TranslucentTextPanelAssets.PrefabPath, name, parent);
             var rect = (RectTransform)instance.transform;
             rect.anchorMin = rect.anchorMax = new Vector2(0.5f, 1f);
             rect.pivot = new Vector2(0.5f, 0.5f);
-            rect.anchoredPosition = new Vector2(0, -Top);
+            rect.anchoredPosition = new Vector2(0, -top);
             rect.sizeDelta = new Vector2(1100, 80);
 
             var panel = instance.GetComponent<TranslucentTextPanel>();
