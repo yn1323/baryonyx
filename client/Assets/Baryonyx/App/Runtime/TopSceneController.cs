@@ -128,7 +128,10 @@ namespace Baryonyx.App
         public static string PromptFor(HealthStartupPhase phase, string failureMessage) =>
             phase switch
             {
-                HealthStartupPhase.Ready => StartText,
+                // 歩数だけ同期できなかったときは、その理由を添えて、歩数なしで始められるようにする。
+                HealthStartupPhase.Ready => string.IsNullOrEmpty(failureMessage)
+                    ? StartText
+                    : $"{failureMessage}  {StartText}",
                 HealthStartupPhase.Failed => $"{failureMessage}  {RetryText}",
                 _ => LoadingText,
             };
@@ -160,7 +163,7 @@ namespace Baryonyx.App
                         HealthStartupPhase.Failed,
                         HealthStartupFlow.NetworkFailedMessage
                     ),
-                    3 => PromptFor(HealthStartupPhase.Failed, HealthStartupFlow.StepsFailedMessage),
+                    3 => PromptFor(HealthStartupPhase.Ready, HealthStartupFlow.StepsFailedMessage),
                     _ => PromptFor(HealthStartupPhase.Loading, ""),
                 }
             );

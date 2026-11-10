@@ -146,6 +146,9 @@ namespace Baryonyx.Tests.PlayMode
             private readonly LocalHealthStepServer store = new();
 
             public bool Fail { get; set; }
+
+            // 歩数の保存だけを失敗させる（セッションは確保できる）。
+            public bool FailSaves { get; set; }
             public int Saves { get; private set; }
 
             public Task ConnectAsync(CancellationToken token)
@@ -157,6 +160,8 @@ namespace Baryonyx.Tests.PlayMode
             public Task SaveAsync(HealthDay[] days, CancellationToken token)
             {
                 ThrowIfFailing();
+                if (FailSaves)
+                    throw new InvalidOperationException("The steps cannot be saved.");
                 Saves++;
                 return store.SaveAsync(days, token);
             }
@@ -173,7 +178,10 @@ namespace Baryonyx.Tests.PlayMode
                 return store.ReadRunesAsync(token);
             }
 
-            public Task<HealthRuneClaim> SaveAndClaimAsync(HealthDay[] days, CancellationToken token)
+            public Task<HealthRuneClaim> SaveAndClaimAsync(
+                HealthDay[] days,
+                CancellationToken token
+            )
             {
                 ThrowIfFailing();
                 Saves++;

@@ -21,6 +21,9 @@ namespace Baryonyx.Health
         private bool synced;
         private bool awaitingSettings;
 
+        // ゲストのセッションを確保できたか。確保できていれば、歩数の読み取り・保存の失敗では開始を止めない。
+        private bool connected;
+
         public HealthStartupFlow(HealthStepLink link) =>
             this.link = link ?? throw new ArgumentNullException(nameof(link));
 
@@ -29,6 +32,14 @@ namespace Baryonyx.Health
         public bool Dismissed { get; private set; }
         public const string StepsFailedMessage = "歩数を読み取れませんでした";
         public const string NetworkFailedMessage = "通信に失敗しました";
+        public const string StepsUnsyncedMessage = "歩数を同期できませんでした";
+
+        /// <summary>
+        /// Whether the steps could not be read or saved this launch although the session is
+        /// there. The game starts without them (the prompt tells so with <see cref="FailureMessage"/>),
+        /// and the ACT panel at home syncs them again.
+        /// </summary>
+        public bool StepsSkipped { get; private set; }
 
         public string FailureMessage { get; private set; } = "";
 
@@ -39,6 +50,7 @@ namespace Baryonyx.Health
                 async () =>
                 {
                     await link.ConnectAsync(token);
+                    connected = true;
                     await CheckAndSyncAsync(token);
                 },
                 token
@@ -110,7 +122,8 @@ namespace Baryonyx.Health
             }
             if (status == HealthLinkStatus.Linked)
             {
-                if (synced)
+                // 同期済みか、歩数なしで始めると決まっていれば、同期し直さずに進む。
+                if (synced || StepsSkipped)
                     return true;
                 await Run(() => SyncAsync(token), token);
                 return Phase == HealthStartupPhase.Ready;
@@ -147,7 +160,7 @@ namespace Baryonyx.Health
             }
             if (result == HealthSyncStatus.ReadFailed)
             {
-                Fail(StepsFailedMessage);
+                Skip(StepsFailedMessage);
                 return;
             }
             synced = true;
@@ -160,6 +173,7 @@ namespace Baryonyx.Health
                 return;
             busy = true;
             FailureMessage = "";
+            StepsSkipped = false;
             Show(HealthStartupPhase.Loading, LinkStatus);
             try
             {
@@ -171,8 +185,13 @@ namespace Baryonyx.Health
             }
             catch (Exception)
             {
-                // 通信・端末のエラー内容は画面へ出さず、再試行できる状態にする。
-                Fail(NetworkFailedMessage);
+                // 通信・端末のエラー内容は画面へ出さない。サーバーへつながらなければ遊べないため再試行させ、
+                // つながったあとの歩数の読み取り・保存の失敗では、歩数なしで始められるようにする
+                // （運動しないと遊べないゲームにはしない。2026-11-10までは、直るまでホームへ入れなかった）。
+                if (connected)
+                    Skip(StepsUnsyncedMessage);
+                else
+                    Fail(NetworkFailedMessage);
             }
             finally
             {
@@ -185,6 +204,14 @@ namespace Baryonyx.Health
         {
             FailureMessage = message;
             Show(HealthStartupPhase.Failed, LinkStatus);
+        }
+
+        // 歩数なしで始められる状態にし、開始の案内に理由を添える。
+        private void Skip(string message)
+        {
+            FailureMessage = message;
+            StepsSkipped = true;
+            Show(HealthStartupPhase.Ready, LinkStatus);
         }
 
         private void Show(HealthStartupPhase phase, HealthLinkStatus status)

@@ -56,35 +56,31 @@ namespace Baryonyx.Tests.EditMode
         }
 
         [Test]
-        public async Task AFailedSaveAfterConnectingCanBeRetried()
+        public async Task AFailedSaveAfterConnectingStartsWithoutTheSteps()
         {
+            // セッションは確保できたので、歩数を保存できなくても始められる。開始のときに同期し直さない
+            // （ホームのACTパネルが同期し直す）。
             server.FailSaves = true;
             await flow.StartAsync(CancellationToken.None);
             Assert.That(server.Connects, Is.EqualTo(1));
-            Assert.That(flow.Phase, Is.EqualTo(HealthStartupPhase.Failed));
-            Assert.That(flow.FailureMessage, Is.EqualTo("通信に失敗しました"));
-            Assert.That(await flow.ConfirmStartAsync(CancellationToken.None), Is.False);
-
-            server.FailSaves = false;
-            await flow.RetryAsync(CancellationToken.None);
             Assert.That(flow.Phase, Is.EqualTo(HealthStartupPhase.Ready));
-            Assert.That(server.Saves, Is.EqualTo(1));
+            Assert.That(flow.StepsSkipped, Is.True);
+            Assert.That(flow.FailureMessage, Is.EqualTo("歩数を同期できませんでした"));
+            Assert.That(await flow.ConfirmStartAsync(CancellationToken.None), Is.True);
+            Assert.That(server.Saves, Is.Zero);
         }
 
         [Test]
-        public async Task AHealthConnectErrorShowsNoDetailsAndCanBeRetried()
+        public async Task AHealthConnectErrorShowsNoDetailsAndStartsWithoutTheSteps()
         {
             provider.Fail = true;
             await flow.StartAsync(CancellationToken.None);
-            // 端末のエラー内容は画面へ出さず、通信の失敗と同じ案内で再試行させる。
-            Assert.That(flow.Phase, Is.EqualTo(HealthStartupPhase.Failed));
-            Assert.That(flow.FailureMessage, Is.EqualTo("通信に失敗しました"));
-            Assert.That(server.Saves, Is.Zero);
-
-            provider.Fail = false;
-            await flow.RetryAsync(CancellationToken.None);
+            // 端末のエラー内容は画面へ出さず、歩数なしで始められるようにする。
             Assert.That(flow.Phase, Is.EqualTo(HealthStartupPhase.Ready));
-            Assert.That(server.Saves, Is.EqualTo(1));
+            Assert.That(flow.StepsSkipped, Is.True);
+            Assert.That(flow.FailureMessage, Is.EqualTo("歩数を同期できませんでした"));
+            Assert.That(server.Saves, Is.Zero);
+            Assert.That(await flow.ConfirmStartAsync(CancellationToken.None), Is.True);
         }
 
         [Test]
@@ -98,12 +94,16 @@ namespace Baryonyx.Tests.EditMode
         }
 
         [Test]
-        public async Task ReadFailureIsRetryableWithItsOwnMessage()
+        public async Task ReadFailureStartsWithoutTheStepsWithItsOwnMessage()
         {
             provider.ReadStatus = HealthReadStatus.Failed;
             await flow.StartAsync(CancellationToken.None);
-            Assert.That(flow.Phase, Is.EqualTo(HealthStartupPhase.Failed));
+            Assert.That(flow.Phase, Is.EqualTo(HealthStartupPhase.Ready));
+            Assert.That(flow.StepsSkipped, Is.True);
             Assert.That(flow.FailureMessage, Is.EqualTo("歩数を読み取れませんでした"));
+            Assert.That(server.Saves, Is.Zero);
+            // 開始のときに読み直さず、そのまま進む。
+            Assert.That(await flow.ConfirmStartAsync(CancellationToken.None), Is.True);
             Assert.That(server.Saves, Is.Zero);
         }
 
@@ -112,7 +112,7 @@ namespace Baryonyx.Tests.EditMode
         {
             provider.TodayStepsStatus = "failed";
             await flow.StartAsync(CancellationToken.None);
-            Assert.That(flow.Phase, Is.EqualTo(HealthStartupPhase.Failed));
+            Assert.That(flow.Phase, Is.EqualTo(HealthStartupPhase.Ready));
             Assert.That(flow.FailureMessage, Is.EqualTo("歩数を読み取れませんでした"));
             Assert.That(server.Saves, Is.Zero);
         }

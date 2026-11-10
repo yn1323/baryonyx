@@ -178,6 +178,29 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(services.Server.Saves, Is.EqualTo(1));
         }
 
+        // 歩数だけ同期できなかったときは、理由を添えた「TAP TO START」で、歩数なしのままホームへ進める
+        // （運動しないと遊べないゲームにはしない。2026-11-10までは、直るまで再試行しかできなかった）。
+        [UnityTest]
+        public IEnumerator TopStartsWithoutTheStepsWhenOnlyTheirSyncFails()
+        {
+            services.Server.FailSaves = true;
+            var controller = default(TopSceneController);
+            yield return LoadTop(value => controller = value);
+            yield return WaitForInputReady(controller);
+            yield return WaitForPhase(controller, HealthStartupPhase.Ready);
+            Assert.That(controller.Flow.StepsSkipped, Is.True);
+            Assert.That(
+                controller.PromptText,
+                Does.Contain(HealthStartupFlow.StepsUnsyncedMessage)
+            );
+            Assert.That(controller.PromptText, Does.Contain(TopSceneController.StartText));
+            Assert.That(services.Server.Saves, Is.Zero);
+
+            controller.ContinueButton.onClick.Invoke();
+            yield return WaitForHome();
+            Assert.That(SceneManager.GetSceneByPath(HomeScenePath).isLoaded, Is.True);
+        }
+
         [UnityTest]
         public IEnumerator UnlinkedTopShowsTheLinkModalAndLinksFromIt()
         {
