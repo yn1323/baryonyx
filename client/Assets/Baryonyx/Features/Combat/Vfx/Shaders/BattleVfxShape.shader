@@ -12,7 +12,8 @@
 //   炎の塊・炎の舌・火球を冷えた先端の煤の覆いを持つ炎、光の柱を塵で見える光の柱（2で火柱）、
 //   ドームと泡を結界の膜として描く。
 //   稲妻は値で層を選ぶ（1 芯、2 通り道と枝・先駆放電、3 にじみ、4 残像）。
-//   斬撃の弧と光線は2以上で層だけを描く（2 にじみ、3 芯、4 残像）。亀裂は2で踏まれて割れる床、3で割れるガラス。
+//   斬撃の弧と光線は2以上で層だけを描く（2 にじみ、3 芯、4 残像）。光線の5は、刃が空間に残す暗い切れ目。
+//   亀裂は2で踏まれて割れる床、3で割れるガラス。氷の棘の2は、床から突き上がる岩（光らない）。
 //   煙は2以上で雷雲の層になる（2 盛り上がり、3 暗い本体、4 ちぎれ雲、5 中の稲光の光）。
 //   雷雲の層は明るさの倍率を全体に掛けず、中の稲光の強さとして使う。
 // - どの形も板の端の手前で0にし、光と覆いがある所だけに8ビットの1段に満たないノイズ（ディザ）を足して、
@@ -254,7 +255,10 @@ Shader "Baryonyx/Combat/Battle Vfx Shape"
                 else
                     shape = ShapeFrost(s);
                 #elif defined(_SHAPE_ICESPIKE)
-                if (_Rich > 0.5)
+                // 2 is a slab of rock heaved out of the floor, on the spike's outline.
+                if (_Rich > 1.5)
+                    shape = ShapeRockSpike(s);
+                else if (_Rich > 0.5)
                     shape = ShapeClearIceSpike(s);
                 else
                     shape = ShapeIceSpike(s);
@@ -266,8 +270,11 @@ Shader "Baryonyx/Combat/Battle Vfx Shape"
                 #elif defined(_SHAPE_CUTINSTREAKS)
                 shape = ShapeCutInStreaks(s);
                 #elif defined(_SHAPE_BEAM)
-                // A shaft's layers on boards of their own (2 halo, 3 core, 4 afterimage).
-                if (_Rich > 1.5)
+                // A shaft's layers on boards of their own (2 halo, 3 core, 4 afterimage), and
+                // the dark slit a blade leaves (5).
+                if (_Rich > 4.5)
+                    shape = ShapeBeamCut(s);
+                else if (_Rich > 1.5)
                     shape = half4(BeamLayer(s, _Rich), 0);
                 else if (_Rich > 0.5)
                     shape = ShapeRichBeam(s);

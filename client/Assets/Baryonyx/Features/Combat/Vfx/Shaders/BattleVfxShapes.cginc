@@ -1417,6 +1417,53 @@ half4 ShapeClearIceSpike(ShapeIn s)
     return half4(body * a + light * keep, a);
 }
 
+// A slab of rock heaved up out of the floor, standing on its root (at 3% of the height), as
+// broken stone looks: broad at the root and narrower above, its top broken off on a slant, not
+// drawn to a point; a chipped outline; a lit face and a shadowed one meeting on a rough ridge;
+// slanted strata and grain; dark hairline cracks along the chunks it later breaks into; a paler
+// edge where its lit face and its broken top catch the light; dark fresh earth at its root. It
+// does not glow. It crumbles chunk by chunk from the top down as rem falls. The tint is the rock.
+half4 ShapeRockSpike(ShapeIn s)
+{
+    SpikeShape g = SpikeAt(s);
+    float2 o = SeedOffset(s.seed);
+    float aa = max(s.aa, 0.006);
+    float base = 0.66 + 0.26 * Hash1(1.0, s.seed);
+    float top = base * (0.3 + 0.28 * Hash1(8.0, s.seed));
+    float lean = (Hash1(2.0, s.seed) - 0.5) * 0.3;
+    float left = lerp(-base, lean - top, g.t);
+    float right = lerp(base, lean + top, g.t);
+    float side = min(s.p.x - left, right - s.p.x);
+    // Its top is broken off on a slant, higher on one side.
+    float slant = (Hash1(9.0, s.seed) - 0.5) * 1.1;
+    float crown = 0.9 - 0.3 * abs(slant) + slant * (s.p.x - lean)
+        + (Noise(float3(s.p.x * 7.0, o)) - 0.5) * 0.12;
+    float under = (crown - s.p.y) * 0.55;
+    // Its outline is chipped: bitten in and out along its height.
+    float bite = (Fbm4(float2(s.p.y * 3.5, s.p.x * 1.2) + o, o.y) - 0.5) * 0.22
+        + (Noise(float3(s.p.y * 11.0, o.yx)) - 0.5) * 0.05;
+    float d = min(side + bite * (right - left) * 0.5, under);
+    float inside = smoothstep(-aa, aa, d) * step(-0.94, s.p.y);
+    float ridge = lerp(g.splitRoot, lean + (Hash1(3.0, s.seed) - 0.5) * top, g.t)
+        + (Noise(float3(s.p.y * 6.0, o.yx)) - 0.5) * 0.1;
+    float lit = smoothstep(ridge + 0.03, ridge - 0.03, s.p.x);
+    float strata = Fbm4(float2((s.p.y + s.p.x * 0.45) * 6.0, s.p.x * 1.4) + o, o.x);
+    float grain = Fbm4(s.p * float2(13.0, 9.0) + o.yx, o.y);
+    float face = lerp(0.36, 1.0, lit) * (0.72 + 0.4 * strata) * (0.86 + 0.28 * grain);
+    float rim = (1 - smoothstep(aa, aa * 3.5, d)) * inside * (0.35 + 0.65 * lit);
+    float border;
+    float2 cell = VoronoiCellBorder(SpikeCells(s), border);
+    float bw = max(fwidth(border), 1e-4);
+    float crack = (1 - smoothstep(bw * 0.6, bw * 2.2, border)) * inside;
+    // Each chunk is a little lighter or darker than the next, as broken faces are.
+    float chunk = 0.86 + 0.28 * Hash(float3(cell, s.seed * 2.0));
+    float root = lerp(0.4, 1.0, smoothstep(0.0, 0.2, g.t));
+    half3 rock = s.tint * (face * chunk * root * (1 - 0.6 * crack) + rim * 0.5);
+    float keep = SpikeChunkKeep(cell, s, g, s.rem);
+    half a = inside * keep;
+    return half4(rock * a, a);
+}
+
 // An ice lance of clear ice flying along +x: a deep body the background shows through, thicker
 // toward its rims; hard bright rims and ridge; a white-hot tip; and a cold glow around the head
 // and down the shaft that is only added light.
@@ -2070,6 +2117,27 @@ half3 BeamLayer(ShapeIn s, float part)
         col = s.tint * strands * 1.2;
     }
     return col * drawn * BoardFade(float2(s.p.x * 0.98, s.p.y));
+}
+
+// The slit a blade leaves across the air for an instant, along +x (a beam's part 5): a dark
+// hairline that opens to a thin lens (k, 0 shut to 1 open, never thinner than a pixel), with a
+// lip of light on each side; the dark covers what is behind it, so the cut reads on any ground,
+// light or dark. It is drawn whole (the blade has already passed) and worn away as the beam is.
+half4 ShapeBeamCut(ShapeIn s)
+{
+    float x01 = s.p.x * 0.5 + 0.5;
+    float y = s.p.y;
+    float px = max(fwidth(y), 1e-4);
+    float taper = pow(saturate(sin(Pi * x01)), 0.3);
+    float open = saturate(s.k);
+    float halfGap = max(0.55 * open * taper, px * 0.9);
+    float gap = (1 - smoothstep(halfGap - px, halfGap + px, abs(y))) * step(0.004, taper);
+    float lips = Line(abs(y) - halfGap, 0.05 * taper * (0.3 + open), px) * taper;
+    float keep = Keep(x01 * 0.5 + Noise(float3(s.p * 4.0, s.seed * 5.0)) * 0.5, s.rem, 0.08);
+    float fade = BoardFade(float2(s.p.x * 0.98, s.p.y));
+    half a = gap * 0.92 * keep * fade;
+    half3 col = lerp(s.tint, 1, 0.8) * lips * 1.5 * keep * fade;
+    return half4(col, a);
 }
 
 // Ice freezing over the floor, seen low from the side (the board is flattened to lie on it, so

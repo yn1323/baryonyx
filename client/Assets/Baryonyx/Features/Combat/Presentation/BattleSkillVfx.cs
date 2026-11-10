@@ -1010,6 +1010,16 @@ namespace Baryonyx.Combat.Presentation
                     14
                 );
                 Arc(backLight, at, -18f, false, color, 1.1f);
+                // The line the blade passed along, through the enemy and a little beyond.
+                Cut(
+                    from + new Vector2(40f, 10f),
+                    at + (at - from).normalized * 220f,
+                    color,
+                    0.6f,
+                    0.05f,
+                    -1f,
+                    0.36f
+                );
                 Sparks(at, BladeSpark, 16, 0.9f, Vector2.right);
                 Illuminate(at, color, 0.6f, 320f, 0.03f, 0.2f, spill: false);
                 DustKick(feet, Vector2.right, 200f);
@@ -1022,6 +1032,7 @@ namespace Baryonyx.Combat.Presentation
 
                 var weight = land(i);
                 Cross(at, color, weight);
+                Punch(at, 0.02f);
                 // The blade bites: a hit stop and a jolt, a brief glint off the metal, a spray of
                 // sparks and their light on the enemy and the floor.
                 HitStop(Weighted(0.076f, weight));
@@ -1102,7 +1113,7 @@ namespace Baryonyx.Combat.Presentation
                     BattleVfxShape.Fireball,
                     from,
                     at,
-                    new Vector2(280f, 280f),
+                    new Vector2(330f, 330f),
                     new Vector2(0.85f, 0.5f),
                     0.26f,
                     90f,
@@ -1111,6 +1122,10 @@ namespace Baryonyx.Combat.Presentation
                 );
                 var weight = land(i);
                 Explosion(targets[i], at, weight);
+                // The blast leaves the floor burning both ways for a moment, and throws embers.
+                GroundFire(Feet(FrontLayer, targets[i]), 280f, 0.5f);
+                EmberBurst(at, 24, 1f);
+                Punch(at, 0.025f);
                 Impact(
                     targets[i],
                     at,
@@ -1147,6 +1162,8 @@ namespace Baryonyx.Combat.Presentation
             for (int i = 0; i < targets.Count; i++)
             {
                 var at = Center(FrontLayer, targets[i]);
+                // Too fast to follow: the line of its flight is left in the cold air.
+                Cut(from, at, IceLight, 0.6f, 0.06f, -1f, 0.5f);
                 yield return Missile(
                     BattleVfxShape.IceSpear,
                     from,
@@ -1167,6 +1184,8 @@ namespace Baryonyx.Combat.Presentation
                 ClearIce(targets[i], at, weight);
                 // The air chilled by the ice sinks and spills along the floor as it breaks.
                 ColdMist(Feet(FrontLayer, targets[i]), 300f, 1.3f, 0.7f, IceBreakAt - 0.1f);
+                // When the spikes break, their dust hangs in the air and twinkles.
+                StartCoroutine(After(IceBreakAt, () => DiamondDust(at, 26, 170f, 1.2f)));
                 if (big)
                     Punch(at, 0.035f);
             }
@@ -1202,6 +1221,8 @@ namespace Baryonyx.Combat.Presentation
                 Bolt(feet);
                 yield return Wait(StormLeader);
                 var weight = land(i);
+                GroundArcs(feet, color, 5, 210f);
+                Punch(at, 0.02f);
                 StartCoroutine(StrokeLights(new Vector2(at.x, at.y + 260f), feet));
                 FloorMark(
                     BattleVfxShape.Scorch,
@@ -1677,7 +1698,8 @@ namespace Baryonyx.Combat.Presentation
             float angle,
             bool mirror,
             Color color,
-            float scale
+            float scale,
+            float flat = 1f
         )
         {
             float seed = UnityEngine.Random.value;
@@ -1702,7 +1724,8 @@ namespace Baryonyx.Combat.Presentation
                         // Every layer moves and is drawn in on the body's clock.
                         float stroke = Mathf.Min(1f, t / ArcDraw);
                         float grow = 0.75f + 0.35f * EaseOut(Mathf.Min(1f, stroke * 2.5f));
-                        s.Holder.localScale = new Vector3(grow, grow, 1f);
+                        // Flattened after it is turned, so a flat arc lies as the floor does.
+                        s.Holder.localScale = new Vector3(grow, grow * flat, 1f);
                         s.Image.rectTransform.localEulerAngles = new Vector3(
                             0f,
                             0f,

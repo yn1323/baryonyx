@@ -217,6 +217,119 @@ namespace Baryonyx.Combat.Presentation
         }
 
         /// <summary>
+        /// Ice dust left in the air round <paramref name="at"/> when ice breaks, as real ice
+        /// dust shows: tiny crystals that catch the light and twinkle as they turn, sinking
+        /// slowly over about <paramref name="seconds"/>, spread <paramref name="spread"/> px.
+        /// Light only: no mist.
+        /// </summary>
+        private void DiamondDust(Vector2 at, int count, float spread, float seconds)
+        {
+            Spray(
+                frontLight,
+                at,
+                new Burst
+                {
+                    Shape = BattleVfxShape.Sparkle,
+                    Bright = CoreBright,
+                    From = new Color(0.85f, 0.95f, 1f, 0.95f),
+                    To = new Color(1f, 1f, 1f, 0f),
+                    Speed = new Vector2(10f, 60f),
+                    Direction = -90f,
+                    Spread = 70f,
+                    Life = new Vector2(0.6f, 1f) * seconds,
+                    Size = new Vector2(9f, 20f),
+                    Gravity = 30f,
+                    Drag = 0.5f,
+                    Spin = 90f,
+                    Area = spread,
+                    Delay = new Vector2(0f, seconds * 0.4f),
+                },
+                count
+            );
+        }
+
+        /// <summary>
+        /// Fire running out along the floor both ways from <paramref name="feet"/>, out to
+        /// <paramref name="reach"/> px, as a blast leaves the ground burning for a moment: low
+        /// tongues of flame that catch one after another, the nearest first and tallest, those
+        /// on the near side drawn before the characters; they burn about
+        /// <paramref name="seconds"/> and the floor under them glows and cools.
+        /// </summary>
+        private void GroundFire(Vector2 feet, float reach, float seconds)
+        {
+            int each = Mathf.Clamp(Mathf.RoundToInt(reach / 70f), 2, 7);
+            for (int side = -1; side <= 1; side += 2)
+            for (int n = 0; n < each; n++)
+            {
+                float far = (n + UnityEngine.Random.Range(0.3f, 1f)) / each;
+                var at =
+                    feet + new Vector2(side * reach * far, UnityEngine.Random.Range(-14f, 14f));
+                // The flame fills about a third of its board, so the board is far bigger.
+                float size = Mathf.Lerp(230f, 130f, far) * UnityEngine.Random.Range(0.8f, 1.2f);
+                float delay = far * 0.16f;
+                Spray(
+                    at.y < feet.y ? frontLight : backLight,
+                    at,
+                    new Burst
+                    {
+                        Shape = BattleVfxShape.FlameTongue,
+                        // Standing on the floor: never turned.
+                        Level = true,
+                        Bright = ErodeBright,
+                        // Orange from the first, not white-hot: a low fire, not a blast.
+                        From = new Color(1f, 0.6f, 0.18f),
+                        To = new Color(0.85f, 0.16f, 0.03f),
+                        // Rooted where they catch: they only lick up a little as they burn.
+                        Speed = new Vector2(20f, 70f),
+                        Direction = 90f,
+                        Spread = 14f,
+                        Life = new Vector2(0.7f, 1.1f) * seconds,
+                        Size = new Vector2(0.9f, 1.3f) * size,
+                        Grow = 0.4f,
+                        Shrink = 1.1f,
+                        Gravity = -60f,
+                        Drag = 1f,
+                        Hold = 0.3f,
+                        Delay = new Vector2(delay, delay + seconds * 0.4f),
+                        Area = 8f,
+                    },
+                    1
+                );
+            }
+            HotFloor(feet, reach * 2.2f, seconds * 0.6f, seconds * 0.8f, FireColor(0.3f));
+        }
+
+        /// <summary>
+        /// Embers thrown out of a blast at <paramref name="at"/>, as burning bits fly: bright
+        /// streaks flung up and out, <paramref name="force"/> hard, slowed by the air, falling
+        /// back and cooling from yellow to red as they go.
+        /// </summary>
+        private void EmberBurst(Vector2 at, int count, float force)
+        {
+            Spray(
+                frontLight,
+                at,
+                new Burst
+                {
+                    Shape = BattleVfxShape.Streak,
+                    Bright = CoreBright,
+                    From = new Color(1f, 0.92f, 0.6f),
+                    To = new Color(1f, 0.3f, 0.06f, 0f),
+                    Speed = new Vector2(500f, 1500f) * force,
+                    Direction = 90f,
+                    Spread = 150f,
+                    Life = new Vector2(0.5f, 1.3f),
+                    Size = new Vector2(6f, 11f),
+                    Stretch = 0.035f,
+                    Gravity = 900f,
+                    Drag = 2.2f,
+                    Area = 30f,
+                },
+                count
+            );
+        }
+
+        /// <summary>
         /// A floor glowing hot round <paramref name="feet"/>, <paramref name="size"/> wide, as
         /// embers and burning ground do: a pool of fire light lying on the floor that flickers,
         /// held for <paramref name="hold"/> and cooling to a dull red over <paramref name="fade"/>.
@@ -491,6 +604,121 @@ namespace Baryonyx.Combat.Presentation
                 },
                 5
             );
+        }
+
+        // A slab of rock (the shader's ice spike, look 2): the stage's stone, lit by the dusk.
+        private const float RockLook = 2f;
+        private static readonly Color Bedrock = new(0.56f, 0.34f, 0.25f);
+
+        /// <summary>
+        /// A slab of rock thrust up out of the floor at <paramref name="root"/>,
+        /// <paramref name="size"/> big and leaning <paramref name="lean"/> degrees, as the ground
+        /// heaves when it splits: it breaks through in under a tenth of a second, a little too
+        /// far, and settles, heavy; chips are shaken off it and dust rolls from its foot; it
+        /// stands <paramref name="stays"/> s, then crumbles chunk by chunk from its tip down while
+        /// lumps of it fall. It is solid and does not glow. One <paramref name="front"/> of the
+        /// characters is drawn before them, the others behind.
+        /// </summary>
+        private void Upheave(Vector2 root, Vector2 size, float lean, float stays, bool front)
+        {
+            var layer = front ? frontSmoke : backLight;
+            if (layer == null)
+                return;
+            var slab = Spawn(
+                layer,
+                BattleVfxShape.IceSpike,
+                root,
+                size,
+                Bedrock,
+                new Vector2(0.5f, 0.03f)
+            );
+            slab.Image.material = RichMaterialOf(BattleVfxShape.IceSpike, RockLook);
+            slab.Image.rectTransform.localEulerAngles = new Vector3(0f, 0f, lean);
+            const float rise = 0.09f;
+            const float crumble = 0.45f;
+            float total = stays + crumble;
+            Animate(
+                slab,
+                total,
+                (s, k) =>
+                {
+                    float up = Mathf.Clamp01(k * total / rise);
+                    s.Holder.localScale = new Vector3(
+                        0.8f + 0.2f * up,
+                        Mathf.Max(0.02f, BackOut(up)),
+                        1f
+                    );
+                    Show(s, Bedrock, k, Eaten(k, stays / total));
+                }
+            );
+            float weight = Mathf.Clamp(size.y / 300f, 0.3f, 1.4f);
+            var chips = new Burst
+            {
+                Shape = BattleVfxShape.Chip,
+                From = new Color(0.44f, 0.35f, 0.28f),
+                To = new Color(0.3f, 0.25f, 0.2f),
+                Speed = new Vector2(260f, 820f) * weight,
+                Direction = 90f + lean,
+                Spread = 80f,
+                Life = new Vector2(0.4f, 0.8f),
+                Size = new Vector2(6f, 16f),
+                Gravity = 1900f,
+                Drag = 0.5f,
+                Spin = 720f,
+                Area = size.x * 0.3f,
+            };
+            Spray(
+                front ? frontLight : backLight,
+                root + Vector2.up * 10f,
+                chips,
+                Mathf.RoundToInt(7 * weight)
+            );
+            // Dust rolling from its foot, low, both ways.
+            Spray(
+                front ? frontSmoke : backSmoke,
+                root + Vector2.up * 6f,
+                new Burst
+                {
+                    Shape = BattleVfxShape.Smoke,
+                    Material = RichMaterialOf(BattleVfxShape.Smoke),
+                    Bright = 0.45f,
+                    From = new Color(KickedDust.r, KickedDust.g, KickedDust.b, 0.6f),
+                    To = new Color(KickedDust.r, KickedDust.g, KickedDust.b, 0.6f),
+                    Speed = new Vector2(60f, 240f) * weight,
+                    Direction = 0f,
+                    Spread = 180f,
+                    Life = new Vector2(0.5f, 0.9f),
+                    Size = new Vector2(0.7f, 1.1f) * size.x,
+                    Aspect = 0.45f,
+                    Grow = 0.4f,
+                    Shrink = 1.6f,
+                    Drag = 3f,
+                    Level = true,
+                    Hold = 0.3f,
+                    Area = size.x * 0.2f,
+                },
+                2
+            );
+            // As it crumbles its lumps fall, the higher the later.
+            chips.Speed = new Vector2(20f, 160f);
+            chips.Spread = 180f;
+            chips.Life = new Vector2(0.35f, 0.6f);
+            chips.Size = new Vector2(10f, 26f) * Mathf.Lerp(0.7f, 1.2f, weight / 1.4f);
+            chips.Spin = 300f;
+            chips.Area = size.x * 0.25f;
+            var axis = (Vector2)(Quaternion.Euler(0f, 0f, lean) * Vector2.up);
+            for (int n = 0; n < 3; n++)
+            {
+                float high = 0.85f - n * 0.25f;
+                float when = stays + crumble * (0.1f + 0.28f * n);
+                chips.Delay = new Vector2(when, when + 0.1f);
+                Spray(
+                    front ? frontLight : backLight,
+                    root + axis * (size.y * 0.9f * high),
+                    chips,
+                    Mathf.Max(1, Mathf.RoundToInt(3 * weight))
+                );
+            }
         }
 
         /// <summary>
