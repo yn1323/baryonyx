@@ -39,6 +39,11 @@ namespace Baryonyx.Tests.PlayMode
             UiSounds.Install();
             Assert.That(UiSounds.Installed, Is.Not.Null, "UiSoundBank.asset is not set up.");
             Assert.That(UiSounds.Installed.gameObject.scene.name, Is.EqualTo("DontDestroyOnLoad"));
+            Assert.That(
+                Object.FindObjectsByType<AudioListener>(FindObjectsSortMode.None),
+                Has.Length.EqualTo(1),
+                "The game hears through the one listener beside the UI sounds."
+            );
             var button = New("Button").AddComponent<Button>();
             yield return null;
             Assert.That(button.GetComponent<UiClickSound>(), Is.Not.Null);

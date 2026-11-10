@@ -61,6 +61,8 @@ namespace Baryonyx.Audio
             installed.source = root.AddComponent<AudioSource>();
             installed.source.playOnAwake = false;
             installed.source.spatialBlend = 0f;
+            // 音を聞く部品は、ゲームにこの1つだけ置く。シーンとカメラには置かない（無いと何も鳴らない）。
+            root.AddComponent<AudioListener>();
             DontDestroyOnLoad(root);
         }
 
