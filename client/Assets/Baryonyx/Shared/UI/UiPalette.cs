@@ -37,6 +37,10 @@ namespace Baryonyx.UI
         public static readonly Color PlateGlass = new(0.62f, 0.72f, 1f, 0.05f);
         public static readonly Color PlateScene = new(0.035f, 0.05f, 0.12f, 0.82f);
 
+        // 報酬の札の板。明るいマスや敵の真上に出るため、下がほぼ透けない濃さにする
+        // （2026-11-10、探索の宝箱の札の下からマスの台が透けて、名前と品質の字に重なった）。
+        public static readonly Color PlateReward = new(0.035f, 0.05f, 0.12f, 0.95f);
+
         // 金の細い線。区切り（見出しの下・ヘッダーの下）は淡く、ヘッダーの仕切りは少し濃く、
         // 面の仕切りの2本線と窓の縁はいちばん濃い。
         public static readonly Color LineFaint = new(1f, 0.86f, 0.59f, 0.43f);

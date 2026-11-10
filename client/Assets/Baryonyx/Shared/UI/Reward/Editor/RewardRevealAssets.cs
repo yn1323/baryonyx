@@ -35,7 +35,7 @@ namespace Baryonyx.UI.Editor
             var content = GlassCardAssets.Plaque(
                 plate,
                 pattern: false,
-                fill: GlassCardAssets.SceneFillColor
+                fill: UiPalette.PlateReward
             );
             // 中身のある札は押すと詳しい窓を開く（RewardReveal.DetailWindow）。押せるかは札ごとに替える。
             var tap = AddButton(plate, AddImage(plate, Color.clear, true));
@@ -94,7 +94,15 @@ namespace Baryonyx.UI.Editor
             tagRect.sizeDelta = new Vector2(260f, 44f);
             reveal.TagBack = Sliced(tagRect, UiArt.CapsulePath, Gold);
             reveal.TagBack.raycastTarget = false;
-            reveal.Tag = Label(tagRect, "Label", "", 24, new Color(0.08f, 0.07f, 0.12f), TextAlignmentOptions.Center, shadow: false);
+            reveal.Tag = Label(
+                tagRect,
+                "Label",
+                "",
+                24,
+                new Color(0.08f, 0.07f, 0.12f),
+                TextAlignmentOptions.Center,
+                shadow: false
+            );
             Stretch(reveal.Tag.rectTransform);
             tagRect.gameObject.SetActive(false);
 

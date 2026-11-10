@@ -40,6 +40,9 @@ namespace Baryonyx.Adventure.Editor
         // 札の板。キラキラが映えるよう、場面の札より少し濃くする。
         private static readonly Color CardFill = new(0.035f, 0.05f, 0.12f, 0.9f);
 
+        // 札の文字の下に敷く、縁へ向かって薄れる暗いぼかし。
+        private static readonly Color TextShade = new(0.008f, 0.012f, 0.04f, 0.82f);
+
         // 列の中の、足元の高さと、強化の札の大きさ・中心の高さ（列の中心から）。
         private const float FloorY = 70f;
         private static readonly Vector2 CardSize = new(352, 150);
@@ -103,6 +106,13 @@ namespace Baryonyx.Adventure.Editor
                     frames.Add(
                         Layer<CardFrameFoil>("Frame", rim.transform, CardFoilAssets.FrameMaterial())
                     );
+                    // キラキラの粒と輪は板の全面に出るため、文字の下だけを暗くぼかして読めるようにする
+                    // （2026-11-10、虹の札の「物攻 +30%」が粒に埋もれた）。縁のきらめきは残す。
+                    var shade = Rect("TextShade", content);
+                    Stretch(shade);
+                    shade.offsetMin = new Vector2(8, 4);
+                    shade.offsetMax = new Vector2(-8, -4);
+                    SpriteImage(shade, UiArt.SoftSpotPath, TextShade).raycastTarget = false;
                     var text = Label(
                         content,
                         "Text",
