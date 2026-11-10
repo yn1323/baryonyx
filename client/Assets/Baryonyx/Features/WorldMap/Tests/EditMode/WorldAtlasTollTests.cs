@@ -34,6 +34,43 @@ namespace Baryonyx.Tests.EditMode
             WorldAtlasSession.Register(layout);
         }
 
+        // 残高がほかの画面で変わるサーバー。
+        private sealed class WalletSource : IWorldAtlasSource
+        {
+            public int Runes;
+
+            public Task<WorldAtlasState> LoadAsync(CancellationToken token) =>
+                Task.FromResult(new WorldAtlasState(Array.Empty<(string, string)>(), Runes));
+
+            public Task<int> OpenAsync(
+                string requestId,
+                string map,
+                string square,
+                bool free,
+                CancellationToken token
+            ) => Task.FromResult(Runes);
+        }
+
+        // 地図を開き直したときは、ホームで受け取ったルーンや商会で使ったルーンを残高へ入れる
+        // （2026-11-10までは、アプリを開いている間に1回しか読まなかった）。
+        [Test]
+        public async Task TheMapOpenedAgainReadsTheRunesChangedElsewhere()
+        {
+            var wallet = new WalletSource { Runes = 100 };
+            WorldAtlasSession.Source = wallet;
+            await WorldAtlasSession.LoadAsync(CancellationToken.None);
+            Assert.That(WorldAtlasSession.Runes, Is.EqualTo(100));
+
+            wallet.Runes = 900;
+            await WorldAtlasSession.LoadAsync(CancellationToken.None);
+            Assert.That(WorldAtlasSession.Runes, Is.EqualTo(100), "Load reads once.");
+            int told = 0;
+            WorldAtlasSession.Changed += () => told++;
+            await WorldAtlasSession.RefreshAsync(CancellationToken.None);
+            Assert.That(WorldAtlasSession.Runes, Is.EqualTo(900));
+            Assert.That(told, Is.GreaterThan(0), "The balance on the map is drawn again.");
+        }
+
         // 1回ずつ待ってから答えるサーバー。決めたマスの支払いだけを断る。
         private sealed class SlowSource : IWorldAtlasSource
         {
@@ -42,9 +79,11 @@ namespace Baryonyx.Tests.EditMode
             public readonly List<string> Sent = new();
             public readonly List<bool> Free = new();
 
-            public SlowSource(int runes) => memory = new WorldAtlasMemorySource(runes, (map, square) => 300);
+            public SlowSource(int runes) =>
+                memory = new WorldAtlasMemorySource(runes, (map, square) => 300);
 
-            public Task<WorldAtlasState> LoadAsync(CancellationToken token) => memory.LoadAsync(token);
+            public Task<WorldAtlasState> LoadAsync(CancellationToken token) =>
+                memory.LoadAsync(token);
 
             public async Task<int> OpenAsync(
                 string requestId,
@@ -85,7 +124,13 @@ namespace Baryonyx.Tests.EditMode
         {
             var graph = Diamond();
             var states = graph.StatesOf(new[] { "a" });
-            var prices = new Dictionary<string, int> { ["b"] = 900, ["c"] = 200, ["d"] = 200, ["e"] = 200 };
+            var prices = new Dictionary<string, int>
+            {
+                ["b"] = 900,
+                ["c"] = 200,
+                ["d"] = 200,
+                ["e"] = 200,
+            };
             int Cost(int i) => prices.TryGetValue(graph.Nodes[i].Id, out int p) ? p : 0;
             Assert.That(
                 Ids(graph, graph.CheapestPathTo(0, graph.IndexOf("d"), states, Cost)),
@@ -130,7 +175,11 @@ namespace Baryonyx.Tests.EditMode
 
             await SaveQueue.IdleAsync(default);
             Assert.That(server.Sent, Is.EqualTo(new[] { "world-18" }));
-            Assert.That(WorldAtlasSession.Runes, Is.EqualTo(200), "The server's balance is the one shown.");
+            Assert.That(
+                WorldAtlasSession.Runes,
+                Is.EqualTo(200),
+                "The server's balance is the one shown."
+            );
             Assert.That(WorldAtlasSession.IsOpened("world", "world-18"), Is.True);
         }
 
@@ -190,7 +239,13 @@ namespace Baryonyx.Tests.EditMode
             Assert.That(WorldAtlasSession.Runes, Is.EqualTo(700));
             Assert.That(
                 refused,
-                Is.EquivalentTo(new[] { ("world-19", WorldAtlasSession.FailedMessage), ("world-20", (string)null) }),
+                Is.EquivalentTo(
+                    new[]
+                    {
+                        ("world-19", WorldAtlasSession.FailedMessage),
+                        ("world-20", (string)null),
+                    }
+                ),
                 "The first refusal is told; the one taken back after it is not told again."
             );
         }

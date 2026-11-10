@@ -141,8 +141,21 @@ namespace Baryonyx.WorldMap
         {
             if (Loaded)
                 return Task.CompletedTask;
-            return loading ??= ReadAsync(token);
+            return Read(token);
         }
+
+        // 読んでいる途中なら、その読み込みを待つ。終わった読み込みは使い回さない（待たずに答える保存先では、
+        // 読み終えてから loading に入るため、null に戻しただけでは古い結果が残る）。
+        private static Task Read(CancellationToken token) =>
+            loading is { IsCompleted: false } ? loading : loading = ReadAsync(token);
+
+        /// <summary>
+        /// Reads the squares and the balance again, for the map opened once more: the runes may
+        /// have changed elsewhere meanwhile (claimed at home, spent at the shop or the temple),
+        /// and the map checks the price against the balance it holds. The first read when nothing
+        /// is read yet.
+        /// </summary>
+        public static Task RefreshAsync(CancellationToken token) => Read(token);
 
         private static async Task ReadAsync(CancellationToken token)
         {

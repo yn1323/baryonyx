@@ -81,12 +81,13 @@ namespace Baryonyx.WorldMap
                 current.ShowNotice(message);
         }
 
-        // ルーンを払って開けたマスと残高を読み、読めたら開けたマスとして地図へ足す。
+        // ルーンを払って開けたマスと残高を読み、読めたら開けたマスとして地図へ足す。地図を開くたびに読み直す
+        // （ホームで受け取ったルーンや、商会・神殿で使ったルーンを残高へ入れるため。前に読んだ内容は先に出ている）。
         private async void LoadPaid()
         {
             try
             {
-                await WorldAtlasSession.LoadAsync(destroyCancellationToken);
+                await WorldAtlasSession.RefreshAsync(destroyCancellationToken);
             }
             catch (OperationCanceledException)
             {
