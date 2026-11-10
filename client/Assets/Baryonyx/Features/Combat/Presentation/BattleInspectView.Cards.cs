@@ -24,7 +24,7 @@ namespace Baryonyx.Combat.Presentation
         // 凍結が解けて、次に動くまでは凍結にかからない敵。
         private readonly HashSet<int> thawed = new();
 
-        /// <summary>Today's ACT, for the cards that grow with it (a mock value; the battle has no step data yet).</summary>
+        /// <summary>Today's ACT, for the cards that grow with it. The adventure's battles set the steps saved on the server (BattleBootstrap); this value stays for the scene opened alone and the debug rooms.</summary>
         [Min(0)]
         public int TodayAct = 6000;
 
@@ -679,7 +679,6 @@ namespace Baryonyx.Combat.Presentation
             RefreshBlock(ally);
             return damage - absorbed;
         }
-
 
         /// <summary>The colour a status's name shows in.</summary>
         public static Color StatusColor(CardStatus status) =>

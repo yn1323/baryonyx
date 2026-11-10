@@ -42,7 +42,11 @@ namespace Baryonyx.Health
     // 歩数の同期とルーンへの変換の結果。同期できなかったとき（Status が Synced 以外）は Claim と Today を使わない。
     public readonly struct HealthSyncClaim
     {
-        public HealthSyncClaim(HealthSyncStatus status, HealthRuneClaim claim, HealthStepReading today)
+        public HealthSyncClaim(
+            HealthSyncStatus status,
+            HealthRuneClaim claim,
+            HealthStepReading today
+        )
         {
             Status = status;
             Claim = claim;
@@ -146,6 +150,7 @@ namespace Baryonyx.Health
             if (status != HealthSyncStatus.Synced)
                 return status;
             await server.SaveAsync(days, token);
+            TodayOf(days);
             return HealthSyncStatus.Synced;
         }
 
@@ -190,9 +195,23 @@ namespace Baryonyx.Health
             var date = today().Date;
             string day = date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
             var match = days?.FirstOrDefault(value => value != null && value.day == day);
-            return match != null && match.hasValue
-                ? new HealthStepReading(date, true, match.steps)
-                : new HealthStepReading(date, false, 0);
+            known =
+                match != null && match.hasValue
+                    ? new HealthStepReading(date, true, match.steps)
+                    : new HealthStepReading(date, false, 0);
+            return known;
         }
+
+        // いちばん最近に知った今日の歩数（サーバーに保存した値）。
+        private HealthStepReading known;
+
+        /// <summary>
+        /// Today's ACT as last saved to or read from the server, for the battle's cards that grow with
+        /// the steps. 0 until a day is read, and once the day (朝4時区切り) has turned.
+        /// </summary>
+        public int TodayAct =>
+            known.HasValue && known.Day == today().Date
+                ? (int)Math.Min(int.MaxValue, known.Steps)
+                : 0;
     }
 }

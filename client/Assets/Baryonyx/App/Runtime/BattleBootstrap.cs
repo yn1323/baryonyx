@@ -155,6 +155,10 @@ namespace Baryonyx.App
         {
             if (transition != null)
                 transition.HoldReveal();
+            // [歩み]のカードとパッシブは、サーバーに保存済みの今日の歩数で効き目が変わる。
+            // 単体で開いた戦闘とデバッグルームは、ここを通らずPrefabの仮の値のままにする。
+            if (GameServices.Current?.Health is { } health)
+                battle.TodayAct = health.TodayAct;
             PartyTask = UsePartyAsync();
             StartCoroutine(RevealWhenPartyRead());
         }

@@ -242,6 +242,20 @@ namespace Baryonyx.Tests.EditMode
         }
 
         [Test]
+        public async Task TheBattleGetsTodaysSavedStepsUntilTheDayTurns()
+        {
+            var now = Today;
+            var walked = new HealthStepLink(provider, server, store, () => now);
+            Assert.That(walked.TodayAct, Is.Zero, "Nothing is known before a day is read.");
+
+            await walked.SyncAsync(CancellationToken.None);
+            Assert.That(walked.TodayAct, Is.EqualTo(1006));
+
+            now = Today.AddDays(1);
+            Assert.That(walked.TodayAct, Is.Zero, "Yesterday's steps do not count for today.");
+        }
+
+        [Test]
         public void EveryLinkStatusHasModalText()
         {
             foreach (HealthLinkStatus status in Enum.GetValues(typeof(HealthLinkStatus)))
