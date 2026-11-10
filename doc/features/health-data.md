@@ -29,6 +29,7 @@ Google認証の契約とUMoth接続（[Account/Runtime](../../client/Assets/Bary
 2026-09-27の企画見直しで、ゲームが扱う運動データを歩数だけにし、Health Connectの権限も歩数の読み取りだけとした（[運動データとルーン換算](exercise-rewards.md)）。
 起動時の同期は歩数だけを要求して読むが、[Androidライブラリのマニフェスト](../../client/Assets/Plugins/Android/BaryonyxHealth.androidlib/AndroidManifest.xml)は16種類（歩数、体重、体脂肪率、身長、血圧、心拍、安静時心拍、酸素飽和度、呼吸数、体温、血糖値、睡眠、距離、活動時消費カロリー、総消費カロリー、運動記録）の読み取り権限を宣言したままである。
 宣言と追加項目の読み取り処理を減らす作業は未着手である。
+Health Connectから開く「健康データの利用について」（`HealthRationaleActivity`）の文は、2026-11-10に今の動作へ合わせた（読むのは7日分の歩数だけ、サーバーへ送って保存し、ルーンへの換算と日々の歩数の表示に使う）。それまでは、削除した歩数画面のころの「サーバーへ送信せず保存もしない」「体重・血圧なども読み取る」のままだった。
 
 ## Editor・PCでのプレビュー
 

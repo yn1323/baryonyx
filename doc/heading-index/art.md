@@ -58,12 +58,12 @@
 
 ## [art/hd2d-stage/light-fire.md](../art/hd2d-stage/light-fire.md)
 
-14KB・82行
+15KB・83行
 
 - 8: # 3Dの舞台：光と炎、実装との対応
 - 12: ## 光と炎
-- 42: ## 実装との対応
-- 69: ## 未決事項
+- 43: ## 実装との対応
+- 70: ## 未決事項
 
 ## [art/hd2d-stage/stage-view.md](../art/hd2d-stage/stage-view.md)
 

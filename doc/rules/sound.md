@@ -42,7 +42,7 @@ updated: 2026-11-02
 
 | 仕組み | 内容 |
 |---|---|
-| [UiSounds](../../client/Assets/Baryonyx/Shared/Audio/UI/UiSounds.cs) | ゲームの開始時に1つ置き、シーンをまたいで残す。画面に現れた `Button` と `Toggle` に `UiClickSound` を付けるため、画面ごとの変更は要らない |
+| [UiSounds](../../client/Assets/Baryonyx/Shared/Audio/UI/UiSounds.cs) | ゲームの開始時に1つ置き、シーンをまたいで残す。画面に現れた `Button` と `Toggle` に `UiClickSound` を付けるため、画面ごとの変更は要らない。音を聞く部品（`AudioListener`）もここに1つだけ持つ。シーンとカメラには置かない（2026-11-10まではどこにも無く、音が鳴っていなかった） |
 | [GlassCard](../../client/Assets/Baryonyx/Shared/UI/GlassCard/GlassCard.cs) | 長押しのあとを押したことにしないため、自分で鳴らす |
 | [UiSoundBank](../../client/Assets/Baryonyx/Shared/Audio/UI/UiSoundBank.cs) | 音と音量を持つ。ビルドの間だけ Preloaded Assets に入れ（`UiSoundBuildStep`）、ゲームの開始時に読み込まれるようにする。Editorでは置き場所から読む |
 | [UiSoundAssets](../../client/Assets/Baryonyx/Shared/Audio/UI/Editor/UiSoundAssets.cs) | `Baryonyx > Audio > Create UI Sound Assets` で、UIの音の取り込み設定（[Unityの取り込み設定](#unityの取り込み設定)の1秒前後までの効果音）と `UiSoundBank.asset` を作り直す |

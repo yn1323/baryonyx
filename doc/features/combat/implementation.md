@@ -101,6 +101,6 @@ updated: 2026-11-02
 2026-10-25に、[会心の一撃](rules.md#会心の一撃)と[状態異常のかかりやすさ](rules.md#状態異常のかかりやすさ)を戦闘に入れた。
 敵の会心と幸運は、[敵の定義](../../catalog/enemies/README.md)のLv100の値を [CombatEnemyStats](../../../client/Assets/Baryonyx/Features/Combat/Runtime/CombatEnemyStats.cs) に写して使う。
 式は [CombatFormula](../../../client/Assets/Baryonyx/Features/Combat/Runtime/CombatFormula.cs)、乱数は同じファイルの `BattleOdds` が持つ。テストでは `BattleOdds` を、会心しない・状態が必ず付く形に固定する。
-[歩み]のカードと歩み手の加護が使う今日のACTは、戦闘ではまだ歩数を読まず、仮の値6,000（`BattleInspectView` の `TodayAct`）を使う。
+[歩み]のカードと歩み手の加護が使う今日のACTは、サーバーに保存済みの今日の歩数である（2026-11-10から。[スキルの山札](../screens/battle-deck.md)）。単体で開いた戦闘とデバッグルームだけ、仮の値6,000（`BattleInspectView` の `TodayAct`）を使う。
 
 戦闘画面のモック・戦闘の背景・デバッグルームの実装の入口は、[画面一覧の実装との対応](../screens/implementation.md#実装との対応)にある。
