@@ -29,6 +29,11 @@ namespace Baryonyx.WorldMap
         public const string ReturnChoice = "地図へ戻る";
         public const string MenuTitle = "街道のメニュー";
         public const string MenuBody = "地図へ戻ると、このマスには後で挑み直せる。";
+
+        // 入れ子の地図の戦闘は、マスに初めて止まったときにだけ開く。地図へ戻ると、もう戦えない。
+        public const string OnceDefeatBody = "地図へ戻ると、このマスの魔物とはもう戦えない。";
+        public const string OnceMenuTitle = "戦闘のメニュー";
+        public const string OnceMenuBody = "地図へ戻ると、このマスの魔物とはもう戦えない。";
         public const string StayChoice = AdventureTexts.GoOnChoice;
 
         private readonly BattleInspectView battle;
@@ -37,6 +42,7 @@ namespace Baryonyx.WorldMap
         private readonly Func<bool> retry;
         private readonly Func<Task<bool>> clear;
         private readonly Action left;
+        private readonly bool fightsAgain;
         private readonly CancellationTokenSource lifetime = new();
         private bool busy;
         private bool disposed;
@@ -58,13 +64,15 @@ namespace Baryonyx.WorldMap
                 () => WorldMapSession.MoveAsync(squareId, clear: true),
                 toMap,
                 retry,
-                () => WorldMapSession.Battle = null
+                () => WorldMapSession.Battle = null,
+                fightsAgain: true
             ) { }
 
         /// <summary>
         /// A battle of <paramref name="encounter"/>: on a win, <paramref name="clear"/> saves the
         /// square before going back to the map, and <paramref name="left"/> runs once the map is
-        /// on its way.
+        /// on its way. <paramref name="fightsAgain"/> tells whether the square can be fought again
+        /// from the map, which the words of the defeat and of the menu follow.
         /// </summary>
         public WorldMapBattleFlow(
             BattleInspectView battle,
@@ -74,7 +82,8 @@ namespace Baryonyx.WorldMap
             Func<Task<bool>> clear,
             Func<bool> toMap,
             Func<bool> retry,
-            Action left
+            Action left,
+            bool fightsAgain = false
         )
         {
             this.battle = battle != null ? battle : throw new ArgumentNullException(nameof(battle));
@@ -84,6 +93,7 @@ namespace Baryonyx.WorldMap
             this.retry = retry ?? throw new ArgumentNullException(nameof(retry));
             this.clear = clear ?? throw new ArgumentNullException(nameof(clear));
             this.left = left;
+            this.fightsAgain = fightsAgain;
             Encounter = encounter ?? throw new ArgumentNullException(nameof(encounter));
             SquareId = squareId;
             Gate = Encounter.Enemies.Kinds.Count > 2 && Encounter.Enemies.Kinds[2] != null;
@@ -177,7 +187,7 @@ namespace Baryonyx.WorldMap
                 return;
             Dialog.Show(
                 DefeatTitle,
-                DefeatBody,
+                DefeatText,
                 null,
                 null,
                 new DialogChoice(RetryChoice, Retry),
@@ -204,13 +214,22 @@ namespace Baryonyx.WorldMap
             }
         }
 
+        /// <summary>The words under the defeat's title.</summary>
+        public string DefeatText => fightsAgain ? DefeatBody : OnceDefeatBody;
+
+        /// <summary>The title of the battle's menu.</summary>
+        public string MenuTitleText => fightsAgain ? MenuTitle : OnceMenuTitle;
+
+        /// <summary>The words of the battle's menu.</summary>
+        public string MenuText => fightsAgain ? MenuBody : OnceMenuBody;
+
         private void OpenMenu()
         {
             if (busy || Leaving || Dialog.IsShown)
                 return;
             Dialog.Show(
-                MenuTitle,
-                MenuBody,
+                MenuTitleText,
+                MenuText,
                 null,
                 Dialog.Hide,
                 new DialogChoice(ReturnChoice, GoMap),

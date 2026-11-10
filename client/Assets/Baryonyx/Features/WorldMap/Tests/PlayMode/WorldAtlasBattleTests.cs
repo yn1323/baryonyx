@@ -66,6 +66,19 @@ namespace Baryonyx.Tests.PlayMode
                 "The battle did not get ready."
             );
             Assert.That(bootstrap.WorldMapFlow, Is.Not.Null);
+            // マスの戦闘の窓は初めて止まったときにだけ開くため、後で挑み直せるとは言わない。
+            Assert.That(
+                bootstrap.WorldMapFlow.DefeatText,
+                Is.EqualTo(WorldMapBattleFlow.OnceDefeatBody)
+            );
+            Assert.That(
+                bootstrap.WorldMapFlow.MenuText,
+                Is.EqualTo(WorldMapBattleFlow.OnceMenuBody)
+            );
+            Assert.That(
+                bootstrap.WorldMapFlow.MenuTitleText,
+                Is.EqualTo(WorldMapBattleFlow.OnceMenuTitle)
+            );
             var kinds = pending.Encounter.Enemies.Kinds;
             for (int i = 0; i < kinds.Count; i++)
                 if (kinds[i] != null)
