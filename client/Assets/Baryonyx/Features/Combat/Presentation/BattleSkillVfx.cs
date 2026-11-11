@@ -1009,7 +1009,7 @@ namespace Baryonyx.Combat.Presentation
                     },
                     14
                 );
-                Arc(backLight, at, -18f, false, color, 1.1f);
+                Arc(backLight, at, -18f, false, color, 1.1f, followed: true);
                 // The line the blade passed along, through the enemy and a little beyond.
                 Cut(
                     from + new Vector2(40f, 10f),
@@ -1025,13 +1025,21 @@ namespace Baryonyx.Combat.Presentation
                 DustKick(feet, Vector2.right, 200f);
                 Shake(0.18f, Vector2.right);
                 yield return Wait(0.08f);
-                Arc(frontLight, at + new Vector2(10f, -16f), 14f, true, color, 0.95f);
+                Arc(
+                    frontLight,
+                    at + new Vector2(10f, -16f),
+                    14f,
+                    true,
+                    color,
+                    0.95f,
+                    followed: true
+                );
                 Sparks(at, BladeSpark, 16, 0.9f, Vector2.left);
                 Shake(0.18f, Vector2.left);
                 yield return Wait(0.08f);
 
                 var weight = land(i);
-                Cross(at, color, weight);
+                Cross(at, color, weight, followed: true);
                 Punch(at, 0.02f);
                 // The blade bites: a hit stop and a jolt, a brief glint off the metal, a spray of
                 // sparks and their light on the enemy and the floor.
@@ -1699,7 +1707,8 @@ namespace Baryonyx.Combat.Presentation
             bool mirror,
             Color color,
             float scale,
-            float flat = 1f
+            float flat = 1f,
+            bool followed = false
         )
         {
             float seed = UnityEngine.Random.value;
@@ -1708,10 +1717,11 @@ namespace Baryonyx.Combat.Presentation
             void Layer(
                 float look,
                 float life,
-                Func<float, (Color tint, float eaten, float bright)> show
+                Func<float, (Color tint, float eaten, float bright)> show,
+                float room = 1f
             )
             {
-                var shot = Spawn(layer, BattleVfxShape.SlashArc, at, size, Color.clear);
+                var shot = Spawn(layer, BattleVfxShape.SlashArc, at, size * room, Color.clear);
                 shot.Seed = seed;
                 shot.Image.material = RichMaterialOf(BattleVfxShape.SlashArc, look);
                 shot.Image.rectTransform.localScale = new Vector3(mirror ? -1f : 1f, 1f, 1f);
@@ -1746,22 +1756,65 @@ namespace Baryonyx.Combat.Presentation
                     return (haze, Eaten(t / 0.36f, 0.4f), 1f);
                 }
             );
-            Layer(
-                ArcTrace,
-                0.5f,
-                t =>
-                {
-                    var trace = new Color(
-                        color.r,
-                        color.g,
-                        color.b,
-                        0.8f * Envelope(t, 0.04f, 0.04f, 0.14f, 0.5f)
-                    );
-                    return (trace, Eaten(t / 0.5f, 0.2f), 1f);
-                }
-            );
+            // Followed, its afterimages are soft ribbons and the air it cuts shows as thin lines
+            // outside its edge, there while the blade passes and gone soon after.
+            if (followed)
+            {
+                // Adding these boards leaves the random numbers of what follows as they were.
+                var random = UnityEngine.Random.state;
+                Layer(
+                    ArcPressure,
+                    0.55f,
+                    t =>
+                    {
+                        var rush = new Color(
+                            color.r,
+                            color.g,
+                            color.b,
+                            0.85f * Envelope(t, 0.02f, 0.05f, 0.18f, 0.55f)
+                        );
+                        return (rush, Eaten(t / 0.55f, 0.25f), 1f);
+                    },
+                    SlashSubRoom
+                );
+                Layer(
+                    ArcSoftTrace,
+                    0.8f,
+                    t =>
+                    {
+                        var trace = new Color(
+                            color.r,
+                            color.g,
+                            color.b,
+                            0.9f * Envelope(t, 0.04f, 0.04f, 0.24f, 0.8f)
+                        );
+                        return (trace, Eaten(t / 0.8f, 0.2f), 1f);
+                    },
+                    SlashSubRoom
+                );
+                UnityEngine.Random.state = random;
+            }
+            else
+                Layer(
+                    ArcTrace,
+                    0.5f,
+                    t =>
+                    {
+                        var trace = new Color(
+                            color.r,
+                            color.g,
+                            color.b,
+                            0.8f * Envelope(t, 0.04f, 0.04f, 0.14f, 0.5f)
+                        );
+                        return (trace, Eaten(t / 0.5f, 0.2f), 1f);
+                    }
+                );
             // It keeps its colour and burns white only along its edge.
-            Layer(ArcBody, ArcDraw, t => (color, Eaten(t / ArcDraw, 0.3f), CoreBright));
+            Layer(
+                followed ? ArcBare : ArcBody,
+                ArcDraw,
+                t => (color, Eaten(t / ArcDraw, 0.3f), CoreBright)
+            );
             Layer(
                 ArcCore,
                 0.12f,
@@ -1777,7 +1830,7 @@ namespace Baryonyx.Combat.Presentation
         /// <summary>
         /// The finishing cross cut: an X of two blades' afterimages that bursts and is eaten away.
         /// </summary>
-        private void Cross(Vector2 at, Color color, BattleHitWeight weight)
+        private void Cross(Vector2 at, Color color, BattleHitWeight weight, bool followed = false)
         {
             float size = weight == BattleHitWeight.Normal ? 420f : 520f;
             var shot = Spawn(
@@ -1787,15 +1840,47 @@ namespace Baryonyx.Combat.Presentation
                 new Vector2(size, size),
                 Color.white
             );
-            shot.Image.material = RichMaterialOf(BattleVfxShape.SlashCross);
+            shot.Image.material = RichMaterialOf(
+                BattleVfxShape.SlashCross,
+                followed ? CrossBare : 1f
+            );
+            const float life = 0.32f;
             Animate(
                 shot,
-                0.32f,
+                life,
                 (s, k) =>
                 {
                     float grow = 0.55f + 0.6f * EaseOut(Mathf.Min(1f, k * 3f));
                     s.Holder.localScale = new Vector3(grow, grow, 1f);
                     Show(s, color, k, Eaten(k, 0.2f), CoreBright);
+                }
+            );
+            if (!followed)
+                return;
+            // Followed, the blades' afterimages are soft ribbons beside them that outlast them and
+            // drift off. Adding the board leaves the random numbers of what follows as they were.
+            var random = UnityEngine.Random.state;
+            var sub = Spawn(
+                frontLight,
+                BattleVfxShape.SlashCross,
+                at,
+                new Vector2(size, size) * SlashSubRoom,
+                Color.white
+            );
+            UnityEngine.Random.state = random;
+            sub.Seed = shot.Seed;
+            sub.Image.material = RichMaterialOf(BattleVfxShape.SlashCross, CrossSub);
+            const float stays = 0.7f;
+            Animate(
+                sub,
+                stays,
+                (s, k) =>
+                {
+                    // It grows and shoots out on the blades' clock.
+                    float stroke = Mathf.Min(1f, k * stays / life);
+                    float grow = 0.55f + 0.6f * EaseOut(Mathf.Min(1f, stroke * 3f));
+                    s.Holder.localScale = new Vector3(grow, grow, 1f);
+                    Show(s, color, stroke, Eaten(k, 0.2f), 1f);
                 }
             );
         }

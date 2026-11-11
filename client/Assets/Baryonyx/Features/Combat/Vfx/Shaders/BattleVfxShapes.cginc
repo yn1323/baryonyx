@@ -1879,13 +1879,19 @@ half4 ShapeRupture(ShapeIn s)
 
 // --- Blades and beams of the rich look (premultiplied, all light) ------------------------------
 
+// How much wider than a blade's own board the board of its sub effects is (BattleSkillVfx's
+// SlashSubRoom).
+static const float SlashSubRoom = 1.45;
+
 // A sword arc, as a real blade looks when it swings fast: a sheaf of thin strands along the
 // crescent (its afterimages), the outermost white-hot along its leading edge where the metal
 // catches the light and the inner ones fainter in the tint; behind them a short motion blur that
 // fades inward, striated along the arc and gone soon after the blade has passed; and a glint at
 // the tip as it draws the arc. No cloud: a blade leaves none. It is drawn in from one tip to the
-// other, then eaten away.
-half4 ShapeRichSlashArc(ShapeIn s)
+// other, then eaten away. inner scales the fainter inner strands: 0 leaves the white-hot edge,
+// the blur and the glint alone, for an arc whose afterimages are drawn soft on a board of their
+// own (SlashArcLayer part 5).
+half4 RichSlashArc(ShapeIn s, float inner)
 {
     float2 q = s.p - float2(0, -0.35);
     float rr = length(q);
@@ -1926,17 +1932,25 @@ half4 ShapeRichSlashArc(ShapeIn s)
     float glint = Gauss(t - min(headAt, 1.0), 0.04) * step(headAt, 1.15) * hot;
     float keep = Keep(streak * 0.5 + shape * 0.5, s.rem, 0.08) * drawn * inArc;
     half3 col = lerp(s.tint, 1, 0.9) * hot * 2.2
-        + s.tint * strands * 1.3
+        + s.tint * strands * 1.3 * inner
         + lerp(s.tint, 1, smear * smear * 0.5) * smear * 0.9
         + glint * 2.0;
     float fade = BoardFade(s.p);
     return half4(col * keep * fade, 0);
 }
 
+half4 ShapeRichSlashArc(ShapeIn s)
+{
+    return RichSlashArc(s, 1);
+}
+
 // The finishing cross cut: two blades of light crossing, each a white-hot edge with a few
 // fainter strands beside it of different lengths and a short motion blur striated along it,
 // shooting out to full length over a hot centre, then eaten away from their ends.
-half4 ShapeRichSlashCross(ShapeIn s)
+// inner scales the fainter strands beside each blade: 0 leaves the two white-hot edges, their
+// blur and the hot centre alone, for a cross whose afterimages are drawn soft on a board of
+// their own (SlashCrossSub).
+half4 RichSlashCross(ShapeIn s, float inner)
 {
     float aa = max(s.aa, 0.004);
     half3 col = 0;
@@ -1965,11 +1979,56 @@ half4 ShapeRichSlashCross(ShapeIn s)
         float streak = Noise(float3(perp * 90.0, along * 1.5 + s.seed * 5.0, b * 3.1));
         float smear = Gauss(perp, 0.05 * taper + 0.006) * taper
             * (0.3 + 0.7 * smoothstep(0.3, 0.8, streak)) * saturate(1.2 - s.k * 1.5);
-        col += (lerp(s.tint, 1, 0.9) * hot * 2.4 + s.tint * strands * 1.3 + s.tint * smear * 0.9) * keep;
+        col += (lerp(s.tint, 1, 0.9) * hot * 2.4 + s.tint * strands * 1.3 * inner + s.tint * smear * 0.9) * keep;
     }
     col += lerp(s.tint, 1, 0.7) * Gauss(s.r, 0.12) * 1.2 * s.rem;
     float fade = BoardFade(s.p);
     return half4(col * fade, 0);
+}
+
+half4 ShapeRichSlashCross(ShapeIn s)
+{
+    return RichSlashCross(s, 1);
+}
+
+// The sub effects of the cross cut, on a wider board (SlashSubRoom) with the same two blades in
+// it for the same seed: beside each blade, four soft ribbons of its afterimage, each on a side,
+// at a gap, of a length, at a place, of a width and with a lean of its own, thinning to nothing
+// toward the blade's ends, frayed by a slow noise, and drifting off the blade as rem falls.
+// k is the cross's own clock (its blades reach full length at a quarter of it).
+half3 SlashCrossSub(ShapeIn s)
+{
+    float2 p = s.p * SlashSubRoom;
+    float aged = 1 - s.rem;
+    float fray = lerp(1.0, smoothstep(0.12, 0.72, Fbm4(s.p * 4.5 + SeedOffset(s.seed), s.seed * 3.0)), 0.6);
+    half3 col = 0;
+    [unroll]
+    for (int b = 0; b < 2; b++)
+    {
+        float a = (b == 0 ? 0.785398 : 2.356194) + (s.seed - 0.5) * 0.3 * (b == 0 ? 1 : -1);
+        float2 u = float2(cos(a), sin(a));
+        float len = 0.95 * (0.55 + 0.45 * saturate(s.k * 4.0));
+        float along = dot(p, u) / len;
+        float perp = p.x * u.y - p.y * u.x;
+        float sub = 0;
+        [unroll]
+        for (int i = 1; i <= 4; i++)
+        {
+            float v1 = Hash1(i + b * 4 + 61.0, s.seed);
+            float v2 = Hash1(i + b * 4 + 72.0, s.seed);
+            float v3 = Hash1(i + b * 4 + 83.0, s.seed);
+            float own = along - (v2 - 0.5) * 0.7;
+            float reach = lerp(0.35, 0.95, v3);
+            float shown = 1 - smoothstep(reach * 0.3, reach, abs(own));
+            float side = v1 < 0.5 ? -1.0 : 1.0;
+            float off = side * (0.03 + 0.12 * abs(v1 * 2.0 - 1.0)) * (1.0 + 1.6 * aged) + (v2 - 0.5) * 0.08 * own;
+            float wide = (0.009 + 0.014 * v3) * (1.0 + 0.8 * aged);
+            sub += Gauss(perp - off, wide) * shown * (0.4 + 0.6 * v2);
+        }
+        float ends = max(1 - smoothstep(0.1, 1.0, abs(along)), 0);
+        col += lerp(s.tint, 1, 0.12) * sub * ends;
+    }
+    return col * 1.5 * fray * saturate(s.rem * 1.5) * BoardFade(s.p);
 }
 
 // One layer of a sword arc, the crescent of ShapeRichSlashArc for the same seed, drawn in from one
@@ -1978,9 +2037,21 @@ half4 ShapeRichSlashCross(ShapeIn s)
 // arc, mostly inside its leading edge; part 3 the core: the white-hot leading edge alone, at least
 // a pixel wide, and the glint at its tip; part 4 the afterimage: the fainter inner strands,
 // broken along their length as rem falls.
+// Parts 5 to 7 are the arc with its sub effects, which are born of the blade and follow it but
+// are softer than it, thin out to nothing toward both tips, and differ one from the next
+// (doc/art/direction.md, サブVFX): part 5 the afterimages as three soft ribbons behind the edge,
+// each with a gap, a length, a place, a width and a lean of its own, frayed by a slow noise and
+// drifting inward as rem falls; part 6 the pressure lines: a few thin soft lines outside the
+// edge, each along part of the arc only, sliding the way the blade moves and soon gone; part 7
+// the body without its sharp inner strands (the edge, the blur and the glint).
 half3 SlashArcLayer(ShapeIn s, float part)
 {
-    float2 q = s.p - float2(0, -0.35);
+    if (part > 6.5)
+        return RichSlashArc(s, 0).rgb;
+    // The sub effects are drawn on a wider board (SlashSubRoom), the arc in it where the other
+    // layers have it, so they have room to drift off the blade.
+    float room = part > 4.5 ? SlashSubRoom : 1.0;
+    float2 q = s.p * room - float2(0, -0.35);
     float rr = length(q);
     float ang = atan2(q.y, q.x);
     const float a0 = 0.3;
@@ -1989,7 +2060,7 @@ half3 SlashArcLayer(ShapeIn s, float part)
     float inArc = step(a0, ang) * step(ang, a1);
     float shape = pow(saturate(sin(Pi * t)), 0.8);
     float d = rr - 0.88;
-    float px = max(s.aa, 1e-4);
+    float px = max(s.aa * room, 1e-4);
     float streak = Noise(float3(d * 90.0, t * 1.5 + s.seed * 5.0, s.seed * 3.0));
     float headAt = s.k * 3.5;
     float drawn = 1 - smoothstep(headAt - 0.15, headAt + 0.05, t);
@@ -2008,6 +2079,55 @@ half3 SlashArcLayer(ShapeIn s, float part)
         float hot = Line(d - offset, 0.011 * taper, px) * taper;
         float glint = Gauss(t - min(headAt, 1.0), 0.04) * step(headAt, 1.15) * hot;
         col = (lerp(s.tint, 1, 0.9) * hot * 2.2 + glint * 2.0) * Keep(streak * 0.5 + shape * 0.5, s.rem, 0.08);
+    }
+    else if (part > 4.5)
+    {
+        // -1 at the tip the blade starts from, 1 at the tip it ends on.
+        float along = t * 2.0 - 1.0;
+        float midst = max(1 - smoothstep(0.1, 1.0, abs(along)), 1e-4);
+        float ends = pow(midst, 1.2);
+        float fray = lerp(1.0, smoothstep(0.12, 0.72, Fbm4(s.p * 4.5 + SeedOffset(s.seed), s.seed * 3.0)), 0.6);
+        float aged = 1 - s.rem;
+        float sub = 0;
+        if (part < 5.5)
+        {
+            [unroll]
+            for (int ribbon = 1; ribbon <= 3; ribbon++)
+            {
+                float v1 = Hash1(ribbon + 31.0, s.seed);
+                float v2 = Hash1(ribbon + 42.0, s.seed);
+                float v3 = Hash1(ribbon + 53.0, s.seed);
+                float own = along - (v2 - 0.5) * 0.55;
+                float reach = lerp(0.45, 1.05, v3);
+                float shown = 1 - smoothstep(reach * 0.3, reach, abs(own));
+                float lean = ((v1 - 0.5) * 0.07 * own + sin(own * Pi * (1.0 + round(v3 * 2.0)) + v2 * Tau) * 0.01) * ribbon;
+                float gap = 0.05 * ribbon * (0.45 + 1.2 * v1) * (1.0 + 1.8 * aged);
+                float wide = (0.013 + 0.009 * ribbon) * (0.6 + 0.9 * v3) * (1.0 + 0.8 * aged);
+                sub += Gauss(d + gap * shape + lean, wide) * shown * exp(-0.35 * (ribbon - 1.0)) * (0.6 + 0.7 * v2);
+            }
+            col = lerp(s.tint, 1, 0.12) * sub * 1.9 * ends * fray * shape * saturate(s.rem * 1.6);
+        }
+        else
+        {
+            [unroll]
+            for (int rush = 0; rush < 5; rush++)
+            {
+                float h1 = Hash1(rush + 1.0, s.seed);
+                float h2 = Hash1(rush + 12.0, s.seed);
+                float h3 = Hash1(rush + 23.0, s.seed);
+                float h4 = Hash1(rush + 34.0, s.seed);
+                float h5 = Hash1(rush + 45.0, s.seed);
+                float mid = lerp(-0.6, 0.6, h2) + (s.k - 0.3) * 0.45 + aged * 0.3;
+                float reach = lerp(0.8, 0.32, rush / 4.0) * (0.6 + 0.8 * h3) * 1.25;
+                float window = pow(saturate(1 - abs(along - mid) / reach), 1.5);
+                float gap = 0.034 * (rush + 1.0) * (0.4 + 1.3 * h1) * (1.0 + 1.3 * aged) + (h4 - 0.5) * 0.12 * (along - mid)
+                    + sin(along * Pi * (2.0 + round(h5 * 3.0)) + h4 * Tau) * 0.004;
+                float wide = 0.008 * (0.55 + 1.1 * h5);
+                sub += (Line(d - gap, wide, px) * 0.55 + Gauss(d - gap, wide * 2.6) * 0.25)
+                    * window * exp(-0.3 * rush) * (0.45 + 0.9 * h4);
+            }
+            col = lerp(s.tint, 1, 0.2) * sub * 3.0 * ends * fray * saturate(s.rem * 1.4);
+        }
     }
     else
     {

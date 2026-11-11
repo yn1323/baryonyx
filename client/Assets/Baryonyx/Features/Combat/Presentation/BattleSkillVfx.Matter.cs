@@ -13,11 +13,26 @@ namespace Baryonyx.Combat.Presentation
     {
         // The looks of the sword arc's layers (the shader's SlashArc _Rich): 1 the body (its
         // strands and edge), 2 the haze of light round it, 3 the white-hot leading edge alone,
-        // 4 the afterimage of thin strands that breaks up as it is eaten.
+        // 4 the afterimage of thin strands that breaks up as it is eaten. 5 to 7 are for an arc
+        // followed by soft sub effects (doc/art/direction.md, サブVFX): 5 the afterimages as soft
+        // ribbons of uneven gaps and lengths, 6 the lines of the air it cuts outside its edge,
+        // 7 the body without its sharp inner strands.
         private const float ArcBody = 1f;
         private const float ArcHaze = 2f;
         private const float ArcCore = 3f;
         private const float ArcTrace = 4f;
+        private const float ArcSoftTrace = 5f;
+        private const float ArcPressure = 6f;
+        private const float ArcBare = 7f;
+
+        // The looks of the cross cut followed by soft sub effects (the shader's SlashCross _Rich):
+        // 2 the two blades without their sharp strands, 3 the soft ribbons of their afterimages.
+        private const float CrossBare = 2f;
+        private const float CrossSub = 3f;
+
+        // How much wider than a blade's own board the board of its sub effects is, so they have
+        // room to drift off it (the shader's SlashSubRoom).
+        private const float SlashSubRoom = 1.45f;
 
         // How long a sword arc takes to be drawn and worn (its body's life, s): every layer
         // reads its progress on this clock, so all of them share one stroke.

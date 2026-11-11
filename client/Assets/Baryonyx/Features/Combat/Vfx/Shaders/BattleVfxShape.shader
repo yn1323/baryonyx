@@ -160,7 +160,8 @@ Shader "Baryonyx/Combat/Battle Vfx Shape"
                 #elif defined(_SHAPE_STAR)
                 shape = ShapeStar(s);
                 #elif defined(_SHAPE_SLASHARC)
-                // A sword arc's layers on boards of their own (2 halo, 3 core, 4 afterimage).
+                // A sword arc's layers on boards of their own (2 halo, 3 core, 4 afterimage; 5 to 7
+                // the arc with soft sub effects: 5 afterimages, 6 pressure lines, 7 the body alone).
                 if (_Rich > 1.5)
                     shape = half4(SlashArcLayer(s, _Rich), 0);
                 else if (_Rich > 0.5)
@@ -168,7 +169,12 @@ Shader "Baryonyx/Combat/Battle Vfx Shape"
                 else
                     shape = ShapeSlashArc(s);
                 #elif defined(_SHAPE_SLASHCROSS)
-                if (_Rich > 0.5)
+                // 2 the cross without its sharp strands, 3 its soft sub effects on a wider board.
+                if (_Rich > 2.5)
+                    shape = half4(SlashCrossSub(s), 0);
+                else if (_Rich > 1.5)
+                    shape = RichSlashCross(s, 0);
+                else if (_Rich > 0.5)
                     shape = ShapeRichSlashCross(s);
                 else
                     shape = ShapeSlashCross(s);
