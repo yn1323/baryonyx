@@ -29,7 +29,7 @@ Material:
     - _Cover: 0
     - _FlameHeight: 0.5
     - _FlameWidth: 0.5
-    - _Halo: 0.3
+    - _Halo: 1.2
     - _Intensity: 1.6
     - _Puff: 1.6
     - _Seed: 0

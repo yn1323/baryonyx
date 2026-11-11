@@ -27,7 +27,7 @@ Material:
     m_Floats:
     - _Core: 0.45
     - _EdgeBreak: 0.35
-    - _Intensity: 0.4
+    - _Intensity: 0.66
     - _Mottle: 0.5
     - _MottleScale: 0.9
     - _Speed: 0.15

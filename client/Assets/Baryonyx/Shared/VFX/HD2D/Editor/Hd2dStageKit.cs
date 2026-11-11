@@ -86,7 +86,7 @@ namespace Baryonyx.Vfx.Hd2d.Editor
                 material =>
                 {
                     material.SetFloat("_Intensity", 1.6f);
-                    material.SetFloat("_Halo", 0.3f);
+                    material.SetFloat("_Halo", 1.2f);
                     material.SetFloat("_Turbulence", 1f);
                     material.SetFloat("_Speed", 2.2f);
                     material.SetFloat("_Puff", 1.6f);
@@ -134,7 +134,7 @@ namespace Baryonyx.Vfx.Hd2d.Editor
             EnsureMaterial(
                 LightBeamMaterialPath,
                 ShaderDirectory + "/Hd2dLightBeam.shader",
-                material => SetBeam(material, new Color(1f, 0.9f, 0.66f, 1f), 0.6f)
+                material => SetBeam(material, new Color(1f, 0.9f, 0.66f, 1f), 1.1f)
             );
             // Dust and pollen in the light: a soft speck that glints when it turns to the light.
             EnsureMaterial(

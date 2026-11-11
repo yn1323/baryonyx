@@ -3957,8 +3957,8 @@ MonoBehaviour:
     KeyLight: {fileID: 961011899}
     Look: {fileID: 11400000, guid: 16a0dbab779be43a3938eec6a03e3a5f, type: 2}
     AmbientSky: {r: 0.34, g: 0.3, b: 0.5, a: 1}
-    AmbientEquator: {r: 0.4, g: 0.28, b: 0.3, a: 1}
-    AmbientGround: {r: 0.14, g: 0.1, b: 0.09, a: 1}
+    AmbientEquator: {r: 0.32, g: 0.28, b: 0.44, a: 1}
+    AmbientGround: {r: 0.1, g: 0.1, b: 0.2, a: 1}
     Fog: {r: 0.42, g: 0.3, b: 0.36, a: 1}
     FogStart: 22
     FogEnd: 75
@@ -3986,19 +3986,19 @@ MonoBehaviour:
     Root: {fileID: 1099319372}
     KeyLight: {fileID: 1099319371}
     Look: {fileID: 11400000, guid: 205947789354d4e978b3107d39b0ad56, type: 2}
-    AmbientSky: {r: 0.2, g: 0.18, b: 0.2, a: 1}
-    AmbientEquator: {r: 0.24, g: 0.18, b: 0.13, a: 1}
-    AmbientGround: {r: 0.08, g: 0.06, b: 0.05, a: 1}
-    Fog: {r: 0.06, g: 0.05, b: 0.05, a: 1}
+    AmbientSky: {r: 0.18, g: 0.25, b: 0.46, a: 1}
+    AmbientEquator: {r: 0.16, g: 0.21, b: 0.4, a: 1}
+    AmbientGround: {r: 0.09, g: 0.12, b: 0.26, a: 1}
+    Fog: {r: 0.05, g: 0.07, b: 0.15, a: 1}
     FogStart: 18
     FogEnd: 52
   - Stage: 4
     Root: {fileID: 1296051110}
     KeyLight: {fileID: 1296051109}
     Look: {fileID: 11400000, guid: 9add4d96ec0394261a1e47a2fdf19b37, type: 2}
-    AmbientSky: {r: 0.16, g: 0.18, b: 0.34, a: 1}
-    AmbientEquator: {r: 0.14, g: 0.13, b: 0.28, a: 1}
-    AmbientGround: {r: 0.05, g: 0.05, b: 0.1, a: 1}
+    AmbientSky: {r: 0.17, g: 0.21, b: 0.42, a: 1}
+    AmbientEquator: {r: 0.15, g: 0.18, b: 0.38, a: 1}
+    AmbientGround: {r: 0.08, g: 0.1, b: 0.24, a: 1}
     Fog: {r: 0.05, g: 0.06, b: 0.13, a: 1}
     FogStart: 18
     FogEnd: 60
@@ -4016,9 +4016,9 @@ MonoBehaviour:
     Root: {fileID: 499056330}
     KeyLight: {fileID: 499056329}
     Look: {fileID: 11400000, guid: 9994e42a320524b51a5d8e94e89ac9de, type: 2}
-    AmbientSky: {r: 0.32, g: 0.38, b: 0.36, a: 1}
-    AmbientEquator: {r: 0.27, g: 0.31, b: 0.25, a: 1}
-    AmbientGround: {r: 0.1, g: 0.11, b: 0.08, a: 1}
+    AmbientSky: {r: 0.3, g: 0.4, b: 0.46, a: 1}
+    AmbientEquator: {r: 0.22, g: 0.31, b: 0.4, a: 1}
+    AmbientGround: {r: 0.09, g: 0.14, b: 0.24, a: 1}
     Fog: {r: 0.36, g: 0.42, b: 0.36, a: 1}
     FogStart: 12
     FogEnd: 55
@@ -4036,8 +4036,8 @@ MonoBehaviour:
     Root: {fileID: 937655061}
     KeyLight: {fileID: 937655060}
     Look: {fileID: 11400000, guid: c2240643b698d4e0aa1d40484c44cbe9, type: 2}
-    AmbientSky: {r: 0.26, g: 0.19, b: 0.21, a: 1}
-    AmbientEquator: {r: 0.3, g: 0.2, b: 0.18, a: 1}
+    AmbientSky: {r: 0.22, g: 0.22, b: 0.42, a: 1}
+    AmbientEquator: {r: 0.22, g: 0.19, b: 0.36, a: 1}
     AmbientGround: {r: 0.34, g: 0.16, b: 0.08, a: 1}
     Fog: {r: 0.2, g: 0.08, b: 0.07, a: 1}
     FogStart: 18
@@ -4046,20 +4046,20 @@ MonoBehaviour:
     Root: {fileID: 388851474}
     KeyLight: {fileID: 388851473}
     Look: {fileID: 11400000, guid: 1945ae54d136040e0a3ad47118617016, type: 2}
-    AmbientSky: {r: 0.17, g: 0.23, b: 0.32, a: 1}
-    AmbientEquator: {r: 0.12, g: 0.16, b: 0.2, a: 1}
-    AmbientGround: {r: 0.04, g: 0.05, b: 0.06, a: 1}
-    Fog: {r: 0.08, g: 0.12, b: 0.15, a: 1}
+    AmbientSky: {r: 0.2, g: 0.29, b: 0.5, a: 1}
+    AmbientEquator: {r: 0.15, g: 0.22, b: 0.4, a: 1}
+    AmbientGround: {r: 0.08, g: 0.12, b: 0.26, a: 1}
+    Fog: {r: 0.07, g: 0.11, b: 0.2, a: 1}
     FogStart: 14
     FogEnd: 60
   - Stage: 10
     Root: {fileID: 1257251803}
     KeyLight: {fileID: 1257251801}
     Look: {fileID: 11400000, guid: ce9d591035ee54b1cb14395cabf98405, type: 2}
-    AmbientSky: {r: 0.22, g: 0.18, b: 0.28, a: 1}
-    AmbientEquator: {r: 0.24, g: 0.16, b: 0.18, a: 1}
-    AmbientGround: {r: 0.08, g: 0.05, b: 0.06, a: 1}
-    Fog: {r: 0.07, g: 0.05, b: 0.08, a: 1}
+    AmbientSky: {r: 0.22, g: 0.23, b: 0.46, a: 1}
+    AmbientEquator: {r: 0.18, g: 0.19, b: 0.4, a: 1}
+    AmbientGround: {r: 0.09, g: 0.1, b: 0.26, a: 1}
+    Fog: {r: 0.06, g: 0.06, b: 0.14, a: 1}
     FogStart: 18
     FogEnd: 60
 --- !u!4 &1497356758

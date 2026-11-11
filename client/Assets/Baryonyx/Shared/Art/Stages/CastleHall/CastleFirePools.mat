@@ -27,11 +27,11 @@ Material:
     m_Floats:
     - _Core: 0.45
     - _EdgeBreak: 0.35
-    - _Intensity: 0.55
+    - _Intensity: 1.1
     - _Mottle: 0.5
     - _MottleScale: 0.9
     - _Speed: 0.15
     m_Colors:
-    - _Color: {r: 1, g: 0.58, b: 0.26, a: 1}
+    - _Color: {r: 1, g: 0.35, b: 0.1, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1

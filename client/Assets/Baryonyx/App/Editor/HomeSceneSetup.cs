@@ -105,8 +105,8 @@ namespace Baryonyx.App.Editor
         // night's campfire of the adventure's rest (CampfireSceneArt) lights the camp brighter.
         internal static void AddCampfire(
             Scene scene,
-            float lightIntensity = 1.6f,
-            float lightRange = 4.5f,
+            float lightIntensity = 4f,
+            float lightRange = 7f,
             bool daylight = true
         )
         {

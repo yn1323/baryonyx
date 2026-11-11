@@ -211,20 +211,20 @@ namespace Baryonyx.Stages.Editor
                     b.Shafts(
                         "Sunbeams",
                         beam,
-                        0.85f,
-                        sun.transform.forward,
+                        1.55f,
+                        StageSetAssets.ShaftTravel(sun),
                         11f,
-                        (-9.8f, 12.6f, 1.6f),
-                        (10.4f, 13f, 1.4f),
-                        (-1.2f, 16.4f, 2.8f)
+                        (-9.8f, 12.6f, 0.8f),
+                        (10.4f, 13f, 1.6f),
+                        (-1.2f, 16.4f, 3.4f)
                     );
                     b.Pools(
                         "SunPools",
                         beam,
-                        0.3f,
-                        (-9.8f, 12.6f, 3.4f, 1f),
-                        (10.4f, 13f, 3f, 1f),
-                        (-1.2f, 16.4f, 5f, 0.8f)
+                        0.5f,
+                        (-9.8f, 12.6f, 2f, 1f),
+                        (10.4f, 13f, 3.2f, 1f),
+                        (-1.2f, 16.4f, 6f, 0.8f)
                     );
                     b.Motes(new Color(1f, 0.96f, 0.78f), 44);
                 }
@@ -278,24 +278,24 @@ namespace Baryonyx.Stages.Editor
                     b.Shafts(
                         "Sunbeams",
                         beam,
-                        0.9f,
-                        sun.transform.forward,
+                        1.65f,
+                        StageSetAssets.ShaftTravel(sun),
                         10f,
-                        (-8.6f, 11.6f, 1.5f),
-                        (-4.6f, 15.8f, 1.9f),
-                        (1.4f, 14.4f, 1.3f),
-                        (6.4f, 13.4f, 1.7f),
-                        (10f, 16.4f, 1.2f)
+                        (-8.6f, 11.6f, 0.6f),
+                        (-4.6f, 15.8f, 2.6f),
+                        (1.4f, 14.4f, 1.1f),
+                        (6.4f, 13.4f, 3f),
+                        (10f, 16.4f, 0.7f)
                     );
                     b.Pools(
                         "SunPools",
                         beam,
-                        0.4f,
-                        (-8.6f, 11.6f, 3.2f, 1f),
-                        (-4.6f, 15.8f, 3.8f, 1f),
-                        (1.4f, 14.4f, 2.8f, 1f),
-                        (6.4f, 13.4f, 3.4f, 1f),
-                        (10f, 16.4f, 2.6f, 1f)
+                        0.66f,
+                        (-8.6f, 11.6f, 1.6f, 1f),
+                        (-4.6f, 15.8f, 4.6f, 1f),
+                        (1.4f, 14.4f, 2.4f, 1f),
+                        (6.4f, 13.4f, 5.2f, 1f),
+                        (10f, 16.4f, 1.8f, 1f)
                     );
                     b.Motes(new Color(1f, 0.92f, 0.7f), 60);
                 }
@@ -306,22 +306,22 @@ namespace Baryonyx.Stages.Editor
                 "MineTunnel",
                 "Mine",
                 new StageSetAssets.StageEnvironment(
-                    new Color(0.2f, 0.18f, 0.2f),
-                    new Color(0.06f, 0.05f, 0.05f),
+                    new Color(0.18f, 0.25f, 0.46f),
+                    new Color(0.05f, 0.07f, 0.15f),
                     18f,
                     52f,
-                    new Color(0.24f, 0.18f, 0.13f),
-                    new Color(0.08f, 0.06f, 0.05f)
+                    new Color(0.16f, 0.21f, 0.4f),
+                    new Color(0.09f, 0.12f, 0.26f)
                 ),
                 Grade(
                     0f,
                     14f,
                     4f,
                     0f,
-                    new Color(0.38f, 0.4f, 0.5f),
+                    new Color(0.32f, 0.42f, 0.7f),
                     new Color(0.66f, 0.52f, 0.38f),
-                    0.34f,
-                    new Color(0.02f, 0.01f, 0.01f)
+                    0.3f,
+                    new Color(0.03f, 0.06f, 0.2f)
                 ),
                 b =>
                 {
@@ -342,33 +342,33 @@ namespace Baryonyx.Stages.Editor
                         Lantern.MineLamp,
                         new Color(1f, 0.66f, 0.32f)
                     );
-                    b.Warm(new Color(1f, 0.62f, 0.3f), 3f);
+                    b.Warm(new Color(1f, 0.62f, 0.3f), 10f);
                     // Daylight falls through cracks in the roof onto the boards: cool shafts
                     // against the lanterns' warmth, the dust floating in them.
                     var daylight = new Color(0.72f, 0.84f, 1f);
                     b.Shafts(
                         "RoofShafts",
                         daylight,
-                        0.75f,
+                        1.4f,
                         new Vector3(0.4f, -1f, -0.3f),
                         9f,
-                        (-2.4f, 13.8f, 1.5f),
-                        (3.4f, 14.2f, 1.1f)
+                        (-2.4f, 13.8f, 2.2f),
+                        (3.4f, 14.2f, 0.7f)
                     );
                     b.Pools(
                         "RoofPools",
                         daylight,
-                        0.3f,
-                        (-2.4f, 13.8f, 3.2f, 1f),
-                        (3.4f, 14.2f, 2.4f, 1f)
+                        0.5f,
+                        (-2.4f, 13.8f, 4.2f, 1f),
+                        (3.4f, 14.2f, 1.6f, 1f)
                     );
                     PointLight(
                         b.Root,
                         "RoofLight",
                         new Vector3(-2.4f, 2.6f, 13.8f),
                         daylight,
-                        1.4f,
-                        6f
+                        5.7f,
+                        10.5f
                     );
                     b.Motes(new Color(1f, 0.76f, 0.48f), 36);
                 }
@@ -379,22 +379,22 @@ namespace Baryonyx.Stages.Editor
                 "CrystalCavern",
                 "Crystal",
                 new StageSetAssets.StageEnvironment(
-                    new Color(0.16f, 0.18f, 0.34f),
+                    new Color(0.17f, 0.21f, 0.42f),
                     new Color(0.05f, 0.06f, 0.13f),
                     18f,
                     60f,
-                    new Color(0.14f, 0.13f, 0.28f),
-                    new Color(0.05f, 0.05f, 0.1f)
+                    new Color(0.15f, 0.18f, 0.38f),
+                    new Color(0.08f, 0.1f, 0.24f)
                 ),
                 Grade(
                     0f,
                     12f,
                     10f,
                     0f,
-                    new Color(0.38f, 0.4f, 0.62f),
+                    new Color(0.36f, 0.42f, 0.68f),
                     new Color(0.5f, 0.56f, 0.66f),
-                    0.38f,
-                    new Color(0.02f, 0.02f, 0.08f)
+                    0.32f,
+                    new Color(0.03f, 0.05f, 0.2f)
                 ),
                 b =>
                 {
@@ -421,8 +421,8 @@ namespace Baryonyx.Stages.Editor
                         "CrystalLeft",
                         new Vector3(-11f, 2.2f, 14.6f),
                         new Color(0.4f, 0.8f, 1f),
-                        2.4f,
-                        9f,
+                        9.7f,
+                        16f,
                         false,
                         0.06f,
                         1f
@@ -432,8 +432,8 @@ namespace Baryonyx.Stages.Editor
                         "CrystalRight",
                         new Vector3(11.2f, 2.2f, 14.4f),
                         new Color(0.65f, 0.5f, 1f),
-                        2.4f,
-                        9f,
+                        9.7f,
+                        16f,
                         false,
                         0.06f,
                         3f
@@ -443,8 +443,8 @@ namespace Baryonyx.Stages.Editor
                         "CrystalBack",
                         new Vector3(0.5f, 2f, 16.2f),
                         new Color(0.55f, 0.6f, 1f),
-                        1.8f,
-                        8f,
+                        7.3f,
+                        14.5f,
                         false,
                         0.05f,
                         5f
@@ -455,25 +455,25 @@ namespace Baryonyx.Stages.Editor
                     b.Shafts(
                         "RoofShafts",
                         shaft,
-                        1f,
+                        1.85f,
                         new Vector3(-0.45f, -1f, -0.25f),
                         10f,
-                        (-1.2f, 14.6f, 2.2f),
-                        (6.6f, 14.4f, 1.5f),
-                        (-7.4f, 14.6f, 1.5f)
+                        (-1.2f, 14.6f, 2.8f),
+                        (6.6f, 14.4f, 0.8f),
+                        (-7.4f, 14.6f, 1.4f)
                     );
                     b.Pools(
                         "RoofPools",
                         shaft,
-                        0.45f,
-                        (-1.2f, 14.6f, 3.8f, 1f),
-                        (6.6f, 14.4f, 2.4f, 1f),
-                        (-7.4f, 14.6f, 2.4f, 1f)
+                        0.75f,
+                        (-1.2f, 14.6f, 4.8f, 1f),
+                        (6.6f, 14.4f, 1.8f, 1f),
+                        (-7.4f, 14.6f, 2.6f, 1f)
                     );
                     b.Pools(
                         "CyanPools",
                         new Color(0.35f, 0.75f, 1f),
-                        0.55f,
+                        1.3f,
                         (-11f, 14.2f, 5.5f, 1f),
                         (-9.4f, 10.4f, 2.6f, 0.8f),
                         (5.5f, 4.1f, 2.4f, 0.7f),
@@ -482,7 +482,7 @@ namespace Baryonyx.Stages.Editor
                     b.Pools(
                         "VioletPools",
                         new Color(0.65f, 0.45f, 1f),
-                        0.55f,
+                        1.3f,
                         (11.2f, 14.2f, 5.5f, 1f),
                         (9.1f, 9.6f, 2.6f, 0.8f),
                         (5.8f, 17f, 3.2f, 0.8f),
@@ -538,20 +538,20 @@ namespace Baryonyx.Stages.Editor
                     b.Shafts(
                         "Sunbeams",
                         beam,
-                        0.6f,
-                        sun.transform.forward,
+                        1.1f,
+                        StageSetAssets.ShaftTravel(sun),
                         12f,
-                        (-6.2f, 15.6f, 3f),
-                        (4.4f, 16.6f, 3.4f),
-                        (11f, 13.4f, 1.8f)
+                        (-6.2f, 15.6f, 2.2f),
+                        (4.4f, 16.6f, 4.2f),
+                        (11f, 13.4f, 1f)
                     );
                     b.Pools(
                         "SunPools",
                         beam,
-                        0.25f,
-                        (-6.2f, 15.6f, 5.5f, 1f),
-                        (4.4f, 16.6f, 6f, 1f),
-                        (11f, 13.4f, 3.4f, 1f)
+                        0.42f,
+                        (-6.2f, 15.6f, 4.2f, 1f),
+                        (4.4f, 16.6f, 7f, 1f),
+                        (11f, 13.4f, 2.2f, 1f)
                     );
                     b.Motes(new Color(0.95f, 0.98f, 1f), 30);
                 }
@@ -562,22 +562,22 @@ namespace Baryonyx.Stages.Editor
                 "MistySwamp",
                 "Swamp",
                 new StageSetAssets.StageEnvironment(
-                    new Color(0.32f, 0.38f, 0.36f),
+                    new Color(0.3f, 0.4f, 0.46f),
                     new Color(0.36f, 0.42f, 0.36f),
                     12f,
                     55f,
-                    new Color(0.27f, 0.31f, 0.25f),
-                    new Color(0.1f, 0.11f, 0.08f)
+                    new Color(0.22f, 0.31f, 0.4f),
+                    new Color(0.09f, 0.14f, 0.24f)
                 ),
                 Grade(
                     0f,
                     10f,
                     -6f,
                     0f,
-                    new Color(0.38f, 0.46f, 0.44f),
+                    new Color(0.32f, 0.46f, 0.64f),
                     new Color(0.58f, 0.58f, 0.46f),
-                    0.38f,
-                    new Color(0.03f, 0.05f, 0.03f)
+                    0.32f,
+                    new Color(0.03f, 0.07f, 0.16f)
                 ),
                 b =>
                 {
@@ -604,8 +604,8 @@ namespace Baryonyx.Stages.Editor
                         "WispLeft",
                         new Vector3(-9.5f, 1.4f, 12.5f),
                         new Color(0.55f, 1f, 0.7f),
-                        1.6f,
-                        6f,
+                        6.5f,
+                        10.5f,
                         false,
                         0.25f,
                         2f
@@ -615,8 +615,8 @@ namespace Baryonyx.Stages.Editor
                         "WispRight",
                         new Vector3(9.8f, 1.4f, 13.5f),
                         new Color(0.55f, 1f, 0.75f),
-                        1.6f,
-                        6f,
+                        6.5f,
+                        10.5f,
                         false,
                         0.25f,
                         4f
@@ -626,27 +626,27 @@ namespace Baryonyx.Stages.Editor
                     b.Shafts(
                         "FogShafts",
                         haze,
-                        0.6f,
-                        Quaternion.Euler(42f, 68f, 0f) * Vector3.forward,
+                        1.1f,
+                        Quaternion.Euler(60f, 68f, 0f) * Vector3.forward,
                         9f,
-                        (-7.2f, 12.2f, 1.6f),
-                        (-2.2f, 15.8f, 2.2f),
-                        (4.8f, 14.2f, 1.4f),
-                        (9.6f, 16.6f, 1.2f)
+                        (-7.2f, 12.2f, 0.8f),
+                        (-2.2f, 15.8f, 3f),
+                        (4.8f, 14.2f, 1.6f),
+                        (9.6f, 16.6f, 0.6f)
                     );
                     b.Pools(
                         "FogPools",
                         haze,
-                        0.3f,
-                        (-7.2f, 12.2f, 3.2f, 1f),
-                        (-2.2f, 15.8f, 4.2f, 1f),
-                        (4.8f, 14.2f, 2.8f, 1f),
-                        (9.6f, 16.6f, 2.4f, 1f)
+                        0.5f,
+                        (-7.2f, 12.2f, 2f, 1f),
+                        (-2.2f, 15.8f, 5.4f, 1f),
+                        (4.8f, 14.2f, 3f, 1f),
+                        (9.6f, 16.6f, 1.6f, 1f)
                     );
                     b.Pools(
                         "WispPools",
                         new Color(0.5f, 1f, 0.65f),
-                        0.5f,
+                        1.2f,
                         (-9.5f, 12.5f, 3.4f, 1f),
                         (9.8f, 13.5f, 3.4f, 1f),
                         (-5.7f, 4f, 2.2f, 0.8f),
@@ -702,20 +702,20 @@ namespace Baryonyx.Stages.Editor
                     b.Shafts(
                         "CloudShafts",
                         beam,
-                        0.7f,
-                        sun.transform.forward,
+                        1.25f,
+                        StageSetAssets.ShaftTravel(sun),
                         11f,
-                        (-5.2f, 14.6f, 2.4f),
-                        (3.6f, 16.2f, 2.8f),
-                        (9.2f, 12.8f, 1.6f)
+                        (-5.2f, 14.6f, 1.4f),
+                        (3.6f, 16.2f, 3.6f),
+                        (9.2f, 12.8f, 0.8f)
                     );
                     b.Pools(
                         "CloudPools",
                         beam,
-                        0.22f,
-                        (-5.2f, 14.6f, 4.6f, 1f),
-                        (3.6f, 16.2f, 5.2f, 1f),
-                        (9.2f, 12.8f, 3.2f, 1f)
+                        0.36f,
+                        (-5.2f, 14.6f, 3f, 1f),
+                        (3.6f, 16.2f, 6.4f, 1f),
+                        (9.2f, 12.8f, 2f, 1f)
                     );
                     b.Snowfall();
                 }
@@ -728,11 +728,11 @@ namespace Baryonyx.Stages.Editor
                 // The red is in the lava and the sky; the light on the field stays near neutral
                 // so the characters keep their own colours (a green slime stays green).
                 new StageSetAssets.StageEnvironment(
-                    new Color(0.26f, 0.19f, 0.21f),
+                    new Color(0.22f, 0.22f, 0.42f),
                     new Color(0.2f, 0.08f, 0.07f),
                     18f,
                     65f,
-                    new Color(0.3f, 0.2f, 0.18f),
+                    new Color(0.22f, 0.19f, 0.36f),
                     new Color(0.34f, 0.16f, 0.08f)
                 ),
                 Grade(
@@ -740,10 +740,10 @@ namespace Baryonyx.Stages.Editor
                     14f,
                     4f,
                     0f,
-                    new Color(0.45f, 0.38f, 0.46f),
+                    new Color(0.36f, 0.38f, 0.66f),
                     new Color(0.64f, 0.52f, 0.42f),
-                    0.38f,
-                    new Color(0.08f, 0.01f, 0.01f)
+                    0.32f,
+                    new Color(0.06f, 0.03f, 0.16f)
                 ),
                 b =>
                 {
@@ -777,8 +777,8 @@ namespace Baryonyx.Stages.Editor
                             "Lava" + i,
                             new Vector3(x, 0.8f, z),
                             new Color(1f, 0.45f, 0.15f),
-                            2.2f,
-                            7f,
+                            8.9f,
+                            12f,
                             false,
                             0.12f,
                             i * 1.7f
@@ -799,7 +799,7 @@ namespace Baryonyx.Stages.Editor
                     b.Pools(
                         "LavaPools",
                         glow,
-                        0.6f,
+                        1.45f,
                         (-9.2f, 10f, 5f, 1f),
                         (8.8f, 12.5f, 5f, 1f),
                         (-2.5f, 16.4f, 4.4f, 1f),
@@ -841,22 +841,22 @@ namespace Baryonyx.Stages.Editor
                 "MoonlitGraveyard",
                 "Grave",
                 new StageSetAssets.StageEnvironment(
-                    new Color(0.17f, 0.23f, 0.32f),
-                    new Color(0.08f, 0.12f, 0.15f),
+                    new Color(0.2f, 0.29f, 0.5f),
+                    new Color(0.07f, 0.11f, 0.2f),
                     14f,
                     60f,
-                    new Color(0.12f, 0.16f, 0.2f),
-                    new Color(0.04f, 0.05f, 0.06f)
+                    new Color(0.15f, 0.22f, 0.4f),
+                    new Color(0.08f, 0.12f, 0.26f)
                 ),
                 Grade(
                     0f,
                     14f,
                     4f,
                     0f,
-                    new Color(0.38f, 0.44f, 0.6f),
+                    new Color(0.32f, 0.44f, 0.72f),
                     new Color(0.56f, 0.6f, 0.62f),
-                    0.4f,
-                    new Color(0.01f, 0.02f, 0.05f)
+                    0.34f,
+                    new Color(0.03f, 0.07f, 0.22f)
                 ),
                 b =>
                 {
@@ -886,20 +886,20 @@ namespace Baryonyx.Stages.Editor
                     b.Shafts(
                         "Moonbeams",
                         moon,
-                        0.6f,
+                        1.1f,
                         new Vector3(0.45f, -1f, -0.28f),
                         10f,
-                        (-1.6f, 12.6f, 2.6f),
-                        (4.6f, 13.8f, 1.8f),
-                        (-6.4f, 14.2f, 1.6f)
+                        (-1.6f, 12.6f, 3.2f),
+                        (4.6f, 13.8f, 1.4f),
+                        (-6.4f, 14.2f, 0.7f)
                     );
                     b.Pools(
                         "MoonPools",
                         moon,
-                        0.35f,
-                        (-1.6f, 12.6f, 4.6f, 1f),
-                        (4.6f, 13.8f, 3f, 1f),
-                        (-6.4f, 14.2f, 2.8f, 1f)
+                        0.6f,
+                        (-1.6f, 12.6f, 5.6f, 1f),
+                        (4.6f, 13.8f, 2.8f, 1f),
+                        (-6.4f, 14.2f, 1.6f, 1f)
                     );
                     b.Motes(new Color(0.6f, 0.85f, 1f), 32);
                 }
@@ -910,22 +910,22 @@ namespace Baryonyx.Stages.Editor
                 "CastleHall",
                 "Castle",
                 new StageSetAssets.StageEnvironment(
-                    new Color(0.22f, 0.18f, 0.28f),
-                    new Color(0.07f, 0.05f, 0.08f),
+                    new Color(0.22f, 0.23f, 0.46f),
+                    new Color(0.06f, 0.06f, 0.14f),
                     18f,
                     60f,
-                    new Color(0.24f, 0.16f, 0.18f),
-                    new Color(0.08f, 0.05f, 0.06f)
+                    new Color(0.18f, 0.19f, 0.4f),
+                    new Color(0.09f, 0.1f, 0.26f)
                 ),
                 Grade(
                     0f,
                     14f,
                     6f,
                     0f,
-                    new Color(0.42f, 0.38f, 0.58f),
+                    new Color(0.34f, 0.4f, 0.7f),
                     new Color(0.66f, 0.52f, 0.4f),
-                    0.34f,
-                    new Color(0.04f, 0.01f, 0.04f)
+                    0.3f,
+                    new Color(0.04f, 0.05f, 0.2f)
                 ),
                 b =>
                 {
@@ -942,21 +942,22 @@ namespace Baryonyx.Stages.Editor
                     b.Sun(new Vector3(48f, 70f, 0f), new Color(0.62f, 0.6f, 0.95f), 0.6f, 0.8f);
                     b.Fill(new Color(0.5f, 0.42f, 0.6f), 0.34f);
                     b.Braziers(b.Cutout("Brazier", Color.white), 2.2f, Lantern.CastleBowlTop);
-                    b.Warm(new Color(1f, 0.6f, 0.32f), 2.6f);
+                    b.Warm(new Color(1f, 0.6f, 0.32f), 8.8f);
                     // Moonlight through the stained glass behind the throne: blue, gold and red
                     // shafts slanting down towards the camera, each leaving its colour on the
                     // carpet.
-                    var window = new Vector3(0.45f, -1f, -0.45f);
-                    (string name, Color color, float x, float z)[] panes =
+                    var window = new Vector3(0.36f, -1f, -0.36f);
+                    // The tall middle window lets through a broad shaft, the side ones narrower.
+                    (string name, Color color, float x, float z, float width)[] panes =
                     {
-                        ("BlueShaft", new Color(0.5f, 0.66f, 1f), -3.4f, 11.2f),
-                        ("GoldShaft", new Color(1f, 0.84f, 0.52f), 0.2f, 12.4f),
-                        ("RedShaft", new Color(1f, 0.46f, 0.42f), 3.6f, 11.4f),
+                        ("BlueShaft", new Color(0.5f, 0.66f, 1f), -3.4f, 11.2f, 1.3f),
+                        ("GoldShaft", new Color(1f, 0.84f, 0.52f), 0.2f, 12.4f, 3f),
+                        ("RedShaft", new Color(1f, 0.46f, 0.42f), 3.6f, 11.4f, 1.8f),
                     };
-                    foreach (var (name, color, x, z) in panes)
+                    foreach (var (name, color, x, z, width) in panes)
                     {
-                        b.Shafts(name, color, 1f, window, 9f, (x, z, 2.2f));
-                        b.Pools(name + "Pool", color, 0.3f, (x, z, 4.6f, 1f));
+                        b.Shafts(name, color, 1.6f, window, 9f, (x, z, width));
+                        b.Pools(name + "Pool", color, 0.5f, (x, z, width * 2f + 0.4f, 1f));
                     }
                     b.Motes(new Color(1f, 0.8f, 0.55f), 34);
                 }
@@ -1311,7 +1312,7 @@ namespace Baryonyx.Stages.Editor
                     new Vector3(-8.5f, 3.4f, 6f),
                     color,
                     intensity,
-                    11f,
+                    19f,
                     false,
                     0.12f,
                     1f
@@ -1322,7 +1323,7 @@ namespace Baryonyx.Stages.Editor
                     new Vector3(8.5f, 3.4f, 7.5f),
                     color,
                     intensity,
-                    11f,
+                    19f,
                     false,
                     0.12f,
                     2.5f
@@ -1337,7 +1338,7 @@ namespace Baryonyx.Stages.Editor
             public void Lanterns(StageDressing.Prop prop, float height, Vector2 lamp, Color color)
             {
                 var lamps = Group(Root, "Lanterns", Vector3.zero).transform;
-                var glow = StageSetAssets.GlowMaterial(Path("LanternGlow") + ".mat", color, 1.2f);
+                var glow = StageSetAssets.GlowMaterial(Path("LanternGlow") + ".mat", color, 2.4f);
                 var quad = Resources.GetBuiltinResource<Mesh>("Quad.fbx");
                 foreach (float side in new[] { -1f, 1f })
                 {
@@ -1366,8 +1367,8 @@ namespace Baryonyx.Stages.Editor
                         "LanternLight" + label,
                         light + Vector3.back * 0.5f,
                         color,
-                        2.4f,
-                        8.5f,
+                        9.7f,
+                        15f,
                         false,
                         0.15f,
                         side * 3f
@@ -1377,9 +1378,9 @@ namespace Baryonyx.Stages.Editor
                 Pools(
                     "LanternPools",
                     color,
-                    0.5f,
-                    (-7.2f + lamp.x * prop.Tall(height).x, 15f, 3.6f, 1f),
-                    (7.2f - lamp.x * prop.Tall(height).x, 15f, 3.6f, 1f)
+                    0.95f,
+                    (-7.2f + lamp.x * prop.Tall(height).x, 15f, 5f, 1f),
+                    (7.2f - lamp.x * prop.Tall(height).x, 15f, 5f, 1f)
                 );
             }
 
@@ -1415,8 +1416,8 @@ namespace Baryonyx.Stages.Editor
                         "FireLight" + label,
                         bowl + Vector3.up * 0.3f + Vector3.back * 0.6f,
                         new Color(1f, 0.58f, 0.26f),
-                        2.8f,
-                        9f,
+                        11.3f,
+                        16f,
                         false,
                         0.2f,
                         side * 5f
@@ -1448,10 +1449,10 @@ namespace Baryonyx.Stages.Editor
                 // The fire's light lies on the floor round the stands.
                 Pools(
                     "FirePools",
-                    new Color(1f, 0.58f, 0.26f),
-                    0.55f,
-                    (-7.2f, 15f, 4f, 1f),
-                    (7.2f, 15f, 4f, 1f)
+                    StageSetAssets.FirePoolColor,
+                    1.1f,
+                    (-7.2f, 15f, 5.5f, 1f),
+                    (7.2f, 15f, 5.5f, 1f)
                 );
             }
 
@@ -1505,7 +1506,7 @@ namespace Baryonyx.Stages.Editor
                 foreach (var (x, z, size, strength) in pools)
                     pieces.Add(
                         new Piece(
-                            new Vector3(x, PoolHeight, z),
+                            new Vector3(x, StageSetAssets.PoolHeight, z),
                             new Vector2(size, size),
                             false,
                             0,
@@ -1514,9 +1515,6 @@ namespace Baryonyx.Stages.Editor
                     );
                 Decals(Dressing, Store, name, material, pieces, StageDressing.Chunk);
             }
-
-            // Above the litter and the shade, under the characters' contact shadows (1 cm).
-            private const float PoolHeight = 0.008f;
 
             /// <summary>Litter laid at chosen places (x, z, size in m and quarter turns).</summary>
             public void Lay(

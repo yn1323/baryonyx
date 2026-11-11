@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Baryonyx.Editor;
 using Baryonyx.Vfx.Hd2d;
 using Baryonyx.Vfx.Hd2d.Editor;
@@ -136,26 +137,28 @@ namespace Baryonyx.Stages.Editor
             60f
         );
 
-        // A night on the mountain: deep blue light from the sky, dimmer around and almost none
-        // from below; a dark blue haze between the stage and the painted mountains.
+        // A night on the mountain: blue light from the sky, from around and from below, so what
+        // no torch reaches turns blue instead of black (the dark is told by its colour, not by
+        // hiding the stage); a dark blue haze between the stage and the painted mountains.
         public static readonly StageEnvironment StarlitEnvironment = new(
-            new Color(0.16f, 0.2f, 0.34f),
-            new Color(0.07f, 0.09f, 0.17f),
+            new Color(0.2f, 0.27f, 0.5f),
+            new Color(0.07f, 0.1f, 0.22f),
             18f,
             70f,
-            new Color(0.1f, 0.12f, 0.2f),
-            new Color(0.04f, 0.04f, 0.06f)
+            new Color(0.14f, 0.19f, 0.38f),
+            new Color(0.08f, 0.11f, 0.24f)
         );
 
-        // Dusk on the highland: violet light from the darkening sky, warm rose from the glow
-        // round the horizon and a dark bounce from the dry ground; a rosy haze in the distance.
+        // Dusk on the highland: violet light from the darkening sky and from around, and a blue
+        // bounce from below, so the shade turns violet-blue instead of brown; a rosy haze in the
+        // distance.
         public static readonly StageEnvironment DuskEnvironment = new(
             new Color(0.34f, 0.3f, 0.5f),
             new Color(0.42f, 0.3f, 0.36f),
             22f,
             75f,
-            new Color(0.4f, 0.28f, 0.3f),
-            new Color(0.14f, 0.1f, 0.09f)
+            new Color(0.32f, 0.28f, 0.44f),
+            new Color(0.1f, 0.1f, 0.2f)
         );
 
         // A bright forest in the day: blue sky light from above, green from the trees around
@@ -463,8 +466,8 @@ namespace Baryonyx.Stages.Editor
                             "TorchLight" + label,
                             tip + new Vector3(-side * 0.4f, 0f, -0.5f),
                             new Color(1f, 0.58f, 0.26f),
-                            2.4f,
-                            6.5f,
+                            9.7f,
+                            11.5f,
                             false,
                             0.22f,
                             i * 3.7f + side
@@ -498,8 +501,8 @@ namespace Baryonyx.Stages.Editor
                     "GateLight",
                     new Vector3(0f, 2.4f, backZ + 1.2f),
                     new Color(0.35f, 0.85f, 0.9f),
-                    3f,
-                    9f,
+                    12.2f,
+                    16f,
                     false,
                     0.06f,
                     11f
@@ -681,8 +684,8 @@ namespace Baryonyx.Stages.Editor
                         "FireLight" + label,
                         tip + Vector3.back * 0.6f,
                         new Color(1f, 0.55f, 0.25f),
-                        3.2f,
-                        9f,
+                        13f,
+                        16f,
                         false,
                         0.2f,
                         side * 5f
@@ -703,8 +706,8 @@ namespace Baryonyx.Stages.Editor
                     "CircleGlow",
                     new Vector3(0f, 1.2f, 9f),
                     new Color(0.45f, 0.65f, 1f),
-                    1f,
-                    9f,
+                    4.1f,
+                    16f,
                     false,
                     0.05f,
                     3f
@@ -975,17 +978,18 @@ namespace Baryonyx.Stages.Editor
                 sun.shadows = LightShadows.Hard;
                 LeafCookie(sun, 12f);
 
-                // Beams of sunlight through gaps in the canopy, slanting the same way as the sun,
-                // with dust and pollen floating in the light over the camp.
+                // Beams of sunlight through gaps in the canopy, coming down from above towards where
+                // the sun's light goes, with dust and pollen floating in the light over the camp.
+                // The gaps differ, so the beams do: hair-thin ones beside broad ones.
                 var light = Group(root, "Sunbeams", Vector3.zero).transform;
-                var towardsSun = -sun.transform.forward;
+                var towardsSun = -ShaftTravel(sun);
                 (float x, float z, float width)[] beams =
                 {
-                    (-6.5f, 9f, 1.6f),
-                    (-2.6f, 15f, 2.4f),
-                    (2.2f, 11.5f, 1.3f),
+                    (-6.5f, 9f, 0.7f),
+                    (-2.6f, 15f, 3.2f),
+                    (2.2f, 11.5f, 1.1f),
                     (5.6f, 16f, 2f),
-                    (9f, 12f, 1.5f),
+                    (9f, 12f, 0.5f),
                 };
                 for (int i = 0; i < beams.Length; i++)
                 {
@@ -1111,7 +1115,7 @@ namespace Baryonyx.Stages.Editor
             var gateGlow = GlowMaterial(
                 StarlitDirectory + "/StarlitGateGlow.mat",
                 new Color(0.42f, 0.62f, 1f),
-                0.9f
+                1.5f
             );
 
             var store = new MeshStore(StarlitDirectory + "/StarlitGateStageMeshes.asset");
@@ -1191,8 +1195,8 @@ namespace Baryonyx.Stages.Editor
                     "GateLight",
                     new Vector3(0f, platformHeight + 2.4f, gateZ - 0.8f),
                     new Color(0.5f, 0.7f, 1f),
-                    3f,
-                    9f,
+                    12.2f,
+                    16f,
                     false,
                     0.06f,
                     11f
@@ -1298,8 +1302,8 @@ namespace Baryonyx.Stages.Editor
                         "TorchLight" + i,
                         tip + new Vector3(0f, 0.1f, -0.4f),
                         new Color(1f, 0.58f, 0.26f),
-                        2.2f,
-                        6f,
+                        8.9f,
+                        10.5f,
                         false,
                         0.22f,
                         i * 3.1f
@@ -1314,6 +1318,21 @@ namespace Baryonyx.Stages.Editor
                         0.05f
                     );
                 }
+                // The torches' light lies on the path between them and on the platform by the
+                // steps (the platform's pools are small, to stay on its top).
+                FirePools(
+                    root,
+                    store,
+                    StarlitDirectory + "/StarlitFirePool.mat",
+                    FirePoolColor,
+                    0.6f,
+                    (new Vector3(-2.2f, 0f, 3.8f), 4.6f),
+                    (new Vector3(2.2f, 0f, 3.8f), 4.6f),
+                    (new Vector3(-2.2f, 0f, 9.2f), 4.6f),
+                    (new Vector3(2.2f, 0f, 9.2f), 4.6f),
+                    (new Vector3(-3f, platformHeight, 16.9f), 2.4f),
+                    (new Vector3(3f, platformHeight, 16.9f), 2.4f)
+                );
 
                 // The snowy range and the sky, painted at night, far behind everything.
                 for (int tile = -1; tile <= 1; tile++)
@@ -1606,8 +1625,8 @@ namespace Baryonyx.Stages.Editor
                         "FireLight" + label,
                         tip + Vector3.back * 0.6f,
                         new Color(1f, 0.55f, 0.25f),
-                        2.6f,
-                        9f,
+                        10.5f,
+                        16f,
                         false,
                         0.2f,
                         side * 5f
@@ -1637,6 +1656,16 @@ namespace Baryonyx.Stages.Editor
                         new Vector2(0.18f, 0f)
                     );
                 }
+                // The fires' light lies on the stone round the braziers.
+                FirePools(
+                    root,
+                    store,
+                    DuskDirectory + "/DuskFirePool.mat",
+                    FirePoolColor,
+                    0.6f,
+                    (new Vector3(-7.2f, 0f, 15f), 7f),
+                    (new Vector3(7.2f, 0f, 15f), 7f)
+                );
 
                 // Dust drifting in the low warm light over the circle.
                 Motes(
@@ -1729,11 +1758,11 @@ namespace Baryonyx.Stages.Editor
                         14f,
                         6f,
                         0f,
-                        new Color(0.4f, 0.45f, 0.62f),
+                        new Color(0.34f, 0.44f, 0.72f),
                         new Color(0.62f, 0.54f, 0.42f),
                         0f
                     );
-                    AddVignette(profile, 0.38f, new Color(0.01f, 0.02f, 0.06f));
+                    AddVignette(profile, 0.32f, new Color(0.03f, 0.07f, 0.22f));
                 }
             );
             Profile(
@@ -1751,11 +1780,11 @@ namespace Baryonyx.Stages.Editor
                         12f,
                         8f,
                         0f,
-                        new Color(0.42f, 0.42f, 0.6f),
+                        new Color(0.4f, 0.42f, 0.66f),
                         new Color(0.64f, 0.52f, 0.4f),
                         0f
                     );
-                    AddVignette(profile, 0.34f, new Color(0.06f, 0.02f, 0.06f));
+                    AddVignette(profile, 0.32f, new Color(0.05f, 0.04f, 0.16f));
                 }
             );
             Profile(
@@ -1855,6 +1884,43 @@ namespace Baryonyx.Stages.Editor
             vignette.smoothness.Override(0.5f);
             vignette.color.Override(color);
             vignette.rounded.Override(false);
+        }
+
+        // Above the litter and the shade, under the characters' contact shadows (1 cm).
+        internal const float PoolHeight = 0.008f;
+
+        /// <summary>
+        /// The way a stage's shafts of light travel: towards where the sun's light goes, but
+        /// coming down more steeply (<paramref name="pitch"/> degrees below the horizon). Along
+        /// a low sun's own direction the shafts lay flat across the screen; they should be seen
+        /// to come down from above (a lie of the lighting, the shadows keep the sun's angle).
+        /// </summary>
+        internal static Vector3 ShaftTravel(Light sun, float pitch = 60f) =>
+            Quaternion.Euler(pitch, sun.transform.eulerAngles.y, 0f) * Vector3.forward;
+
+        // The colour of a fire's pool. The pool's colour is taken as linear values, so the orange is
+        // given deeper than the fire's point light: (1, 0.55, 0.25) came out as pale cream.
+        internal static readonly Color FirePoolColor = new(1f, 0.35f, 0.1f);
+
+        /// <summary>
+        /// The light of fires lying on the ground round their stands (<c>Light Pool</c>), each
+        /// <c>size</c> m wide round <c>foot</c>: the point light warms what stands near the fire,
+        /// and the pool shows on the ground itself where that light lands.
+        /// </summary>
+        private static void FirePools(
+            Transform root,
+            MeshStore store,
+            string path,
+            Color color,
+            float intensity,
+            params (Vector3 foot, float size)[] fires
+        )
+        {
+            var material = PoolMaterial(path, color, intensity);
+            var pieces = new List<Piece>();
+            foreach (var (foot, size) in fires)
+                pieces.Add(new Piece(foot + Vector3.up * PoolHeight, new Vector2(size, size)));
+            Decals(root, store, "FirePools", material, pieces, StageDressing.Chunk);
         }
 
         internal static Material GlowMaterial(string path, Color color, float intensity)

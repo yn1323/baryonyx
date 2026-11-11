@@ -29,7 +29,7 @@ Material:
     - _CoreBoost: 2
     - _Halo: 1
     - _HaloSize: 0.3
-    - _Intensity: 0.9
+    - _Intensity: 1.5
     - _Occlude: 0
     - _Twinkle: 0
     - _TwinkleSpeed: 2

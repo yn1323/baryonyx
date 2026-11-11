@@ -32,7 +32,7 @@ Material:
     - _DustBrightness: 3
     - _EdgeSoftness: 0.7
     - _Halo: 0.35
-    - _Intensity: 1
+    - _Intensity: 1.6
     - _Seed: 0
     - _Speed: 0.12
     - _StripeAmount: 0.45
