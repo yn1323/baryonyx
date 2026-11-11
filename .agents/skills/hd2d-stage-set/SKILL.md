@@ -3,7 +3,7 @@ name: hd2d-stage-set
 description: >
   3Dの地面と背景にドット絵のキャラを立たせる3Dの舞台（HD-2D。Top・Home・戦闘画面と戦闘の背景）を作る・直す・レビューするときに必ず使う。
   カメラ、キャラの板と影、時間帯の光、霧・光芒、松明や焚き火の炎と煙、Topの舞台に重ねる2Dの塵ときらめき、被写界深度と色調、地面・遠景・小物・草・汚しとテクスチャ、密度と配置、舞台の重さを扱う。
-  「背景が寂しい・平ら・作り物っぽい・光が足りない・ぼけ方が変・重い」「焚き火の火がしょぼい」、新しい場所を3Dの舞台で組む、という依頼に当てはめる。
+  「背景が寂しい・平ら・作り物っぽい・光が足りない・ぼけ方が変・重い」「焚き火の火がしょぼい」「スキル以外のHD-2DのVFXのライティングが弱い」「暗い所が黒い」「光芒の太さ・角度が不自然」、新しい場所を3Dの舞台で組む、という依頼に当てはめる。
   技・被弾のエフェクトと報酬を受け取る瞬間の演出は vfx-authoring、描いた2D背景の画面の演出と常に漂う粒は hd2d-lighting-vfx、地図や案内人の画面などの描いた背景の絵そのものは creative-direction の担当とする。
 ---
 
@@ -16,7 +16,7 @@ Topの舞台に重ねている2Dの塵ときらめき（`TopHd2dLightingVfx`）�
 
 | 参照文書 | 扱うこと |
 |---|---|
-| [camera-light.md](references/camera-light.md) | カメラと配置の計算、キャラの板と影、描く順番、炎とライト、昼・夜・夕暮れの光、光芒と光だまり、霧、木漏れ日と雲の影のマスク、レンズと色、カメラの動き、自作シェーダーとRender Graph、停止中とSceneタブの表示 |
+| [camera-light.md](references/camera-light.md) | カメラと配置の計算、キャラの板と影、描く順番、炎とライト、昼・夜・夕暮れの光、光芒と光だまり、灯りの強さと暗がりの色、霧、木漏れ日と雲の影のマスク、レンズと色、カメラの動き、自作シェーダーとRender Graph、停止中とSceneタブの表示 |
 | [stage-building.md](references/stage-building.md) | 床・壁・遠景・書き割りの組み方、マテリアルの選び方、テクスチャの作り方、法線マップ、草と葉のシェーダー |
 | [set-dressing.md](references/set-dressing.md) | 小物・草の房・地面の汚し・足元の陰の密度の決め方、置き方の手順、撮影での点検 |
 | [Unity EditorとCLIの知見](../shared/unity-editor-notes.md) | Editorの状態、CLIのコマンドの時間切れ、撮影の方法、テストの注意 |
@@ -32,12 +32,12 @@ Topの舞台に重ねている2Dの塵ときらめき（`TopHd2dLightingVfx`）�
 
 ## 作業の流れ
 
-1. **直す層を決める**：カメラ・光・レンズの問題か、物と材質の問題か、密度の問題かを分ける。光が足りず平らに見えるなら [camera-light.md](references/camera-light.md) の光芒と光だまり・昼の光・夜と夕暮れの屋外、物が寂しいなら [set-dressing.md](references/set-dressing.md) のごちゃごちゃ具合の決め方と画面の帯ごとの置き場に沿って、休ませる所を先に決め、何を足すかを決める。
+1. **直す層を決める**：カメラ・光・レンズの問題か、物と材質の問題か、密度の問題かを分ける。光が足りず平らに見えるなら [camera-light.md](references/camera-light.md) の光芒と光だまり・昼の光・夜と夕暮れの屋外、灯りが弱い・暗がりが黒いなら同じ文書の[灯りの強さと暗がりの色](references/camera-light.md#灯りの強さと暗がりの色)、物が寂しいなら [set-dressing.md](references/set-dressing.md) のごちゃごちゃ具合の決め方と画面の帯ごとの置き場に沿って、休ませる所を先に決め、何を足すかを決める。
 2. **物の一覧を作る**：場所ごとに大・中・小・面の物と、その場で起きたことを見せる物を選び、物ごとに大きさ（m）・作り方・マテリアルを決める（[マテリアルの選び方](references/stage-building.md#マテリアルの選び方)）。
 3. **テクスチャを作る**：[テクスチャの作り方](references/stage-building.md#テクスチャの作り方)に従い、[stage_requests.py](scripts/stage_requests.py) で依頼文を作ってCodex CLIで生成し、[fit_textures.py](scripts/fit_textures.py) で縮めて、`.aseprite` にする。[pixel-art-standards](../pixel-art-standards/SKILL.md) と一緒に使う。
 4. **配置を計算する**：カメラの位置、手前の物、ピントの範囲、ドットの細かさ、描いた遠景の月、光芒の上端は、撮影の繰り返しで探さず、[配置を計算で決める](references/camera-light.md#配置を計算で決める)と [stage_view.py](scripts/stage_view.py) で先に求め、画面に収まり、キャラの絵に重ならないかを確かめる。
 5. **組む**：舞台の生成処理と小物の配置処理に、物・草・汚し・陰・光・Profileを書く。光を受ける面には法線マップを付け、草と葉は草と葉のシェーダーにする（[法線マップ](references/stage-building.md#法線マップ)、[草と葉のシェーダー](references/stage-building.md#草と葉のシェーダー)）。自作のURPシェーダーとRender Graphのパスは、[自作シェーダーとRender Graphの注意](references/camera-light.md#自作シェーダーとrender-graphの注意)を読んでから書く。決めた値はコードに書き、Inspectorで直さない。
-6. **作り直して撮る**：開いているシーンを閉じてから舞台を作り直し、関係する画面を停止中とPlay Modeで撮る。[camera-light.md の検証](references/camera-light.md#検証)と[set-dressing.md の撮影での点検](references/set-dressing.md#撮影での点検)の項目で確かめ、直して撮り直す。
+6. **作り直して撮る**：開いているシーンを閉じてから舞台を作り直し、関係する画面を停止中とPlay Modeで撮る。光・色調・光芒のように多くの舞台に効く変更は、[stage_shots.sh](scripts/stage_shots.sh) で全部の舞台を変更の前後に撮り、[stage_pairs.sh](scripts/stage_pairs.sh) で左右に並べて見比べ、その画像をユーザーへ送る。[camera-light.md の検証](references/camera-light.md#検証)と[set-dressing.md の撮影での点検](references/set-dressing.md#撮影での点検)の項目で確かめ、直して撮り直す。
 7. **テストと展示室**：小物と草の房がキャラの足元を避けていることをEditModeテストで確かめ、関係する画面のPlayModeテストを実行する（[作業中に実行するPlayModeテスト](../../../doc/rules/client-testing.md#作業中に実行するplaymodeテスト)）。光を受ける材質に法線マップが付いたかを確かめるテストはないため、マテリアルの `_BumpMap` と `_NORMALMAP` を読んで確かめる（[コードで付けたキーワードが消える](references/stage-building.md#つまずいた点)）。展示室はルートの AGENTS.md の[クライアントアセット展示室](../../../AGENTS.md#クライアントアセット展示室)に従って更新し、新しいテクスチャ・マテリアル・シェーダー・Prefabが一覧に入ったことを確かめる。
 8. **文書を更新する**：仕様の該当する節（画面ごとの構成、光と炎、レンズと色、小物と汚し、テクスチャの表）と[変更と判断の記録](../../../doc/art/hd2d-stage-history.md)、展示室の仕様、`client/ArtSource/Stages/prompts.json` を同じ変更で直す。作業で得た手順や注意はこのスキルの参照文書へ、守るべき規則や値は仕様へ書く（[docとスキルの使い分け](../../../doc/rules/documentation-policy.md#docとスキルの使い分け)）。
 
@@ -47,6 +47,11 @@ Topの舞台に重ねている2Dの塵ときらめき（`TopHd2dLightingVfx`）�
 詳しい原因と直し方は参照文書に書く。
 
 - 光が足りず平らに見える（光芒と光だまりがなく、光の当たる場所が分からない）
+- 炎や灯りは明るいのに、周りが照らされていない（点光源が弱く届かない、足元の光だまりがない）
+- 灯りの届かない所が黒くつぶれる（暗さを黒で作っている。青で表す）
+- 光芒の太さがそろい、寝た角度で画面を横切る
+- 灯りの光だまりが白っぽいクリーム色に浮く（色がリニアの値として使われる）
+- 1つの舞台だけを直し、同じ部品を置いたほかの舞台に同じ問題を残す
 - キャラの影が見えない（主光源の向きでHPバーやキャラ自身の板に隠れる、ソフトシャドウで薄い）
 - 逆光で崖や門が黒い影絵になる
 - 小物が黒い塊に見える（主光源の影の中、暗く描かれた絵、裏からしか光が当たらない板）
@@ -65,6 +70,10 @@ Topの舞台に重ねている2Dの塵ときらめき（`TopHd2dLightingVfx`）�
 | [stage_requests.py](scripts/stage_requests.py) | Codex CLIへの依頼文を固定の段落と物の説明から組み立て、並行生成のスクリプトを書き出す |
 | [fit_textures.py](scripts/fit_textures.py) | 物の範囲の縦横比を測り、大きさ（m）とドットの細かさから寸法を決めて変換する |
 | [stage_texture.py](scripts/stage_texture.py) | 面積平均で格子を作り直し、減色する（fit_textures.py が呼ぶ） |
+| [stage_shots.sh](scripts/stage_shots.sh) | Top・Home・戦闘の背景を、停止中のEditorで順に撮る。`TRY` に渡したC#を撮る直前に `eval` して、保存しない値を試せる |
+| [stage_pairs.sh](scripts/stage_pairs.sh) | 2組の撮影を画面ごとに左右へ並べる（変更の前後の比較） |
+| [scale_lights.cs](scripts/eval/scale_lights.cs) | 開いたシーンの点光源・光だまり・光芒・炎のまわりの光を、保存せずに何倍かにする（写しを作って倍率を書く） |
+| [rebuild_stages.cs](scripts/eval/rebuild_stages.cs) | 舞台のPrefab・マテリアル・Profileを作り直し、シーンが持つ環境光と霧をコードの値に合わせる |
 
 ## 完了報告
 
@@ -72,7 +81,7 @@ Topの舞台に重ねている2Dの塵ときらめき（`TopHd2dLightingVfx`）�
 
 - 画面ごとに変えたカメラ・光・レンズと色、足した物と、休ませる所として空けた場所
 - 新しいテクスチャ（生成した枚数、ドットの細かさを変えた物）とマテリアル・シェーダーの種類
-- 撮影で見つけて直した問題
+- 撮影で見つけて直した問題（光・色調・光芒を変えたときは、変更の前後を並べた画像を送る）
 - テスト・展示室・文書の更新と、その結果
 - 確かめていないこと（Android端末での負荷、スマートフォン用の描画設定での見え方、展示室のプレビューの見た目など）
 - ユーザーの判断が要ること（規格からの例外、PNGで置いた生成データなど）
