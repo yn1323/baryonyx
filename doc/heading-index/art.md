@@ -36,7 +36,7 @@
 
 ## [art/hd2d-stage-history.md](../art/hd2d-stage-history.md)
 
-11KB・27行
+13KB・29行
 
 - 8: # 3Dの舞台（HD-2D）の変更と判断の記録
 
@@ -49,25 +49,25 @@
 
 ## [art/hd2d-stage/battle-backgrounds.md](../art/hd2d-stage/battle-backgrounds.md)
 
-12KB・111行
+14KB・117行
 
 - 8: # 3Dの舞台：戦闘の背景
 - 12: ## 戦闘の背景
-- 62: ### 光芒と光だまり
-- 91: ### 霧と煙
+- 63: ### 光芒と光だまり
+- 97: ### 霧と煙
 
 ## [art/hd2d-stage/light-fire.md](../art/hd2d-stage/light-fire.md)
 
-15KB・83行
+16KB・85行
 
 - 8: # 3Dの舞台：光と炎、実装との対応
 - 12: ## 光と炎
-- 43: ## 実装との対応
-- 70: ## 未決事項
+- 45: ## 実装との対応
+- 72: ## 未決事項
 
 ## [art/hd2d-stage/stage-view.md](../art/hd2d-stage/stage-view.md)
 
-20KB・165行
+20KB・166行
 
 - 8: # 3Dの舞台：方針・画面の構成・カメラとレンズ
 - 12: ## 確定している方針
@@ -79,7 +79,7 @@
 - 115: ## レンズと色（ポストプロセス）
 - 119: ### 舞台のレンズ
 - 138: ### Bloom・色調・周辺減光
-- 151: ## 描く順番
+- 152: ## 描く順番
 
 ## [art/hd2d-stage/textures.md](../art/hd2d-stage/textures.md)
 
