@@ -455,7 +455,7 @@ namespace Baryonyx.Inventory.Editor
         }
 
         // 横に動かすつまみ。溝の上を押してもつまんでも倍率が変わる。
-        private static Slider BuildSlider(
+        internal static Slider BuildSlider(
             RectTransform parent,
             string name,
             float x,

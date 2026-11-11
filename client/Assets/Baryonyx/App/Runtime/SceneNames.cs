@@ -35,6 +35,9 @@ namespace Baryonyx.App
         // スキルのデバッグルーム。
         public const string CardSkillLab = "CardSkillLab";
 
+        // VFXの質感デバッグルーム。演出の土台の見た目（くっきり〜もや）をつまみで動かす。
+        public const string VfxLookLab = "VfxLookLab";
+
         // 品質のデバッグルーム。
         public const string QualityLab = "QualityLab";
 
@@ -81,6 +84,7 @@ namespace Baryonyx.App
         )[] DebugRooms =
         {
             ("スキルのデバッグルーム", CardSkillLab, true, DebugRoomCorner.TopRight),
+            ("VFXの質感デバッグルーム", VfxLookLab, true, DebugRoomCorner.TopRight),
             ("品質のデバッグルーム", QualityLab, true, DebugRoomCorner.TopRight),
             ("持ち物のデバッグルーム", InventoryLab, true, DebugRoomCorner.TopRight),
             ("戦闘画面のモック", BattleLab, false, DebugRoomCorner.TopRight),

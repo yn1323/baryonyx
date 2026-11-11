@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b840e69afabe41cf8f8842a1fe99a83a, type: 3}
+  m_Name: 4ae87585cc75b42e48c3ae5dbe262b5c
+  m_EditorClassIdentifier: Baryonyx.Runtime::Baryonyx.Showcase.ShowcaseEntry
+  Id: 4ae87585cc75b42e48c3ae5dbe262b5c
+  DisplayName: VfxLookLabScreen
+  Description: Assets/Baryonyx/Features/Combat/UI/VfxLookLabScreen.prefab
+  Category: 9
+  Asset: {fileID: 7420883858698640369, guid: 4ae87585cc75b42e48c3ae5dbe262b5c, type: 3}
+  PreviewPrefab: {fileID: 7420883858698640369, guid: 4ae87585cc75b42e48c3ae5dbe262b5c, type: 3}
+  PreviewAnimation: {fileID: 0}
+  AnimationStateName: 
+  ScenePath: 
+  Enabled: 1

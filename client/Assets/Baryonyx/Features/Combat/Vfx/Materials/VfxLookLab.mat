@@ -1,0 +1,105 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!21 &2100000
+Material:
+  serializedVersion: 8
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: VfxLookLab
+  m_Shader: {fileID: 4800000, guid: 8d3352010182844ae8707f9f660a5f69, type: 3}
+  m_Parent: {fileID: 0}
+  m_ModifiedSerializedProperties: 0
+  m_ValidKeywords: []
+  m_InvalidKeywords: []
+  m_LightmapFlags: 4
+  m_EnableInstancingVariants: 0
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: -1
+  stringTagMap: {}
+  disabledShaderPasses: []
+  m_LockedProperties: 
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs:
+    - _MainTex:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    m_Ints: []
+    m_Floats:
+    - _Additive: 1
+    - _BodyOpacity: 1
+    - _BodyWidth: 0.3
+    - _ClumpBlast: 0
+    - _ClumpCarry: 0
+    - _ClumpFloor: 0
+    - _ClumpSource: 0
+    - _ClumpSwirl: 0
+    - _ClumpTurbulence: 1
+    - _ClumpWake: 0
+    - _ColorMask: 15
+    - _CoreBright: 1.8
+    - _CoreWhite: 0.75
+    - _CoreWidth: 0.3
+    - _DissolveSoft: 0
+    - _EatCarry: 0
+    - _EatCool: 0
+    - _EatLag: 0
+    - _EatNoise: 1
+    - _EatOuter: 0
+    - _EatRim: 0
+    - _EatSoft: 0.3
+    - _EatThin: 0
+    - _EatWake: 0
+    - _EdgeNoise: 0.1
+    - _EdgeSoft: 0.3
+    - _EmitSpeed: 0.5
+    - _EmitStop: 0.45
+    - _FloorAt: -0.235
+    - _Form: 1
+    - _HaloStrength: 0.3
+    - _HaloWidth: 0.25
+    - _HazeAmount: 0.15
+    - _HazeClump: 0.3
+    - _HazeClumpSize: 0.5
+    - _HazeEmit: 0
+    - _HazeFill: 0.3
+    - _HazeFollow: 0
+    - _HazeGlow: 0
+    - _HazeReach: 0.35
+    - _HazeRise: 0.3
+    - _HazeShade: 0.2
+    - _HazeSide: 0
+    - _HazeSoft: 0.3
+    - _HazeWave: 0
+    - _HazeWaveCount: 5
+    - _HazeWind: 0
+    - _Heat: 0.2
+    - _Intensity: 1.3
+    - _NoiseFlow: 0.3
+    - _NoiseScale: 0.4
+    - _NoiseWarp: 0.4
+    - _Rays: 0
+    - _Sparks: 0
+    - _Stencil: 0
+    - _StencilComp: 8
+    - _StencilOp: 0
+    - _StencilReadMask: 255
+    - _StencilWriteMask: 255
+    - _Steps: 0
+    - _SubAfter: 0
+    - _SubPressure: 0
+    - _SubSoft: 0.8
+    - _SubSpiral: 0
+    - _SubSpread: 0.5
+    - _SubTaper: 0.6
+    - _SubVary: 0.6
+    - _SubWake: 0
+    - _WakeDrag: 0
+    m_Colors:
+    - _Color: {r: 1, g: 1, b: 1, a: 1}
+    - _Up: {r: 0, g: 1, b: 0, a: 0}
+  m_BuildTextureStacks: []
+  m_AllowLocking: 1

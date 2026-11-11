@@ -80,5 +80,8 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Baryonyx/App/Scenes/Debug/DropLab.unity
     guid: a71dc4e5b5bfa4081b5da23825217c23
+  - enabled: 1
+    path: Assets/Baryonyx/App/Scenes/Debug/VfxLookLab.unity
+    guid: 1ad7f4426cb8341fc80a9766505a351e
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
