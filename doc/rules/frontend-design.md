@@ -2,7 +2,7 @@
 id: rule-frontend-design
 type: reference
 status: 運用中
-updated: 2026-11-02
+updated: 2026-11-11
 ---
 
 # クライアントの構成と依存関係
@@ -28,7 +28,7 @@ client/
 │   │   │   ├── Runtime/                 起動、Providerの選択、前面・背面通知、シーン名（SceneNames）
 │   │   │   ├── Scenes/                   Top.unity、Home.unity、Showcase.unity、World.unity、WorldAtlas.unity、WorldMap.unity、Exploration.unity、Battle.unity
 │   │   │   │   ├── Guide/                案内人の画面（Pub・Shop・Temple・TravelOffice・Library）
-│   │   │   │   └── Debug/                デバッグ用のシーン（BattleLab・CardSkillLab・EnemyLab・BattleMomentLab・ExplorationMomentLab・QualityLab・InventoryLab・TempleSummonLab・AdventureLab・WorldEventLab・DropLab・TempLab）
+│   │   │   │   └── Debug/                デバッグ用のシーン（BattleLab・CardSkillLab・VfxLookLab・EnemyLab・BattleMomentLab・ExplorationMomentLab・QualityLab・InventoryLab・TempleSummonLab・AdventureLab・WorldEventLab・DropLab・TempLab）
 │   │   │   ├── Editor/                  シーンへの機能の配置、HD-2Dの演出と3Dの舞台のシーンへの配置
 │   │   │   ├── UI/                      冒険のデバッグルームの操作盤のPrefab
 │   │   │   └── Tests/                   EditMode（サーバーの接続先、開発用のプレイヤー、3Dの舞台の配置）とPlayMode（起動、案内人の画面、編成・商会・ライブラリの操作、デバッグルーム、展示室のシーン）
@@ -193,6 +193,7 @@ client/
 | `Guide/Pub.unity`・`Shop.unity`・`Temple.unity`・`TravelOffice.unity`・`Library.unity` | Homeから開く案内人の画面（編成・商会・神殿・ライブラリ）と、世界地図から開く旅の案内所（ダンジョン一覧。案内人なし）。「もどる」でHome（旅の案内所は世界地図）へ戻る | `Baryonyx > App > Create Guide Scenes` | [案内人がいる画面](../features/screens/guide.md#編成商会神殿旅の案内所の画面)・[ライブラリ](../features/library.md) |
 | `Debug/BattleLab.unity` | 戦闘画面の見た目を確かめるモック。単体で開いて確認する | `Baryonyx > App > Create Battle Lab Scene` | [戦闘画面の見た目モック](../features/screens/battle.md#戦闘画面の見た目モック) |
 | `Debug/CardSkillLab.unity` | Play中に選んだスキルの演出をすぐ再生するデバッグルーム | `Baryonyx > App > Create Card Skill Lab Scene` | [スキルのデバッグルーム](../features/screens/debug-rooms.md#スキルのデバッグルーム) |
+| `Debug/VfxLookLab.unity` | 演出の土台の見た目（輪郭のやわらかさ、芯・にじみ・もや）をつまみで動かして見比べるデバッグルーム | `Baryonyx > App > Create Vfx Look Lab Scene` | [VFXの質感デバッグルーム](../features/screens/debug-rooms.md#vfxの質感デバッグルーム) |
 | `Debug/QualityLab.unity` | スキル・装備・アクセサリーの倍率を動かし、品質の文字とキラキラを確かめるデバッグルーム | `Baryonyx > App > Create Quality Lab Scene` | [品質のデバッグルーム](../features/screens/debug-rooms.md#品質のデバッグルーム) |
 | `Debug/InventoryLab.unity` | 押した種類を、選んだ品質と数でサーバーの持ち物へ足すデバッグルーム | `Baryonyx > App > Create Inventory Lab Scene` | [持ち物のデバッグルーム](../features/screens/debug-rooms.md#持ち物のデバッグルーム) |
 | `Debug/EnemyLab.unity` | Play中に選んだ敵に、選んだ行動を戦闘画面のモックと同じ処理ですぐさせるデバッグルーム | `Baryonyx > App > Create Enemy Lab Scene` | [敵の挙動デバッグルーム](../features/screens/debug-rooms.md#敵の挙動デバッグルーム) |
@@ -226,7 +227,7 @@ Top・Home・BattleLabを開くと、Sceneタブは舞台のカメラから見�
 | 探索と冒険用の重ね画面のPrefab（行き先ごとの地面の取り込み設定を含む） | `Baryonyx > Adventure > Create Screen Assets` |
 | 休憩の焚き火の夜の野営地の絵（Homeの3Dの野営地を夜の光で描き出す。描いたあとは上の探索のPrefabと、それを置いたシーンを作り直す） | `Baryonyx > Adventure > Render Campfire Scene` |
 | 探索の演出デバッグルームの操作盤と演出の部品のPrefab、光のマテリアル | `Baryonyx > Adventure > Create Exploration Moment Lab Assets` |
-| 戦闘画面のモックとデバッグルームのPrefab | `Baryonyx > Combat > Create Battle Inspect Assets`・`Create Card Skill Lab Assets`・`Create Enemy Lab Assets`・`Create Battle Moment Lab Assets` |
+| 戦闘画面のモックとデバッグルームのPrefab | `Baryonyx > Combat > Create Battle Inspect Assets`・`Create Card Skill Lab Assets`・`Create Vfx Look Lab Assets`・`Create Enemy Lab Assets`・`Create Battle Moment Lab Assets` |
 | 戦闘画面の敵の絵の表、手で変えたカードのPrefabを既定から作り直す | `Baryonyx > Combat > Create Enemy Looks`・`Reset Battle Card Prefab` |
 | 3Dの舞台と戦闘の背景 | `Baryonyx > Stages > Create 3D Stage Assets`・`Create Battle Stage Assets` |
 | 接続設定アセット（`HealthConnectionSettings.asset`）と共有フォント | `Baryonyx > Health > Create Screen Assets`（[実行環境と接続先](../features/startup-sync.md#実行環境と接続先)） |

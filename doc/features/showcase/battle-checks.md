@@ -2,7 +2,7 @@
 id: client-showcase-battle-checks
 type: specification
 status: 一部確定
-updated: 2026-11-02
+updated: 2026-11-11
 ---
 
 # クライアントアセット展示室：横画面と戦闘・デバッグルームの確かめ方
@@ -29,6 +29,7 @@ updated: 2026-11-02
 ダメージ・弱点・会心・回復の数字と状態の帯は、プレイ中に浮かんで消えるだけで `BattleInspectScreen` には映らないため、戦闘の背景の上に並べた `BattleDamageNumbers` Prefabで確認する。上の段に通常・弱点・会心・弱点＋会心・回復の数字、下の段に状態の帯（出血・毒×2・防御ダウン・やけど・凍結で動けない）を並べる。
 カードを使ったときのスキルの演出は、`BattleSkillVfxPreview` Prefabで確認する。戦闘の背景に味方と敵を並べ、[スキルの仮設定](../combat/cards.md#スキルの仮設定)の50枚の演出を、それぞれの使い手と対象で順に繰り返し再生する（2周目ごとに弱点の当たりとして大きく出す）。画面の上に、再生中のカードの番号と名前を出す。やけど・毒・出血・リジェネ・爆炎の刻印・雷雲は、続けて働くときの演出も再生する。1枚だけを見るときは、Play中に `BattleSkillVfxDemo` の `Only` にカードのID（`Meteor` など）を入れ、途中から見るときは `First` に番号を入れる。
 好きなスキルを一覧から選んで再生するときは、シーンのカテゴリから `CardSkillLab` を開く（[スキルのデバッグルーム](../screens/debug-rooms.md#スキルのデバッグルーム)）。戦闘と同じ3Dの舞台とポストプロセスで再生するため、Bloomも映る。右上を「覚醒：入」にして固有スキルの最初の段階か1段目を選ぶと、カードが魔法陣で浮いてひびが入り、[覚醒先を選ぶ画面](../skill-evolution/effects.md#覚醒先を選ぶ画面)で選んだ段階に割れて覚醒する（[覚醒のエフェクト](../skill-evolution/effects.md#覚醒のエフェクト)）。覚醒のエフェクトは計算で描く形と、戦闘のカードのPrefabの複製だけで作るため、展示室に増えるアセットはない。選択画面は `CardSkillLabScreen` の中にあり、開いていないときは何も表示しない。選んだ候補の後ろの白金の後光の靄は、シェーダー `BattleCardAura` とマテリアル `VfxCardAura`（`Features/Combat/Vfx/`）で描く。靄は時間で形が変わるため、揺らぎはPlay Modeの選択画面で確かめる。決めるボタンのチェックの絵（`ConfirmCheck`、`Features/Combat/UI/Art/`）も一覧に並ぶ。同じ選択画面は戦闘画面のPrefab `BattleInspectScreen` にも入っており、冒険の戦闘で固有スキルが覚醒するときに開く。冒険の外の `BattleLab` では抽選しないため開かない。
+演出の土台の見た目（輪郭のやわらかさ、芯・にじみ・もやの配分）をつまみで動かして見比べるときは、シーンのカテゴリから `VfxLookLab` を開く（[VFXの質感デバッグルーム](../screens/debug-rooms.md#vfxの質感デバッグルーム)）。見本はPlay中だけ写るため、画面のPrefab `VfxLookLabScreen`、マテリアル `VfxLookLab`、シェーダー `Vfx Look Lab` のプレビューでは確かめられない。
 覚醒が当たったカードの手札の光（[覚醒の予兆](../skill-evolution/rules.md#覚醒の予兆)）は、`BattleInspectScreen` Prefabのプレビューで、停止中の表示の切り替えの「覚醒の予兆（光るカード）」を選んで確かめる（初めの手札の1枚を光らせた1コマ）。光はコードがその場で作るため、展示室に増えるアセットはない。息づく光と瞬き・表を向いたときの瞬きは、冒険の戦闘でしか出ない。同じ画面のPrefab `CardSkillLabScreen` も一覧に並ぶ。スキルの[覚醒版](../skill-awakening.md#演出)の100の段階は、一覧の「覚醒版」のタブから選んで再生する（停止中は「一覧を開いた（覚醒版）」で並びを確かめる）。演出は計算で描く形だけで作るため、展示室に増えるアセットはない。
 スキル・固有スキル・武器・防具・アクセサリーの倍率を動かして、品質の文字・キラキラ・効果の数字を確かめるときは、シーンのカテゴリから `QualityLab` を開く（[品質のデバッグルーム](../screens/debug-rooms.md#品質のデバッグルーム)）。同じ画面のPrefab `QualityLabScreen` は、停止中の表示の切り替えでスキル・武器・ボーナスを品質ごとに見られる。ホームの設定の下の、[デバッグルームの一覧](../screens/top-home.md#デバッグルームの一覧)を出すボタンのアイコン（`IconDebugRooms`、`Features/Home/UI/Art/`）も一覧に並ぶ。
 [持ち物のデバッグルーム](../screens/debug-rooms.md#持ち物のデバッグルーム)と[冒険のデバッグルーム](../screens/debug-rooms.md#冒険のデバッグルーム)は、シーンのカテゴリから `InventoryLab`・`AdventureLab` を開く。画面のPrefab `InventoryLabScreen` と操作盤 `AdventureLabPanel` も一覧に並ぶ。展示室から開いた持ち物のデバッグルームは、サーバーの接続を作らないため持ち物を足せない。
